@@ -1,221 +1,91 @@
 # StegVerse
 
-**Governed Autonomy Infrastructure**
+**StegVerse** is a research and engineering effort focused on building a **governed distributed operating system for autonomous agents, AI systems, and human‑AI collaboration**.
 
-StegVerse is a runtime governance system for autonomous software.
+The project explores how complex autonomous systems can operate safely and reliably when their actions are mediated by **policy enforcement, verifiable receipts, and governed state transitions**.
 
-It introduces a **Trust Kernel** that sits at the boundary where systems propose actions and infrastructure executes them.  
-Every action must pass through this kernel before it can affect the real world.
+StegVerse is organized as a modular ecosystem of interoperable components designed to support:
 
-The result is a new class of system:
-
-> **Governed Distributed Operating Systems**
-
----
-
-# The Problem
-
-Autonomous systems can now act faster than governance can respond.
-
-Today most systems operate like this:
-
-```
-model decides
-→ system executes
-→ humans audit afterward
-```
-
-This architecture assumes autonomy is always allowed.
-
-That assumption becomes dangerous as systems gain the ability to:
-
-- deploy infrastructure
-- control financial flows
-- manage critical services
-- coordinate other autonomous agents
-
-Governance that occurs **after execution** cannot prevent systemic failures.
+- autonomous AI agents
+- secure communication
+- policy‑governed execution
+- receipt‑based workflow control
+- distributed coordination
+- resilient communication across degraded infrastructure
 
 ---
 
-# The StegVerse Approach
+# Core Idea
 
-StegVerse inserts governance directly into the runtime.
+Traditional software systems assume that actors can execute operations freely once authenticated.
 
-```
-system proposes action
-        ↓
-   Trust Kernel
-        ↓
-governance verification
-        ↓
-execution allowed / denied / deferred
-```
+StegVerse introduces a different model:
 
-Autonomy becomes a **conditional runtime privilege**, not a default capability.
+intent → policy gate → decision → execution → receipt → next admissible state
 
----
+In this model:
 
-# GCAT: The Governance Model
-
-StegVerse is based on the **GCAT framework**:
-
-```
-G — Governance
-C — Constraints
-A — Artifacts (execution pressure)
-T — Trust continuity
-```
-
-These four dimensions define a **governability state space**.
-
-Systems remain stable only when execution pressure stays within the legitimacy capacity derived from governance, constraints, and trust.
-
-This relationship is captured by the **admissibility invariant**:
-
-```
-a ≤ K · g^α · c^β · t^γ
-```
-
-Where:
-
-- `a` = artifact execution pressure  
-- `g,c,t` = governance capacity factors  
-- `K` = scaling constant
-
-The balanced operating region is called **Rigel**.
-
----
-
-# The Trust Kernel
-
-The Trust Kernel is the runtime enforcement mechanism that:
-
-- evaluates GCAT system state
-- verifies execution continuity
-- enforces admissibility
-- emits cryptographic execution receipts
-
-Every action must pass through the kernel before execution.
+- actions are evaluated **before execution**
+- the system produces **verifiable receipts**
+- receipts authorize **subsequent actions or information access**
+- workflows become **state‑aware and governed**
 
 ---
 
 # Core Components
 
+## StegVerse SDK
+Developer toolkit for integrating governed execution, receipts, and policy enforcement into applications and agent frameworks.
+
+## StegTalk
+Transport‑independent secure messaging layer capable of operating across multiple communication bearers.
+
 ## StegCore
-Decision engine for governed actions.
+Decision and policy evaluation engine responsible for determining whether actions are admissible.
 
-```
-allow
-deny
-defer
-```
+## Token Vault (TV / TVC)
+Secret and capability distribution system for short‑lived authorization tokens.
 
-## StegID
-Identity and execution receipt verification.
-
-## StegBrain
-Global state controller that aggregates cluster signals.
-
-## StegDB
-System signal registry and dependency tracking.
-
-## StegAgents
-Autonomous agent runtime integrated with the Trust Kernel.
+## Trust Kernel
+Execution boundary where system actions are validated before they are allowed to affect external systems.
 
 ---
 
-# StegVerse SDK
+# Demonstrations
 
-The StegVerse SDK allows external systems to interact with the Trust Kernel.
+The **StegVerse Demo Suite** provides runnable examples illustrating the core primitives of the architecture.
 
-Minimal interface:
+These demos show how:
 
-```python
-submit_intent(action, target, parameters)
-get_decision(intent_id)
-verify_receipt(receipt)
-```
+- AI agents operate under governed execution
+- actions are evaluated by policy gates
+- receipts are generated and chained
+- workflows unlock subsequent steps through verified state transitions
 
-Example workflow:
-
-```
-agent proposes intent
-→ Trust Kernel evaluates GCAT state
-→ decision returned
-→ receipt generated
-→ execution permitted or blocked
-```
-
-This makes StegVerse **integrable governance infrastructure**.
-
----
-
-# What StegVerse Enables
-
-StegVerse makes it possible to build:
-
-- governed autonomous agents
-- governed infrastructure automation
-- governed AI systems
-- governed decentralized compute networks
-- governed financial automation
-
-Instead of relying on post-hoc oversight, systems become **structurally governable**.
-
----
-
-# Research Foundations
-
-The architecture is based on the GCAT research series, which introduces:
-
-- governability state spaces
-- legitimacy surplus invariants
-- admissibility bounds
-- Rigel stability conditions
-- Trust Kernel runtime enforcement
-
-These papers define a **control-theoretic approach to AI governance**.
+Repository:
+https://github.com/StegVerse-org/stegverse-demo-suite
 
 ---
 
 # Current Status
 
-StegVerse is an early-stage research and engineering effort.
-
-Active work includes:
-
-- GCAT formalization
-- Trust Kernel reference implementation
-- SDK development
-- interactive simulation tools
-- integration with autonomous infrastructure platforms
+StegVerse is currently in an **early prototype phase**, providing experimental implementations and architecture demonstrations.
 
 ---
 
-# Vision
+# Contributing
 
-The long-term goal of StegVerse is simple:
+Engineers and researchers interested in:
 
-> **Autonomous systems should remain governable at the moment they act.**
+- AI infrastructure
+- distributed systems
+- autonomous agents
+- governance and safety architectures
 
-StegVerse provides the infrastructure to make that possible.
+are welcome to explore the demos and participate in discussion.
 
 ---
 
 # License
 
-Open source licensing will be announced as the reference implementation stabilizes.
-
----
-
-# Learn More
-
-Additional materials:
-
-- GCAT research papers
-- architecture diagrams
-- runtime reference implementations
-- interactive governance simulations
-
-These will appear in the repositories of this organization as development continues.
+Open research / prototype environment. Individual repositories may define their own licenses.
