@@ -1,0 +1,64 @@
+name: Architecture Guard
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install StegDB Validator
+        run: |
+          pip install git+https://github.com/StegVerse-Labs/StegDB.git#subdirectory=tools
+      
+      - name: Discover Manifest
+        id: discover
+        run: |
+          for m in stegverse.architecture.json architecture.json .architecture.json; do
+            if [ -f "$m" ]; then
+              echo "manifest=$m" >> $GITHUB_OUTPUT
+              echo "found=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          done
+          echo "found=false" >> $GITHUB_OUTPUT
+      
+      - name: Run Validation
+        if: steps.discover.outputs.found == 'true'
+        run: |
+          python -m stegdb.tools.validate_architecture \
+            --repo . \
+            --manifest ${{ steps.discover.outputs.manifest }} \
+            --output architecture-report.json \
+            --fail-on-drift
+      
+      - name: Upload Report
+        if: always() && steps.discover.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-report-${{ github.run_id }}
+          path: architecture-report.json
+      
+      - name: Report to StegDB
+        if: steps.discover.outputs.found == 'true' && failure()
+        run: |
+          # Future: POST report to StegDB registry for aggregated tracking
+          echo "Would report violation to StegDB registry"
+      
+      - name: Dormant Notice
+        if: steps.discover.outputs.found == 'false'
+        run: |
+          echo "::notice::No architecture manifest found. Guard is dormant."
+          echo "Create stegverse.architecture.json to activate governance."
