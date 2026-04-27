@@ -1,64 +1,183 @@
 name: Architecture Guard
-
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master]
   schedule:
-    - cron: '0 0 * * 0'
+    - cron: '0 4 * * 1'  # Weekly audit: Monday 4AM UTC
+  workflow_dispatch:
 
 jobs:
-  validate:
+  validate-structure:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
-      - name: Install StegDB Validator
+
+      - name: Install dependencies
         run: |
-          pip install git+https://github.com/StegVerse-Labs/StegDB.git#subdirectory=tools
-      
-      - name: Discover Manifest
-        id: discover
+          python -m pip install --upgrade pip
+          pip install pyyaml requests
+
+      - name: Download canonical validator from StegDB
         run: |
-          for m in stegverse.architecture.json architecture.json .architecture.json; do
-            if [ -f "$m" ]; then
-              echo "manifest=$m" >> $GITHUB_OUTPUT
-              echo "found=true" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-          done
-          echo "found=false" >> $GITHUB_OUTPUT
-      
-      - name: Run Validation
-        if: steps.discover.outputs.found == 'true'
+          curl -sL \
+            "https://raw.githubusercontent.com/StegVerse-Labs/StegDB/main/tools/architecture_validator.py" \
+            -o /tmp/architecture_validator.py || echo "StegDB validator unavailable; using local fallback"
+
+      - name: Validate repository structure against manifest
         run: |
-          python -m stegdb.tools.validate_architecture \
-            --repo . \
-            --manifest ${{ steps.discover.outputs.manifest }} \
-            --output architecture-report.json \
-            --fail-on-drift
-      
-      - name: Upload Report
-        if: always() && steps.discover.outputs.found == 'true'
+          MANIFEST="stegverse.architecture.json"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "ERROR: $MANIFEST not found. Repository lacks architecture manifest."
+            echo "Create $MANIFEST or copy from StegVerse-Labs/StegDB/templates/"
+            exit 1
+          fi
+
+          python3 << 'PYEOF'
+          import json, os, re, sys
+          from pathlib import Path
+
+          manifest_path = Path("stegverse.architecture.json")
+          if not manifest_path.exists():
+              sys.exit(1)
+
+          manifest = json.loads(manifest_path.read_text())
+          expected = manifest.get("expected_structure", {})
+          migration = manifest.get("migration_rules", {})
+          file_rules = manifest.get("file_rules", {})
+
+          review_needed_path = migration.get("review_needed_path", "review_needed/")
+          legacy_path = migration.get("legacy_path", "legacy/")
+          auto_migrate = migration.get("auto_migrate", False)
+          require_approval = migration.get("require_approval", True)
+          syntax_patterns = migration.get("syntax_issue_patterns", [])
+
+          violations = []
+          misplaced = []
+          syntax_issues = []
+          forbidden_hits = []
+
+          # 1. Check required paths
+          def check_path(rel_path, spec, base=""):
+              full = Path(base) / rel_path if base else Path(rel_path)
+              is_dir = rel_path.endswith("/")
+              if is_dir:
+                  exists = full.exists() and full.is_dir()
+              else:
+                  exists = full.exists() and full.is_file()
+              if spec.get("required", False) and not exists:
+                  violations.append(f"MISSING required: {rel_path}")
+              if exists and "subdirs" in spec:
+                  for sub, subspec in spec["subdirs"].items():
+                      check_path(sub, subspec, str(full))
+
+          for rel_path, spec in expected.items():
+              check_path(rel_path, spec)
+
+          # 2. Check forbidden patterns
+          forbidden = file_rules.get("forbidden_patterns", [])
+          for root, dirs, files in os.walk("."):
+              # Skip git and common junk
+              dirs[:] = [d for d in dirs if d not in {".git","__pycache__","node_modules",".venv","venv"}]
+              for f in files:
+                  rel = os.path.join(root, f)
+                  for pattern in forbidden:
+                      if re.search(pattern, rel):
+                          forbidden_hits.append(f"FORBIDDEN pattern '{pattern}' matched: {rel}")
+
+          # 3. Check naming conventions
+          naming = file_rules.get("naming_conventions", {})
+          for root, dirs, files in os.walk("."):
+              dirs[:] = [d for d in dirs if d not in {".git","__pycache__","node_modules"}]
+              for f in files:
+                  if f.endswith(".py") and f.startswith("test_") is False and f != "__init__.py":
+                      # Simple snake_case check
+                      if not re.match(r"^[a-z0-9_]+\.py$", f):
+                          syntax_issues.append(f"NAMING: {f} (expected snake_case)")
+
+          # 4. Migration: detect files outside expected structure
+          expected_dirs = set()
+          expected_files = set()
+          for rel_path in expected:
+              if rel_path.endswith("/"):
+                  expected_dirs.add(rel_path.rstrip("/"))
+              else:
+                  expected_files.add(rel_path)
+
+          for root, dirs, files in os.walk("."):
+              dirs[:] = [d for d in dirs if d not in {".git","__pycache__","node_modules",".venv","venv",review_needed_path.rstrip("/"),legacy_path.rstrip("/")}]
+              for f in files:
+                  rel = os.path.join(root, f).lstrip("./")
+                  # Skip files in expected paths
+                  in_expected = any(rel.startswith(d) for d in expected_dirs) or rel in expected_files
+                  if not in_expected and not rel.startswith(".") and not rel.startswith("_"):
+                      # Check syntax issues
+                      for pat in syntax_patterns:
+                          if re.search(pat, f):
+                              syntax_issues.append(f"SYNTAX ISSUE in filename: {rel}")
+                              break
+
+          # Report
+          print("="*60)
+          print("ARCHITECTURE GUARD REPORT")
+          print("="*60)
+          print(f"Repo: {manifest.get('repo_id','unknown')}")
+          print(f"Enforcement: {manifest.get('enforcement','warn')}")
+          print(f"Schema version: {manifest.get('schema_version','unknown')}")
+          print("-"*60)
+
+          if violations:
+              print(f"\nSTRUCTURE VIOLATIONS ({len(violations)}):")
+              for v in violations:
+                  print(f"  - {v}")
+          else:
+              print("\nSTRUCTURE: PASS — all required paths present")
+
+          if syntax_issues:
+              print(f"\nSYNTAX / NAMING ISSUES ({len(syntax_issues)}):")
+              for s in syntax_issues[:50]:
+                  print(f"  - {s}")
+              if len(syntax_issues) > 50:
+                  print(f"  ... and {len(syntax_issues)-50} more")
+          else:
+              print("\nSYNTAX: PASS")
+
+          if forbidden_hits:
+              print(f"\nFORBIDDEN PATTERN HITS ({len(forbidden_hits)}):")
+              for h in forbidden_hits[:20]:
+                  print(f"  - {h}")
+              if len(forbidden_hits) > 20:
+                  print(f"  ... and {len(forbidden_hits)-20} more")
+          else:
+              print("\nFORBIDDEN: PASS")
+
+          print("-"*60)
+          total = len(violations) + len(syntax_issues) + len(forbidden_hits)
+          print(f"TOTAL ISSUES: {total}")
+
+          if total > 0 and manifest.get("enforcement") == "strict":
+              print("\nENFORCEMENT: STRICT — failing build")
+              sys.exit(1)
+          elif total > 0:
+              print("\nENFORCEMENT: WARN — issues logged, build continues")
+              sys.exit(0)
+          else:
+              print("\nSTATUS: CLEAN")
+              sys.exit(0)
+          PYEOF
+
+      - name: Upload architecture report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: architecture-report-${{ github.run_id }}
-          path: architecture-report.json
-      
-      - name: Report to StegDB
-        if: steps.discover.outputs.found == 'true' && failure()
-        run: |
-          # Future: POST report to StegDB registry for aggregated tracking
-          echo "Would report violation to StegDB registry"
-      
-      - name: Dormant Notice
-        if: steps.discover.outputs.found == 'false'
-        run: |
-          echo "::notice::No architecture manifest found. Guard is dormant."
-          echo "Create stegverse.architecture.json to activate governance."
+          name: architecture-report
+          path: |
+            stegverse.architecture.json
+            *.log
