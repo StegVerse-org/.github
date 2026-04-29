@@ -1,5 +1,7 @@
 I drew this on a scrap of paper a year ago.
 
+https://github.com/StegVerse-org/.github/blob/main/IMG_E83773BE-CC13-4E8E-AF8D-3160AB405731.jpeg
+
 It's still the map.
 
 The notation is rough because the idea was obvious - if you've been trained in calorimetry.
