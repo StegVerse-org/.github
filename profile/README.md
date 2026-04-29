@@ -31,12 +31,12 @@ In this model:
 
 | Component | Repo | Status | Purpose |
 |-----------|------|--------|---------|
-| **StegVerse SDK** | [StegVerse-SDK](https://github.com/StegVerse-org/StegVerse-SDK) | v1.0.1 | Developer toolkit for governed execution |
-| **Trust Kernel** | [Trust-Kernel](https://github.com/StegVerse-org/Trust-Kernel) | v1.0.0 | Foundational governance layer |
-| **StegVerse Admission** | [StegVerse-Admission](https://github.com/StegVerse-org/StegVerse-Admission) | v1.0.0 | GCAT/BCAT admissibility evaluation |
-| **LLM Adapter** | [LLM-adapter](https://github.com/StegVerse-org/LLM-adapter) | v2.1 | AI output governance bridge |
-| **Demo Suite** | [stegverse-demo-suite](https://github.com/StegVerse-org/stegverse-demo-suite) | v1.0.0 | Reproducible validation scenarios |
-| **Ingestion Engine** | [demo_ingest_engine](https://github.com/StegVerse-org/demo_ingest_engine) | v1.2.1 | Orchestrated bundle ingestion |
+| **StegVerse SDK** | [StegVerse-SDK](https://github.com/StegVerse-org/StegVerse-SDK) | ![PyPI](https://img.shields.io/pypi/v/stegverse-sdk) | Developer toolkit for governed execution |
+| **Trust Kernel** | [Trust-Kernel](https://github.com/StegVerse-org/Trust-Kernel) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/Trust-Kernel) | Foundational governance layer |
+| **StegVerse Admission** | [StegVerse-Admission](https://github.com/StegVerse-org/StegVerse-Admission) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/StegVerse-Admission) | GCAT/BCAT admissibility evaluation |
+| **LLM Adapter** | [LLM-adapter](https://github.com/StegVerse-org/LLM-adapter) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/LLM-adapter) | AI output governance bridge |
+| **Demo Suite** | [stegverse-demo-suite](https://github.com/StegVerse-org/stegverse-demo-suite) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/stegverse-demo-suite) | Reproducible validation scenarios |
+| **Ingestion Engine** | [demo_ingest_engine](https://github.com/StegVerse-org/demo_ingest_engine) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/demo_ingest_engine) | Orchestrated bundle ingestion |
 | **StegTalk** | StegTalk | — | Secure messaging layer |
 | **StegCore** | StegCore | — | Policy evaluation engine |
 | **Token Vault** | TV / TVC | — | Ephemeral secret distribution |
@@ -60,7 +60,7 @@ Repository: [stegverse-demo-suite](https://github.com/StegVerse-org/stegverse-de
 
 StegVerse is currently in an **early prototype phase**, providing experimental implementations and architecture demonstrations.
 
-Core SDK v1.0.1 is published to PyPI and integrated with the ingestion engine for automated downstream distribution.
+Core SDK is published to PyPI and integrated with the ingestion engine for automated downstream distribution.
 
 ---
 
