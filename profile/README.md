@@ -1,82 +1,79 @@
 # StegVerse
 
-**StegVerse** is a research and engineering effort focused on building a **governed distributed operating system for autonomous agents, AI systems, and human‑AI collaboration**.
+**StegVerse** is a research and engineering effort focused on governed AI execution, admissibility testing, receipt-bound runtime paths, and reconstructable human-AI / agent-system collaboration.
 
-The project explores how complex autonomous systems can operate safely and reliably when their actions are mediated by **policy enforcement, verifiable receipts, and governed state transitions**.
-
-> Execution is not assumed. Execution is admitted.
+> Submission is not execution. Execution is not authority. Authority is not admissibility.
 
 ---
 
-## Core Idea
+## Core idea
 
-Traditional software systems assume that actors can execute operations freely once authenticated.
+Traditional software systems often assume that authenticated actors may execute operations freely.
 
-StegVerse introduces a different model:
+StegVerse separates the path:
 
-```
-intent → policy gate → decision → execution → receipt → next admissible state
+```text
+submission
+→ manifest binding
+→ receipt binding
+→ admissibility check
+→ bounded execution / demonstration
+→ result receipt
+→ reconstruction packet
 ```
 
 In this model:
 
-- actions are evaluated **before execution**
-- the system produces **verifiable receipts**
-- receipts authorize **subsequent actions or information access**
-- workflows become **state‑aware and governed**
+- actions are evaluated before consequence attaches;
+- receipts preserve transition history;
+- reconstruction answers what happened;
+- admissibility answers whether standing existed for consequence;
+- public review does not create endorsement, compatibility, provenance, collaboration, or validation.
 
 ---
 
-## Ecosystem
+## Public ecosystem
 
-| Component | Repo | Status | Purpose |
-|-----------|------|--------|---------|
-| **StegVerse SDK** | [StegVerse-SDK](https://github.com/StegVerse-org/StegVerse-SDK) | ![PyPI](https://img.shields.io/pypi/v/stegverse-sdk) | Developer toolkit for governed execution |
-| **Trust Kernel** | [Trust-Kernel](https://github.com/StegVerse-org/Trust-Kernel) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/Trust-Kernel) | Foundational governance layer |
-| **StegVerse Admission** | [StegVerse-Admission](https://github.com/StegVerse-org/StegVerse-Admission) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/StegVerse-Admission) | GCAT/BCAT admissibility evaluation |
-| **LLM Adapter** | [LLM-adapter](https://github.com/StegVerse-org/LLM-adapter) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/LLM-adapter) | AI output governance bridge |
-| **Demo Suite** | [stegverse-demo-suite](https://github.com/StegVerse-org/stegverse-demo-suite) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/stegverse-demo-suite) | Reproducible validation scenarios |
-| **Ingestion Engine** | [demo_ingest_engine](https://github.com/StegVerse-org/demo_ingest_engine) | ![GitHub tag](https://img.shields.io/github/v/tag/StegVerse-org/demo_ingest_engine) | Orchestrated bundle ingestion |
-| **StegTalk** | StegTalk | — | Secure messaging layer |
-| **StegCore** | StegCore | — | Policy evaluation engine |
-| **Token Vault** | TV / TVC | — | Ephemeral secret distribution |
-
----
-
-## Demonstrations
-
-The **StegVerse Demo Suite** provides runnable examples illustrating the core primitives:
-
-- AI agents operate under governed execution
-- actions are evaluated by policy gates
-- receipts are generated and chained
-- workflows unlock subsequent steps through verified state transitions
-
-Repository: [stegverse-demo-suite](https://github.com/StegVerse-org/stegverse-demo-suite)
+| Component | Repo | Purpose |
+|---|---|---|
+| SDK intake | [StegVerse-SDK](https://github.com/StegVerse-org/StegVerse-SDK) | Public SDK boundary for manifest-bound and receipt-bound submissions. |
+| LLM adapter | [LLM-adapter](https://github.com/StegVerse-org/LLM-adapter) | Converts LLM output into route-ready governance artifacts. |
+| Demo suite | [stegverse-demo-suite](https://github.com/StegVerse-org/stegverse-demo-suite) | Reproducible public governance demonstrations. |
+| Demo suite runner | [demo-suite-runner](https://github.com/StegVerse-org/demo-suite-runner) | Formal runner for GCAT/BCAT and related fixture probes. |
+| Demo ingestion engine | [demo_ingest_engine](https://github.com/StegVerse-org/demo_ingest_engine) | Org-side orchestration and result-return boundary. |
+| Demo sandbox | [demo-sandbox](https://github.com/StegVerse-org/demo-sandbox) | Public sandbox fixtures and controlled experiments. |
+| Core-node runtime demo | [core-node-runtime-demo](https://github.com/StegVerse-org/core-node-runtime-demo) | Runtime comparison across ingestion, core-node, and micro-node paths. |
+| GSL | [stegverse-gsl](https://github.com/StegVerse-org/stegverse-gsl) | Governance Specification Language for structure and manifest validation. |
+| Discovery | [discovery](https://github.com/StegVerse-org/discovery) | Component discovery and repository indexing. |
+| Manifests | [manifests](https://github.com/StegVerse-org/manifests) | Canonical pricing, package, tier, and configuration manifests. |
 
 ---
 
-## Current Status
+## Private authority-bearing / operational repos
 
-StegVerse is currently in an **early prototype phase**, providing experimental implementations and architecture demonstrations.
+The following repositories are expected to remain private unless separate public-safe scaffolds are created:
 
-Core SDK is published to PyPI and integrated with the ingestion engine for automated downstream distribution.
+| Component | Purpose |
+|---|---|
+| trust-kernel | Authority-bearing governance kernel. |
+| StegVerse-admission | Admission / threshold layer. |
+| telemetry | Cross-org signal monitoring and operational records. |
+| TV / TVC | TrustVault and TrustVaultController workflow material. |
 
 ---
 
-## Contributing
+## Current status
 
-Engineers and researchers interested in:
+StegVerse is in an early prototype and demonstration phase. Public repositories are intended to expose interfaces, demos, schemas, receipts, path reports, and reconstruction-oriented artifacts. Private repositories retain authority-bearing or operationally sensitive logic.
 
-- AI infrastructure
-- distributed systems
-- autonomous agents
-- governance and safety architectures
+---
 
-are welcome to explore the demos and participate in discussion.
+## Boundary rule
+
+Private review, artifact inspection, repository review, or technical comments do not become public attribution, endorsement, compatibility recognition, provenance recognition, collaboration, validation, semantic attribution, conceptual attribution, or publication authorization.
 
 ---
 
 ## License
 
-Open research / prototype environment. Individual repositories define their own licenses (MIT for SDK, Trust Kernel, Admission, LLM Adapter, Demo Suite, Ingestion Engine).
+Public repositories define their own licenses. Most public demonstration and SDK repositories currently use MIT.
