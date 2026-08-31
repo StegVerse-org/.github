@@ -379,8 +379,10 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, seen:set[st
                         now_ns:int|None=None)->list[dict[str,Any]]:
     registry=load_registry(repo_root)
     organization=registry["organization"]
+    durable_seen=federation_seen_frame_names(repo_root)
+    effective_seen=set(seen or set())|durable_seen
     out=[]
-    for item in scan_addressed_frames(organization,root=mesh_root,seen=seen):
+    for item in scan_addressed_frames(organization,root=mesh_root,seen=effective_seen):
         packet=recover_packet(item["frame"])
         payload=packet.get("payload") or {}
         message_class=payload.get("message_class")
@@ -390,7 +392,8 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, seen:set[st
             "ecosystem.monitor.request","ecosystem.work.request","ecosystem.communication"}:
             response=build_control_response(packet,result["execution_result"])
             response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns)
-        out.append({"path":item["path"],"result":result,"response_publication":response_publication})
+        marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result)
+        out.append({"path":item["path"],"result":result,"response_publication":response_publication,"seen_marker":str(marker)})
     return out
 
 def collect_ecosystem_responses(origin_org:str, communication_id:str, *, mesh_root:Path|None=None)->dict[str,Any]:
@@ -444,3 +447,40 @@ def publish_ecosystem_from_directory(repo_root:Path, *, message_class:str, subje
       root=mesh_root,
       now_ns=now_ns
     )
+
+
+# --- Federation replay/dedup v1.3.1 additions ---
+def federation_seen_frame_names(repo_root:Path)->set[str]:
+    seen_dir=repo_root/"resident-runtime/federation/seen.d"
+    if not seen_dir.exists():
+        return set()
+    names=set()
+    for path in seen_dir.glob("*.json"):
+        try:
+            value=json.loads(path.read_text())
+            if isinstance(value.get("frame_name"),str):
+                names.add(value["frame_name"])
+        except Exception:
+            continue
+    return names
+
+def mark_federation_frame_seen(repo_root:Path, frame_path:str, frame:dict[str,Any], result:dict[str,Any])->Path:
+    seen_dir=repo_root/"resident-runtime/federation/seen.d"
+    seen_dir.mkdir(parents=True,exist_ok=True)
+    frame_name=Path(frame_path).name
+    marker={
+      "schema_version":"stegverse.federation-frame-consumption.v1",
+      "frame_name":frame_name,
+      "frame_sha256":frame.get("frame_sha256"),
+      "packet_id":frame.get("packet_id"),
+      "destination_org":frame.get("destination_org"),
+      "status":result.get("status"),
+      "authority_effect":"NONE_CARRIER_ONLY"
+    }
+    marker_path=seen_dir/(hashlib.sha256(frame_name.encode()).hexdigest()+".json")
+    if marker_path.exists():
+        if json.loads(marker_path.read_text())!=marker:
+            raise ValueError("federation_seen_marker_collision")
+    else:
+        marker_path.write_text(json.dumps(marker,indent=2,sort_keys=True)+"\n")
+    return marker_path
