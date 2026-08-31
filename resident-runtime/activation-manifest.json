@@ -7,7 +7,7 @@
   "ingress_egress_owner": "StegVerse-org/.github",
   "intr_transport": "org-boundary/runtime/intr_transport.py",
   "boundary_processor": "org-boundary/runtime/process_boundary.py",
-  "state": "UNIVERSAL_KERNEL_ECOSYSTEM_CONTROL_SOURCE_INSTALLED_OBSERVATION_PENDING",
+  "state": "UNIVERSAL_KERNEL_NETWORK_FEDERATION_SOURCE_INSTALLED_OBSERVATION_PENDING",
   "github_actions_is_runtime_authority": false,
   "hb_carrier_grants_authority": false,
   "application_repositories_are_activation_authority": false,
@@ -19,5 +19,9 @@
   },
   "ecosystem_control": "resident-runtime/ecosystem_control.py",
   "federation_cycle": "resident-runtime/federation_cycle.py",
-  "federation_directory": "org-boundary/registry/federation.json"
+  "federation_directory": "org-boundary/registry/federation.json",
+  "federation_gateway_transport": "resident-runtime/federation_gateway_transport.py",
+  "federation_gateway_url_env": "STEGVERSE_ORG_FEDERATION_GATEWAY_URL",
+  "federation_gateway_required_for_cross_host": true,
+  "local_spool_scope": "SAME_HOST_FALLBACK_ONLY"
 }
