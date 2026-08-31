@@ -1,0 +1,32 @@
+{
+  "schema": "stegverse.organization-resident-runtime-activation/v1",
+  "organization": "StegVerse-org",
+  "owner_repository": "StegVerse-org/.github",
+  "activation_source_scope": "ORG_DOT_GITHUB_ONLY",
+  "runtime_execution_surface": "SOVEREIGN_RESIDENT_PROCESS",
+  "activation_request_generator": "org-runtime/runtime_boundary.py",
+  "activation_state": "SOURCE_INSTALLED_RUNTIME_NOT_PROVEN",
+  "heartbeat_reference": {
+    "frequency_hz": 100,
+    "period_ms": 10,
+    "progression_dependency": "OSCILLATOR_ONLY",
+    "grants_execution_authority": false
+  },
+  "credential_authority": "TV/TVC",
+  "github_token_runtime_authority": "NONE",
+  "github_actions_runtime_authority": "NONE",
+  "authority_transfer_assumed": false,
+  "authority_effect_resolution": "DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS",
+  "required_runtime_evidence": [
+    "resident process identity",
+    "activation request consumption",
+    "task-capable resident cycle",
+    "local receipt",
+    "same-execution reconstruction where applicable"
+  ],
+  "nonclaims": [
+    "source presence is not activation",
+    "merge is not activation",
+    "GitHub Actions is not resident execution"
+  ]
+}
