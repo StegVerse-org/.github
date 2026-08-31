@@ -1,0 +1,39 @@
+name: Validate Organization Resident Runtime and Interlock-InTr Boundary
+
+on:
+  pull_request:
+    paths:
+      - 'org-runtime/**'
+      - 'ORG_RESIDENT_RUNTIME_INTR_BOUNDARY_MIRROR_HANDOFF.md'
+      - '.github/workflows/org-runtime-boundary.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'org-runtime/**'
+      - 'ORG_RESIDENT_RUNTIME_INTR_BOUNDARY_MIRROR_HANDOFF.md'
+      - '.github/workflows/org-runtime-boundary.yml'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate organization boundary
+        run: |
+          python org-runtime/runtime_boundary.py validate | tee /tmp/org-boundary.json
+          python -c 'import json; x=json.load(open("/tmp/org-boundary.json")); assert x["valid"] is True; assert x["authority_effect"]=="NONE_VALIDATION_ONLY"'
+      - name: Validate activation request generation
+        run: |
+          python org-runtime/runtime_boundary.py activation-request --runtime-id validation-resident | tee /tmp/activation.json
+          python -c 'import json; x=json.load(open("/tmp/activation.json")); assert x["state"]=="REQUESTED"; assert x["request_granted_authority"] is False; assert x["github_token_runtime_authority"]=="NONE"'
+      - name: Validate Interlock/InTr ingress generation
+        run: |
+          python org-runtime/runtime_boundary.py ingress --peer-org validation-peer --interlock-id validation-interlock --payload-sha256 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --transition-elements-ref validation-transition-elements | tee /tmp/ingress.json
+          python -c 'import json; x=json.load(open("/tmp/ingress.json")); assert x["direction"]=="INGRESS"; assert x["protocol"]=="InTr"; assert x["authority_effect_resolution"]=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS"'
+      - name: Validate Interlock/InTr egress generation
+        run: |
+          python org-runtime/runtime_boundary.py egress --peer-org validation-peer --interlock-id validation-interlock --payload-sha256 fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210 --transition-elements-ref validation-transition-elements | tee /tmp/egress.json
+          python -c 'import json; x=json.load(open("/tmp/egress.json")); assert x["direction"]=="EGRESS"; assert x["protocol"]=="InTr"; assert x["github_token_runtime_authority"]=="NONE"'
