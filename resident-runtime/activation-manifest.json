@@ -23,5 +23,8 @@
   "federation_gateway_transport": "resident-runtime/federation_gateway_transport.py",
   "federation_gateway_url_env": "STEGVERSE_ORG_FEDERATION_GATEWAY_URL",
   "federation_gateway_required_for_cross_host": true,
-  "local_spool_scope": "SAME_HOST_FALLBACK_ONLY"
+  "local_spool_scope": "SAME_HOST_FALLBACK_ONLY",
+  "resident_cycle_entrypoint": "resident-runtime/federation_cycle.py",
+  "federation_poll_mode": "OUTBOUND_ONLY",
+  "federation_network_route": "SHARED_SERVICE_GATEWAY"
 }
