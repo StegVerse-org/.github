@@ -1,0 +1,133 @@
+{
+  "schema_version": "stegverse-org.service-registry.v1",
+  "organization": "StegVerse-org",
+  "services": [
+    {
+      "service_id": "stegverse-org.boundary-diagnostic",
+      "repository": "StegVerse-org/.github",
+      "boundary_role": "BOUNDARY_LOCAL_DIAGNOSTIC",
+      "profile_status": "ACTIVE",
+      "runtime_required_for_consumption": false
+    },
+    {
+      "service_id": "stegverse-org.tvc",
+      "repository": "StegVerse-org/TVC",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.demo-sandbox",
+      "repository": "StegVerse-org/demo-sandbox",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.stegverse-sdk",
+      "repository": "StegVerse-org/StegVerse-SDK",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.stegverse-demo-suite",
+      "repository": "StegVerse-org/stegverse-demo-suite",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.demo-suite-runner",
+      "repository": "StegVerse-org/demo-suite-runner",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.manifests",
+      "repository": "StegVerse-org/manifests",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.trust-kernel",
+      "repository": "StegVerse-org/trust-kernel",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.telemetry",
+      "repository": "StegVerse-org/telemetry",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.discovery",
+      "repository": "StegVerse-org/discovery",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.stegverse-admission",
+      "repository": "StegVerse-org/StegVerse-admission",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.universal-transition-table-test-path",
+      "repository": "StegVerse-org/universal-transition-table-test-path",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.stegverse-gsl",
+      "repository": "StegVerse-org/stegverse-gsl",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.core-node-runtime-demo",
+      "repository": "StegVerse-org/core-node-runtime-demo",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.tv",
+      "repository": "StegVerse-org/TV",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.llm-adapter",
+      "repository": "StegVerse-org/LLM-adapter",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.hps-runtime",
+      "repository": "StegVerse-org/HPS-runtime",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "stegverse-org.demo-ingest-engine",
+      "repository": "StegVerse-org/demo_ingest_engine",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    }
+  ],
+  "boundary_rule": "All organization-crossing communication is generated by this .github boundary using Interlock/InTr; endpoint authority remains transition-governed."
+}
