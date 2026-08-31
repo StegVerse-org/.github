@@ -1,6 +1,6 @@
 {
   "schema_version": "stegverse.org-resident-kernel-manifest/v1",
-  "kernel_version": "1.3.0",
+  "kernel_version": "1.3.1",
   "canonical_source": "StegVerse-Labs/.github/org-kernel",
   "organization_neutral": true,
   "modules": [
@@ -19,7 +19,8 @@
     "resident status responses",
     "durable ecosystem work intake",
     "governed request-response frames",
-    "federation directory consumption"
+    "federation directory consumption",
+    "durable federation frame deduplication"
   ],
   "authority": {
     "heartbeat": "NONE",
@@ -41,7 +42,9 @@
     "broker_required": false,
     "github_runtime_required": false,
     "carrier": "HB_DERIVED_INTR_FRAME",
-    "authority_effect": "NONE"
+    "authority_effect": "NONE",
+    "replay_policy": "WRITE_ONCE_PER_NODE_CONSUMPTION_MARKER",
+    "duplicate_frame_consumption": false
   },
   "ecosystem_communications": {
     "message_classes": [
