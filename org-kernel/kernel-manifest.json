@@ -1,0 +1,28 @@
+{
+  "schema_version": "stegverse.org-resident-kernel-manifest/v1",
+  "kernel_version": "1.0.0",
+  "canonical_source": "StegVerse-Labs/.github/org-kernel",
+  "organization_neutral": true,
+  "modules": [
+    "HB reference derivation",
+    "HB-derived InTr carrier",
+    "organization addressing",
+    "service registry dispatch",
+    "five-stage receipts",
+    "same-execution reconstruction",
+    "write-once federation outbox"
+  ],
+  "authority": {
+    "heartbeat": "NONE",
+    "carrier": "NONE",
+    "github_actions": "NONE",
+    "credential_authority": "TV/TVC"
+  },
+  "excluded_as_application_specific": [
+    "StegFin workers",
+    "SV-DN1 workers",
+    "HIL workers",
+    "TVC provider workers",
+    "KV-specific workers"
+  ]
+}
