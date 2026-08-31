@@ -1,79 +1,37 @@
 # StegVerse
 
-**StegVerse** is a research and engineering effort focused on governed AI execution, admissibility testing, receipt-bound runtime paths, and reconstructable human-AI / agent-system collaboration.
+**StegVerse-org is the public evaluator- and developer-facing organization for governed StegVerse execution and comparison work.**
 
-> Submission is not execution. Execution is not authority. Authority is not admissibility.
+It exposes the SDK, manifests, adapters, discovery surfaces, and reproducible evaluation tooling that let an external tester describe a proposition, submit it through published governed paths, and receive portable evidence without requiring a special route to be created for that evaluator.
 
----
-
-## Core idea
-
-Traditional software systems often assume that authenticated actors may execute operations freely.
-
-StegVerse separates the path:
+## Core operating model
 
 ```text
-submission
-→ manifest binding
-→ receipt binding
-→ admissibility check
-→ bounded execution / demonstration
-→ result receipt
-→ reconstruction packet
+evaluator proposition
+-> manifest
+-> published governed intake
+-> canonical execution path
+-> receipts / evidence
+-> replay / reconstruction / comparison
 ```
 
-In this model:
+A new comparison case should normally be expressed as a manifest against existing published capabilities. A tester should not need a StegVerse developer to construct a one-off evaluator route.
 
-- actions are evaluated before consequence attaches;
-- receipts preserve transition history;
-- reconstruction answers what happened;
-- admissibility answers whether standing existed for consequence;
-- public review does not create endorsement, compatibility, provenance, collaboration, or validation.
+## Public repositories
 
----
+Representative public components include:
 
-## Public ecosystem
+- **StegVerse-SDK** — evaluator/developer intake, manifests, receipts, and evidence navigation;
+- **LLM-adapter** — bounded conversion of model output into governed artifacts;
+- **manifests** — reusable configuration and experiment declarations;
+- **discovery** — component and capability discovery;
+- **stegverse-gsl** — governance/specification structure;
+- public runners, fixtures, and sandbox surfaces used to exercise published paths.
 
-| Component | Repo | Purpose |
-|---|---|---|
-| SDK intake | [StegVerse-SDK](https://github.com/StegVerse-org/StegVerse-SDK) | Public SDK boundary for manifest-bound and receipt-bound submissions. |
-| LLM adapter | [LLM-adapter](https://github.com/StegVerse-org/LLM-adapter) | Converts LLM output into route-ready governance artifacts. |
-| Demo suite | [stegverse-demo-suite](https://github.com/StegVerse-org/stegverse-demo-suite) | Reproducible public governance demonstrations. |
-| Demo suite runner | [demo-suite-runner](https://github.com/StegVerse-org/demo-suite-runner) | Formal runner for GCAT/BCAT and related fixture probes. |
-| Demo ingestion engine | [demo_ingest_engine](https://github.com/StegVerse-org/demo_ingest_engine) | Org-side orchestration and result-return boundary. |
-| Demo sandbox | [demo-sandbox](https://github.com/StegVerse-org/demo-sandbox) | Public sandbox fixtures and controlled experiments. |
-| Core-node runtime demo | [core-node-runtime-demo](https://github.com/StegVerse-org/core-node-runtime-demo) | Runtime comparison across ingestion, core-node, and micro-node paths. |
-| GSL | [stegverse-gsl](https://github.com/StegVerse-org/stegverse-gsl) | Governance Specification Language for structure and manifest validation. |
-| Discovery | [discovery](https://github.com/StegVerse-org/discovery) | Component discovery and repository indexing. |
-| Manifests | [manifests](https://github.com/StegVerse-org/manifests) | Canonical pricing, package, tier, and configuration manifests. |
-
----
-
-## Private authority-bearing / operational repos
-
-The following repositories are expected to remain private unless separate public-safe scaffolds are created:
-
-| Component | Purpose |
-|---|---|
-| trust-kernel | Authority-bearing governance kernel. |
-| StegVerse-admission | Admission / threshold layer. |
-| telemetry | Cross-org signal monitoring and operational records. |
-| TV / TVC | TrustVault and TrustVaultController workflow material. |
-
----
-
-## Current status
-
-StegVerse is in an early prototype and demonstration phase. Public repositories are intended to expose interfaces, demos, schemas, receipts, path reports, and reconstruction-oriented artifacts. Private repositories retain authority-bearing or operationally sensitive logic.
-
----
+Some repositories retain historical names containing “demo.” Those names do **not** define a weaker demo-only authority lane. Tests and demonstrations are expected to exercise the same published governance semantics and production-capable routes, with manifests and receipts distinguishing the experiment.
 
 ## Boundary rule
 
-Private review, artifact inspection, repository review, or technical comments do not become public attribution, endorsement, compatibility recognition, provenance recognition, collaboration, validation, semantic attribution, conceptual attribution, or publication authorization.
+Submission is not execution. Model output is not authority. A manifest cannot silently create a new runtime capability or hot-patch a route. Unsupported requested capability should fail closed or be rejected before execution.
 
----
-
-## License
-
-Public repositories define their own licenses. Most public demonstration and SDK repositories currently use MIT.
+Private authority-bearing repositories remain separate where required, including TV/TVC and trust/admission internals.
