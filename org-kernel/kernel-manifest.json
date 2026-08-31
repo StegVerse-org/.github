@@ -1,6 +1,6 @@
 {
   "schema_version": "stegverse.org-resident-kernel-manifest/v1",
-  "kernel_version": "1.0.0",
+  "kernel_version": "1.1.0",
   "canonical_source": "StegVerse-Labs/.github/org-kernel",
   "organization_neutral": true,
   "modules": [
@@ -10,7 +10,9 @@
     "service registry dispatch",
     "five-stage receipts",
     "same-execution reconstruction",
-    "write-once federation outbox"
+    "write-once federation outbox",
+    "shared sovereign federation spool",
+    "addressed HB-derived InTr frame publish/scan/consume"
   ],
   "authority": {
     "heartbeat": "NONE",
@@ -24,5 +26,14 @@
     "HIL workers",
     "TVC provider workers",
     "KV-specific workers"
-  ]
+  ],
+  "federation": {
+    "transport": "shared local sovereign spool",
+    "default_root": "$XDG_STATE_HOME/stegverse/org-federation",
+    "override_env": "STEGVERSE_ORG_FEDERATION_ROOT",
+    "broker_required": false,
+    "github_runtime_required": false,
+    "carrier": "HB_DERIVED_INTR_FRAME",
+    "authority_effect": "NONE"
+  }
 }
