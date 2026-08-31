@@ -104,3 +104,78 @@ def ingest_frame(root:Path, frame:dict[str,Any])->dict[str,Any]:
     return {"status":"CONSUMED","packet":packet,"execution_result":result}
 
 __all__=["hb_reference","derive_channel","carrier_frame","recover_packet","dispatch","persist_outbox","ingest_frame"]
+
+
+# --- Federation mesh v1.1 additions ---
+FEDERATION_ROOT_ENV="STEGVERSE_ORG_FEDERATION_ROOT"
+
+def federation_root(env:dict[str,str]|None=None)->Path:
+    values=os.environ if env is None else env
+    override=values.get(FEDERATION_ROOT_ENV)
+    if override:
+        return Path(override).expanduser().resolve()
+    base=Path(values.get("XDG_STATE_HOME",str(Path.home()/".local"/"state")))
+    return (base/"stegverse"/"org-federation").resolve()
+
+def publish_frame(frame:dict[str,Any], *, root:Path|None=None)->Path:
+    mesh=(root or federation_root()).resolve()
+    frames=mesh/"frames.d"
+    frames.mkdir(parents=True,exist_ok=True)
+    frame_id=hashlib.sha256((frame["packet_id"]+"|"+frame["frame_sha256"]).encode()).hexdigest()
+    path=frames/(frame_id+".json")
+    if path.exists():
+        existing=json.loads(path.read_text())
+        if existing!=frame:
+            raise ValueError("federation_frame_write_once_collision")
+        return path
+    path.write_text(json.dumps(frame,indent=2,sort_keys=True)+"\n")
+    return path
+
+def scan_addressed_frames(organization:str, *, root:Path|None=None, seen:set[str]|None=None)->list[dict[str,Any]]:
+    mesh=(root or federation_root()).resolve()
+    frames=mesh/"frames.d"
+    if not frames.exists():
+        return []
+    consumed=seen or set()
+    out=[]
+    for path in sorted(frames.glob("*.json")):
+        if path.name in consumed:
+            continue
+        frame=json.loads(path.read_text())
+        if frame.get("destination_org")==organization:
+            out.append({"path":str(path),"frame":frame})
+    return out
+
+def build_packet(*, origin_org:str, origin_service:str, destination_org:str, destination_service:str,
+                 payload:dict[str,Any], transition_reference:str="federation.v1",
+                 authority_effect:str="NONE", packet_id:str|None=None)->dict[str,Any]:
+    pid=packet_id or "pkt-"+hashlib.sha256(canon({
+        "origin_org":origin_org,"origin_service":origin_service,"destination_org":destination_org,
+        "destination_service":destination_service,"payload":payload,"transition_reference":transition_reference
+    })).hexdigest()[:24]
+    return {
+      "schema_version":PACKET_SCHEMA,
+      "packet_id":pid,
+      "direction":"INGRESS",
+      "origin":{"org":origin_org,"service":origin_service},
+      "destination":{"org":destination_org,"service":destination_service},
+      "carrier":{"kind":"HB_DERIVED","reference":"org-federation"},
+      "intr_profile":"stegverse.intr.org-boundary.v1",
+      "transition":{"reference":transition_reference,"authority_effect":authority_effect,"conditions":[]},
+      "payload":payload,
+      "evidence":{"ingress_receipt":None,"dispatch_receipt":None,"consumption_receipt":None,"egress_receipt":None,"reconstruction_reference":None}
+    }
+
+def publish_packet(packet:dict[str,Any], *, root:Path|None=None, now_ns:int|None=None)->dict[str,Any]:
+    frame=carrier_frame(packet,now_ns=now_ns)
+    path=publish_frame(frame,root=root)
+    return {"packet":packet,"frame":frame,"path":str(path)}
+
+def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:set[str]|None=None)->list[dict[str,Any]]:
+    registry=load_registry(repo_root)
+    organization=registry["organization"]
+    results=[]
+    for item in scan_addressed_frames(organization,root=mesh_root,seen=seen):
+        result=ingest_frame(repo_root,item["frame"])
+        results.append({"path":item["path"],"result":result})
+    return results
