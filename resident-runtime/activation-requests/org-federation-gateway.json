@@ -1,0 +1,43 @@
+{
+  "schema_version": "stegverse.org-resident-activation-request.v1",
+  "request_id": "STEGVERSE-ORG-FEDERATION-GATEWAY-001",
+  "organization": "StegVerse-org",
+  "activation_owner": "StegVerse-org/.github",
+  "capability": "ORG_FEDERATION_SERVICE_GATEWAY",
+  "source_repository": "StegVerse-org/LLM-adapter",
+  "source_entrypoint": "scripts/stegdeploy_native_gateway.py",
+  "resident_entrypoint": "resident-runtime/activate_org_federation_gateway.py",
+  "required_env": [
+    "STEGVERSE_LLM_ADAPTER_ROOT"
+  ],
+  "optional_env": [
+    "STEGVERSE_SERVICE_GATEWAY_HOST",
+    "STEGVERSE_SERVICE_GATEWAY_PORT",
+    "STEGVERSE_SERVICE_GATEWAY_DURABLE_ROOT",
+    "STEGDEPLOY_NATIVE_TLS_CERT_FILE",
+    "STEGDEPLOY_NATIVE_TLS_KEY_FILE"
+  ],
+  "required_source_surfaces": [
+    "llm_adapter/org_federation_rendezvous_api.py",
+    "llm_adapter/combined_gateway.py",
+    "scripts/stegdeploy_native_gateway.py"
+  ],
+  "expected_gateway_env": {
+    "STEGVERSE_ORG_FEDERATION_RENDEZVOUS_ENABLED": "true",
+    "STEGVERSE_ORG_FEDERATION_RENDEZVOUS_ROOT": "<durable-root>/org-federation-rendezvous"
+  },
+  "gateway_execution_authority": "NONE",
+  "credential_authority": "TV/TVC",
+  "github_token_runtime_authority": "NONE",
+  "activation_state": "REQUESTED",
+  "success_evidence": [
+    "native gateway local health ready",
+    "native gateway receipt contains org_federation_rendezvous_enabled=true",
+    "durable org federation rendezvous root exists"
+  ],
+  "non_claims": [
+    "local readiness does not prove public reachability",
+    "gateway receipt does not prove resident org polling",
+    "gateway does not grant execution authority"
+  ]
+}
