@@ -7,8 +7,14 @@
   "ingress_egress_owner": "StegVerse-org/.github",
   "intr_transport": "org-boundary/runtime/intr_transport.py",
   "boundary_processor": "org-boundary/runtime/process_boundary.py",
-  "state": "SOURCE_INSTALLED_NOT_RUNTIME_OBSERVED",
+  "state": "UNIVERSAL_KERNEL_SOURCE_INSTALLED_NOT_FEDERATION_OBSERVED",
   "github_actions_is_runtime_authority": false,
   "hb_carrier_grants_authority": false,
-  "application_repositories_are_activation_authority": false
+  "application_repositories_are_activation_authority": false,
+  "kernel": {
+    "version": "1.0.0",
+    "path": "org-kernel/kernel.py",
+    "canonical_source": "StegVerse-Labs/.github/org-kernel",
+    "vendored": true
+  }
 }
