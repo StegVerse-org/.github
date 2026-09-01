@@ -1,0 +1,12 @@
+{
+  "schema": "stegverse.organization-transition-ledger-contract/v1",
+  "organization": "StegVerse-org",
+  "ledger_level": "ORGANIZATION",
+  "consumes": "stegverse.repo-transition-receipt/v1",
+  "emits": "stegverse.organization-transition-receipt/v1",
+  "replay_rule": "ORGANIZATION_REPLAY_MUST_REQUIRE_ONLY_VERIFIED_REPO_RECEIPTS_AND_ORG_RECEIPTS_NOT_ECOSYSTEM_REPLAY",
+  "preserves_repo_receipt": true,
+  "append_only_receipts": true,
+  "propagation_target": "master-records/.github",
+  "authority_effect": "NONE_CONTRACT_ONLY"
+}
