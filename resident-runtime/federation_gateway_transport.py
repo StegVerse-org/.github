@@ -203,6 +203,14 @@ def resident_gateway_cycle(repo_root: Path) -> dict[str, Any]:
             response_ref = response_frame["frame_sha256"]
         elif message_class in {"ecosystem.monitor.response", "ecosystem.work.ack", "ecosystem.communication.ack"}:
             _persist_response(repo_root, packet, execution)
+        elif not (packet.get("payload") or {}).get("response_to_packet_id"):
+            service = next((svc for svc in registry["services"] if svc.get("service_id") == packet["destination"]["service"]), None)
+            if service and service.get("endpoint_adapter"):
+                response = K.build_endpoint_response(packet, execution)
+                response_frame = K.carrier_frame(response)
+                submit_frame(response_frame)
+                response_emitted = 1
+                response_ref = response_frame["frame_sha256"]
         ack_state = "CONSUMED"
     else:
         ack_state = "BLOCKED"

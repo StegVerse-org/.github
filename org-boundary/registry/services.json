@@ -39,8 +39,12 @@
       "service_id": "stegverse-org.stegverse-sdk",
       "repository": "StegVerse-org/StegVerse-SDK",
       "boundary_role": "INTERNAL_ENDPOINT",
-      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
-      "runtime_required_for_consumption": true
+      "profile_status": "ACTIVE",
+      "runtime_required_for_consumption": true,
+      "endpoint_adapter": "resident-runtime/sdk_self_characterization_response.py",
+      "accepts": [
+        "stegverse.org-endpoint-response/v1"
+      ]
     },
     {
       "service_id": "stegverse-org.stegverse-demo-suite",
