@@ -5,7 +5,7 @@ Organization-neutral runtime behavior extracted from StegVerse-Labs/.github.
 No GitHub, hosted scheduler, provider, or carrier grants authority.
 """
 from __future__ import annotations
-import base64, hashlib, json, os
+import base64, hashlib, json, os, subprocess, tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -76,6 +76,19 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
     service=next((s for s in registry["services"] if s["service_id"]==packet["destination"]["service"]),None)
     if service is None: raise ValueError("unknown_service")
     role=service.get("boundary_role")
+    adapter=service.get("endpoint_adapter")
+    if role=="INTERNAL_ENDPOINT" and adapter:
+        processor=root/"org-boundary/runtime/process_boundary.py"
+        if not processor.is_file(): raise ValueError("org_boundary_processor_missing")
+        with tempfile.TemporaryDirectory() as td:
+            td=Path(td); envelope=td/"packet.json"; out=td/"execution.json"
+            envelope.write_text(json.dumps(packet,indent=2,sort_keys=True)+"\n")
+            completed=subprocess.run(["python3",str(processor),"--envelope",str(envelope),"--out",str(out)],cwd=root,capture_output=True,text=True,check=False)
+            if completed.returncode!=0 or not out.is_file():
+                raise ValueError("endpoint_adapter_execution_failed:"+completed.stderr[-512:])
+            result=json.loads(out.read_text())
+            if not isinstance(result,dict): raise ValueError("endpoint_adapter_result_invalid")
+            return result
     if role not in {"BOUNDARY_LOCAL_DIAGNOSTIC","BOUNDARY_LOCAL_CONTROL"}:
         raise ValueError("endpoint_adapter_not_installed")
     prev=None; receipts=[]
@@ -375,6 +388,25 @@ def build_control_response(request_packet:dict[str,Any], execution_result:dict[s
       packet_id=str(req_payload.get("communication_id"))+":response:"+organization_slug(local_org)
     )
 
+def build_endpoint_response(request_packet:dict[str,Any], execution_result:dict[str,Any])->dict[str,Any]:
+    payload={
+      "schema":"stegverse.org-endpoint-response/v1",
+      "response_to_packet_id":request_packet["packet_id"],
+      "request_manifest_sha256":((request_packet.get("payload") or {}).get("request") or {}).get("bindings",{}).get("manifest_sha256"),
+      "execution_result":execution_result,
+      "authority_transfer":False
+    }
+    return build_packet(
+      origin_org=request_packet["destination"]["org"],
+      origin_service=request_packet["destination"]["service"],
+      destination_org=request_packet["origin"]["org"],
+      destination_service=request_packet["origin"]["service"],
+      payload=payload,
+      transition_reference=str((request_packet.get("transition") or {}).get("reference") or "endpoint")+".response",
+      authority_effect="NONE_RESPONSE_ONLY",
+      packet_id=request_packet["packet_id"]+":response"
+    )
+
 def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, seen:set[str]|None=None,
                         now_ns:int|None=None)->list[dict[str,Any]]:
     registry=load_registry(repo_root)
@@ -392,6 +424,11 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, seen:set[st
             "ecosystem.monitor.request","ecosystem.work.request","ecosystem.communication"}:
             response=build_control_response(packet,result["execution_result"])
             response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns)
+        elif result.get("status")=="CONSUMED" and not payload.get("response_to_packet_id"):
+            service=next((svc for svc in registry["services"] if svc.get("service_id")==packet["destination"]["service"]),None)
+            if service and service.get("endpoint_adapter"):
+                response=build_endpoint_response(packet,result["execution_result"])
+                response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns)
         marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result)
         out.append({"path":item["path"],"result":result,"response_publication":response_publication,"seen_marker":str(marker)})
     return out
