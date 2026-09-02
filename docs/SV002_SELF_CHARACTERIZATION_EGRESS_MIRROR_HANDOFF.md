@@ -33,3 +33,29 @@ SDK exact request
 ```
 
 `stegverse-org.stegverse-sdk` is ACTIVE as an internal response endpoint. The org kernel now dispatches registered internal endpoint adapters and suppresses response recursion when `response_to_packet_id` is present. The response remains manifest-bound and authority-neutral.
+
+
+## Sovereign same-host runtime availability — 2026-09-01
+
+The SDK query now has a direct sovereign runtime path that does not require a hosted scheduler or GitHub Actions:
+
+```text
+StegVerse-org/StegVerse-SDK exact frozen request
+-> StegVerse-org/.github resident-runtime/sdk_self_characterization_egress.py
+-> SHARED_SERVICE_GATEWAY when configured
+   OR canonical LOCAL_SPOOL_FALLBACK for same-host sovereign federation
+-> StegVerse-002/.github resident-runtime/federation_cycle.py
+-> stegverse-002.self-characterization
+-> StegVerse-002/micro-node-runtime principal
+-> StegVerse-002 response packet
+-> StegVerse-org/.github resident federation cycle
+```
+
+New executable bridge:
+- `resident-runtime/run_sv002_self_characterization_roundtrip.py`
+
+The bridge requires the SDK, StegVerse-002/.github, and micro-node-runtime repositories to already be locally materialized on the same sovereign resident. It rejects hosted CI/runtime environments and credential-bearing GitHub execution environments. It never invokes the StegVerse-002 principal directly from the source organization; target execution remains owned by `StegVerse-002/.github`.
+
+`sdk_self_characterization_egress.py --submit` now uses the shared HTTPS Service Gateway when configured and otherwise publishes to the canonical same-host federation spool. The fallback remains an InTr/org-boundary carrier path and is limited to same-host sovereign federation.
+
+Source availability is now established. Authentic principal execution, response transport, Master Records custody/reconstruction, and public observation remain runtime-evidence transitions and must not be inferred from these commits.
