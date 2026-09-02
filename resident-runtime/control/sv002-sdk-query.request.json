@@ -1,0 +1,14 @@
+{
+  "schema": "stegverse.resident-one-shot-request/v1",
+  "task_id": "SV002-SDK-QUERY-RELEASE-001",
+  "state": "REQUESTED",
+  "experiment_id": "STEGVERSE-002-SELF-CHARACTERIZATION-001",
+  "authority_ref": "SDK_EXTERNAL_EVALUATOR",
+  "requested_action": "RUN_FROZEN_SV002_SDK_SELF_CHARACTERIZATION_ROUNDTRIP",
+  "executor": "resident-runtime/resident_executor.py",
+  "roundtrip_entrypoint": "resident-runtime/run_sv002_self_characterization_roundtrip.py",
+  "exact_once": true,
+  "github_actions_runtime_authority": "NONE",
+  "hosted_runtime_allowed": false,
+  "authority_effect": "NONE_REQUEST_ONLY"
+}
