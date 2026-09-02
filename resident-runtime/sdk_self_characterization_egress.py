@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bind the frozen StegVerse SDK self-characterization request to StegVerse-org egress."""
 from __future__ import annotations
-import argparse, hashlib, importlib.util, json
+import argparse, hashlib, importlib.util, json, os
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -77,6 +77,15 @@ def main():
     a.packet_out.parent.mkdir(parents=True,exist_ok=True); a.packet_out.write_text(json.dumps(packet,indent=2,sort_keys=True)+"\n")
     if a.frame_out:
         a.frame_out.parent.mkdir(parents=True,exist_ok=True); a.frame_out.write_text(json.dumps(frame,indent=2,sort_keys=True)+"\n")
-    submit_result=GW.submit_frame(frame) if a.submit else None
-    print(json.dumps({"status":"PASS","packet_id":packet["packet_id"],"destination":packet["destination"],"manifest_sha256":req["bindings"]["manifest_sha256"],"submitted":bool(a.submit),"gateway_state":submit_result.get("state") if isinstance(submit_result,dict) else None},sort_keys=True))
+    submit_result=None
+    transport=None
+    if a.submit:
+        if os.getenv("STEGVERSE_ORG_FEDERATION_GATEWAY_URL","").strip():
+            submit_result=GW.submit_frame(frame)
+            transport="SHARED_SERVICE_GATEWAY"
+        else:
+            path=K.publish_frame(frame)
+            submit_result={"state":"PENDING","path":str(path)}
+            transport="LOCAL_SPOOL_FALLBACK"
+    print(json.dumps({"status":"PASS","packet_id":packet["packet_id"],"destination":packet["destination"],"manifest_sha256":req["bindings"]["manifest_sha256"],"submitted":bool(a.submit),"gateway_state":submit_result.get("state") if isinstance(submit_result,dict) else None,"transport":transport,"submission_ref":submit_result.get("path") if isinstance(submit_result,dict) else None},sort_keys=True))
 if __name__=="__main__": raise SystemExit(main())
