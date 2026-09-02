@@ -3,7 +3,7 @@
   "organization": "StegVerse-org",
   "canonical_repository": "StegVerse-org/.github",
   "activation_owner": "StegVerse-org/.github",
-  "entrypoint": "resident-runtime/run_once.py",
+  "entrypoint": "resident-runtime/resident_executor.py",
   "ingress_egress_owner": "StegVerse-org/.github",
   "intr_transport": "org-boundary/runtime/intr_transport.py",
   "boundary_processor": "org-boundary/runtime/process_boundary.py",
@@ -24,7 +24,20 @@
   "federation_gateway_url_env": "STEGVERSE_ORG_FEDERATION_GATEWAY_URL",
   "federation_gateway_required_for_cross_host": true,
   "local_spool_scope": "SAME_HOST_FALLBACK_ONLY",
-  "resident_cycle_entrypoint": "resident-runtime/federation_cycle.py",
-  "federation_poll_mode": "OUTBOUND_ONLY",
-  "federation_network_route": "SHARED_SERVICE_GATEWAY"
+  "resident_cycle_entrypoint": "resident-runtime/resident_executor.py",
+  "federation_poll_mode": "CONTINUOUS_BIDIRECTIONAL",
+  "federation_network_route": "SHARED_SERVICE_GATEWAY",
+  "persistent_executor": {
+    "state": "SOURCE_INSTALLED_ACTIVATION_EVIDENCE_PENDING",
+    "implementation": "resident-runtime/resident_executor.py",
+    "restart_policy": "ALWAYS",
+    "service_template": "resident-runtime/systemd/stegverse-org-resident.service",
+    "github_actions_runtime_authority": "NONE"
+  },
+  "startup_one_shot": {
+    "state": "REQUESTED",
+    "request": "resident-runtime/control/sv002-sdk-query.request.json",
+    "task_id": "SV002-SDK-QUERY-RELEASE-001",
+    "execution_receipt": "resident-runtime/state/sv002-sdk-query.execution.latest.json"
+  }
 }
