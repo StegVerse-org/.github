@@ -27,6 +27,16 @@ In this model:
 
 ---
 
+## Organization federation boundary
+
+Organization-crossing messages use the registered Interlock/InTr federation boundary rather than service-ID-specific transport logic. A service registered as an `INTERNAL_ENDPOINT` may declare an `endpoint_adapter`; the boundary processor dispatches that registered adapter generically after destination/service validation.
+
+The adapter must resolve inside the organization repository root and must exist as a file. Missing, external-path, or failing adapters fail closed. Registry-driven dispatch does not itself grant transport, credential, governance, or transition authority; those authorities remain governed by their applicable layers.
+
+This keeps the organization boundary extensible without hardcoding each future service into the boundary processor.
+
+---
+
 ## Ecosystem
 
 | Component | Repo | Status | Purpose |
