@@ -1,0 +1,39 @@
+name: Internal Endpoint Dispatch Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - org-boundary/runtime/process_boundary.py
+      - org-kernel/kernel.py
+      - tests/test_internal_endpoint_dispatch.py
+      - docs/ORG_FEDERATION_GENERIC_ENDPOINT_ADAPTER_MIRROR_HANDOFF.md
+      - README.md
+      - .github/workflows/internal-endpoint-dispatch-validation.yml
+  push:
+    branches: [main]
+    paths:
+      - org-boundary/runtime/process_boundary.py
+      - org-kernel/kernel.py
+      - tests/test_internal_endpoint_dispatch.py
+      - docs/ORG_FEDERATION_GENERIC_ENDPOINT_ADAPTER_MIRROR_HANDOFF.md
+      - README.md
+      - .github/workflows/internal-endpoint-dispatch-validation.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production registry-driven endpoint dispatch
+        run: |
+          set -eu
+          python -m unittest tests.test_internal_endpoint_dispatch -v
+          python -m py_compile org-boundary/runtime/process_boundary.py org-kernel/kernel.py
+      - name: Record non-authorizing boundary
+        run: |
+          echo 'INTERNAL_ENDPOINT_DISPATCH_VALIDATION_PASS'
+          echo 'Registry-driven endpoint adapter dispatch does not grant transport, credential, governance, or transition authority.'

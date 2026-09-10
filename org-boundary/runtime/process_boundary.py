@@ -1,21 +1,50 @@
 #!/usr/bin/env python3
 import argparse, hashlib, json, subprocess, tempfile
 from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[2]
 KINDS=["INGRESS_ACCEPTED","DISPATCHED","CONSUMED","RESULT_BOUND","EGRESS_EMITTED"]
 def canon(v): return json.dumps(v,sort_keys=True,separators=(",",":")).encode()
 def hid(prefix,v): return prefix+"-"+hashlib.sha256(canon(v)).hexdigest()[:24]
 def load(path): return json.loads(Path(path).read_text())
 
-def endpoint_result(env,svc,envelope_path):
+def resolve_adapter(svc):
     adapter=svc.get("endpoint_adapter")
-    if svc.get("service_id")=="stegverse-org.stegverse-sdk" and adapter:
+    if not adapter:
+        raise SystemExit("endpoint-adapter-not-installed")
+    candidate=Path(str(adapter))
+    if not candidate.is_absolute():
+        candidate=ROOT/candidate
+    candidate=candidate.resolve()
+    root=ROOT.resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        raise SystemExit("endpoint-adapter-outside-organization-root")
+    if not candidate.is_file():
+        raise SystemExit("endpoint-adapter-not-found")
+    return candidate
+
+def endpoint_result(env,svc,envelope_path):
+    role=svc.get("boundary_role")
+    if role=="INTERNAL_ENDPOINT":
+        adapter=resolve_adapter(svc)
         with tempfile.TemporaryDirectory() as td:
-            out=Path(td)/"sdk-response.json"
-            completed=subprocess.run(["python3",str(Path(adapter)),"--envelope",str(Path(envelope_path).resolve()),"--out",str(out)],capture_output=True,text=True,check=False)
+            out=Path(td)/"endpoint-response.json"
+            completed=subprocess.run(
+                ["python3",str(adapter),"--envelope",str(Path(envelope_path).resolve()),"--out",str(out)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
             if completed.returncode!=0 or not out.is_file():
-                raise SystemExit("sdk-response-adapter-failed")
-            return load(out)
-    if svc.get("boundary_role")=="BOUNDARY_LOCAL_DIAGNOSTIC":
+                raise SystemExit("endpoint-adapter-execution-failed")
+            result=load(out)
+            if not isinstance(result,dict):
+                raise SystemExit("endpoint-adapter-result-invalid")
+            return result
+    if role=="BOUNDARY_LOCAL_DIAGNOSTIC":
         return {"echo":env["payload"]}
     raise SystemExit("endpoint-adapter-not-installed")
 def main():
