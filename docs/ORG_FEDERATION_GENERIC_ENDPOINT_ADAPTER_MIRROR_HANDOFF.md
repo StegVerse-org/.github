@@ -7,11 +7,13 @@ Goal Task ID: `SDK-GENERIC-MANIFEST-DOWNSTREAM-PROPAGATION-003`
 Parent handoff: `StegVerse-org/StegVerse-SDK:docs/SHARED_DOCS_EPHEMERAL_MANIFEST_WORKSPACE_MIRROR_HANDOFF.md`
 Generic dispatch PR: `#9 MERGED`
 Generic dispatch merge SHA: `d8baefb8674ebed00bbbf9784c54e092a5b1a04d`
-Status: `ACTIVE / GENERIC INTERNAL ENDPOINT DISPATCH MERGED / WORKSPACE ENDPOINT BINDING VALIDATION PENDING`
+WorkSpace binding PR: `#10 MERGED`
+WorkSpace binding merge SHA: `b851996afc5c5323d0d0db970dd46e511bd36338`
+Status: `ACTIVE / WORKSPACE ENDPOINT BINDING MERGED-VALIDATED / PROVIDER AUTHORITY REUSE NEXT`
 
 ## Completed generic dispatch repair
 
-`org-kernel/kernel.py::dispatch` and `org-boundary/runtime/process_boundary.py` now execute a registry-declared `endpoint_adapter` generically for any `INTERNAL_ENDPOINT`. Adapter paths must resolve inside the organization repository root and exist as files. Missing adapters, paths outside the organization root, failed adapter execution, and invalid output remain fail-closed.
+`org-kernel/kernel.py::dispatch` and `org-boundary/runtime/process_boundary.py` execute a registry-declared `endpoint_adapter` generically for any `INTERNAL_ENDPOINT`. Adapter paths must resolve inside the organization repository root and exist as files. Missing adapters, paths outside the organization root, failed adapter execution, and invalid output remain fail-closed.
 
 The generic boundary preserves:
 
@@ -24,9 +26,9 @@ boundary processor retains receipt generation
 adapter does not gain transport/governance/credential/transition authority
 ```
 
-## WorkSpace endpoint binding candidate
+## WorkSpace endpoint binding — merged
 
-The next organization-local binding is implemented on branch `workspace-internal-endpoint-binding`.
+The organization-local WorkSpace binding is now merged and validated.
 
 Registry service:
 
@@ -40,22 +42,28 @@ accepts: stegverse.workspace-resource-request.v1
 runtime_required_for_consumption: true
 ```
 
-The adapter is intentionally thin. It validates destination and request shape, then imports and calls `stegverse.workspace_resource_consumer.consume_workspace_resource` from the installed canonical SDK. It does not copy projection semantics into the organization repository and does not mint InTr receipts, confer governance authority, or claim MIR/Master Records custody.
+The adapter is intentionally thin. It validates destination/request shape and delegates projection semantics to `stegverse.workspace_resource_consumer.consume_workspace_resource` from the installed canonical SDK. It does not duplicate consumer logic, mint InTr receipts, confer governance authority, or claim MIR/Master Records custody.
 
-Dedicated regression coverage uses the real organization boundary processor plus the exact merged SDK consumer source at `07ceb1f131dd8fd27b3b8c89ab747e58aa55e55c`. Tests cover READY materialization, fail-closed `PROBE_REQUIRED` materialization, teardown availability while probe-required, and unknown-service rejection.
-
-Candidate files:
+Validation evidence:
 
 ```text
-resident-runtime/workspace_resource_consumer_adapter.py
-org-boundary/registry/services.json
-tests/test_workspace_internal_endpoint_binding.py
-.github/workflows/workspace-internal-endpoint-binding-validation.yml
-README.md
-docs/ORG_FEDERATION_GENERIC_ENDPOINT_ADAPTER_MIRROR_HANDOFF.md
+PR #10 exact head: 7fb6783ec7bbfbdc249dfdba45b7c454ae0beed4
+WorkSpace Internal Endpoint Binding Validation 34545811959: PASS
+Internal Endpoint Dispatch Validation 34545811830: PASS
+merge: b851996afc5c5323d0d0db970dd46e511bd36338
 ```
 
-README maintenance is included and documents the organization-local WorkSpace endpoint without claiming live provider execution.
+README maintenance was included in PR #10 and documents the organization-local WorkSpace endpoint without claiming live provider execution.
+
+## Active probe relationship
+
+Provider-neutral active probe execution is now implemented and merged in `StegVerse-org/StegVerse-SDK` PR #181 at `5c8a3c0246a0ae48e498c10f85d9eee0a2d1ba2c`. Runtime-supplied probe evidence may resolve represented `PROBE_REQUIRED` state, but readiness remains canonically re-derived and probe evidence remains `authority_effect: NONE`.
+
+No provider-specific OAuth, callback, secret store, or provider authority is created here. Existing provider authority must be reused.
+
+## Current provider reuse finding
+
+Google Drive owner-consent/callback authority already exists in `StegVerse-Labs/TVC` under its Personal-KV Google Drive lane. The sovereign Service Gateway query-secret-safe source prerequisite is owned by `StegVerse-org/LLM-adapter#271`; its source hardening PR #328 is merged, while authentic deployed-ingress proof remains a distinct prerequisite. The WorkSpace lane must therefore reuse those boundaries rather than create a second Google OAuth or credential path.
 
 ## Current proof boundary
 
@@ -63,26 +71,24 @@ README maintenance is included and documents the organization-local WorkSpace en
 registry-driven kernel dispatch: IMPLEMENTED / MERGED
 provider-neutral internal endpoint adapter dispatch: IMPLEMENTED / VALIDATED / MERGED
 provider-neutral WorkSpace resource consumer in SDK: IMPLEMENTED / VALIDATED / MERGED
-organization-local WorkSpace endpoint binding source: IMPLEMENTED / VALIDATION PENDING
-active provider probe execution: PENDING
+organization-local WorkSpace endpoint binding: IMPLEMENTED / VALIDATED / MERGED
+provider-neutral active probe execution: IMPLEMENTED / VALIDATED / MERGED
+authentic provider probe: NOT PROVEN
 Shared Docs live transport/projection proof: NOT PROVEN
 MIR transition reporting: NOT PROVEN
 Master Records authentic custody/reconstruction: NOT PROVEN
 one-device authentic end-to-end execution: NOT PROVEN
 ```
 
-This binding is source/CI work only. It must not be represented as authentic provider access, live synchronization, runtime activation, or custody proof.
-
 ## Next actions
 
-1. Validate and merge the organization-local WorkSpace endpoint binding.
-2. Reconcile the SDK WorkSpace handoff and canonical task registry with the merge evidence.
-3. Add provider-neutral active-probe execution so `PROBE_REQUIRED` can only become resolvable through authentic current evidence, never caller assertion.
-4. Bind an authentic external-provider adapter only after its authority/consent boundary is available.
-5. Execute the controlled `OBSERVE -> MATERIALIZE -> live edit -> REFRESH -> authorization/probe change -> REVOKE/EXPIRE -> DESTROY` experiment.
-6. Retain MIR transition reporting and independent Master Records custody/reconstruction evidence.
-7. Verify the entire path on one current mobile device.
+1. Reuse the existing TVC Google Drive owner-consent/credential authority rather than creating a parallel provider stack.
+2. Determine the narrow provider operation/probe interface that WorkSpace can consume without exposing credentials or moving TVC authority.
+3. Keep authentic deployed-ingress proof separate from source/CI evidence.
+4. Once provider access is explicitly available, execute the controlled `OBSERVE -> MATERIALIZE -> live edit -> REFRESH -> authorization/probe change -> REVOKE/EXPIRE -> DESTROY` experiment.
+5. Retain MIR transition reporting and independent Master Records custody/reconstruction evidence.
+6. Verify the entire path on one current mobile device.
 
 ## Human action
 
-None for the organization-local endpoint binding or provider-neutral active-probe source work.
+None for provider-interface source design and validation. Owner-present Google authorization is only required when authentic provider-backed execution begins.
