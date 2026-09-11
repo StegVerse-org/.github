@@ -33,6 +33,8 @@ Organization-crossing messages use the registered Interlock/InTr federation boun
 
 The adapter must resolve inside the organization repository root and must exist as a file. Missing, external-path, or failing adapters fail closed. Registry-driven dispatch does not itself grant transport, credential, governance, or transition authority; those authorities remain governed by their applicable layers.
 
+The provider-neutral WorkSpace resource consumer is exposed through the registered `stegverse-org.workspace-resource-consumer` internal endpoint. Its organization-local adapter remains thin and delegates projection semantics to the installed canonical StegVerse SDK consumer instead of copying that logic into the organization boundary. The adapter and SDK consumer remain non-authorizing; boundary receipts, governance authority, MIR custody, and Master Records custody are not conferred by the adapter.
+
 This keeps the organization boundary extensible without hardcoding each future service into the boundary processor.
 
 ---

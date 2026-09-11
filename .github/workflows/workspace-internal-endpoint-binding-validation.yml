@@ -1,0 +1,56 @@
+name: WorkSpace Internal Endpoint Binding Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'org-boundary/registry/services.json'
+      - 'resident-runtime/workspace_resource_consumer_adapter.py'
+      - 'tests/test_workspace_internal_endpoint_binding.py'
+      - 'docs/ORG_FEDERATION_GENERIC_ENDPOINT_ADAPTER_MIRROR_HANDOFF.md'
+      - 'README.md'
+      - '.github/workflows/workspace-internal-endpoint-binding-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-workspace-binding:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout exact merged SDK WorkSpace consumer source
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: 07ceb1f131dd8fd27b3b8c89ab747e58aa55e55c
+          path: sdk
+          persist-credentials: false
+
+      - name: Install SDK test dependency surface
+        run: python -m pip install -e ./sdk
+
+      - name: Validate organization-local WorkSpace endpoint binding
+        run: python -m unittest tests.test_workspace_internal_endpoint_binding -v
+
+      - name: Assert registry and adapter remain non-authorizing
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          registry = json.loads(Path('org-boundary/registry/services.json').read_text())
+          service = next(s for s in registry['services'] if s['service_id'] == 'stegverse-org.workspace-resource-consumer')
+          assert service['boundary_role'] == 'INTERNAL_ENDPOINT'
+          assert service['endpoint_adapter'] == 'resident-runtime/workspace_resource_consumer_adapter.py'
+          assert service['repository'] == 'StegVerse-org/StegVerse-SDK'
+          text = Path(service['endpoint_adapter']).read_text()
+          assert 'authority_transfer' in text and 'False' in text
+          assert 'intr_receipt_minted_by_adapter' in text
+          print('WORKSPACE_INTERNAL_ENDPOINT_BINDING=PASS')
+          PY
