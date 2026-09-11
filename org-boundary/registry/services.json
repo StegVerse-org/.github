@@ -47,6 +47,17 @@
       ]
     },
     {
+      "service_id": "stegverse-org.workspace-resource-consumer",
+      "repository": "StegVerse-org/StegVerse-SDK",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "ACTIVE",
+      "runtime_required_for_consumption": true,
+      "endpoint_adapter": "resident-runtime/workspace_resource_consumer_adapter.py",
+      "accepts": [
+        "stegverse.workspace-resource-request.v1"
+      ]
+    },
+    {
       "service_id": "stegverse-org.stegverse-demo-suite",
       "repository": "StegVerse-org/stegverse-demo-suite",
       "boundary_role": "INTERNAL_ENDPOINT",
