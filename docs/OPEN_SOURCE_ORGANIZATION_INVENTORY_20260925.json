@@ -1,0 +1,127 @@
+{
+  "schema": "stegverse.organization-open-source-inventory/v1",
+  "organization": "StegVerse-org",
+  "parent_goal": "ECOSYSTEM-OPEN-SOURCE-STRATEGY-001",
+  "parent_cosv": "20010010100000",
+  "snapshot_date": "2026-09-25",
+  "scope": "GitHub repositories returned by current authenticated organization search. All 18 exact repository metadata entries checked; only public repository names included in this public artifact.",
+  "counts": {
+    "total": 18,
+    "public": 10,
+    "private": 8,
+    "internal": 0,
+    "github_detected_mit": 13,
+    "no_license_detected": 5,
+    "other_license": 0,
+    "full_copyright_chains_verified": 0
+  },
+  "nonpublic_aggregate": {
+    "count": 8,
+    "detected_mit": 4,
+    "no_detected_license": 4
+  },
+  "public_repositories": [
+    {
+      "repo": "StegVerse-org/demo-sandbox",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/StegVerse-SDK",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/stegverse-demo-suite",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/.github",
+      "visibility": "public",
+      "github_license": null,
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/demo-suite-runner",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/manifests",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/discovery",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/stegverse-gsl",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/LLM-adapter",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    },
+    {
+      "repo": "StegVerse-org/demo_ingest_engine",
+      "visibility": "public",
+      "github_license": "MIT",
+      "archived": false,
+      "source_license_scope": "NOT_FULLY_AUDITED",
+      "copyright_chain": "NOT_VERIFIED",
+      "release_permission": "NOT_AUTHORIZED"
+    }
+  ],
+  "rights_and_release_limits": [
+    "GitHub LICENSE detection is descriptive metadata; inspect LICENSE, NOTICE, file headers and historical grants at exact release SHA.",
+    "Private repository names, details and credentials must not appear in this public inventory; access must remain source-owner controlled.",
+    "SDK existing MIT declaration has been observed; contributor rights, optional private dependency distribution grants, Python compatibility, import provenance and full SBOM remain unresolved.",
+    "Do not treat this organization artifact as independent canonical Task Registry admission, licensing change or governed release authority."
+  ],
+  "first_wave_owner": "StegVerse-org/StegVerse-SDK",
+  "source_refs": [
+    "StegVerse-org/StegVerse-SDK/LICENSE",
+    "StegVerse-org/StegVerse-SDK/pyproject.toml",
+    "StegVerse-Labs/.github/docs/ECOSYSTEM_OPEN_SOURCE_STRATEGY_MIRROR_HANDOFF.md"
+  ]
+}
