@@ -92,3 +92,8 @@ are welcome to explore the demos and participate in discussion.
 ## License
 
 Open research / prototype environment. Individual repositories define their own licenses (MIT for SDK, Trust Kernel, Admission, LLM Adapter, Demo Suite, Ingestion Engine).
+
+
+## Open-source licensing census — organization-owned baseline (2026-09-25)
+
+The source-owned [organization inventory](docs/OPEN_SOURCE_ORGANIZATION_INVENTORY_20260925.json) records all 18 StegVerse-org repositories visible through the connected GitHub search (10 public, 8 private), with 13 GitHub-detected MIT and five without a detected license. Private repository names are not published in the inventory. The existing [central goal](https://github.com/StegVerse-Labs/.github/blob/main/docs/ECOSYSTEM_OPEN_SOURCE_STRATEGY_MIRROR_HANDOFF.md) retains task ownership and COSV `20010010100000`; this repository owns its scope-specific licensing and contributor evidence. Metadata does not prove ownership, distribution rights or release authorization. The SDK's optional pinned dependencies and complete contributor history remain under review. No license was changed or release made.
