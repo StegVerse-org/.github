@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - 'org-runtime/**'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'tests/test_org_ledger_atomic_append.py'
       - 'ORG_RESIDENT_RUNTIME_INTR_BOUNDARY_MIRROR_HANDOFF.md'
       - '.github/workflows/org-runtime-boundary.yml'
   push:
     branches: [main]
     paths:
       - 'org-runtime/**'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'tests/test_org_ledger_atomic_append.py'
       - 'ORG_RESIDENT_RUNTIME_INTR_BOUNDARY_MIRROR_HANDOFF.md'
       - '.github/workflows/org-runtime-boundary.yml'
   workflow_dispatch:
@@ -22,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Test serialized organization ledger append
+        run: python -m unittest discover -s tests -p 'test_org_ledger_atomic_append.py' -v
       - name: Validate organization boundary
         run: |
           python org-runtime/runtime_boundary.py validate | tee /tmp/org-boundary.json
