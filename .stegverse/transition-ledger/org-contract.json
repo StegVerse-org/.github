@@ -2,11 +2,25 @@
   "schema": "stegverse.organization-transition-ledger-contract/v1",
   "organization": "StegVerse-org",
   "ledger_level": "ORGANIZATION",
-  "consumes": "stegverse.repo-transition-receipt/v1",
+  "consumes": [
+    "stegverse.repo-transition-receipt/v1",
+    "stegverse.canonical-state-transition-receipt/v1"
+  ],
   "emits": "stegverse.organization-transition-receipt/v1",
   "replay_rule": "ORGANIZATION_REPLAY_MUST_REQUIRE_ONLY_VERIFIED_REPO_RECEIPTS_AND_ORG_RECEIPTS_NOT_ECOSYSTEM_REPLAY",
   "preserves_repo_receipt": true,
+  "preserves_source_transition_receipt": true,
   "append_only_receipts": true,
   "propagation_target": "master-records/.github",
-  "authority_effect": "NONE_CONTRACT_ONLY"
+  "authority_effect": "NONE_CONTRACT_ONLY",
+  "organization_scope_rule": "EVERY_STATE_TRANSITION_OCCURRING_WITHIN_THE_ORGANIZATION_EMITS_AN_ORGANIZATION_RECEIPT",
+  "ledger_root_is_organization_runtime_reality_locus": true,
+  "runtime_reality_authority": "Organization",
+  "ledger_lock": "ORGANIZATION_LEDGER_LOCK",
+  "write_mode": "MANIFEST_DIRECTED_APPEND",
+  "propagation_role": "RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER",
+  "propagation_gates_organization_runtime_reality": false,
+  "propagation_receiver_unavailable_disposition": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION",
+  "always_on_receiver_required": false,
+  "declaration": "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001"
 }
