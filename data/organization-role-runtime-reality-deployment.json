@@ -1,0 +1,141 @@
+{
+  "schema": "stegverse.organization-role-runtime-reality-deployment/v1",
+  "declaration_id": "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001",
+  "organization": "StegVerse-org",
+  "declared_on": "2026-10-01",
+  "completion_evidence_contract_version": "v1",
+  "evidence_class": "SOURCE_IMPLEMENTED",
+  "authority_effect": "NONE_DECLARATION_ONLY",
+  "deployment_scope": "THIS_ORGANIZATION_ONLY_EACH_ORGANIZATION_DEPLOYS_IN_ITS_OWN_DOT_GITHUB",
+  "role_change": {
+    "invariant_key": "runtime_reality_authority",
+    "previous_value": "Master Records",
+    "current_value": "Organization",
+    "reality_locus": "ORGANIZATION_LEDGER_ROOT",
+    "reality_lock": "ORGANIZATION_LEDGER_LOCK",
+    "reality_write_mode": "MANIFEST_DIRECTED_APPEND",
+    "organization_ledger_contract": ".stegverse/transition-ledger/org-contract.json",
+    "organization_receipt_schema": "stegverse.organization-transition-receipt/v1",
+    "organization_scope_rule": "EVERY_STATE_TRANSITION_OCCURRING_WITHIN_THE_ORGANIZATION_EMITS_AN_ORGANIZATION_RECEIPT"
+  },
+  "organization_scope_rule_path_generalization": {
+    "rule": "A_CONTRACT_THAT_CONSUMES_REPOSITORY_RECEIPTS_ONLY_CONTRADICTS_THE_ORGANIZATION_SCOPE_RULE_BECAUSE_A_CANONICAL_GOVERNED_TRANSITION_HAS_NO_PATH_TO_AN_ORGANIZATION_RECEIPT",
+    "due_independently_of_the_role_change": true,
+    "emitter": "resident-runtime/aggregate_repo_transition.py",
+    "admission_gate": "ORGANIZATION_LEDGER_CONTRACT_CONSUMES_LIST",
+    "consumes": [
+      "stegverse.repo-transition-receipt/v1",
+      "stegverse.canonical-state-transition-receipt/v1"
+    ],
+    "canonical_state_transition_binding": "BOUND_BY_ITS_OWN_CANONICAL_DIGEST",
+    "canonical_state_transition_relabelled_as_repository_transition": false,
+    "preserves_source_transition_receipt": true,
+    "canonical_required_evidence": "EXACT_INLINE_CANONICAL_EVIDENCE_BYTES_REQUIRED_FOR_ORGANIZATION_LOCAL_REPLAY",
+    "live_producer": "StegVerse-org/StegVerse-SDK manifests canonical state transitions through Interlock/InTr as of StegVerse-SDK PR 416",
+    "previous_defect": "EVERY_SCHEMA_EXCEPT_THE_REPOSITORY_RECEIPT_WAS_HARD_REJECTED_SO_A_CANONICAL_GOVERNED_TRANSITION_WAS_DROPPED_RATHER_THAN_RECORDED"
+  },
+  "master_records_restated_role": {
+    "role": "RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER",
+    "runtime_reality_authority": "NONE",
+    "transition_authority": "NONE",
+    "records": "RELEASED_ORGANIZATION_BATCH_RECEIPTS",
+    "release_predecessor_required": "VERIFIED_ORGANIZATION_RECEIPT_CHAIN_SEGMENT",
+    "retained_capabilities": [
+      "CUSTODY",
+      "RECONSTRUCTION",
+      "CROSS_ORGANIZATION_HISTORY"
+    ],
+    "propagation_target": "master-records/.github",
+    "may_gate_organization_runtime_reality": false,
+    "may_be_awaited_by_a_transition": false
+  },
+  "unchanged_authorities": {
+    "transition_authority": "Interlock/InTr",
+    "worker_claim_authority": "WorkerCoordinator",
+    "credential_authority": "TV/TVC",
+    "user_verification_authority": "KV/SKAP Vault",
+    "work_intent_and_coordination_truth": "Task Registry",
+    "non_authorizing": [
+      "HeartBeat",
+      "GitHub"
+    ]
+  },
+  "conformance_standard": {
+    "actions_by_manifest_required": true,
+    "state_transition_dependent": true,
+    "external_machine_awaiting_allowed": false,
+    "destination_sufficiency_rule": "MANIFEST_DETERMINES_THE_DESTINATION_AND_AN_EXISTING_DESTINATION_IS_SUFFICIENT_FOR_INGRESS_AND_EGRESS",
+    "destination_liveness_is_transition_predicate": false,
+    "receiver_unavailable_disposition": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION",
+    "always_on_receiver_required": false,
+    "post_closure_authentic_observer_gate_allowed": false,
+    "non_conforming_surface_disposition": "DECLARED_EXEMPTION_REQUIRED",
+    "non_conforming_surface_failure_code": "ORGANIZATION_ROLE_CONFORMANCE_NOT_DECLARED"
+  },
+  "exemption_path": {
+    "register": "data/organization-role-exemption-register.json",
+    "required_fields": [
+      "surface",
+      "owning_existing_goal",
+      "failure_code",
+      "failed_predicate",
+      "why_manifest_bound_state_transition_is_not_yet_possible",
+      "required_evidence_or_repair",
+      "retry_entrypoint",
+      "next_attempt",
+      "expires_or_review_on"
+    ],
+    "rule": "A_SURFACE_THAT_CANNOT_YET_BE_MANIFEST_BOUND_MUST_HOLD_A_REGISTERED_EXEMPTION_RATHER_THAN_REMAIN_SILENTLY_NON_CONFORMING",
+    "exemption_grants_authority": false,
+    "register_opens_empty": true
+  },
+  "superseded_prose_statements": {
+    "rule": "A_PROSE_STATEMENT_ASSIGNING_OBSERVED_OR_RUNTIME_REALITY_AUTHORITY_TO_MASTER_RECORDS_IS_SUPERSEDED_BY_THIS_DECLARATION_AT_ITS_OWNING_SURFACE",
+    "cross_owner_edit_performed": false,
+    "measured_on_commit_of_this_declaration": true,
+    "comparison_key": "PATH_AND_STATEMENT_TEXT",
+    "line_numbers_are_provenance_only": true,
+    "count": 0,
+    "files": [],
+    "occurrences": [],
+    "measured_empty_reason": "NO_PROSE_IN_THIS_ORGANIZATION_ASSIGNS_OBSERVED_OR_RUNTIME_REALITY_AUTHORITY_TO_MASTER_RECORDS",
+    "measured_empty_is_asserted_by_the_same_measurement_as_a_non_empty_set": true
+  },
+  "retained_statements": {
+    "rule": "A_STATEMENT_THAT_MASTER_RECORDS_IS_CUSTODY_RECONSTRUCTION_ONLY_AND_HOLDS_NO_TRANSITION_AUTHORITY_REMAINS_CORRECT_AND_IS_NOT_SUPERSEDED",
+    "reason": "THIS_DECLARATION_MOVES_RUNTIME_REALITY_NOT_CUSTODY",
+    "examples_in_this_organization": [
+      "docs/ORGANIZATION_TRANSITION_LEDGER_MIRROR_HANDOFF.md",
+      "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
+      "docs/ORG_FEDERATION_GENERIC_ENDPOINT_ADAPTER_MIRROR_HANDOFF.md"
+    ]
+  },
+  "deferred_record_side_reconciliation": {
+    "gated_behind": "CANONICAL_TASK_RECORD_SCHEMA_RECONCILIATION_AND_REGISTRATION_BEFORE_MUTATION",
+    "items": [],
+    "measured_empty_reason": "THIS_ORGANIZATION_HOLDS_NO_CANONICAL_TASK_RECORD_OR_TASK_REGISTRY_SURFACE",
+    "completion_evidence_class_vocabulary": {
+      "key": "MASTER_RECORDS_RECONSTRUCTED",
+      "disposition": "UNCHANGED_IN_THIS_DECLARATION",
+      "reason": "RENAMING_A_COMPLETION_EVIDENCE_CLASS_IS_A_REGISTRY_WIDE_VOCABULARY_MIGRATION_WITH_ITS_OWN_REGISTRATION"
+    }
+  },
+  "validation": {
+    "tests": [
+      "tests/test_organization_role_runtime_reality_deployment.py",
+      "tests/test_org_ledger_atomic_append.py"
+    ],
+    "source_validation_grants_no_runtime_authority": true
+  },
+  "this_declaration_does_not": [
+    "MUTATE_ANY_CANONICAL_TASK_RECORD",
+    "CLOSE_ANY_GOAL",
+    "CLAIM_RUNTIME_OBSERVATION",
+    "CLAIM_INTR_ADMISSION",
+    "CLAIM_AN_EMITTED_ORGANIZATION_RECEIPT",
+    "CLAIM_MASTER_RECORDS_RECONSTRUCTION",
+    "CREATE_A_SCHEDULER_RUNTIME_LEDGER_CREDENTIAL_OR_DEVICE",
+    "GRANT_TRANSITION_EXECUTION_CUSTODY_OR_CREDENTIAL_AUTHORITY",
+    "REQUIRE_AN_EXTERNAL_MACHINE_OR_SECOND_DEVICE"
+  ]
+}

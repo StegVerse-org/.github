@@ -1,0 +1,32 @@
+{
+  "schema": "stegverse.organization-role-exemption-register/v1",
+  "register_id": "ORGANIZATION-ROLE-EXEMPTION-REGISTER-001",
+  "organization": "StegVerse-org",
+  "declaration": "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001",
+  "standard": "EVERY_ACTION_IS_A_MANIFEST_BOUND_STATE_TRANSITION_AND_NO_EXTERNAL_MACHINE_IS_AWAITED",
+  "rule": "A_SURFACE_THAT_CANNOT_YET_SATISFY_THE_STANDARD_MUST_HOLD_A_REGISTERED_EXEMPTION_WITH_AN_ACTIONABLE_NON_ALLOW_DISPOSITION",
+  "silent_non_conformance_allowed": false,
+  "exemption_grants_authority": false,
+  "exemption_may_satisfy_a_terminal_predicate": false,
+  "required_fields": [
+    "surface",
+    "owning_existing_goal",
+    "failure_code",
+    "failed_predicate",
+    "why_manifest_bound_state_transition_is_not_yet_possible",
+    "required_evidence_or_repair",
+    "retry_entrypoint",
+    "next_attempt",
+    "expires_or_review_on"
+  ],
+  "prohibited_justifications": [
+    "AN_EXTERNAL_MACHINE_MUST_BE_RUNNING",
+    "A_SECOND_USER_OPERATED_DEVICE_IS_REQUIRED",
+    "A_REMOTE_COMPUTER_IS_UNAVAILABLE",
+    "EVIDENCE_REACHABILITY_IS_PENDING",
+    "A_RECEIVER_IS_NOT_ALWAYS_ON",
+    "AN_AUTHENTIC_OBSERVER_HAS_NOT_YET_LOOKED"
+  ],
+  "exemptions": [],
+  "authority_effect": "NONE_REGISTER_ONLY"
+}

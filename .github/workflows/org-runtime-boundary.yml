@@ -5,7 +5,12 @@ on:
     paths:
       - 'org-runtime/**'
       - 'resident-runtime/aggregate_repo_transition.py'
+      - '.stegverse/transition-ledger/org-contract.json'
+      - 'data/organization-role-runtime-reality-deployment.json'
+      - 'data/organization-role-exemption-register.json'
+      - 'docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md'
       - 'tests/test_org_ledger_atomic_append.py'
+      - 'tests/test_organization_role_runtime_reality_deployment.py'
       - 'ORG_RESIDENT_RUNTIME_INTR_BOUNDARY_MIRROR_HANDOFF.md'
       - '.github/workflows/org-runtime-boundary.yml'
   push:
@@ -13,7 +18,12 @@ on:
     paths:
       - 'org-runtime/**'
       - 'resident-runtime/aggregate_repo_transition.py'
+      - '.stegverse/transition-ledger/org-contract.json'
+      - 'data/organization-role-runtime-reality-deployment.json'
+      - 'data/organization-role-exemption-register.json'
+      - 'docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md'
       - 'tests/test_org_ledger_atomic_append.py'
+      - 'tests/test_organization_role_runtime_reality_deployment.py'
       - 'ORG_RESIDENT_RUNTIME_INTR_BOUNDARY_MIRROR_HANDOFF.md'
       - '.github/workflows/org-runtime-boundary.yml'
   workflow_dispatch:
@@ -28,6 +38,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test serialized organization ledger append
         run: python -m unittest discover -s tests -p 'test_org_ledger_atomic_append.py' -v
+      - name: Test Organization Role deployment and generalized ledger admission
+        run: python -m unittest discover -s tests -p 'test_organization_role_runtime_reality_deployment.py' -v
       - name: Validate organization boundary
         run: |
           python org-runtime/runtime_boundary.py validate | tee /tmp/org-boundary.json
