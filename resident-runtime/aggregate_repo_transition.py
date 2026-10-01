@@ -16,12 +16,23 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 C = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_text())
+
+
+SHA256_REF = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+
+def require_state_digest(field, value):
+    """A field named *_sha256 must carry one, or the chain records a claim it cannot check."""
+    if not isinstance(value, str) or not SHA256_REF.match(value):
+        raise SystemExit("ORG_LEDGER_" + field.upper() + "_NOT_A_SHA256_DIGEST")
+    return value
 
 
 def canon(value):
@@ -207,6 +218,8 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     # Admission is decided before the append lock is taken; an inadmissible
     # source receipt never contends for the organization ledger.
     source = verify_source(source_receipt)
+    require_state_digest("predecessor_org_state_sha256", predecessor_state)
+    require_state_digest("successor_org_state_sha256", successor_state)
     root = ledger_root()
     receipt_dir = root / "receipts"
     receipt_dir.mkdir(parents=True, exist_ok=True)

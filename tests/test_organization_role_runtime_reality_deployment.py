@@ -26,6 +26,10 @@ ORGANIZATION = "StegVerse-org"
 CANONICAL = "stegverse.canonical-state-transition-receipt/v1"
 REPO = "stegverse.repo-transition-receipt/v1"
 
+# The emitter requires a digest in every *_sha256 field.
+STATE_BEFORE = "sha256:" + "a" * 64
+STATE_AFTER = "sha256:" + "b" * 64
+
 spec = importlib.util.spec_from_file_location("org_append_role", EMITTER)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
@@ -343,7 +347,7 @@ class EmitterAdmissionTests(unittest.TestCase):
                     module.append({"schema": "stegverse.not-consumed/v1",
                                    "transition_id": "x"},
                                   "ORGANIZATION_STATE_TRANSITION",
-                                  "before", "after", {}, "NONE")
+                                  STATE_BEFORE, STATE_AFTER, {}, "NONE")
             self.assertFalse(root.exists())
 
 
@@ -353,7 +357,7 @@ class EmitterAppendTests(unittest.TestCase):
             with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
                 receipt = canonical_receipt(1)
                 record = module.append(receipt, "ORGANIZATION_STATE_TRANSITION",
-                                       "before", "after", {}, "NONE")
+                                       STATE_BEFORE, STATE_AFTER, {}, "NONE")
                 self.assertEqual(record["schema"],
                                  "stegverse.organization-transition-receipt/v1")
                 self.assertEqual(record["organization"], ORGANIZATION)
@@ -369,10 +373,10 @@ class EmitterAppendTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
                 first = module.append(repo_receipt(1), "REPO_STATE_PROPAGATION",
-                                      "before", "after", {}, "NONE")
+                                      STATE_BEFORE, STATE_AFTER, {}, "NONE")
                 second = module.append(canonical_receipt(2),
                                        "ORGANIZATION_STATE_TRANSITION",
-                                       "before", "after", {}, "NONE")
+                                       STATE_BEFORE, STATE_AFTER, {}, "NONE")
                 self.assertIsNone(first["previous_receipt_sha256"])
                 self.assertEqual(second["previous_receipt_sha256"],
                                  first["receipt_sha256"])
