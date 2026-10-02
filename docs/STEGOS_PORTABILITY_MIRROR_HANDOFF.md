@@ -68,3 +68,17 @@ The uploaded review identified and this branch now resolves at the design-contra
 ## Machine-readable continuation requirement
 
 Canonical discovery must publish both `LLM_MACHINE_CONTINUATION` and `EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION`. The former identifies the existing LLM-adapter governed-manifest ingress for a machine that can provide a canonical manifest. The latter identifies the existing SDK `build_manifest` / `stegverse manifest build` and `manifest_external_framework_submission` / `stegverse external-run` path for a framework requiring manifest construction. Both begin with ESTABLISH_GENESIS or VERIFY_EXISTING standing, preserve manifest-selected capability + route, and may not promote SDK-local handoff or enclosed validation into canonical far-side completion.
+
+
+
+## Test 5/6 external submission boundary — 2026-10-02
+
+External instructions terminate at `SUBMIT_CANONICAL_MANIFEST` and `RETAIN_SUBMISSION_RESULT_AND_EVIDENCE`. Interlock/InTr is `INTERNAL_POST_SUBMISSION`; `EXTERNAL_INTERLOCK_INTR` is deferred to a separate successor expansion after Tests 5/6. This changes the caller instruction boundary, not the retained experiment, Test 5-before-Test 6 ordering, or downstream receipt/custody acceptance. Source tests are not Test 5/6 runtime results.
+
+`SDK_MACHINE_CONTRACT` derives from existing SDK builder signatures, processor/route declarations, return projections and console commands. The adapter consumes that SDK projection instead of maintaining a second instruction recipe. The console wrapper already dispatched manifest/external-run; its top-level help omitted them. Shared dispatch/help declarations repair that discovery mismatch.
+
+The external-framework helper currently reports `SDK_LOCAL_MANIFEST_HANDOFF`; it does not prove receiver observation. Adapter predecessor checks establish structural validity only, not authenticated standing. Production endpoint binding, authentic standing, runtime execution, deployment and custody remain NOT_PROVEN. No endpoint, runtime, credential path or authority was created.
+
+Source checkpoint: SDK PR #424 at `1b24ab0fe4ca1690994a7bacb4ac2286a35f2603`; 35 local source tests and 4 subtests passed. Organization PR #31 merged as `96541b2f0dcb33c3fc23a30869d9bcb4258f1f5a` during this session; this Test 5/6 amendment is a follow-up, not part of that merge. SDK and adapter integration still require exact-head CI and merge; no deployment or runtime claim.
+
+Counter reconciliation: session has 4 user prompts; goal recovery count was already 20/20, now 24 qualifying prompts. Do not reset the parent counter. The external Interlock/InTr successor may be registered only after this boundary is retained on canonical main; its concrete scope is reciprocal external-node transport contracts and tests, with an explicit dependency on Tests 5/6 and no change to their caller instructions. No successor ID has yet been invented or registered.
