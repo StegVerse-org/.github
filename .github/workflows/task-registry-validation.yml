@@ -5,9 +5,12 @@ name: Validate Organization Task Registry
 # cannot resolve one. This organization held no such surface, so work intent
 # survived only in whatever session produced it.
 #
-# The registry's schema is owned by StegVerse-Labs/repo-standards. Vendoring a
-# copy here would drift the moment the owner changed it, so conformance is
-# checked against the owner's schema at a pin.
+# The registry's schema is owned by StegVerse-Labs/repo-standards. That
+# repository is private and in another organization, so this workflow cannot
+# check it out with the default token -- the attempt fails with git exit code
+# 128. The schema is therefore vendored under orchestration/schemas/ with its
+# source commit and digest recorded, and the drift check against the owner's
+# own file runs wherever repo-standards is reachable rather than here.
 
 on:
   pull_request:
@@ -41,20 +44,10 @@ jobs:
       - name: Registry invariants, with no other repository required
         run: python -m unittest tests.test_task_registry -v
 
-      - name: Checkout the standards repository that owns the schema
-        uses: actions/checkout@v4
-        with:
-          repository: StegVerse-Labs/repo-standards
-          ref: 7ad8ac61b90455dfa05279320b7975de6d1ca6b9
-          path: repo-standards
-          persist-credentials: false
-
       - name: Install the schema validator
         run: python -m pip install jsonschema
 
-      - name: Conform to the owner's schema, not a local copy
-        env:
-          REPO_STANDARDS_ROOT: repo-standards
+      - name: Conform to the schema, and hold the copy to its recorded digest
         run: python -m unittest tests.test_task_registry_schema_conformance -v
 
       - name: Report the active goal and what each task still needs

@@ -1,0 +1,16 @@
+{
+  "schema": "stegverse.vendored-schema-provenance/v1",
+  "why": "StegVerse-Labs/repo-standards is private and in another organization, so a workflow in StegVerse-org/.github cannot check it out with the default token: the cross-organization checkout fails with git exit code 128. Validating against a copy is the only way this repository's own CI can check its registry at all. The copy is therefore recorded with the commit it was taken from and the digest it had, so drift is detectable rather than silent.",
+  "vendored": [
+    {
+      "path": "orchestration/schemas/task-registry.schema.json",
+      "source_repository": "StegVerse-Labs/repo-standards",
+      "source_path": "schemas/task-registry.schema.json",
+      "source_commit": "7ad8ac61b90455dfa05279320b7975de6d1ca6b9",
+      "source_sha256": "sha256:cd66982f8ccb1baaf1caf468b531f756587de76c0f20e4586d44cacb900d79cd",
+      "owner_standard": "ST-021 Goal Progression Automaton",
+      "drift_check": "tests/test_task_registry_schema_conformance.py compares this copy against the owner's whenever repo-standards is reachable; it cannot run in this repository's CI and is not a substitute for the owner's own validation"
+    }
+  ],
+  "authority_effect": "NONE_COPY_ONLY"
+}
