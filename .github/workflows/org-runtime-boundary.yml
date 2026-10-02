@@ -5,6 +5,15 @@ on:
     paths:
       - 'org-runtime/**'
       - 'resident-runtime/aggregate_repo_transition.py'
+      - 'org-boundary/runtime/intr_transport.py'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - 'org-kernel/kernel.py'
+      - 'resident-runtime/run_once.py'
+      - 'resident-runtime/org_boundary_runtime.py'
+      - 'resident-runtime/sdk_self_characterization_egress.py'
+      - 'tests/test_intr_org_crossing.py'
+      - 'tests/test_sdk_self_characterization_egress.py'
       - '.stegverse/transition-ledger/org-contract.json'
       - 'data/organization-role-runtime-reality-deployment.json'
       - 'data/organization-role-exemption-register.json'
@@ -18,6 +27,15 @@ on:
     paths:
       - 'org-runtime/**'
       - 'resident-runtime/aggregate_repo_transition.py'
+      - 'org-boundary/runtime/intr_transport.py'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - 'org-kernel/kernel.py'
+      - 'resident-runtime/run_once.py'
+      - 'resident-runtime/org_boundary_runtime.py'
+      - 'resident-runtime/sdk_self_characterization_egress.py'
+      - 'tests/test_intr_org_crossing.py'
+      - 'tests/test_sdk_self_characterization_egress.py'
       - '.stegverse/transition-ledger/org-contract.json'
       - 'data/organization-role-runtime-reality-deployment.json'
       - 'data/organization-role-exemption-register.json'
@@ -40,6 +58,12 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_org_ledger_atomic_append.py' -v
       - name: Test Organization Role deployment and generalized ledger admission
         run: python -m unittest discover -s tests -p 'test_organization_role_runtime_reality_deployment.py' -v
+      - name: Test complete Interlock/InTr organization crossing
+        run: python -m unittest tests.test_intr_org_crossing -v
+      - name: Test SDK self-characterization egress route
+        run: python -m unittest tests.test_sdk_self_characterization_egress -v
+      - name: Test organization kernel carrier frame and ingest
+        run: python org-kernel/tests/test_kernel.py
       - name: Validate organization boundary
         run: |
           python org-runtime/runtime_boundary.py validate | tee /tmp/org-boundary.json

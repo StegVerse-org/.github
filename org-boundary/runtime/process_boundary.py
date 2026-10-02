@@ -39,7 +39,11 @@ def endpoint_result(env,svc,envelope_path):
                 check=False,
             )
             if completed.returncode!=0 or not out.is_file():
-                raise SystemExit("endpoint-adapter-execution-failed")
+                # Carry the adapter's own reason. Discarding it made every
+                # adapter failure read as one opaque message at the boundary.
+                detail=(completed.stderr or completed.stdout or "").strip().splitlines()
+                raise SystemExit("endpoint-adapter-execution-failed"
+                                 + (": "+detail[-1] if detail else ""))
             result=load(out)
             if not isinstance(result,dict):
                 raise SystemExit("endpoint-adapter-result-invalid")
