@@ -63,3 +63,8 @@ The uploaded review identified and this branch now resolves at the design-contra
 4. Repair the live LLM-adapter path so caller-fabricated identity and message-keyword routing cannot bypass canonical standing and manifest-only route selection.
 5. Trace canonical KV and StegBrowser owners before asserting KV-as-node or StegBrowser-as-KV-surface.
 6. Preserve every authority boundary and NOT_PROVEN runtime claim.
+
+
+## Machine-readable continuation requirement
+
+Canonical discovery must publish both `LLM_MACHINE_CONTINUATION` and `EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION`. The former identifies the existing LLM-adapter governed-manifest ingress for a machine that can provide a canonical manifest. The latter identifies the existing SDK `build_manifest` / `stegverse manifest build` and `manifest_external_framework_submission` / `stegverse external-run` path for a framework requiring manifest construction. Both begin with ESTABLISH_GENESIS or VERIFY_EXISTING standing, preserve manifest-selected capability + route, and may not promote SDK-local handoff or enclosed validation into canonical far-side completion.
