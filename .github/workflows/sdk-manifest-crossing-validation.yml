@@ -21,6 +21,9 @@ on:
       - 'tests/fixtures/sdk_manifest_fixture_build.py'
       - 'tests/fixtures/sdk-manifest-build-spec.json'
       - 'tests/fixtures/sdk-manifests/**'
+      - 'resident-runtime/task_registry_disclosure_endpoint.py'
+      - 'tests/test_task_registry_disclosure_endpoint.py'
+      - 'orchestration/task-registry.json'
       - 'org-boundary/runtime/intr_transport.py'
       - 'org-boundary/runtime/process_boundary.py'
       - 'org-boundary/runtime/manifest_selection.py'
@@ -53,6 +56,9 @@ jobs:
 
       - name: Crossing runs without the SDK, and must keep doing so
         run: python -m unittest tests.test_sdk_manifest_crossing -v
+
+      - name: A manifest's declared capability is actually served at the far side
+        run: python -m unittest tests.test_task_registry_disclosure_endpoint -v
 
       - name: The committed fixtures are what the SDK builds, and both sides agree where they go
         run: python -m unittest tests.test_sdk_manifest_crossing_fidelity -v
@@ -90,9 +96,16 @@ jobs:
           print(result["terminal_receipt_id"])
           PY
 
-      - name: The declared far side with no installed endpoint is reported, not claimed
+      - name: An installed far side still refuses a pair it does not admit
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
             --manifest tests/fixtures/sdk-manifests/hold-to-llm-adapter.json \
             --packet-id ci-sdk-manifest-crossing-gap --out /tmp/gap.json || true
-          python -c 'import json; x=json.load(open("/tmp/gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is False; assert isinstance(x["far_side_disposition"],str) and x["far_side_disposition"].strip(), "a refused crossing must name its disposition"; print("DECLARED_FAR_SIDE_GAP_REPORTED=PASS")'
+          python -c 'import json; x=json.load(open("/tmp/gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is True, "this step now covers an installed adapter refusing an unadmitted pair"; assert isinstance(x["far_side_disposition"],str) and x["far_side_disposition"].strip(), "a refused crossing must name its disposition"; print("UNADMITTED_PAIR_REFUSED_AT_INSTALLED_FAR_SIDE=PASS")'
+
+      - name: The declared capability is served, with a reconstructable chain
+        run: |
+          python resident-runtime/sdk_manifest_crossing.py \
+            --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
+            --packet-id ci-task-registry-disclosure --out /tmp/disclosure.json
+          python -c 'import json; x=json.load(open("/tmp/disclosure.json")); assert x["crossing_completed"] is True; assert x["processing_selection"]=="MANIFEST_DECLARED"; assert x["declared_capability_processed"] is True; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["reconstruction"]=="RECONSTRUCTED"; assert len(x["receipts"])==5; r=x["egress"]["payload"]["execution_result"]["application_result"]; assert r["authority_effect"]=="NONE_DISCLOSURE_ONLY"; print("DECLARED_CAPABILITY_SERVED_AT_FAR_SIDE=PASS", r["active_goal"], r["task_count"])'
