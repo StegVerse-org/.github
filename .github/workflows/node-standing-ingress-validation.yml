@@ -1,0 +1,81 @@
+name: Node Standing Ingress Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json
+      - org-boundary/runtime/node_standing.py
+      - org-kernel/kernel.py
+      - resident-runtime/sdk_self_characterization_egress.py
+      - resident-runtime/submit_org_transition_to_master_records.py
+      - tests/test_node_standing_ingress.py
+      - .github/workflows/node-standing-ingress-validation.yml
+  push:
+    branches: [main]
+    paths:
+      - docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json
+      - org-boundary/runtime/node_standing.py
+      - org-kernel/kernel.py
+      - resident-runtime/sdk_self_characterization_egress.py
+      - resident-runtime/submit_org_transition_to_master_records.py
+      - tests/test_node_standing_ingress.py
+      - .github/workflows/node-standing-ingress-validation.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate that the boundary carries and validates the canonical predecessor
+        run: |
+          set -eu
+          python -m unittest tests.test_node_standing_ingress -v
+          python -m py_compile org-boundary/runtime/node_standing.py org-kernel/kernel.py \
+            resident-runtime/sdk_self_characterization_egress.py \
+            resident-runtime/submit_org_transition_to_master_records.py
+
+      - name: Assert the rules are read from the contract, not restated in the boundary
+        run: |
+          set -eu
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('org-boundary/runtime/node_standing.py').read_text(encoding='utf-8')
+          # A second copy of the owner's field set here would violate
+          # local_second_predecessor_semantics_permitted: false. It is read off
+          # the contract, so the literal names must not appear as a local tuple.
+          assert 'predecessor_fields' in source
+          assert '"generation", "manifest_sha256", "result_sha256", "heartbeat_epoch"' not in source
+          assert 'CANONICAL_NODE_INGRESS_CONTRACT_001.json' in source
+          for marker in ('predecessor-key-absent', 'standing_agrees_with_carried_manifest',
+                         'attestation_owner_state', 'declared_predecessor_lineage_recomputed',
+                         'caller_editable_origin_established_identity'):
+              assert marker in source, marker
+
+          kernel = Path('org-kernel/kernel.py').read_text(encoding='utf-8')
+          # Standing must resolve above the role branch, or only one dispatch
+          # arm is gated and the other is the bypass.
+          standing_at = kernel.index('standing_module=node_standing(root)')
+          role_at = kernel.index('role=service.get("boundary_role")')
+          assert standing_at < role_at, 'standing must resolve before the role branch'
+          # No default standing anywhere: a silent default is the defaulting the
+          # contract exists to prevent.
+          assert 'standing:dict[str,Any]' in kernel
+          assert 'standing=None' not in kernel and 'standing={}' not in kernel
+          print('NODE_STANDING_CONTRACT_IS_THE_AUTHORITY=PASS')
+          PY
+
+      - name: Record non-authorizing standing
+        run: |
+          echo 'NODE_STANDING_INGRESS_VALIDATION_PASS'
+          echo 'ALL_EXTERNAL_ECOSYSTEM_INGRESS_REQUIRES_CANONICAL_NODE_STANDING is enforced at the boundary,'
+          echo 'not merely declared. Every dispatched packet declares its chain position; predecessor is a'
+          echo 'required key and null is explicit genesis only; an absent key is FAIL_CLOSED.'
+          echo 'Standing is structural, not authenticated. attestation_owner_state=NOT_PROVEN and'
+          echo 'authoritative_source_classification=NOT_PROVEN are recorded, not manufactured.'
+          echo 'A declared predecessor is checked against the owner field set, not recomputed:'
+          echo 'declared_predecessor_lineage_recomputed=false. Lineage owner is StegVerse-org/StegVerse-SDK.'
+          echo 'Standing grants no execution, route, credential, governance or transition authority.'
