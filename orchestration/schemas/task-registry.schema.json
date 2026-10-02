@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stegverse-labs.github.io/repo-standards/schemas/task-registry.schema.json",
+  "title": "StegVerse Orchestration Task Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "org",
+    "repo",
+    "registry_type",
+    "active_goal",
+    "tasks",
+    "archive_status"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "org": { "type": "string", "minLength": 1 },
+    "repo": { "type": "string", "minLength": 1 },
+    "registry_type": {
+      "type": "string",
+      "const": "orchestration_task_registry"
+    },
+    "active_goal": { "type": "string", "minLength": 1 },
+    "latest_readme_commit": { "type": "string" },
+    "latest_release_readiness_commit": { "type": "string" },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task_id",
+          "issue",
+          "title",
+          "status",
+          "workstream",
+          "depends_on",
+          "outputs"
+        ],
+        "properties": {
+          "task_id": { "type": "string", "minLength": 1 },
+          "issue": { "type": "integer", "minimum": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["proposed", "accepted", "claimed", "in_progress", "validating", "complete", "merged", "archived", "blocked"]
+          },
+          "workstream": { "type": "string", "minLength": 1 },
+          "depends_on": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "required_evidence": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "outputs": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "tag_allowed": { "type": "boolean" },
+          "activation_condition": { "type": "string" },
+          "destinations": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "archive_status": {
+      "type": "string",
+      "enum": ["ACTIVE", "READY_FOR_HANDOFF", "READY_FOR_ARCHIVE"]
+    }
+  }
+}

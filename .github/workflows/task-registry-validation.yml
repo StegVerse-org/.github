@@ -1,0 +1,68 @@
+name: Validate Organization Task Registry
+
+# ST-021 Goal Progression Automaton fixes a mandatory read order whose first
+# source is the task registry record, and requires a run to fail closed when it
+# cannot resolve one. This organization held no such surface, so work intent
+# survived only in whatever session produced it.
+#
+# The registry's schema is owned by StegVerse-Labs/repo-standards. That
+# repository is private and in another organization, so this workflow cannot
+# check it out with the default token -- the attempt fails with git exit code
+# 128. The schema is therefore vendored under orchestration/schemas/ with its
+# source commit and digest recorded, and the drift check against the owner's
+# own file runs wherever repo-standards is reachable rather than here.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'orchestration/**'
+      - 'tests/test_task_registry.py'
+      - 'tests/test_task_registry_schema_conformance.py'
+      - '.github/workflows/task-registry-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'orchestration/**'
+      - 'tests/test_task_registry.py'
+      - 'tests/test_task_registry_schema_conformance.py'
+      - '.github/workflows/task-registry-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-task-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Registry invariants, with no other repository required
+        run: python -m unittest tests.test_task_registry -v
+
+      - name: Install the schema validator
+        run: python -m pip install jsonschema
+
+      - name: Conform to the schema, and hold the copy to its recorded digest
+        run: python -m unittest tests.test_task_registry_schema_conformance -v
+
+      - name: Report the active goal and what each task still needs
+        run: |
+          python - <<'PY'
+          import json
+          registry = json.load(open("orchestration/task-registry.json"))
+          goal = registry["active_goal"]
+          print("active_goal:", goal)
+          assert goal in {t["task_id"] for t in registry["tasks"]}
+          for task in registry["tasks"]:
+              print(f"  {task['status']:12} {task['task_id']:38} record #{task['issue']}")
+          open_tasks = [t for t in registry["tasks"]
+                        if t["status"] not in {"complete", "merged", "archived"}]
+          assert all(t.get("required_evidence") for t in open_tasks), \
+              "an open task names no evidence that would close it"
+          print(f"ORGANIZATION_TASK_REGISTRY_RESOLVED=PASS open={len(open_tasks)}")
+          PY
