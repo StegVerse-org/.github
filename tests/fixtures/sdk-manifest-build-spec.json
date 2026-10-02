@@ -1,0 +1,117 @@
+{
+  "_comment": "The exact build_manifest arguments these fixtures were produced from. Committing the inputs, not just the output, is what lets a workflow with the SDK installed rebuild the fixtures and prove they are still what the SDK actually produces.",
+  "common": {
+    "created_at": "2026-09-26T00:00:00Z",
+    "data_class": "sv.hold.independent.source-only.v1",
+    "declared_intent": "Independently qualify a proposed governed HOLD transition",
+    "process": "governance",
+    "publisher_required": false,
+    "requested_consequence": "Observe actual disposition and protected effect only if genuinely admitted",
+    "return_depth": "full-trace",
+    "source_framework": "StegVerse-independent-evaluator",
+    "source_output_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+  },
+  "data": {
+    "authority_declaration": {
+      "actor_current": false,
+      "authenticated_grant_observed": false,
+      "delegation_current": false,
+      "permission_present": false,
+      "validity_window_open": true
+    },
+    "condition_id": "HOLD_ENTERED",
+    "evidence_class": "INDEPENDENT_SV_EXPERIMENT_DESIGN_NOT_NATIVE_RUNTIME",
+    "expected_evidence": [
+      "actual_intr_admissibility_snapshot",
+      "original_protected_operation_effect_or_prevention",
+      "predecessor_linked_organization_receipts",
+      "applicable_master_records_reconstruction"
+    ],
+    "experiment_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926",
+    "native_stev_inference": null,
+    "other_framework_output_consumed": false,
+    "protected_operation": "bounded_no_external_side_effect_test",
+    "relative_time": "T1",
+    "temporal_sampling": "EXPERIMENT_RELATIVE_ONLY_NOT_MEASURED"
+  },
+  "manifests": {
+    "hold-to-boundary-diagnostic": {
+      "egress_surface": "BOUNDARY_DIAGNOSTIC"
+    },
+    "hold-to-llm-adapter": {
+      "egress_surface": "LLM_ADAPTER"
+    }
+  },
+  "processor_request": {
+    "approval": {
+      "required": true
+    },
+    "candidate": {
+      "action": "evaluate_bounded_hold_operation",
+      "actor_class": "sdk_evaluator",
+      "parameters": {
+        "external_side_effect": false,
+        "relative_time": "T1"
+      },
+      "scope": "isolated_experiment",
+      "target": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+    },
+    "capability": {
+      "allowed": true
+    },
+    "continuity": {
+      "required": true
+    },
+    "declared_context": {
+      "authority_evidence_status": "NOT_AUTHENTICATED",
+      "condition_id": "HOLD_ENTERED",
+      "no_external_effect": true,
+      "other_framework_evidence_used": false,
+      "relative_time": "T1",
+      "semantic_status": "UNRESOLVED",
+      "source_only": true
+    },
+    "execution": {
+      "actor_authority_current": false,
+      "affected_entity_conditions_represented": true,
+      "delegation_current": false,
+      "delegation_ref": "sv-hold:proposed-test-delegation:not-runtime-authenticated",
+      "evidence_current": false,
+      "evidence_refs": [
+        "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+      ],
+      "policy_current": true,
+      "policy_ref": "sv-hold:proposed-test-policy:not-runtime-authenticated",
+      "recoverability_profile": "recoverable",
+      "validity_window_open": true
+    },
+    "judgment": {
+      "evidence_refs": [
+        "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+      ],
+      "isolation_state": "supported",
+      "operator_recoverability": "available",
+      "refusal_available": true,
+      "time_pressure": "normal",
+      "workload_state": "supported"
+    },
+    "permission_present": false,
+    "signal": {
+      "admitted_signal_refs": [
+        "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+      ],
+      "excluded_signal_refs": [],
+      "expected_reference_state_hash": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110",
+      "missing_inputs": [
+        "authenticated_current_grant",
+        "authentic_runtime_evidence"
+      ],
+      "reconstruction_available": false,
+      "reference_state_hash": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110",
+      "transformation_provenance_complete": true,
+      "transformations": [],
+      "uncertainty_state": "unknown"
+    }
+  },
+  "source": "StegVerse-org/StegVerse-SDK scripts/experiment_sv_hold_independent.py, condition HOLD_ENTERED"
+}

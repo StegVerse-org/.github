@@ -1,0 +1,97 @@
+name: Validate SDK Manifest Crossing of the Organization Boundary
+
+# Nothing in the ecosystem exercised SDK output and boundary transport together.
+# The SDK gated its manifests, this boundary gated its crossing, and the join
+# between them was gated by nothing -- so a change on either side could break
+# it while every check on both sides stayed green. That is exactly how the HOLD
+# experiment came to declare a far side that nothing could reach.
+#
+# This job installs the SDK at a pinned commit, rebuilds the committed manifest
+# fixtures from their build spec, proves they are byte-for-byte what the SDK
+# produces, and carries a freshly built manifest across the boundary in the
+# same run.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'tests/test_sdk_manifest_crossing.py'
+      - 'tests/test_sdk_manifest_crossing_fidelity.py'
+      - 'tests/fixtures/sdk_manifest_fixture_build.py'
+      - 'tests/fixtures/sdk-manifest-build-spec.json'
+      - 'tests/fixtures/sdk-manifests/**'
+      - 'org-boundary/runtime/intr_transport.py'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - '.github/workflows/sdk-manifest-crossing-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-sdk-manifest-crossing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout the SDK that produces the manifests
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: 0028cab992629414b4dda423dffb35c07eaf0771
+          path: sdk
+          persist-credentials: false
+
+      - name: Install the SDK
+        run: python -m pip install -e ./sdk
+
+      - name: Crossing runs without the SDK, and must keep doing so
+        run: python -m unittest tests.test_sdk_manifest_crossing -v
+
+      - name: The committed fixtures are what the SDK builds, and both sides agree where they go
+        run: python -m unittest tests.test_sdk_manifest_crossing_fidelity -v
+
+      - name: Report any fixture drift by name
+        run: python tests/fixtures/sdk_manifest_fixture_build.py
+
+      - name: Carry an SDK-built manifest across the boundary end-to-end
+        run: |
+          python - <<'PY'
+          import importlib.util, json
+          from pathlib import Path
+
+          def load(name, path):
+              spec = importlib.util.spec_from_file_location(name, path)
+              module = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(module)
+              return module
+
+          builder = load("build", "tests/fixtures/sdk_manifest_fixture_build.py")
+          bridge = load("crossing", "resident-runtime/sdk_manifest_crossing.py")
+
+          manifest = builder.rebuild()["hold-to-boundary-diagnostic"]
+          result = bridge.cross(manifest, packet_id="ci-sdk-built-manifest-crossing")
+          assert result["crossing_completed"] is True, result
+          assert result["consumed"] is True
+          assert result["reconstruction"] == "RECONSTRUCTED"
+          assert result["receipts"] == ["INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED",
+                                        "RESULT_BOUND", "EGRESS_EMITTED"]
+          assert result["authority_effect"] == "NONE"
+          far = result["egress"]["payload"]["execution_result"]["application_result"]["echo"]
+          assert far["manifest"] == manifest, "a different manifest arrived"
+          assert far["manifest_sha256"] == result["manifest_sha256"]
+          print("SDK_MANIFEST_CROSSES_ORGANIZATION_BOUNDARY=PASS")
+          print(result["terminal_receipt_id"])
+          PY
+
+      - name: The declared far side with no installed endpoint is reported, not claimed
+        run: |
+          python resident-runtime/sdk_manifest_crossing.py \
+            --manifest tests/fixtures/sdk-manifests/hold-to-llm-adapter.json \
+            --packet-id ci-sdk-manifest-crossing-gap --out /tmp/gap.json || true
+          python -c 'import json; x=json.load(open("/tmp/gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is False; assert x["far_side_disposition"]=="endpoint-adapter-not-installed"; print("DECLARED_FAR_SIDE_GAP_REPORTED=PASS")'
