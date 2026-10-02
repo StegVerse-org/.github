@@ -7,8 +7,8 @@ Goal Task ID: `SVORG-STEGOS-PORTABILITY-001`
 Task Registry status: `in_progress`
 Task Registry source: `orchestration/task-registry.json`
 Task Registry baseline: `2901c6a9eb87266545e66e70e1dafba5016c9a56`
-COSV ID: `UNRESOLVED_FROM_CURRENT_TASK_REGISTRY`
-Status: `ACTIVE / CANONICAL NODE INGRESS CONTRACT UNDER REVIEW`
+COSV ID: `ABSENT_FROM_CURRENT_TASK_REGISTRY_SCHEMA`
+Status: `ACTIVE / CANONICAL NODE STANDING CONTRACT UNDER REVIEW`
 
 ## Current truth
 
@@ -16,19 +16,15 @@ The active organization goal is to remove host dependency from StegOS node and m
 
 ## Canonical ingress review contract
 
-The review artifact `docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json` defines one proposed invariant family:
+The review artifact `docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json` now defines:
 
-`ALL_EXTERNAL_EXECUTION_SURFACES_REQUIRE_CANONICAL_NODE_TRANSITION`
+`ALL_EXTERNAL_ECOSYSTEM_INGRESS_REQUIRES_CANONICAL_NODE_STANDING`
 
-with five typed requirements:
+The contract covers both first establishment and later access by an already-established node. The predecessor key is mandatory: `null` means explicit genesis only; an established node must carry a validated SDK canonical predecessor binding. Missing or invalid predecessor evidence fails closed and may not silently re-enroll as genesis.
 
-- `MACHINE_LLM_ADAPTER_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION`
-- `DEVICE_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION`
-- `CONSOLE_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION`
-- `EPHEMERAL_STEGOS_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION`
-- `EPHEMERAL_STEGNODE_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION`
+Ingress is modeled across orthogonal dimensions rather than mutually exclusive identities: participant/framework, browser or console/API interaction surface, device/machine substrate, StegNode materialization, StegOS runtime, and processing continuation. An external LLM is not assumed to be the node itself. KV-as-node and StegBrowser-as-KV-surface remain NOT_PROVEN pending their canonical owners.
 
-These are five typed continuations from one canonical bootstrap ingress, not five new authority planes or five independent ingress implementations.
+There is one canonical ingress CONTRACT, not one mandatory host. The currently observed gateway is a replaceable discovery host and grants no authority. Existing advertised surfaces must be mapped as continuations before creating new endpoints.
 
 ## Source-classification boundary
 
@@ -38,14 +34,14 @@ A caller-editable `ingress_source` or equivalent field is insufficient for autho
 
 ## Fail-closed dependency
 
-Every covered destination must validate a canonical predecessor node transition before downstream processing. Direct destination addressing without that predecessor must fail closed. A canonical node transition is necessary for downstream processing but is not itself sufficient for execution authority.
+Every covered destination must validate canonical node standing before downstream processing. Explicit genesis requires a present null predecessor; continuity requires the SDK canonical predecessor binding. An absent predecessor key, invalid continuity, or unprovable claimed standing fails closed. Failed continuity may not silently create a new identity. Standing is necessary for downstream processing but is not itself sufficient for execution authority.
 
 Manifest processing remains selected only by the manifest-declared capability and route binding owned by the SDK.
 
 ## Current proof boundary
 
-- complete deployed support for all five typed continuations: `NOT_PROVEN`
-- automatic authoritative ingress-source classification: `NOT_PROVEN`
+- deployed canonical-standing contract, explicit genesis, existing-node verification and continuation mapping: `NOT_PROVEN`
+- automatic authoritative ingress-source classification and an attestation owner: `NOT_PROVEN`
 - ingress-to-LLM-adapter end-to-end handoff: `NOT_PROVEN`
 - bypass rejection at every destination: `NOT_PROVEN`
 - SDK manifest-only route-selection contract: source contract exists
@@ -53,13 +49,17 @@ Manifest processing remains selected only by the manifest-declared capability an
 
 ## COSV reconciliation
 
-The current Task Registry entry for `SVORG-STEGOS-PORTABILITY-001` contains no COSV field, and no applicable pre-existing mirror handoff was found by Task ID search. This handoff therefore records COSV as unresolved rather than inventing one. The canonical coordination owner must bind the existing or newly assigned COSV through the established Task Registry/COSV mechanism before any status transition that requires COSV evidence.
+The current Task Registry schema forbids unspecified task properties and defines no COSV field. COSV is therefore recorded as `ABSENT_FROM_CURRENT_TASK_REGISTRY_SCHEMA`, not merely unresolved. No COSV is invented.
+
+## Review resolution incorporated
+
+The uploaded review identified and this branch now resolves at the design-contract level: optional-lineage contradiction; wall-clock ordering ambiguity; single-host portability conflict; framework/surface conflation; omission of already-established-node continuity; and omission of browser as an explicit interaction surface. Runtime implementation findings remain NOT_PROVEN and are not upgraded by this handoff.
 
 ## Next actions
 
-1. Review the machine-readable ingress contract.
-2. Identify existing owners for non-caller-editable source evidence for each ingress class.
-3. Identify the existing receiving operation for every typed continuation.
-4. Prove destination-side rejection when canonical predecessor evidence is absent or inconsistent.
-5. Preserve manifest-only SDK processing selection and every existing authority boundary.
-6. Reconcile COSV without inventing an identifier.
+1. Map each standing continuation to an existing advertised surface before adding endpoints.
+2. Identify the existing canonical owner, if any, for non-caller-editable classification/attestation; otherwise retain FAIL_CLOSED.
+3. Add the organization-boundary carrier/validator for SDK canonical predecessor standing without redefining predecessor semantics as receipt chaining.
+4. Repair the live LLM-adapter path so caller-fabricated identity and message-keyword routing cannot bypass canonical standing and manifest-only route selection.
+5. Trace canonical KV and StegBrowser owners before asserting KV-as-node or StegBrowser-as-KV-surface.
+6. Preserve every authority boundary and NOT_PROVEN runtime claim.
