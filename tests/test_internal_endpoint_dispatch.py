@@ -24,7 +24,10 @@ class InternalEndpointDispatchTests(unittest.TestCase):
             service["endpoint_adapter"]=adapter
         registry={"organization":"Target-Org","services":[service]}
         (root/"org-boundary/registry/services.json").write_text(json.dumps(registry))
-        shutil.copy2(ROOT/"org-boundary/runtime/process_boundary.py",root/"org-boundary/runtime/process_boundary.py")
+        # The boundary runtime is two files: the dispatcher and the module that
+        # selects processing from the manifest rather than from the addressed row.
+        for name in ("process_boundary.py", "manifest_selection.py"):
+            shutil.copy2(ROOT/"org-boundary/runtime"/name, root/"org-boundary/runtime"/name)
         return root
 
     def packet(self, service_id: str="target.endpoint"):
@@ -87,8 +90,12 @@ class InternalEndpointDispatchTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)
             (root/"org-boundary/registry").mkdir(parents=True)
+            (root/"org-boundary/runtime").mkdir(parents=True)
             registry={"organization":"Target-Org","services":[{"service_id":"target.diag","boundary_role":"BOUNDARY_LOCAL_DIAGNOSTIC"}]}
             (root/"org-boundary/registry/services.json").write_text(json.dumps(registry))
+            # Boundary-local selects no processor, but the result still records
+            # that it did not, so the selection module is required here too.
+            shutil.copy2(ROOT/"org-boundary/runtime/manifest_selection.py",root/"org-boundary/runtime/manifest_selection.py")
             packet=K.build_packet(origin_org="Source-Org",origin_service="source.sdk",destination_org="Target-Org",destination_service="target.diag",payload={"hello":"world"})
             result=K.dispatch(root,packet)
             self.assertEqual(result["application_result"]["echo"],{"hello":"world"})

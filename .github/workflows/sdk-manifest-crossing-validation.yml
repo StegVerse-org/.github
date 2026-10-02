@@ -23,6 +23,7 @@ on:
       - 'tests/fixtures/sdk-manifests/**'
       - 'org-boundary/runtime/intr_transport.py'
       - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/runtime/manifest_selection.py'
       - 'org-boundary/registry/services.json'
       - '.github/workflows/sdk-manifest-crossing-validation.yml'
   workflow_dispatch:

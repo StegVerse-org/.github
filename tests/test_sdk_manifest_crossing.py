@@ -170,6 +170,29 @@ class CompleteCrossingTests(unittest.TestCase):
         self.assertEqual(self.result["authority_effect"], declared)
         self.assertEqual(self.result["authority_effect"], "NONE")
 
+    def test_the_sdk_facing_result_says_how_processing_was_selected(self):
+        """A completed crossing is not evidence that the declared capability ran.
+
+        The manifest declares `processing.capability` bound to
+        `processing.route_id`; the far side here is a diagnostic, which *is* the
+        processor and echoes. An earlier version of this bridge reported that as
+        a manifest reaching "its declared surface" with nothing distinguishing a
+        transported declaration from a processed one -- the exact overclaim
+        `SDK-GENERIC-MANIFEST-ECOSYSTEM-INVARIANT-005` exists to remove. The SDK
+        reads this result, so the record has to be in it.
+        """
+        processing = self.source["processing"]
+        self.assertEqual(self.result["declared_capability"], processing["capability"])
+        self.assertEqual(self.result["declared_route_id"], processing["route_id"])
+        self.assertEqual(self.result["processing_selection"],
+                         "BOUNDARY_LOCAL_NO_PROCESSOR_SELECTED")
+        self.assertIs(self.result["declared_capability_processed"], False)
+
+    def test_the_result_never_claims_the_boundary_resolved_the_route(self):
+        """Route installation belongs to the SDK; the boundary holds no route table."""
+        self.assertEqual(self.result["route_admissibility"],
+                         "NOT_RESOLVED_AT_BOUNDARY_ROUTE_OWNER_IS_SDK")
+
     def test_the_same_manifest_crosses_reproducibly(self):
         again = bridge.cross(self.source, packet_id="sdk-manifest-crossing-test")
         self.assertEqual(again["terminal_receipt_id"], self.result["terminal_receipt_id"])
@@ -190,7 +213,10 @@ class UninstalledFarSideTests(unittest.TestCase):
         self.assertIs(self.result["crossing_completed"], False)
 
     def test_the_result_names_where_the_chain_stops(self):
-        self.assertEqual(self.result["far_side_disposition"], "endpoint-adapter-not-installed")
+        """Refused before its adapter is sought, because a service that has not
+        declared what processing it admits must not have one resolved for it."""
+        self.assertEqual(self.result["far_side_disposition"],
+                         "service-declares-no-admitted-processing:stegverse-org.llm-adapter")
         self.assertIs(self.result["endpoint_adapter_installed"], False)
         self.assertEqual(self.result["profile_status"],
                          "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION")
