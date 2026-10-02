@@ -1,0 +1,183 @@
+{
+  "schema_version": "stegverse.canonical-node-ingress-contract.v0.1",
+  "document_id": "CANONICAL-NODE-INGRESS-CONTRACT-001",
+  "status": "DRAFT_FOR_REVIEW",
+  "date": "2026-10-02",
+  "goal_task_id": "SVORG-STEGOS-PORTABILITY-001",
+  "cosv_id": null,
+  "cosv_state": "UNRESOLVED_FROM_CURRENT_TASK_REGISTRY",
+  "authority_effect": "NONE",
+  "purpose": "Define one canonical external ingress contract through which machine, device, console, ephemeral StegOS, and ephemeral StegNode surfaces establish canonical node-transition state before any downstream ecosystem processing.",
+  "umbrella_invariant": {
+    "id": "ALL_EXTERNAL_EXECUTION_SURFACES_REQUIRE_CANONICAL_NODE_TRANSITION",
+    "bypass_permitted": false,
+    "caller_self_assertion_sufficient": false,
+    "failure_mode": "FAIL_CLOSED"
+  },
+  "ingress_requirements": [
+    {
+      "id": "MACHINE_LLM_ADAPTER_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION",
+      "ingress_class": "MACHINE_LLM_ADAPTER",
+      "destination_class": "LLM_ADAPTER",
+      "required_predecessor": "CANONICAL_NODE_TRANSITION",
+      "direct_destination_bypass": "FORBIDDEN"
+    },
+    {
+      "id": "DEVICE_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION",
+      "ingress_class": "DEVICE",
+      "destination_class": "DEVICE_CONTINUATION",
+      "required_predecessor": "CANONICAL_NODE_TRANSITION",
+      "direct_destination_bypass": "FORBIDDEN"
+    },
+    {
+      "id": "CONSOLE_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION",
+      "ingress_class": "CONSOLE",
+      "destination_class": "CONSOLE_CONTINUATION",
+      "required_predecessor": "CANONICAL_NODE_TRANSITION",
+      "direct_destination_bypass": "FORBIDDEN"
+    },
+    {
+      "id": "EPHEMERAL_STEGOS_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION",
+      "ingress_class": "EPHEMERAL_STEGOS",
+      "destination_class": "STEGOS_CONTINUATION",
+      "required_predecessor": "CANONICAL_NODE_TRANSITION",
+      "direct_destination_bypass": "FORBIDDEN"
+    },
+    {
+      "id": "EPHEMERAL_STEGNODE_INGRESS_REQUIRES_CANONICAL_NODE_TRANSITION",
+      "ingress_class": "EPHEMERAL_STEGNODE",
+      "destination_class": "STEGNODE_CONTINUATION",
+      "required_predecessor": "CANONICAL_NODE_TRANSITION",
+      "direct_destination_bypass": "FORBIDDEN"
+    }
+  ],
+  "canonical_ingress": {
+    "discovery_role": "PUBLIC_BOOTSTRAP_AND_NODE_ESTABLISHMENT",
+    "single_ingress_requirement": true,
+    "discovery_endpoint": "https://stegverse-ecosystem-chat-gateway.onrender.com/api/stegverse-node",
+    "advertised_endpoint_must_be_used": true,
+    "advertised_health_endpoint_must_be_used": true,
+    "must_publish_machine_readable_continuations": true,
+    "must_publish": [
+      "recognized ingress classes",
+      "required predecessor transition semantics",
+      "destination continuation for each ingress class",
+      "required predecessor evidence for each destination",
+      "explicit non-authority flags",
+      "bypass rejection semantics"
+    ]
+  },
+  "source_classification": {
+    "caller_editable_ingress_source_field": "FORBIDDEN_AS_AUTHORITATIVE_EVIDENCE",
+    "transport_metadata": {
+      "examples": [
+        "User-Agent",
+        "client hints",
+        "HTTP headers",
+        "IP/network metadata",
+        "TLS characteristics"
+      ],
+      "evidence_class": "DESCRIPTIVE_HINT_ONLY",
+      "sufficient_for_authoritative_classification": false
+    },
+    "authoritative_classification_requires": [
+      "non-caller-editable observation or attestation",
+      "or previously established canonical node identity/state",
+      "binding of classification evidence to the canonical node transition"
+    ],
+    "unresolved_classification_disposition": "FAIL_CLOSED"
+  },
+  "canonical_node_transition": {
+    "must_bind": [
+      "transition_id",
+      "run_id",
+      "event_id",
+      "origin_manifest_id",
+      "observed ingress source evidence reference",
+      "derived ingress class",
+      "continuation class",
+      "canonical ordering evidence",
+      "receipt/evidence reference where applicable"
+    ],
+    "optional_lineage": [
+      "parent_transition_id",
+      "previous_receipt_id"
+    ],
+    "non_caller_editable_fields": [
+      "observed ingress source evidence reference",
+      "derived ingress class",
+      "admission disposition",
+      "continuation class"
+    ],
+    "necessary_for_downstream_processing": true,
+    "sufficient_for_execution_authority": false
+  },
+  "llm_adapter_continuation": {
+    "receiving_boundary_must_validate": [
+      "canonical predecessor transition exists",
+      "predecessor transition is admissible",
+      "transition identity matches request lineage",
+      "ingress class permits requested continuation",
+      "continuation has not been substituted by caller input",
+      "manifest processing capability is bound to declared SDK route"
+    ],
+    "receiving_boundary_must_reject": [
+      "direct LLM-adapter request with no canonical predecessor",
+      "caller-fabricated predecessor identity",
+      "mismatched predecessor lineage",
+      "caller-selected ingress class without authoritative evidence",
+      "route substitution",
+      "processing selected outside manifest capability/route binding"
+    ],
+    "sdk_processing_rule": {
+      "selector": "manifest.processing.capability + manifest.processing.route_id",
+      "other_selectors_permitted": false,
+      "route_selection_grants_authority": false
+    }
+  },
+  "device_os_distinction": {
+    "http_platform_identity_trustworthy": false,
+    "authoritative_platform_distinction_requires": "attested, registered, or otherwise non-caller-editable evidence bound to the canonical node transition",
+    "examples": {
+      "ios_user_agent": "HINT_ONLY",
+      "linux_user_agent": "HINT_ONLY",
+      "tls_fingerprint": "HINT_ONLY",
+      "registered_node_evidence": "POTENTIALLY_AUTHORITATIVE_IF_VALIDATED",
+      "device_attestation": "POTENTIALLY_AUTHORITATIVE_IF_VALIDATED"
+    }
+  },
+  "required_dispositions": {
+    "success": "ALLOW",
+    "policy_or_admissibility_rejection": "DENY",
+    "missing_or_unverifiable_required_evidence": "FAIL_CLOSED",
+    "silent_fallback": "FORBIDDEN"
+  },
+  "required_regressions": [
+    "INGRESS_DISCOVERY_ADVERTISES_ALL_TYPED_CONTINUATIONS",
+    "LLM_ADAPTER_REJECTS_DIRECT_BYPASS",
+    "DEVICE_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "CONSOLE_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "EPHEMERAL_STEGOS_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "EPHEMERAL_STEGNODE_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "CALLER_EDITABLE_INGRESS_CLASS_DOES_NOT_ESTABLISH_CLASSIFICATION",
+    "HTTP_PLATFORM_HINT_DOES_NOT_ESTABLISH_DEVICE_IDENTITY",
+    "CANONICAL_PREDECESSOR_LINEAGE_IS_REQUIRED",
+    "MANIFEST_ONLY_PROCESSING_SELECTION_REMAINS_ENFORCED"
+  ],
+  "current_proof_boundary": {
+    "deployed_ingress_support_for_all_five_typed_continuations": "NOT_PROVEN",
+    "automatic_authoritative_ingress_source_classification": "NOT_PROVEN",
+    "llm_adapter_end_to_end_handoff": "NOT_PROVEN",
+    "direct_bypass_rejection_at_every_destination": "NOT_PROVEN",
+    "sdk_manifest_only_route_selection": "SOURCE_CONTRACT_EXISTS",
+    "no_status_is_upgraded_by_this_document": true
+  },
+  "review_questions": [
+    "Is canonical node transition the correct universal predecessor for all five ingress classes?",
+    "What existing owner provides non-caller-editable source/attestation evidence for each class?",
+    "Which exact continuation endpoint/operation is returned for each ingress class?",
+    "Where is predecessor validation enforced at each receiving boundary?",
+    "Are any existing routes capable of bypassing the canonical predecessor transition?",
+    "Does any proposed evidence accidentally turn descriptive HTTP metadata into authority?"
+  ]
+}
