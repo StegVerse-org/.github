@@ -24,7 +24,7 @@ The contract covers both first establishment and later access by an already-esta
 
 Ingress is modeled across orthogonal dimensions rather than mutually exclusive identities: participant/framework, browser or console/API interaction surface, device/machine substrate, StegNode materialization, StegOS runtime, and processing continuation. An external LLM is not assumed to be the node itself. KV-as-node and StegBrowser-as-KV-surface remain NOT_PROVEN pending their canonical owners.
 
-There is one canonical ingress CONTRACT, not one mandatory host. The currently observed gateway is a replaceable discovery host and grants no authority. Existing advertised surfaces must be mapped as continuations before creating new endpoints.
+There is one canonical ingress CONTRACT, not one mandatory host. The currently observed gateway is a replaceable discovery host and grants no authority; it is also a third-party provider deployment that `ENTERPRISE-HOST-PROVIDER-ERADICATION-001` (COSV `40000100100000`, superseding `ENTERPRISE-RENDER-ERADICATION-001`) exists to remove, and that goal is `ACTIVE_NOT_CLOSED`. No canonical discovery host is declared yet, so the contract records `canonical_discovery_host` as `UNRESOLVED_PENDING_HOST_DECLARATION`. Site's own cutover record states `third_party_hosts_required: false`, so the observed host is a stale deployment rather than a dependency. Existing advertised surfaces must be mapped as continuations before creating new endpoints.
 
 ## Source-classification boundary
 
