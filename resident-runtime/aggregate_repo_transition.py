@@ -13,11 +13,11 @@ terms and bound by its own canonical digest.
 import argparse
 import base64
 import hashlib
+import importlib.util
 import json
 import os
 import re
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -25,6 +25,11 @@ from ledger_store import HEAD_KEY, RECEIPT_PREFIX, PosixLedgerStore, receipt_key
 
 ROOT = Path(__file__).resolve().parents[1]
 C = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_text())
+
+_spec = importlib.util.spec_from_file_location("kernel", ROOT / "org-kernel/kernel.py")
+kernel = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(kernel)  # noqa: E402
+
 
 
 SHA256_REF = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -190,12 +195,16 @@ def _validate_existing_head(store):
 
 
 def append(source_receipt, org_transition_class, predecessor_state, successor_state,
-           boundary_evidence, authority_effect):
+           boundary_evidence, authority_effect, hb_epoch=None):
     # Admission is decided before the append lock is taken; an inadmissible
     # source receipt never contends for the organization ledger.
     source = verify_source(source_receipt)
     require_state_digest("predecessor_org_state_sha256", predecessor_state)
     require_state_digest("successor_org_state_sha256", successor_state)
+    # Ordering is a heartbeat count, not a clock reading. A supplied tick keeps
+    # the receipt reproducible; deriving one from the host clock is permitted
+    # but marks itself so the two can be told apart.
+    heartbeat = kernel.hb_reference(epoch=hb_epoch) if hb_epoch is not None else kernel.hb_reference()
     store = PosixLedgerStore(ledger_root())
     store.initialize()
     # All writers using this emitter serialize the HEAD read, receipt creation,
@@ -211,7 +220,7 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
             "successor_org_state_sha256": successor_state,
             "boundary_evidence": boundary_evidence,
             "authority_effect": authority_effect,
-            "observed_at": datetime.now(timezone.utc).isoformat(),
+            "hb_reference": heartbeat,
             "previous_receipt_sha256": previous,
         }
         digest = sha(body)
@@ -240,6 +249,8 @@ def main():
     parser.add_argument("--successor-org-state-sha256", required=True)
     parser.add_argument("--boundary-evidence-json", default="{}")
     parser.add_argument("--authority-effect", default="NONE")
+    parser.add_argument("--hb-epoch", type=int, default=None,
+                        help="heartbeat epoch; derived from the host clock, and marked as derived, when absent")
     args = parser.parse_args()
     source_path = args.transition_receipt or args.repo_receipt
     if not source_path:
@@ -250,7 +261,8 @@ def main():
                      else "ORGANIZATION_STATE_TRANSITION")
     result = append(receipt, args.org_transition_class or default_class,
                     args.predecessor_org_state_sha256, args.successor_org_state_sha256,
-                    json.loads(args.boundary_evidence_json), args.authority_effect)
+                    json.loads(args.boundary_evidence_json), args.authority_effect,
+                    hb_epoch=args.hb_epoch)
     print(json.dumps(result, sort_keys=True))
 
 
