@@ -12,14 +12,16 @@ terms and bound by its own canonical digest.
 """
 import argparse
 import base64
-import fcntl
 import hashlib
 import json
 import os
 import re
-import tempfile
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from ledger_store import HEAD_KEY, RECEIPT_PREFIX, PosixLedgerStore, receipt_key  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 C = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_text())
@@ -148,44 +150,20 @@ def verify_source(receipt):
     }
 
 
-def _sync_directory(directory):
-    fd = os.open(str(directory), os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
-    try:
-        os.fsync(fd)
-    finally:
-        os.close(fd)
-
-
-def _atomic_json(path, value):
-    """Publish complete JSON by same-directory atomic replacement."""
-    fd, temp = tempfile.mkstemp(prefix=".org-append-", suffix=".tmp", dir=str(path.parent))
-    try:
-        with os.fdopen(fd, "wb") as stream:
-            stream.write(json.dumps(value, indent=2, sort_keys=True).encode() + b"\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temp, path)
-        _sync_directory(path.parent)
-    finally:
-        if os.path.exists(temp):
-            os.unlink(temp)
-
-
-def _validate_existing_head(head, receipt_dir):
-    if not head.exists():
+def _validate_existing_head(store):
+    head = store.get(HEAD_KEY)
+    if head is None:
         # A missing HEAD with existing receipts requires explicit recovery;
         # never silently fork or reset the organization chain.
-        if any(receipt_dir.glob("*.json")):
+        if store.list_prefix(RECEIPT_PREFIX):
             raise SystemExit("ORG_LEDGER_HEAD_MISSING_WITH_EXISTING_RECEIPTS")
         return None
-    state = load(head)
-    previous = state.get("receipt_sha256")
+    previous = head.get("receipt_sha256")
     if not isinstance(previous, str) or not previous.startswith("sha256:"):
         raise SystemExit("ORG_LEDGER_HEAD_INVALID")
-    path = receipt_dir / (previous.split(":", 1)[1] + ".json")
-    if not path.is_file():
+    receipt = store.get(receipt_key(previous))
+    if receipt is None:
         raise SystemExit("ORG_LEDGER_HEAD_RECEIPT_MISSING")
-    receipt = load(path)
     body = dict(receipt)
     body.pop("receipt_sha256", None)
     if receipt.get("receipt_sha256") != previous or sha(body) != previous:
@@ -198,17 +176,15 @@ def _validate_existing_head(head, receipt_dir):
         if cursor in reachable:
             raise SystemExit("ORG_LEDGER_PREDECESSOR_CYCLE")
         reachable.add(cursor)
-        predecessor_path = receipt_dir / (cursor.split(":", 1)[1] + ".json")
-        if not predecessor_path.is_file():
+        record = store.get(receipt_key(cursor))
+        if record is None:
             raise SystemExit("ORG_LEDGER_PREDECESSOR_MISSING")
-        record = load(predecessor_path)
         record_body = dict(record)
         record_body.pop("receipt_sha256", None)
         if record.get("receipt_sha256") != cursor or sha(record_body) != cursor:
             raise SystemExit("ORG_LEDGER_PREDECESSOR_HASH_MISMATCH")
         cursor = record.get("previous_receipt_sha256")
-    stored = {"sha256:" + item.stem for item in receipt_dir.glob("*.json")}
-    if stored != reachable:
+    if store.list_prefix(RECEIPT_PREFIX) != {receipt_key(digest) for digest in reachable}:
         raise SystemExit("ORG_LEDGER_UNPUBLISHED_OR_ORPHAN_RECEIPTS_RECOVERY_REQUIRED")
     return previous
 
@@ -220,16 +196,12 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     source = verify_source(source_receipt)
     require_state_digest("predecessor_org_state_sha256", predecessor_state)
     require_state_digest("successor_org_state_sha256", successor_state)
-    root = ledger_root()
-    receipt_dir = root / "receipts"
-    receipt_dir.mkdir(parents=True, exist_ok=True)
-    head = root / "HEAD.json"
-    lock_path = root / ".append.lock"
+    store = PosixLedgerStore(ledger_root())
+    store.initialize()
     # All writers using this emitter serialize the HEAD read, receipt creation,
     # and HEAD publication. No second resident process is required.
-    with lock_path.open("a+b") as lock:
-        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
-        previous = _validate_existing_head(head, receipt_dir)
+    with store.exclusive():
+        previous = _validate_existing_head(store)
         body = {
             "schema": "stegverse.organization-transition-receipt/v1",
             "organization": C["organization"],
@@ -244,16 +216,17 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
         }
         digest = sha(body)
         receipt = {**body, "receipt_sha256": digest}
-        receipt_path = receipt_dir / (digest.split(":", 1)[1] + ".json")
-        if receipt_path.exists():
-            if load(receipt_path) != receipt:
+        key = receipt_key(digest)
+        existing = store.get(key)
+        if existing is not None:
+            if existing != receipt:
                 raise SystemExit("org receipt collision")
             raise SystemExit("ORG_LEDGER_DUPLICATE_RECEIPT_RECOVERY_REQUIRED")
-        _atomic_json(receipt_path, receipt)
-        _atomic_json(head, {
+        store.put(key, receipt)
+        store.put(HEAD_KEY, {
             "organization": C["organization"],
             "receipt_sha256": digest,
-            "receipt_path": str(receipt_path),
+            "receipt_path": store.locator(key),
         })
         return receipt
 

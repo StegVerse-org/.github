@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""Storage for an append-only organization ledger, addressed rather than located.
+
+The ledger's own model is already substrate-neutral: receipts are content
+addressed and hash linked, and the chain is verified by recomputing digests.
+What bound it to one machine was its storage, not its model -- a POSIX
+filesystem under a home directory, a `fcntl` advisory lock as the whole
+concurrency model, same-filesystem atomic rename for durability, and
+directory enumeration as the integrity check. None of those survive a move to
+ephemeral nodes that share no filesystem.
+
+This module is the seam. The ledger addresses documents by key; a store maps
+keys onto whatever substrate it has. `PosixLedgerStore` keeps today's exact
+behaviour, so the filesystem remains a first-class implementation rather than
+a legacy path, and a key-value store is a sibling rather than a rewrite.
+
+Keys are `HEAD` and `receipts/<hex>`. Nothing here grants authority.
+"""
+from __future__ import annotations
+
+import fcntl
+import json
+import os
+import tempfile
+from contextlib import contextmanager
+from pathlib import Path
+
+HEAD_KEY = "HEAD.json"
+RECEIPT_PREFIX = "receipts/"
+
+
+def receipt_key(digest):
+    """Address a receipt by its own digest, so the key carries the content.
+
+    The key keeps the `.json` suffix a filesystem store would give the file
+    anyway, so a POSIX store's paths are unchanged by this indirection and an
+    existing ledger root stays readable.
+    """
+    return RECEIPT_PREFIX + digest.split(":", 1)[1] + ".json"
+
+
+class PosixLedgerStore:
+    """A ledger store on one POSIX filesystem.
+
+    Durability is same-directory atomic replacement plus an fsync of the file
+    and its directory. Appenders are serialized by an advisory lock, which
+    holds only within one kernel -- two nodes on separate filesystems would
+    each take "the lock" and both append. A networked store implements
+    `exclusive` as a no-op and serializes through `compare_and_swap` instead.
+    """
+
+    kind = "POSIX_FILESYSTEM"
+
+    def __init__(self, root):
+        self.root = Path(root)
+        self._lock_path = self.root / ".append.lock"
+        self._held = 0
+
+    def _path(self, key):
+        return self.root / key
+
+    def initialize(self):
+        (self.root / RECEIPT_PREFIX.rstrip("/")).mkdir(parents=True, exist_ok=True)
+
+    def locator(self, key):
+        """How this substrate names the key, for a reader outside the ledger."""
+        return str(self._path(key))
+
+    def exists(self, key):
+        return self._path(key).is_file()
+
+    def get(self, key):
+        path = self._path(key)
+        if not path.is_file():
+            return None
+        return json.loads(path.read_text())
+
+    def put(self, key, value):
+        path = self._path(key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, temp = tempfile.mkstemp(prefix=".org-append-", suffix=".tmp", dir=str(path.parent))
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(json.dumps(value, indent=2, sort_keys=True).encode() + b"\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temp, path)
+            self._sync_directory(path.parent)
+        finally:
+            if os.path.exists(temp):
+                os.unlink(temp)
+
+    def list_prefix(self, prefix):
+        directory = self._path(prefix.rstrip("/"))
+        if not directory.is_dir():
+            return set()
+        return {prefix + item.name for item in directory.glob("*.json")}
+
+    @contextmanager
+    def exclusive(self):
+        """Serialize appenders, re-entrantly within one store instance.
+
+        `flock` is held per open file description, so a second acquisition
+        from the same process would block on the first forever. Callers nest
+        legitimately -- compare_and_swap serializes internally and may be
+        invoked from inside an append -- so re-entry is counted rather than
+        re-locked.
+        """
+        if self._held:
+            self._held += 1
+            try:
+                yield self
+            finally:
+                self._held -= 1
+            return
+        self.root.mkdir(parents=True, exist_ok=True)
+        with self._lock_path.open("a+b") as lock:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            self._held = 1
+            try:
+                yield self
+            finally:
+                self._held = 0
+
+    def compare_and_swap(self, key, expected, value):
+        """Publish `value` at `key` only if it still holds `expected`.
+
+        Serialization a networked store gets natively. Here it is the advisory
+        lock again, so the guarantee is the same one `exclusive` gives and no
+        stronger.
+        """
+        with self.exclusive():
+            if self.get(key) != expected:
+                return False
+            self.put(key, value)
+            return True
+
+    @staticmethod
+    def _sync_directory(directory):
+        fd = os.open(str(directory), os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
