@@ -51,11 +51,17 @@ class NodeFixture:
     """A node with a supplied mesh and a supplied state root, and no host."""
 
     def __init__(self, stack):
-        import json
+        import json, shutil
         self.node_root = Path(stack.enter_context(tempfile.TemporaryDirectory()))
         self.mesh_root = Path(stack.enter_context(tempfile.TemporaryDirectory()))
         (self.node_root / "org-boundary/registry").mkdir(parents=True)
         (self.node_root / "org-boundary/registry/services.json").write_text(json.dumps(REGISTRY))
+        # A node that dispatches carries a boundary runtime beside its registry:
+        # processing is selected by the admitted manifest, and a root that cannot
+        # say how processing was selected fails closed rather than dispatching.
+        (self.node_root / "org-boundary/runtime").mkdir(parents=True)
+        shutil.copy2(ROOT / "org-boundary/runtime/manifest_selection.py",
+                     self.node_root / "org-boundary/runtime/manifest_selection.py")
         self.mesh = kernel.mesh_store(self.mesh_root)
         self.state = kernel.node_state_store(self.node_root)
 

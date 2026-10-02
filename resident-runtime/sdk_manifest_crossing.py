@@ -41,6 +41,15 @@ _spec.loader.exec_module(intr_transport)
 
 INTR_TRANSPORT = "INTERLOCK_INTR"
 
+# What the boundary recorded about how processing was selected. The SDK reads
+# this result, so a completed crossing that omitted the record would read as a
+# manifest's declared capability having been processed when it may not have
+# been -- the overclaim `SDK-GENERIC-MANIFEST-ECOSYSTEM-INVARIANT-005` exists
+# to remove. The boundary's values are carried through, never recomputed here.
+SELECTION_FIELDS = ("processing_selection", "declared_capability", "declared_route_id",
+                    "declared_capability_processed", "route_admissibility",
+                    "identity_selected_by")
+
 
 def load(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -161,6 +170,7 @@ def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing"):
         "egress_packet_id": egress["packet_id"],
         "egress": egress,
         "authority_effect": result.get("authority_effect", "NONE"),
+        **{field: result[field] for field in SELECTION_FIELDS if field in result},
     }
 
 

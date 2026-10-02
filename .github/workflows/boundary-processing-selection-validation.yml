@@ -1,0 +1,42 @@
+name: Boundary Processing Selection Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - org-boundary/runtime/manifest_selection.py
+      - org-boundary/runtime/process_boundary.py
+      - org-boundary/registry/services.json
+      - org-kernel/kernel.py
+      - tests/test_boundary_processing_selection.py
+      - .github/workflows/boundary-processing-selection-validation.yml
+  push:
+    branches: [main]
+    paths:
+      - org-boundary/runtime/manifest_selection.py
+      - org-boundary/runtime/process_boundary.py
+      - org-boundary/registry/services.json
+      - org-kernel/kernel.py
+      - tests/test_boundary_processing_selection.py
+      - .github/workflows/boundary-processing-selection-validation.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate that processing is selected by the admitted manifest
+        run: |
+          set -eu
+          python -m unittest tests.test_boundary_processing_selection -v
+          python -m py_compile org-boundary/runtime/manifest_selection.py \
+            org-boundary/runtime/process_boundary.py org-kernel/kernel.py
+      - name: Record non-authorizing selection
+        run: |
+          echo 'BOUNDARY_PROCESSING_SELECTION_VALIDATION_PASS'
+          echo 'Selection is not admission. A declared capability bound to a declared route selects processing;'
+          echo 'it grants no transport, credential, governance, or transition authority.'
+          echo 'Route installation is not resolved at this boundary; the route owner is StegVerse-org/StegVerse-SDK.'

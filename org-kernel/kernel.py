@@ -115,6 +115,23 @@ def receipt(kind:str, packet_id:str, subject:str, previous:str|None, detail:dict
     rid=kind.lower()+"-"+hashlib.sha256(canon(body)).hexdigest()[:24]
     return {**body,"receipt_id":rid,"evidence_hash":sha(body)}
 
+def manifest_selection(root:Path):
+    """Load the organization's manifest-selection module from its boundary runtime.
+
+    Processing is selected by the admitted manifest, not by the addressed row.
+    The module is resolved from the dispatch root rather than from beside this
+    file, for the same reason `services.json` and `process_boundary.py` are: the
+    kernel is organization-neutral and runs against whichever organization root
+    it is handed. A root with no selection module fails closed -- dispatching
+    into a boundary that cannot say how processing was selected is exactly what
+    this must not do silently.
+    """
+    path=root/"org-boundary/runtime/manifest_selection.py"
+    if not path.is_file(): raise ValueError("org_boundary_manifest_selection_missing")
+    spec=importlib.util.spec_from_file_location("manifest_selection",path)
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
 def load_registry(root:Path)->dict[str,Any]:
     return json.loads((root/"org-boundary/registry/services.json").read_text())
 
@@ -139,6 +156,9 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
             return result
     if role not in {"BOUNDARY_LOCAL_DIAGNOSTIC","BOUNDARY_LOCAL_CONTROL"}:
         raise ValueError("endpoint_adapter_not_installed")
+    # Resolved before any receipt is minted: a dispatch that cannot state how
+    # processing was selected must not leave a chain implying it was consumed.
+    selected=manifest_selection(root).select_processing(service,packet["payload"])
     prev=None; receipts=[]
     for kind in ("INGRESS_ACCEPTED","DISPATCHED","CONSUMED","RESULT_BOUND","EGRESS_EMITTED"):
         r=receipt(kind,packet["packet_id"],service["service_id"],prev,{"payload_hash":sha(packet["payload"])})
@@ -149,7 +169,8 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
         application_result={"echo":packet["payload"]}
     return {"schema_version":SCHEMA,"organization":registry["organization"],"packet_id":packet["packet_id"],
             "service_id":service["service_id"],"consumed":True,"application_result":application_result,
-            "authority_effect":packet["transition"]["authority_effect"],"receipts":receipts,
+            "authority_effect":packet["transition"]["authority_effect"],
+            **selected,"receipts":receipts,
             "reconstruction":{"same_execution_required":True,"status":"RECONSTRUCTED","terminal_receipt_id":prev}}
 
 def persist_outbox(root:Path, frame:dict[str,Any], *, store:Any|None=None)->Path:

@@ -31,13 +31,17 @@
       "title": "Stop binding the StegOS mesh location from the environment",
       "status": "proposed",
       "workstream": "stegos-portability",
-      "depends_on": ["SVORG-STEGOS-PORTABILITY-001"],
+      "depends_on": [
+        "SVORG-STEGOS-PORTABILITY-001"
+      ],
       "required_evidence": [
         "org-kernel/kernel.py carries no FEDERATION_ROOT_ENV",
         "a node receives its mesh location from whatever materialized it",
         "node_state_provenance reports SUPPLIED for a node started without environment"
       ],
-      "outputs": ["org-kernel/kernel.py"],
+      "outputs": [
+        "org-kernel/kernel.py"
+      ],
       "tag_allowed": false,
       "activation_condition": "the handoff that supplies a materializing node its mesh location is decided"
     },
@@ -47,7 +51,9 @@
       "title": "Decide how the capability map reaches a node that holds no repository",
       "status": "proposed",
       "workstream": "discovery-portability",
-      "depends_on": ["SVORG-STEGOS-PORTABILITY-001"],
+      "depends_on": [
+        "SVORG-STEGOS-PORTABILITY-001"
+      ],
       "required_evidence": [
         "org-kernel/kernel.py::load_registry resolves without a filesystem root",
         "org-boundary/runtime/process_boundary.py resolves its registry without a path default",
@@ -59,7 +65,9 @@
       ],
       "tag_allowed": false,
       "activation_condition": "whether the capability map and the ST-022 KV participant spec are one spec is decided",
-      "destinations": ["StegVerse-Labs/repo-standards"]
+      "destinations": [
+        "StegVerse-Labs/repo-standards"
+      ]
     },
     {
       "task_id": "SVORG-ADAPTER-ADMISSIBILITY-001",
@@ -67,13 +75,17 @@
       "title": "Express endpoint adapter admissibility without a filesystem root",
       "status": "blocked",
       "workstream": "boundary-admissibility",
-      "depends_on": ["SVORG-CAPABILITY-MAP-DISCOVERY-001"],
+      "depends_on": [
+        "SVORG-CAPABILITY-MAP-DISCOVERY-001"
+      ],
       "required_evidence": [
         "a boundary refuses an undeclared adapter with no reference to an organization root",
         "a test driving both the admit and the refuse path",
         "the 16 rows declaring runtime_required_for_consumption with no endpoint_adapter each carry an actionable disposition"
       ],
-      "outputs": ["org-boundary/runtime/process_boundary.py"],
+      "outputs": [
+        "org-boundary/runtime/process_boundary.py"
+      ],
       "tag_allowed": false,
       "activation_condition": "capability-map discovery is resolved, since admissibility is read from the map"
     },
@@ -83,7 +95,9 @@
       "title": "Serialize ledger append across substrates that share no lock",
       "status": "blocked",
       "workstream": "ledger-portability",
-      "depends_on": ["SVORG-STEGOS-PORTABILITY-001"],
+      "depends_on": [
+        "SVORG-STEGOS-PORTABILITY-001"
+      ],
       "required_evidence": [
         "appenders sharing no filesystem produce one reconstructable chain",
         "a recorded decision on what a lost compare-and-swap leaves behind",
@@ -110,8 +124,32 @@
         "the same crossing at the same heartbeat tick yields an identical envelope digest from two separate emitters",
         "tests/test_intr_org_crossing.py continues to pass"
       ],
-      "outputs": ["org-boundary/runtime/intr_transport.py"],
+      "outputs": [
+        "org-boundary/runtime/intr_transport.py"
+      ],
       "tag_allowed": false
+    },
+    {
+      "task_id": "SVORG-MANIFEST-SELECTS-PROCESSING-001",
+      "issue": 29,
+      "title": "Select boundary processing from the admitted manifest rather than the addressed row",
+      "status": "validating",
+      "workstream": "boundary-admissibility",
+      "depends_on": [],
+      "required_evidence": [
+        "tests/test_boundary_processing_selection.py drives capability/route mismatch and the identity shortcut",
+        "a refused declaration mints no receipt, in the boundary runtime and in the kernel",
+        "the SDK-facing crossing result carries declared_capability_processed",
+        "no result claims the boundary resolved route admissibility; the route owner is StegVerse-org/StegVerse-SDK"
+      ],
+      "outputs": [
+        "org-boundary/runtime/manifest_selection.py",
+        "org-boundary/runtime/process_boundary.py",
+        "org-kernel/kernel.py",
+        "resident-runtime/sdk_manifest_crossing.py"
+      ],
+      "tag_allowed": false,
+      "activation_condition": "a surface in this organization declares an admitted capability/route binding, which none yet does; until then detection is proven and enforcement on paths this organization does not own belongs to their owners"
     }
   ]
 }

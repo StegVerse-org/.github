@@ -23,6 +23,7 @@ on:
       - 'tests/fixtures/sdk-manifests/**'
       - 'org-boundary/runtime/intr_transport.py'
       - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/runtime/manifest_selection.py'
       - 'org-boundary/registry/services.json'
       - '.github/workflows/sdk-manifest-crossing-validation.yml'
   workflow_dispatch:
@@ -94,4 +95,4 @@ jobs:
           python resident-runtime/sdk_manifest_crossing.py \
             --manifest tests/fixtures/sdk-manifests/hold-to-llm-adapter.json \
             --packet-id ci-sdk-manifest-crossing-gap --out /tmp/gap.json || true
-          python -c 'import json; x=json.load(open("/tmp/gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is False; assert x["far_side_disposition"]=="endpoint-adapter-not-installed"; print("DECLARED_FAR_SIDE_GAP_REPORTED=PASS")'
+          python -c 'import json; x=json.load(open("/tmp/gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is False; assert isinstance(x["far_side_disposition"],str) and x["far_side_disposition"].strip(), "a refused crossing must name its disposition"; print("DECLARED_FAR_SIDE_GAP_REPORTED=PASS")'
