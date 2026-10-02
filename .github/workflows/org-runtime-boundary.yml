@@ -15,6 +15,9 @@ on:
       - 'org-boundary/runtime/process_boundary.py'
       - 'org-boundary/registry/services.json'
       - 'org-kernel/kernel.py'
+      - 'org-kernel/node_store.py'
+      - 'tests/test_node_store_contract.py'
+      - 'tests/test_kernel_node_state_is_addressed.py'
       - 'resident-runtime/run_once.py'
       - 'resident-runtime/org_boundary_runtime.py'
       - 'resident-runtime/sdk_self_characterization_egress.py'
@@ -47,6 +50,9 @@ on:
       - 'org-boundary/runtime/process_boundary.py'
       - 'org-boundary/registry/services.json'
       - 'org-kernel/kernel.py'
+      - 'org-kernel/node_store.py'
+      - 'tests/test_node_store_contract.py'
+      - 'tests/test_kernel_node_state_is_addressed.py'
       - 'resident-runtime/run_once.py'
       - 'resident-runtime/org_boundary_runtime.py'
       - 'resident-runtime/sdk_self_characterization_egress.py'
@@ -104,8 +110,28 @@ jobs:
         run: python -m unittest tests.test_receipt_time_base -v
       - name: Test heartbeat reference is an oscillator count, not a clock read
         run: python -m unittest tests.test_hb_reference_oscillator -v
+      - name: Test StegOS node-state store contract
+        run: python -m unittest tests.test_node_store_contract -v
+      - name: Test StegOS node state is addressed, not located
+        run: python -m unittest tests.test_kernel_node_state_is_addressed -v
       - name: Test organization kernel carrier frame and ingest
         run: python org-kernel/tests/test_kernel.py
+      - name: Report node-state provenance and refuse a silent host dependency
+        run: |
+          python - <<'PY'
+          import importlib.util, json
+          spec = importlib.util.spec_from_file_location("kernel", "org-kernel/kernel.py")
+          kernel = importlib.util.module_from_spec(spec); spec.loader.exec_module(kernel)
+          supplied = kernel.node_state_provenance("/tmp/ci-stegos-mesh")
+          assert supplied["mesh_provenance"] == "SUPPLIED"
+          assert supplied["mesh_portable"] is True
+          assert supplied["authority_effect"] == "NONE_REPORT_ONLY"
+          derived = kernel.node_state_provenance(env={})
+          assert derived["mesh_provenance"] == "DERIVED_FROM_HOME_DIRECTORY"
+          assert derived["mesh_portable"] is False
+          print(json.dumps(supplied, sort_keys=True))
+          print("STEGOS_NODE_STATE_PROVENANCE_REPORTED=PASS")
+          PY
       - name: Validate organization boundary
         run: |
           python org-runtime/runtime_boundary.py validate | tee /tmp/org-boundary.json

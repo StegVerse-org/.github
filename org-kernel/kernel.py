@@ -5,10 +5,19 @@ Organization-neutral runtime behavior extracted from StegVerse-Labs/.github.
 No GitHub, hosted scheduler, provider, or carrier grants authority.
 """
 from __future__ import annotations
-import base64, hashlib, json, os, subprocess, tempfile
+import base64, hashlib, importlib.util, json, os, subprocess, tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# StegOS node state is addressed by key, not located by path. The seam lives
+# beside this module so the kernel loads it without depending on a package
+# layout a node may not have.
+_store_spec=importlib.util.spec_from_file_location(
+    "stegos_node_store", Path(__file__).resolve().parent/"node_store.py")
+node_store_module=importlib.util.module_from_spec(_store_spec)
+_store_spec.loader.exec_module(node_store_module)
+PosixStateStore=node_store_module.PosixStateStore
 
 HB_ANCHOR_EPOCH=32
 HB_ANCHOR_UNIX_NS=1_787_511_600_000_000_000
@@ -143,14 +152,19 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
             "authority_effect":packet["transition"]["authority_effect"],"receipts":receipts,
             "reconstruction":{"same_execution_required":True,"status":"RECONSTRUCTED","terminal_receipt_id":prev}}
 
-def persist_outbox(root:Path, frame:dict[str,Any])->Path:
-    out=root/"resident-runtime/federation/outbox"; out.mkdir(parents=True,exist_ok=True)
-    path=out/(hashlib.sha256(frame["packet_id"].encode()).hexdigest()+".json")
-    if path.exists():
-        if json.loads(path.read_text())!=frame: raise ValueError("write_once_collision")
-        return path
-    path.write_text(json.dumps(frame,indent=2,sort_keys=True)+"\n")
-    return path
+def persist_outbox(root:Path, frame:dict[str,Any], *, store:Any|None=None)->Path:
+    """Record a published frame in this node's outbox.
+
+    The write is atomic and write-once by key; it used to be a bare
+    `write_text`, so a reader could observe a partial frame.
+    """
+    target=store or node_state_store(root)
+    key=node_store_module.outbox_key(frame["packet_id"])
+    try:
+        target.put_once(key,frame)
+    except node_store_module.WriteOnceCollision:
+        raise ValueError("write_once_collision")
+    return Path(target.locator(key))
 
 def ingest_frame(root:Path, frame:dict[str,Any])->dict[str,Any]:
     packet=recover_packet(frame)
@@ -160,47 +174,77 @@ def ingest_frame(root:Path, frame:dict[str,Any])->dict[str,Any]:
     result=dispatch(root,packet)
     return {"status":"CONSUMED","packet":packet,"execution_result":result}
 
-__all__=["hb_reference","derive_channel","carrier_frame","recover_packet","dispatch","persist_outbox","ingest_frame"]
+__all__=["hb_reference","derive_channel","carrier_frame","recover_packet","dispatch","persist_outbox",
+         "ingest_frame","mesh_store","node_state_store","node_state_provenance",
+         "resolve_federation_root"]
 
 
 # --- Federation mesh v1.1 additions ---
 FEDERATION_ROOT_ENV="STEGVERSE_ORG_FEDERATION_ROOT"
 
 def federation_root(env:dict[str,str]|None=None)->Path:
+    return resolve_federation_root(env)[0]
+
+def resolve_federation_root(env:dict[str,str]|None=None)->tuple[Path,str]:
+    """Where the mesh is, and how this node came to believe that.
+
+    A node that was told where the mesh is can be moved. One that read it from
+    the environment, or derived it from the home directory of whatever host it
+    happens to be running on, cannot -- so the provenance is returned with the
+    path rather than discarded. StegOS lives on the network; a mesh under
+    `$HOME` is a node pretending to be a host, and the provenance is what makes
+    that measurable instead of invisible.
+    """
     values=os.environ if env is None else env
     override=values.get(FEDERATION_ROOT_ENV)
     if override:
-        return Path(override).expanduser().resolve()
+        return Path(override).expanduser().resolve(), node_store_module.FROM_ENVIRONMENT
     base=Path(values.get("XDG_STATE_HOME",str(Path.home()/".local"/"state")))
-    return (base/"stegverse"/"org-federation").resolve()
+    return (base/"stegverse"/"org-federation").resolve(), node_store_module.FROM_HOME_DIRECTORY
 
-def publish_frame(frame:dict[str,Any], *, root:Path|None=None)->Path:
-    mesh=(root or federation_root()).resolve()
-    frames=mesh/"frames.d"
-    frames.mkdir(parents=True,exist_ok=True)
-    frame_id=hashlib.sha256((frame["packet_id"]+"|"+frame["frame_sha256"]).encode()).hexdigest()
-    path=frames/(frame_id+".json")
-    if path.exists():
-        existing=json.loads(path.read_text())
-        if existing!=frame:
-            raise ValueError("federation_frame_write_once_collision")
-        return path
-    path.write_text(json.dumps(frame,indent=2,sort_keys=True)+"\n")
-    return path
+def mesh_store(root:Path|None=None, env:dict[str,str]|None=None)->Any:
+    """The shared frame medium between nodes. Outlives any node reading it."""
+    if root is not None:
+        return PosixStateStore(Path(root).resolve(), provenance=node_store_module.SUPPLIED)
+    resolved,provenance=resolve_federation_root(env)
+    return PosixStateStore(resolved, provenance=provenance)
 
-def scan_addressed_frames(organization:str, *, root:Path|None=None, seen:set[str]|None=None)->list[dict[str,Any]]:
-    mesh=(root or federation_root()).resolve()
-    frames=mesh/"frames.d"
-    if not frames.exists():
-        return []
+def node_state_store(root:Path)->Any:
+    """One node's own markers, outbox and work intake. Expected to be ephemeral."""
+    return PosixStateStore(Path(root)/"resident-runtime",
+                           provenance=node_store_module.SUPPLIED)
+
+def node_state_provenance(root:Path|None=None, env:dict[str,str]|None=None)->dict[str,Any]:
+    """What this node's state depends on, and whether that would survive a move."""
+    store=mesh_store(root,env)
+    return {"schema_version":"stegverse.stegos-node-state-provenance/v1",
+            "mesh_locator":str(store.root),"mesh_provenance":store.provenance,
+            "mesh_portable":store.portable,"store_kind":store.kind,
+            "authority_effect":"NONE_REPORT_ONLY"}
+
+def publish_frame(frame:dict[str,Any], *, root:Path|None=None, store:Any|None=None)->Path:
+    """Publish a frame to the mesh, addressed by what it carries."""
+    target=store or mesh_store(root)
+    key=node_store_module.frame_key(frame)
+    try:
+        target.put_once(key,frame)
+    except node_store_module.WriteOnceCollision:
+        raise ValueError("federation_frame_write_once_collision")
+    return Path(target.locator(key))
+
+def scan_addressed_frames(organization:str, *, root:Path|None=None, store:Any|None=None,
+                          seen:set[str]|None=None)->list[dict[str,Any]]:
+    """Frames in the mesh addressed to `organization` and not already consumed."""
+    target=store or mesh_store(root)
     consumed=seen or set()
     out=[]
-    for path in sorted(frames.glob("*.json")):
-        if path.name in consumed:
+    for key in target.list_prefix(node_store_module.MESH_FRAME_PREFIX):
+        if node_store_module.frame_name(key) in consumed:
             continue
-        frame=json.loads(path.read_text())
-        if frame.get("destination_org")==organization:
-            out.append({"path":str(path),"frame":frame})
+        frame=target.get(key)
+        if frame is not None and frame.get("destination_org")==organization:
+            out.append({"key":key,"name":node_store_module.frame_name(key),
+                        "path":target.locator(key),"frame":frame})
     return out
 
 def build_packet(*, origin_org:str, origin_service:str, destination_org:str, destination_service:str,
@@ -341,13 +385,9 @@ def resident_status(root:Path, registry:dict[str,Any]|None=None)->dict[str,Any]:
       "runtime_observation_claimed":False
     }
 
-def persist_work_request(root:Path, packet:dict[str,Any])->dict[str,Any]:
+def persist_work_request(root:Path, packet:dict[str,Any], *, store:Any|None=None)->dict[str,Any]:
     payload=packet.get("payload") or {}
     communication_id=payload.get("communication_id")
-    inbox=root/"resident-runtime/control/inbox"
-    inbox.mkdir(parents=True,exist_ok=True)
-    name=hashlib.sha256((packet["packet_id"]+"|"+str(communication_id)).encode()).hexdigest()+".json"
-    path=inbox/name
     record={
       "schema_version":"stegverse.ecosystem-work-intake.v1",
       "communication_id":communication_id,
@@ -361,12 +401,14 @@ def persist_work_request(root:Path, packet:dict[str,Any])->dict[str,Any]:
       "execution_authority_inferred":False,
       "carrier_grants_execution_authority":False
     }
-    if path.exists():
-        if json.loads(path.read_text())!=record:
-            raise ValueError("work_intake_write_once_collision")
-    else:
-        path.write_text(json.dumps(record,indent=2,sort_keys=True)+"\n")
-    return {"state":record["state"],"intake_ref":str(path),"execution_authority_inferred":False}
+    target=store or node_state_store(root)
+    key=node_store_module.intake_key(packet["packet_id"],communication_id)
+    try:
+        target.put_once(key,record)
+    except node_store_module.WriteOnceCollision:
+        raise ValueError("work_intake_write_once_collision")
+    return {"state":record["state"],"intake_ref":target.locator(key),
+            "execution_authority_inferred":False}
 
 def handle_control_message(root:Path, packet:dict[str,Any], registry:dict[str,Any])->dict[str,Any]:
     payload=packet.get("payload") or {}
@@ -526,24 +568,28 @@ def publish_ecosystem_from_directory(repo_root:Path, *, message_class:str, subje
 
 
 # --- Federation replay/dedup v1.3.1 additions ---
-def federation_seen_frame_names(repo_root:Path)->set[str]:
-    seen_dir=repo_root/"resident-runtime/federation/seen.d"
-    if not seen_dir.exists():
-        return set()
+def federation_seen_frame_names(repo_root:Path, *, store:Any|None=None)->set[str]:
+    """Which frames this node has already consumed.
+
+    The marker records the frame's name rather than its key, so a node holding
+    markers written before state was addressed does not re-consume the mesh.
+    """
+    target=store or node_state_store(repo_root)
     names=set()
-    for path in seen_dir.glob("*.json"):
+    for key in target.list_prefix(node_store_module.NODE_SEEN_PREFIX):
         try:
-            value=json.loads(path.read_text())
-            if isinstance(value.get("frame_name"),str):
-                names.add(value["frame_name"])
-        except Exception:
+            value=target.get(key)
+        except ValueError:
             continue
+        if isinstance(value,dict) and isinstance(value.get("frame_name"),str):
+            names.add(value["frame_name"])
     return names
 
-def mark_federation_frame_seen(repo_root:Path, frame_path:str, frame:dict[str,Any], result:dict[str,Any])->Path:
-    seen_dir=repo_root/"resident-runtime/federation/seen.d"
-    seen_dir.mkdir(parents=True,exist_ok=True)
-    frame_name=Path(frame_path).name
+def mark_federation_frame_seen(repo_root:Path, frame_path:str, frame:dict[str,Any], result:dict[str,Any],
+                               *, store:Any|None=None)->Path:
+    """Record that this node consumed a frame, once and atomically."""
+    target=store or node_state_store(repo_root)
+    frame_name=node_store_module.frame_name(str(frame_path))
     marker={
       "schema_version":"stegverse.federation-frame-consumption.v1",
       "frame_name":frame_name,
@@ -553,10 +599,9 @@ def mark_federation_frame_seen(repo_root:Path, frame_path:str, frame:dict[str,An
       "status":result.get("status"),
       "authority_effect":"NONE_CARRIER_ONLY"
     }
-    marker_path=seen_dir/(hashlib.sha256(frame_name.encode()).hexdigest()+".json")
-    if marker_path.exists():
-        if json.loads(marker_path.read_text())!=marker:
-            raise ValueError("federation_seen_marker_collision")
-    else:
-        marker_path.write_text(json.dumps(marker,indent=2,sort_keys=True)+"\n")
-    return marker_path
+    key=node_store_module.seen_key(frame_name)
+    try:
+        target.put_once(key,marker)
+    except node_store_module.WriteOnceCollision:
+        raise ValueError("federation_seen_marker_collision")
+    return Path(target.locator(key))
