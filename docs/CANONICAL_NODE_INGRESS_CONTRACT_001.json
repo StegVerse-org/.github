@@ -258,7 +258,11 @@
     "CALLER_EDITABLE_CLASSIFICATION_DOES_NOT_ESTABLISH_IDENTITY",
     "HTTP_PLATFORM_HINT_DOES_NOT_ESTABLISH_DEVICE_IDENTITY",
     "HEARTBEAT_ONLY_ORDERING",
-    "MANIFEST_ONLY_PROCESSING_SELECTION_REMAINS_ENFORCED"
+    "MANIFEST_ONLY_PROCESSING_SELECTION_REMAINS_ENFORCED",
+    "DISCOVERY_PUBLISHES_LLM_MACHINE_CONTINUATION",
+    "DISCOVERY_PUBLISHES_EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION",
+    "INSTRUCTIONS_REFERENCE_EXISTING_CANONICAL_OWNERS_ONLY",
+    "EXTERNAL_FRAMEWORK_DEFAULT_HANDOFF_IS_NOT_PROMOTED_TO_CANONICAL_COMPLETION"
   ],
   "current_proof_boundary": {
     "deployed_standing_contract": "NOT_PROVEN",
@@ -274,5 +278,51 @@
     "sdk_predecessor_source_contract": "PROVEN_AT_50d6ed8",
     "sdk_manifest_only_route_selection": "SOURCE_CONTRACT_EXISTS",
     "no_status_is_upgraded_by_this_document": true
+  },
+  "machine_readable_instructions": {
+    "requirement": "Discovery MUST publish both instruction profiles. Instructions are contract data, not authority, and MUST use existing canonical owners/surfaces.",
+    "common_precondition": {
+      "node_standing": "ESTABLISH_GENESIS_OR_VERIFY_EXISTING",
+      "predecessor_key": "REQUIRED",
+      "genesis": "predecessor=null AND generation=1",
+      "existing": "SDK_CANONICAL_PREDECESSOR_BINDING",
+      "missing_or_invalid": "FAIL_CLOSED",
+      "silent_reenrollment": false
+    },
+    "LLM_MACHINE_CONTINUATION": {
+      "consumer": "LLM_OR_MACHINE_ALREADY_CAPABLE_OF_EMITTING_A_CANONICAL_MANIFEST",
+      "steps": [
+        "GET canonical node advertisement and health endpoint",
+        "establish explicit genesis standing or verify existing canonical predecessor standing",
+        "construct or retain canonical manifest whose processing.capability and processing.route_id bind an installed SDK route",
+        "submit through the existing LLM-adapter governed-manifest ingress/Interlock-InTr continuation",
+        "accept only the returned ALLOW, DENY, or FAIL_CLOSED disposition and retained evidence"
+      ],
+      "canonical_receiving_owner": "StegVerse-org/LLM-adapter:llm_adapter/governed_manifest_ingress.py",
+      "processing_selector": "manifest.processing.capability + manifest.processing.route_id",
+      "message_content_selects_processing": false,
+      "direct_adapter_bypass_without_standing": "FAIL_CLOSED"
+    },
+    "EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION": {
+      "consumer": "EXTERNAL_FRAMEWORK_REQUIRING_CANONICAL_MANIFEST_CONSTRUCTION",
+      "steps": [
+        "GET canonical node advertisement and health endpoint",
+        "establish explicit genesis standing or verify existing canonical predecessor standing",
+        "use StegVerse-SDK stegverse.manifest_builder.build_manifest or the stegverse manifest build CLI to construct and validate the canonical manifest",
+        "for evaluator/governance framework submission use stegverse.external_framework_runner.manifest_external_framework_submission or stegverse external-run without --execute-enclosed",
+        "handoff through the existing SDK manifest state-transition/Interlock-InTr path to the registered receiving continuation",
+        "do not promote SDK-local handoff, enclosed validation, or unobserved far-side state into canonical completion"
+      ],
+      "builder_owner": "StegVerse-org/StegVerse-SDK:stegverse/manifest_builder.py",
+      "framework_owner": "StegVerse-org/StegVerse-SDK:stegverse/external_framework_runner.py",
+      "builder_api": "stegverse.manifest_builder.build_manifest",
+      "builder_cli": "stegverse manifest build",
+      "framework_cli": "stegverse external-run",
+      "enclosed_validation_flag": "--execute-enclosed",
+      "enclosed_validation_is_canonical": false
+    },
+    "no_new_endpoint_required": true,
+    "no_new_host_required": true,
+    "authority_effect": "NONE_INSTRUCTIONS_ONLY"
   }
 }
