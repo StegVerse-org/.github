@@ -39,6 +39,13 @@ This keeps the organization boundary extensible without hardcoding each future s
 
 ---
 
+## Canonical external node ingress — review contract
+
+The proposed machine-readable contract at [`docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json`](docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json) defines one canonical ecosystem-ingress **contract** for node standing, not one mandatory host. It covers both explicit genesis and later access by already-established nodes: the predecessor key is mandatory, `null` means explicit genesis only, and continuity requires the canonical SDK predecessor binding. Participant/framework, browser/console/API surface, device/machine substrate, StegNode materialization, StegOS runtime and processing continuation are orthogonal dimensions rather than caller-selected peer identities. Missing or invalid standing fails closed and may not silently re-enroll. HTTP/TLS metadata remains descriptive only. The document is `DRAFT_FOR_REVIEW`; KV-as-established-node, StegBrowser semantics, deployed continuations, attestation and bypass rejection remain `NOT_PROVEN` until their owners/evidence establish them.
+
+
+---
+
 ## Ecosystem
 
 | Component | Repo | Status | Purpose |
@@ -97,3 +104,6 @@ Open research / prototype environment. Individual repositories define their own 
 ## Open-source licensing census — organization-owned baseline (2026-09-25)
 
 The source-owned [organization inventory](docs/OPEN_SOURCE_ORGANIZATION_INVENTORY_20260925.json) records all 18 StegVerse-org repositories visible through the connected GitHub search (10 public, 8 private), with 13 GitHub-detected MIT and five without a detected license. Private repository names are not published in the inventory. The existing [central goal](https://github.com/StegVerse-Labs/.github/blob/main/docs/ECOSYSTEM_OPEN_SOURCE_STRATEGY_MIRROR_HANDOFF.md) retains task ownership and COSV `20010010100000`; this repository owns its scope-specific licensing and contributor evidence. Metadata does not prove ownership, distribution rights or release authorization. The SDK's optional pinned dependencies and complete contributor history remain under review. No license was changed or release made.
+
+
+PR #31 also requires discovery to publish two machine-readable continuation recipes using existing owners only: `LLM_MACHINE_CONTINUATION` for a machine/LLM that can supply a canonical manifest to the governed LLM-adapter path, and `EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION` for a framework that must use the SDK Manifest Builder / external-framework handoff first. Both require canonical node standing and preserve manifest capability + route binding; neither instruction grants authority or creates an endpoint.

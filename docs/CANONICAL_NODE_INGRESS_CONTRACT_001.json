@@ -1,0 +1,328 @@
+{
+  "schema_version": "stegverse.canonical-node-ingress-contract.v0.2",
+  "document_id": "CANONICAL-NODE-INGRESS-CONTRACT-001",
+  "status": "DRAFT_FOR_REVIEW",
+  "date": "2026-10-02",
+  "goal_task_id": "SVORG-STEGOS-PORTABILITY-001",
+  "cosv_id": null,
+  "cosv_state": "ABSENT_FROM_CURRENT_TASK_REGISTRY_SCHEMA",
+  "authority_effect": "NONE",
+  "purpose": "Define the canonical ecosystem-ingress standing contract for both first-time establishment and subsequent access by already-established nodes, without making one host, one device class, or one processing destination authoritative.",
+  "umbrella_invariant": {
+    "id": "ALL_EXTERNAL_ECOSYSTEM_INGRESS_REQUIRES_CANONICAL_NODE_STANDING",
+    "statement": "Every covered ecosystem entry must cross the canonical ingress contract and either establish explicit genesis standing or prove continuity from an existing canonical predecessor. A downstream destination may not substitute for that determination.",
+    "canonical_contract_single": true,
+    "canonical_host_single": false,
+    "bypass_permitted": false,
+    "caller_self_assertion_sufficient": false,
+    "failure_mode": "FAIL_CLOSED"
+  },
+  "standing_modes": {
+    "ESTABLISH_GENESIS": {
+      "predecessor_key": "REQUIRED",
+      "predecessor_value": null,
+      "meaning": "Explicit first generation only; null is data, not a default."
+    },
+    "VERIFY_EXISTING": {
+      "predecessor_key": "REQUIRED",
+      "predecessor_value": "SDK_CANONICAL_PREDECESSOR_BINDING",
+      "meaning": "Already-established standing continues only from validated predecessor lineage."
+    },
+    "INVALID_OR_UNRESOLVED": {
+      "conditions": [
+        "predecessor key absent",
+        "non-genesis predecessor invalid",
+        "claimed standing not provable"
+      ],
+      "disposition": "FAIL_CLOSED",
+      "silent_reenrollment": false
+    }
+  },
+  "lineage_contract": {
+    "owner": "StegVerse-org/StegVerse-SDK",
+    "source": "stegverse/external_interlock_bootstrap.py",
+    "canonical_functions": [
+      "validate_external_interaction_generation_manifest",
+      "successor_predecessor_binding"
+    ],
+    "baseline_commit": "50d6ed8c1e9058092ce5056fa09157804b2c70d3",
+    "rule": "predecessor key MUST be present; null is permitted only for explicit generation-1 genesis; later generations require the SDK predecessor binding",
+    "predecessor_fields": [
+      "generation",
+      "manifest_sha256",
+      "result_sha256",
+      "heartbeat_epoch"
+    ],
+    "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY",
+    "wall_clock_ordering_permitted": false,
+    "local_second_predecessor_semantics_permitted": false
+  },
+  "ingress_dimensions": {
+    "participant": [
+      "EXTERNAL_FRAMEWORK_OR_LLM",
+      "KV_OR_OTHER_ESTABLISHED_PARTICIPANT",
+      "OTHER_OR_UNRESOLVED"
+    ],
+    "interaction_surface": [
+      "BROWSER",
+      "CONSOLE",
+      "API_OR_MACHINE_CLIENT",
+      "OTHER_OR_UNRESOLVED"
+    ],
+    "execution_substrate": [
+      "DEVICE",
+      "MACHINE",
+      "OTHER_OR_UNRESOLVED"
+    ],
+    "node_materialization": [
+      "STEGNODE",
+      "EPHEMERAL_STEGNODE",
+      "OTHER_OR_UNRESOLVED"
+    ],
+    "runtime": [
+      "STEGOS",
+      "EPHEMERAL_STEGOS",
+      "OTHER_OR_UNRESOLVED"
+    ],
+    "processing_continuation": [
+      "LLM_ADAPTER",
+      "OTHER_REGISTERED_CONTINUATION",
+      "UNRESOLVED"
+    ]
+  },
+  "classification_rule": {
+    "dimensions_are_orthogonal": true,
+    "note": "An interaction may simultaneously be an established participant using a browser on a device through an ephemeral node. These dimensions are not mutually exclusive ingress classes.",
+    "external_llm_is_not_assumed_to_be_node_surface": true,
+    "kv_is_not_assumed_to_be_node_without_owner_evidence": true,
+    "stegbrowser_semantics": "UNRESOLVED_PENDING_CANONICAL_OWNER_EVIDENCE"
+  },
+  "covered_requirements": [
+    "MACHINE_OR_LLM_ECOSYSTEM_INGRESS_REQUIRES_CANONICAL_NODE_STANDING",
+    "DEVICE_INGRESS_REQUIRES_CANONICAL_NODE_STANDING",
+    "BROWSER_INGRESS_REQUIRES_CANONICAL_NODE_STANDING",
+    "CONSOLE_INGRESS_REQUIRES_CANONICAL_NODE_STANDING",
+    "STEGOS_INGRESS_REQUIRES_CANONICAL_NODE_STANDING",
+    "STEGNODE_INGRESS_REQUIRES_CANONICAL_NODE_STANDING"
+  ],
+  "canonical_ingress": {
+    "discovery_role": "PUBLIC_DISCOVERY_AND_NODE_STANDING_BOUNDARY",
+    "single_contract_requirement": true,
+    "single_host_requirement": false,
+    "currently_observed_discovery_host": "https://stegverse-ecosystem-chat-gateway.onrender.com/api/stegverse-node",
+    "host_is_authority": false,
+    "host_replaceable": true,
+    "must_publish_machine_readable_continuations": true,
+    "continuation_policy": "Map existing advertised surfaces before adding any endpoint.",
+    "must_publish": [
+      "standing semantics",
+      "recognized ingress dimensions",
+      "existing-surface continuation mapping",
+      "predecessor evidence required by each receiving boundary",
+      "non-authority flags",
+      "bypass rejection semantics"
+    ]
+  },
+  "source_classification": {
+    "caller_editable_ingress_source_field": "FORBIDDEN_AS_AUTHORITATIVE_EVIDENCE",
+    "transport_metadata": {
+      "examples": [
+        "User-Agent",
+        "client hints",
+        "HTTP headers",
+        "IP/network metadata",
+        "TLS characteristics"
+      ],
+      "evidence_class": "DESCRIPTIVE_HINT_ONLY",
+      "sufficient_for_authoritative_classification": false
+    },
+    "authoritative_classification_requires": [
+      "non-caller-editable observation or attestation",
+      "or validated previously established canonical node standing",
+      "binding of classification evidence to the canonical transition"
+    ],
+    "attestation_owner_state": "NOT_PROVEN",
+    "unresolved_classification_disposition": "FAIL_CLOSED"
+  },
+  "boundary_lineage_requirement": {
+    "organization_boundary_must_carry_predecessor": true,
+    "receiving_boundary_must_validate_predecessor": true,
+    "current_organization_boundary_support": "NOT_PROVEN",
+    "known_review_finding": "Current boundary receipt lane begins with previous_receipt_id null and does not yet express cross-lane predecessor standing.",
+    "repair_constraint": "Reuse SDK lineage semantics; do not make receipt-chain previous_receipt_id a second definition of canonical predecessor."
+  },
+  "llm_adapter_continuation": {
+    "external_framework_role": "TRANSPORT_OR_PROCESSING_CONSUMER_THROUGH_A_NODE; NOT_ASSUMED_TO_BE_THE_NODE",
+    "receiving_boundary_must_validate": [
+      "canonical node standing exists",
+      "predecessor is admissible or explicit genesis",
+      "transition identity matches validated lineage",
+      "continuation is registered and not caller-substituted",
+      "manifest processing capability is bound to declared SDK route"
+    ],
+    "receiving_boundary_must_reject": [
+      "direct adapter request with absent predecessor key",
+      "fabricated predecessor identity",
+      "mismatched lineage",
+      "unproven standing presented as established",
+      "route substitution",
+      "message-content route selection outside manifest capability/route binding"
+    ],
+    "sdk_processing_rule": {
+      "selector": "manifest.processing.capability + manifest.processing.route_id",
+      "other_selectors_permitted": false,
+      "route_selection_grants_authority": false
+    },
+    "current_live_gateway_compliance": "NOT_PROVEN_AND_REVIEW_REPORTED_VIOLATION"
+  },
+  "device_os_distinction": {
+    "http_platform_identity_trustworthy": false,
+    "authoritative_platform_distinction_requires": "attested, registered, or otherwise non-caller-editable evidence bound to canonical standing",
+    "examples": {
+      "ios_user_agent": "HINT_ONLY",
+      "linux_user_agent": "HINT_ONLY",
+      "tls_fingerprint": "HINT_ONLY",
+      "registered_node_evidence": "POTENTIALLY_AUTHORITATIVE_IF_VALIDATED",
+      "device_attestation": "POTENTIALLY_AUTHORITATIVE_IF_VALIDATED"
+    }
+  },
+  "required_dispositions": {
+    "success": "ALLOW",
+    "policy_or_admissibility_rejection": "DENY",
+    "missing_or_unverifiable_required_evidence": "FAIL_CLOSED",
+    "silent_fallback": "FORBIDDEN",
+    "silent_reenrollment": "FORBIDDEN"
+  },
+  "solution_map": [
+    {
+      "finding": "PREDECESSOR_REQUIRED_BUT_LINEAGE_OPTIONAL",
+      "solution": "Remove optional lineage semantics and normatively reuse SDK predecessor contract; predecessor presence is mandatory and null is explicit genesis only."
+    },
+    {
+      "finding": "MUST_BIND_ADMITS_A_WALL_CLOCK",
+      "solution": "Use heartbeat_epoch oscillator ordering only; wall-clock ordering is forbidden."
+    },
+    {
+      "finding": "SINGLE_INGRESS_CONFLICTS_WITH_PORTABILITY_GOAL",
+      "solution": "Require one canonical ingress contract, not one canonical host; deployment host is replaceable and non-authoritative."
+    },
+    {
+      "finding": "MACHINE_LLM_ADAPTER_COLLAPSES_FRAMEWORK_AND_SURFACE",
+      "solution": "Model framework/LLM as participant/consumer and surface/substrate/node/runtime as orthogonal dimensions."
+    },
+    {
+      "finding": "ALREADY_ESTABLISHED_NODES_NOT_MODELED",
+      "solution": "Add VERIFY_EXISTING standing path driven by mandatory predecessor lineage; failed verification never silently becomes genesis."
+    },
+    {
+      "finding": "BROWSER_NOT_MODELED",
+      "solution": "Add BROWSER as an explicit interaction-surface dimension without assuming StegBrowser semantics until its owner is proven."
+    },
+    {
+      "finding": "NO_ATTESTATION_OWNER",
+      "solution": "Retain NOT_PROVEN and FAIL_CLOSED; do not manufacture an attestation owner."
+    },
+    {
+      "finding": "NO_TYPED_CONTINUATIONS_ADVERTISED",
+      "solution": "Require mapping to existing advertised surfaces before any new endpoint is created."
+    },
+    {
+      "finding": "BOUNDARY_CANNOT_CARRY_CANONICAL_PREDECESSOR",
+      "solution": "Require a canonical predecessor carrier/validation seam using SDK semantics; do not equate lane-local receipt chaining with cross-lane predecessor standing."
+    },
+    {
+      "finding": "LIVE_GATEWAY_ACCEPTS_CALLER_FABRICATED_IDENTITY",
+      "solution": "Mark noncompliant; receiving boundary must validate canonical standing before processing."
+    },
+    {
+      "finding": "MESSAGE_KEYWORD_ROUTE_SELECTION",
+      "solution": "Forbid message-content processing selection; preserve manifest capability + route_id as the only processing selector."
+    },
+    {
+      "finding": "COSV_UNRESOLVABLE_BY_CONSTRUCTION",
+      "solution": "Record ABSENT_FROM_CURRENT_TASK_REGISTRY_SCHEMA; do not invent COSV."
+    }
+  ],
+  "required_regressions": [
+    "GENESIS_REQUIRES_PRESENT_NULL_PREDECESSOR",
+    "MISSING_PREDECESSOR_KEY_FAILS_CLOSED",
+    "ESTABLISHED_NODE_REQUIRES_VALIDATED_PREDECESSOR",
+    "FAILED_EXISTING_NODE_VERIFICATION_DOES_NOT_REENROLL",
+    "INGRESS_DISCOVERY_ADVERTISES_STANDING_AND_CONTINUATION_MAPPING",
+    "LLM_ADAPTER_REJECTS_DIRECT_BYPASS",
+    "DEVICE_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "BROWSER_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "CONSOLE_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "STEGOS_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "STEGNODE_CONTINUATION_REJECTS_DIRECT_BYPASS",
+    "CALLER_EDITABLE_CLASSIFICATION_DOES_NOT_ESTABLISH_IDENTITY",
+    "HTTP_PLATFORM_HINT_DOES_NOT_ESTABLISH_DEVICE_IDENTITY",
+    "HEARTBEAT_ONLY_ORDERING",
+    "MANIFEST_ONLY_PROCESSING_SELECTION_REMAINS_ENFORCED",
+    "DISCOVERY_PUBLISHES_LLM_MACHINE_CONTINUATION",
+    "DISCOVERY_PUBLISHES_EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION",
+    "INSTRUCTIONS_REFERENCE_EXISTING_CANONICAL_OWNERS_ONLY",
+    "EXTERNAL_FRAMEWORK_DEFAULT_HANDOFF_IS_NOT_PROMOTED_TO_CANONICAL_COMPLETION"
+  ],
+  "current_proof_boundary": {
+    "deployed_standing_contract": "NOT_PROVEN",
+    "deployed_existing_node_verification": "NOT_PROVEN",
+    "deployed_genesis_semantics": "NOT_PROVEN",
+    "deployed_continuation_mapping": "NOT_PROVEN",
+    "automatic_authoritative_source_classification": "NOT_PROVEN",
+    "attestation_owner": "NOT_PROVEN",
+    "llm_adapter_end_to_end_handoff": "NOT_PROVEN",
+    "direct_bypass_rejection_at_every_destination": "NOT_PROVEN",
+    "kv_as_established_node": "NOT_PROVEN",
+    "stegbrowser_as_kv_surface": "NOT_PROVEN",
+    "sdk_predecessor_source_contract": "PROVEN_AT_50d6ed8",
+    "sdk_manifest_only_route_selection": "SOURCE_CONTRACT_EXISTS",
+    "no_status_is_upgraded_by_this_document": true
+  },
+  "machine_readable_instructions": {
+    "requirement": "Discovery MUST publish both instruction profiles. Instructions are contract data, not authority, and MUST use existing canonical owners/surfaces.",
+    "common_precondition": {
+      "node_standing": "ESTABLISH_GENESIS_OR_VERIFY_EXISTING",
+      "predecessor_key": "REQUIRED",
+      "genesis": "predecessor=null AND generation=1",
+      "existing": "SDK_CANONICAL_PREDECESSOR_BINDING",
+      "missing_or_invalid": "FAIL_CLOSED",
+      "silent_reenrollment": false
+    },
+    "LLM_MACHINE_CONTINUATION": {
+      "consumer": "LLM_OR_MACHINE_ALREADY_CAPABLE_OF_EMITTING_A_CANONICAL_MANIFEST",
+      "steps": [
+        "GET canonical node advertisement and health endpoint",
+        "establish explicit genesis standing or verify existing canonical predecessor standing",
+        "construct or retain canonical manifest whose processing.capability and processing.route_id bind an installed SDK route",
+        "submit through the existing LLM-adapter governed-manifest ingress/Interlock-InTr continuation",
+        "accept only the returned ALLOW, DENY, or FAIL_CLOSED disposition and retained evidence"
+      ],
+      "canonical_receiving_owner": "StegVerse-org/LLM-adapter:llm_adapter/governed_manifest_ingress.py",
+      "processing_selector": "manifest.processing.capability + manifest.processing.route_id",
+      "message_content_selects_processing": false,
+      "direct_adapter_bypass_without_standing": "FAIL_CLOSED"
+    },
+    "EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION": {
+      "consumer": "EXTERNAL_FRAMEWORK_REQUIRING_CANONICAL_MANIFEST_CONSTRUCTION",
+      "steps": [
+        "GET canonical node advertisement and health endpoint",
+        "establish explicit genesis standing or verify existing canonical predecessor standing",
+        "use StegVerse-SDK stegverse.manifest_builder.build_manifest or the stegverse manifest build CLI to construct and validate the canonical manifest",
+        "for evaluator/governance framework submission use stegverse.external_framework_runner.manifest_external_framework_submission or stegverse external-run without --execute-enclosed",
+        "handoff through the existing SDK manifest state-transition/Interlock-InTr path to the registered receiving continuation",
+        "do not promote SDK-local handoff, enclosed validation, or unobserved far-side state into canonical completion"
+      ],
+      "builder_owner": "StegVerse-org/StegVerse-SDK:stegverse/manifest_builder.py",
+      "framework_owner": "StegVerse-org/StegVerse-SDK:stegverse/external_framework_runner.py",
+      "builder_api": "stegverse.manifest_builder.build_manifest",
+      "builder_cli": "stegverse manifest build",
+      "framework_cli": "stegverse external-run",
+      "enclosed_validation_flag": "--execute-enclosed",
+      "enclosed_validation_is_canonical": false
+    },
+    "no_new_endpoint_required": true,
+    "no_new_host_required": true,
+    "authority_effect": "NONE_INSTRUCTIONS_ONLY"
+  }
+}
