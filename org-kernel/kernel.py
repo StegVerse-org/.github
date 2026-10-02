@@ -26,16 +26,54 @@ def sha(v:Any)->str:
     raw=v if isinstance(v,(bytes,bytearray)) else canon(v)
     return "sha256:"+hashlib.sha256(bytes(raw)).hexdigest()
 
-def hb_reference(now_ns:int|None=None)->dict[str,Any]:
+def validate_hb_reference(ref:dict[str,Any])->dict[str,Any]:
+    """A carrier frame's heartbeat reference is part of what the frame asserts.
+
+    recover_packet verified the frame and packet digests but never the
+    reference, so an incoherent or fabricated epoch rode through a validly
+    signed frame unchallenged.
+    """
+    if not isinstance(ref,dict): raise ValueError("heartbeat_reference_invalid")
+    epoch=ref.get("epoch")
+    if not isinstance(epoch,int) or isinstance(epoch,bool) or epoch<HB_ANCHOR_EPOCH:
+        raise ValueError("heartbeat_epoch_invalid")
+    if ref.get("generation")!=epoch: raise ValueError("heartbeat_generation_mismatch")
+    if ref.get("heartbeat_id")!=f"HB:{epoch}": raise ValueError("heartbeat_id_mismatch")
+    if ref.get("frequency_hz")!=HB_HZ: raise ValueError("heartbeat_frequency_mismatch")
+    if ref.get("progression_dependency")!="OSCILLATOR_ONLY":
+        raise ValueError("heartbeat_progression_not_oscillator")
+    return ref
+
+def hb_reference(now_ns:int|None=None, *, epoch:int|None=None)->dict[str,Any]:
+    """Build the heartbeat reference for a crossing.
+
+    Progression is OSCILLATOR_ONLY: the epoch is a count of heartbeat periods,
+    not a reading of a wall clock. Supply `epoch` from the carrier wherever the
+    tick is available; the reference is then reproducible, so the same packet
+    at the same epoch yields the same frame digest.
+
+    Deriving the epoch from a host clock instead makes the reference depend on
+    that host's clock discipline -- an NTP step moves or reverses it, and two
+    nodes with skewed clocks assign different epochs to one event. A derived
+    reference therefore says so and carries the sample it was derived from.
+    """
+    if epoch is not None:
+        if now_ns is not None: raise ValueError("supply_epoch_or_sample_not_both")
+        if not isinstance(epoch,int) or isinstance(epoch,bool) or epoch<HB_ANCHOR_EPOCH:
+            raise ValueError("epoch_precedes_hb32_anchor")
+        return validate_hb_reference({"epoch":epoch,"generation":epoch,"heartbeat_id":f"HB:{epoch}",
+                "phase_offset_ns":0,"frequency_hz":HB_HZ,"progression_dependency":"OSCILLATOR_ONLY",
+                "derived_from_clock":False,"authority_effect":"NONE"})
     if now_ns is None:
         now_ns=int(datetime.now(timezone.utc).timestamp()*1_000_000_000)
     if now_ns<HB_ANCHOR_UNIX_NS:
         raise ValueError("sample_precedes_hb32_anchor")
     q,phase=divmod(now_ns-HB_ANCHOR_UNIX_NS,HB_PERIOD_NS)
     epoch=HB_ANCHOR_EPOCH+q
-    return {"epoch":epoch,"generation":epoch,"heartbeat_id":f"HB:{epoch}","sampled_unix_ns":now_ns,
-            "phase_offset_ns":phase,"frequency_hz":HB_HZ,"progression_dependency":"OSCILLATOR_ONLY",
-            "authority_effect":"NONE"}
+    return validate_hb_reference({"epoch":epoch,"generation":epoch,"heartbeat_id":f"HB:{epoch}",
+            "sampled_unix_ns":now_ns,"phase_offset_ns":phase,"frequency_hz":HB_HZ,
+            "progression_dependency":"OSCILLATOR_ONLY","derived_from_clock":True,
+            "authority_effect":"NONE"})
 
 def derive_channel(payload_hash:str)->dict[str,Any]:
     if not isinstance(payload_hash,str) or not payload_hash.startswith("sha256:") or len(payload_hash)!=71:
@@ -44,8 +82,8 @@ def derive_channel(payload_hash:str)->dict[str,Any]:
     return {"channel_id":f"HB:H1:P{slot}","phase_slot":slot,"phase_slot_count":CHANNEL_COUNT,
             "derivation":"PAYLOAD_SHA256_FIRST64_MOD_16","authority_effect":"NONE_CARRIER_ONLY"}
 
-def carrier_frame(packet:dict[str,Any], *, now_ns:int|None=None)->dict[str,Any]:
-    raw=canon(packet); payload_hash=sha(packet.get("payload",{})); ref=hb_reference(now_ns); channel=derive_channel(payload_hash)
+def carrier_frame(packet:dict[str,Any], *, now_ns:int|None=None, epoch:int|None=None)->dict[str,Any]:
+    raw=canon(packet); payload_hash=sha(packet.get("payload",{})); ref=hb_reference(now_ns,epoch=epoch); channel=derive_channel(payload_hash)
     body={"schema":CARRIER_SCHEMA,"packet_id":packet["packet_id"],"packet_sha256":sha(raw),
           "packet_base64":base64.b64encode(raw).decode("ascii"),"heartbeat_reference":ref,
           "channel":channel,"origin_org":packet["origin"]["org"],"destination_org":packet["destination"]["org"],
@@ -57,6 +95,7 @@ def recover_packet(frame:dict[str,Any])->dict[str,Any]:
     if claimed!=sha(body): raise ValueError("carrier_frame_hash_mismatch")
     raw=base64.b64decode(frame["packet_base64"].encode("ascii"),validate=True)
     if sha(raw)!=frame["packet_sha256"]: raise ValueError("packet_hash_mismatch")
+    validate_hb_reference(frame.get("heartbeat_reference"))
     packet=json.loads(raw)
     if packet["packet_id"]!=frame["packet_id"]: raise ValueError("packet_id_mismatch")
     if packet["destination"]["org"]!=frame["destination_org"]: raise ValueError("destination_org_mismatch")
