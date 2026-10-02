@@ -1,0 +1,181 @@
+{
+  "attestation": null,
+  "candidate": {
+    "action": "evaluate_bounded_hold_operation",
+    "actor_class": "sdk_evaluator",
+    "parameters": {
+      "external_side_effect": false,
+      "relative_time": "T1"
+    },
+    "scope": "isolated_experiment",
+    "target": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+  },
+  "canonicalization_profile": "steggate.jcs.v1",
+  "completion": {
+    "direction": "SOUTH",
+    "egress": {
+      "far_side_transition_required": true,
+      "final_stegverse_transition_surface": "BOUNDARY_DIAGNOSTIC",
+      "transport": "INTERLOCK_INTR"
+    },
+    "initiator": {
+      "class": "external_framework",
+      "ref": "StegVerse-independent-evaluator"
+    },
+    "publisher": {
+      "package_profile": "stegverse.publisher.evidence-report-package/v1",
+      "required": false,
+      "stage": "PUBLISHER"
+    }
+  },
+  "context_refs": [],
+  "created_at": "2026-09-26T00:00:00Z",
+  "declared_intent": "Independently qualify a proposed governed HOLD transition",
+  "extensions": {
+    "capability_resolution": {
+      "authority_effect": "NONE_CLASSIFICATION_ONLY",
+      "capability": "governance",
+      "next_action": "BUILD_AND_SUBMIT_MANIFEST",
+      "route_id": "stegverse.route.canonical-governed.v1",
+      "schema": "stegverse.manifest-capability-resolution.v1",
+      "solution_required": false,
+      "status": "ONLINE"
+    },
+    "manifest_builder": {
+      "builder_grants_authority": false,
+      "capability_status": "ONLINE",
+      "external_review_requested": false,
+      "processing_capability": "governance",
+      "profile": "stegverse.manifest-builder.v1",
+      "publisher_required_by_review_default": false,
+      "return_depth": "full-trace",
+      "route_id": "stegverse.route.canonical-governed.v1",
+      "source_semantic_custody": "EXTERNAL"
+    },
+    "source_data_class": "sv.hold.independent.source-only.v1",
+    "stegverse_governance_request": {
+      "approval": {
+        "required": true
+      },
+      "candidate": {
+        "action": "evaluate_bounded_hold_operation",
+        "actor_class": "sdk_evaluator",
+        "parameters": {
+          "external_side_effect": false,
+          "relative_time": "T1"
+        },
+        "scope": "isolated_experiment",
+        "target": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+      },
+      "capability": {
+        "allowed": true
+      },
+      "continuity": {
+        "required": true
+      },
+      "declared_context": {
+        "authority_evidence_status": "NOT_AUTHENTICATED",
+        "condition_id": "HOLD_ENTERED",
+        "no_external_effect": true,
+        "other_framework_evidence_used": false,
+        "relative_time": "T1",
+        "semantic_status": "UNRESOLVED",
+        "source_only": true
+      },
+      "execution": {
+        "actor_authority_current": false,
+        "affected_entity_conditions_represented": true,
+        "delegation_current": false,
+        "delegation_ref": "sv-hold:proposed-test-delegation:not-runtime-authenticated",
+        "evidence_current": false,
+        "evidence_refs": [
+          "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+        ],
+        "policy_current": true,
+        "policy_ref": "sv-hold:proposed-test-policy:not-runtime-authenticated",
+        "recoverability_profile": "recoverable",
+        "validity_window_open": true
+      },
+      "judgment": {
+        "evidence_refs": [
+          "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+        ],
+        "isolation_state": "supported",
+        "operator_recoverability": "available",
+        "refusal_available": true,
+        "time_pressure": "normal",
+        "workload_state": "supported"
+      },
+      "permission_present": false,
+      "signal": {
+        "admitted_signal_refs": [
+          "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+        ],
+        "excluded_signal_refs": [],
+        "expected_reference_state_hash": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110",
+        "missing_inputs": [
+          "authenticated_current_grant",
+          "authentic_runtime_evidence"
+        ],
+        "reconstruction_available": false,
+        "reference_state_hash": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110",
+        "transformation_provenance_complete": true,
+        "transformations": [],
+        "uncertainty_state": "unknown"
+      }
+    },
+    "stegverse_route": {
+      "containment": "PRODUCTION_ROUTE_BOUNDED_CONSEQUENCE",
+      "external_consequence_enabled": false,
+      "lane_class": "PRODUCTION_VALIDATION",
+      "route_id": "stegverse.route.canonical-governed.v1",
+      "routing_surface": "CANONICAL_PRODUCTION",
+      "sandbox_required": false
+    }
+  },
+  "freshness": {},
+  "hashes": {
+    "candidate_sha256": "2f83659ec56b7c20295a91262c7f7b551daab0d9197ca9ee0020674cda51ca2f",
+    "payload_sha256": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+  },
+  "manifest_labels": {
+    "mode": "NONE"
+  },
+  "manifest_profile": "stegverse.ingress-manifest.v1",
+  "manifest_profile_version": "1",
+  "payload": {
+    "authority_declaration": {
+      "actor_current": false,
+      "authenticated_grant_observed": false,
+      "delegation_current": false,
+      "permission_present": false,
+      "validity_window_open": true
+    },
+    "condition_id": "HOLD_ENTERED",
+    "evidence_class": "INDEPENDENT_SV_EXPERIMENT_DESIGN_NOT_NATIVE_RUNTIME",
+    "expected_evidence": [
+      "actual_intr_admissibility_snapshot",
+      "original_protected_operation_effect_or_prevention",
+      "predecessor_linked_organization_receipts",
+      "applicable_master_records_reconstruction"
+    ],
+    "experiment_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926",
+    "native_stev_inference": null,
+    "other_framework_output_consumed": false,
+    "protected_operation": "bounded_no_external_side_effect_test",
+    "relative_time": "T1",
+    "temporal_sampling": "EXPERIMENT_RELATIVE_ONLY_NOT_MEASURED"
+  },
+  "processing": {
+    "capability": "governance",
+    "route_id": "stegverse.route.canonical-governed.v1"
+  },
+  "requested_consequence": "Observe actual disposition and protected effect only if genuinely admitted",
+  "return_projection": {
+    "mode": "ALL",
+    "transition_classes": []
+  },
+  "source_framework": "StegVerse-independent-evaluator",
+  "source_instance": null,
+  "source_output_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+}
