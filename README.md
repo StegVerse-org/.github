@@ -39,6 +39,13 @@ This keeps the organization boundary extensible without hardcoding each future s
 
 ---
 
+## Canonical external node ingress — review contract
+
+The proposed machine-readable contract at [`docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json`](docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json) defines one canonical bootstrap/node-establishment dependency for machine/LLM, device, console, ephemeral StegOS and ephemeral StegNode ingress classes. It requires destination-side validation of the canonical predecessor node transition and forbids direct destination bypass. HTTP transport metadata is descriptive only and cannot by itself establish authoritative ingress class or device/runtime identity. The document is `DRAFT_FOR_REVIEW` and does not promote any `NOT_PROVEN` runtime condition or grant authority.
+
+
+---
+
 ## Ecosystem
 
 | Component | Repo | Status | Purpose |
