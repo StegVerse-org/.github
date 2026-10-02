@@ -121,7 +121,29 @@
       "predecessor evidence required by each receiving boundary",
       "non-authority flags",
       "bypass rejection semantics"
-    ]
+    ],
+    "currently_observed_discovery_host_is_canonical": false,
+    "currently_observed_discovery_host_provider_class": "THIRD_PARTY_HOST_UNDER_ACTIVE_ERADICATION",
+    "canonical_discovery_host": "UNRESOLVED_PENDING_HOST_DECLARATION",
+    "third_party_hosts_required": false,
+    "provider_eradication": {
+      "goal_id": "ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+      "cosv_id": "40000100100000",
+      "supersedes": "ENTERPRISE-RENDER-ERADICATION-001",
+      "owner": "StegVerse-Labs/.github:docs/ENTERPRISE_HOST_PROVIDER_ERADICATION_MIRROR_HANDOFF.md",
+      "state": "ACTIVE_NOT_CLOSED",
+      "site_child_goal_id": "SITE-497-THIRD-PARTY-DEPENDENCY-ERADICATION",
+      "site_child_cosv_id": "50000000102000"
+    },
+    "observed_runtime_dependency_state": {
+      "source": "StegVerse-Labs/Site:data/third-party-runtime-cutover-current.json",
+      "third_party_hosts_required": false,
+      "hosted_ci_runtime_required": false,
+      "hosted_ci_runtime_authority": "NONE",
+      "third_party_tunnels_canonical": false,
+      "historical_inventory_rewrites_current_state": false,
+      "note": "No third-party host is required. The observed discovery host is a stale provider deployment, not a dependency."
+    }
   },
   "source_classification": {
     "caller_editable_ingress_source_field": "FORBIDDEN_AS_AUTHORITATIVE_EVIDENCE",
@@ -277,7 +299,8 @@
     "stegbrowser_as_kv_surface": "NOT_PROVEN",
     "sdk_predecessor_source_contract": "PROVEN_AT_50d6ed8",
     "sdk_manifest_only_route_selection": "SOURCE_CONTRACT_EXISTS",
-    "no_status_is_upgraded_by_this_document": true
+    "no_status_is_upgraded_by_this_document": true,
+    "canonical_discovery_host_declared": "NOT_PROVEN"
   },
   "machine_readable_instructions": {
     "requirement": "Discovery MUST publish both instruction profiles. Instructions are contract data, not authority, and MUST use existing canonical owners/surfaces.",
