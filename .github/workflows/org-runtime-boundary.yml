@@ -113,6 +113,7 @@ jobs:
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
             --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
+            --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-task-registry-disclosure --out /tmp/task-registry-disclosure.json
           python -c 'import json; x=json.load(open("/tmp/task-registry-disclosure.json")); assert x["declared_capability_processed"] is True; assert x["processing_selection"]=="MANIFEST_DECLARED"; assert x["reconstruction"]=="RECONSTRUCTED"; assert len(x["receipts"])==5'
       - name: Test repository ledger append is serialized and atomically published
