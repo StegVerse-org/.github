@@ -1,0 +1,179 @@
+name: Validate Organization Egress Boundary
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'org-kernel/kernel.py'
+      - 'org-kernel/node_store.py'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-runtime/runtime_boundary.py'
+      - 'org-boundary/registry/federation.json'
+      - 'org-boundary/registry/services.json'
+      - '.stegverse/transition-ledger/emit.py'
+      - '.stegverse/transition-ledger/org-contract.json'
+      - 'tests/test_organization_egress_boundary.py'
+      - 'docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-egress-boundary-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'org-kernel/kernel.py'
+      - 'org-kernel/node_store.py'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-runtime/runtime_boundary.py'
+      - 'org-boundary/registry/federation.json'
+      - 'org-boundary/registry/services.json'
+      - '.stegverse/transition-ledger/emit.py'
+      - '.stegverse/transition-ledger/org-contract.json'
+      - 'tests/test_organization_egress_boundary.py'
+      - 'docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-egress-boundary-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-egress-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Both ledgers are durable sovereign state. A run that appended into
+      # either default location would be writing runtime reality from CI, so
+      # every step that can append is pointed at the runner's temporary
+      # directory. `runner` is a step-level context, not a job-level one.
+      - name: Validate the outbound crossing records its dispositions
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/egress-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/egress-org-ledger
+        run: python -m unittest tests.test_organization_egress_boundary -v
+
+      - name: The boundary document binds the outbound half
+        run: |
+          python org-runtime/runtime_boundary.py validate
+          python - <<'PY'
+          import importlib.util, json
+          spec = importlib.util.spec_from_file_location(
+              "runtime_boundary", "org-runtime/runtime_boundary.py")
+          boundary = importlib.util.module_from_spec(spec); spec.loader.exec_module(boundary)
+          report = boundary.validate()
+          # The two checks that did not exist while egress was declared and
+          # bound to nothing.
+          assert report["checks"]["egress_emitting_operation_bound"] is True, report["checks"]
+          assert report["checks"]["egress_destinations_resolve_from_the_directory"] is True
+          assert report["valid"] is True, report["checks"]
+          print("EGRESS_EMITTING_OPERATION_BOUND=PASS", len(report["checks"]), "checks")
+          PY
+
+      - name: A full inter-organization round trip, emitted and closed on one chain
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/roundtrip-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/roundtrip-org-ledger
+        run: |
+          python - <<'PY'
+          import importlib.util, json, os, shutil, tempfile
+          from pathlib import Path
+
+          spec = importlib.util.spec_from_file_location(
+              "egress", "resident-runtime/organization_egress_boundary.py")
+          egress = importlib.util.module_from_spec(spec); spec.loader.exec_module(egress)
+          K = egress.kernel
+
+          PEER, PEER_CONTROL = "StegVerse-Labs", "stegverse-labs.org-control"
+          CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+          mesh = Path(tempfile.mkdtemp())
+
+          # The peer organization's own node: its registry and the boundary
+          # runtime it needs to dispatch what it consumes.
+          peer = Path(tempfile.mkdtemp())
+          (peer / "org-boundary/registry").mkdir(parents=True)
+          (peer / "org-boundary/registry/services.json").write_text(json.dumps({
+              "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
+              "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
+              "services": [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
+                            "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
+          (peer / "org-boundary/runtime").mkdir(parents=True)
+          for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
+              shutil.copy2("org-boundary/runtime/" + name, peer / "org-boundary/runtime" / name)
+          (peer / "docs").mkdir(parents=True, exist_ok=True)
+          shutil.copy2(CONTRACT, peer / CONTRACT)
+
+          genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci-egress", "predecessor": None}
+          emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
+              "communication_id": "ci-egress-001", "subject": "ci inter-org round trip",
+              "body": {"ci": True}}, standing=genesis, mesh_root=mesh, hb_epoch=32)
+          assert emitted["disposition"] == "ALLOW", emitted
+          assert emitted["crossed_an_organization_boundary"] is True
+          assert emitted["origin_attestation_state"] == "NOT_PROVEN"
+
+          # Nothing has answered yet, so there is nothing to dispose of.
+          pending = egress.close(PEER, emitted["packet_id"], "ci-egress-001",
+                                 mesh_root=mesh, hb_epoch=32)
+          assert pending["disposition"] == "PENDING", pending
+          assert pending["closure_recorded"] is False
+
+          consumed = K.consume_and_respond(peer, mesh_root=mesh)
+          assert [(r["result"] or {}).get("status") for r in consumed] == ["CONSUMED"], consumed
+
+          closed = egress.close(PEER, emitted["packet_id"], "ci-egress-001",
+                                mesh_root=mesh, hb_epoch=32)
+          assert closed["disposition"] == "ALLOW", closed
+          assert closed["closed"] is True and closed["closure_findings"] == []
+          assert closed["responding_organization"] == PEER
+          assert closed["far_side_receipt_carried_not_verified"] is True
+
+          # A refusal is recorded too, and never as a crossing that left.
+          refused = egress.emit("Not-A-Declared-Peer", {"message_class": "ecosystem.communication",
+              "communication_id": "ci-egress-002", "body": {}}, standing=genesis,
+              mesh_root=mesh, hb_epoch=32)
+          assert refused["disposition"] == "DENY" and refused["emitted"] is False
+          assert refused["refusal_recorded"] is True
+
+          def receipts(variable, schema):
+              return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
+                      if json.loads(p.read_text()).get("schema") == schema]
+
+          repository = receipts("STEGVERSE_REPO_LEDGER_ROOT",
+                                "stegverse.repo-transition-receipt/v1")
+          organization = receipts("STEGVERSE_ORG_LEDGER_ROOT",
+                                  "stegverse.organization-transition-receipt/v1")
+          by = {r["receipt_sha256"]: r for r in repository}
+          head = json.loads((Path(os.environ["STEGVERSE_REPO_LEDGER_ROOT"]) / "HEAD.json")
+                            .read_text())["receipt_sha256"]
+          chain, cursor = [], head
+          while cursor in by:
+              chain.append(by[cursor]); cursor = by[cursor]["previous_receipt_sha256"]
+          chain.reverse()
+          assert [r["transition_class"] for r in chain] == [
+              "ORGANIZATION_EGRESS_EMITTED", "ORGANIZATION_EGRESS_CLOSED",
+              "ORGANIZATION_EGRESS_REFUSED"
+          ], [r["transition_class"] for r in chain]
+          assert [r["evidence"]["disposition"] for r in chain] == ["ALLOW", "ALLOW", "DENY"]
+          for receipt in chain:
+              evidence = receipt["evidence"]
+              assert evidence["intended_action"], receipt["transition_class"]
+              assert evidence["transition_is_the_disposition_of_the_intended_action"] is True
+              assert evidence["authority_effect"].startswith("NONE")
+              assert "state_changed" not in evidence
+          # Both levels, the organization consuming a receipt it did not author.
+          assert len(organization) == len(chain), (len(organization), len(chain))
+          carried = {o["repo_receipt_sha256"] for o in organization}
+          assert carried == {r["receipt_sha256"] for r in chain}
+          assert all(o["org_transition_class"] == "REPO_STATE_PROPAGATION" for o in organization)
+          assert all(o["source_repository"] == "StegVerse-org/.github" for o in organization)
+          print("INTER_ORG_ROUND_TRIP_ON_ONE_CHAIN=PASS", len(chain), "transitions")
+          PY
+
+      - name: Declare what an outbound crossing does not prove
+        run: |
+          echo 'origin_attestation_state=NOT_PROVEN; credential_authority=TV/TVC'
+          echo 'far_side_receipt_reconstructed_here=false; authority_effect=NONE_EGRESS_RECORD_ONLY'

@@ -38,11 +38,54 @@ def capability_bindings_resolve(t:dict[str,Any])->bool:
         if b.get("binding_role")!="ORGANIZATION_RECEIVING_OPERATION_RESOLUTION" or b.get("authority_effect")!="NONE_BINDING_ONLY": return False
         if any(b.get(flag) is not False for flag in NON_AUTHORIZING_BINDING_FLAGS): return False
     return True
+# Egress is not receiving a registered capability, so it resolves an emitting
+# operation rather than a capability binding: one operation, owned here, that
+# publishes to a peer the organization's own directory declares. Before this the
+# egress section carried only `interlock_required` and `intr_required`, so the
+# outbound half of the boundary was declared to exist and bound to nothing.
+EGRESS_EMITTING_OPERATION_ID="ORGANIZATION_INTER_ORG_EGRESS"
+EGRESS_NON_AUTHORIZING_FLAGS=NON_AUTHORIZING_BINDING_FLAGS
+def egress_emitting_operation(t:dict[str,Any])->dict[str,Any]:
+    operation=(t.get("egress") or {}).get("emitting_operation")
+    return operation if isinstance(operation,dict) else {}
+def egress_emitting_operation_bound(t:dict[str,Any])->bool:
+    """One emitting operation, owned here, granting nothing, and attesting nothing it cannot.
+
+    The same shape the receiving operation is held to, plus the two claims an
+    outbound crossing must not make: that the origin on a frame was verified
+    here, and that the far side's receipt was reconstructed here. Declaring
+    either as true would be the overclaim the records are written to avoid.
+    """
+    operation=egress_emitting_operation(t)
+    if not operation: return False
+    if operation.get("owner_repository")!=f"{ORG}/.github": return False
+    if operation.get("operation_id")!=EGRESS_EMITTING_OPERATION_ID: return False
+    if not str(operation.get("emission") or "").strip(): return False
+    if not str(operation.get("closure") or "").strip(): return False
+    if operation.get("transport")!="INTERLOCK_INTR": return False
+    # No host, no environment URL -- the same rule the receiving operation keeps.
+    if operation.get("host_required") is not False or operation.get("environment_url_required") is not False: return False
+    if operation.get("credential_authority")!="TV/TVC" or operation.get("github_token_runtime_authority")!="NONE": return False
+    if operation.get("binding_role")!="ORGANIZATION_EMITTING_OPERATION_RESOLUTION" or operation.get("authority_effect")!="NONE_BINDING_ONLY": return False
+    if any(operation.get(flag) is not False for flag in EGRESS_NON_AUTHORIZING_FLAGS): return False
+    if operation.get("every_disposition_is_receipted") is not True: return False
+    if operation.get("origin_attestation_state")!="NOT_PROVEN": return False
+    if operation.get("origin_is_verified_by_this_boundary") is not False: return False
+    if operation.get("far_side_receipt_reconstructed_here") is not False: return False
+    return True
+def egress_destinations_resolve_from_the_directory(t:dict[str,Any])->bool:
+    """Destinations come from the organization's own peer directory, not a caller."""
+    resolution=(t.get("egress") or {}).get("peer_destination_resolution")
+    if not isinstance(resolution,dict): return False
+    if resolution.get("source")!="ORGANIZATION_FEDERATION_DIRECTORY": return False
+    if resolution.get("directory")!="org-boundary/registry/federation.json": return False
+    if resolution.get("resolved_from_caller_argument") is not False: return False
+    return resolution.get("destination_must_declare_this_transport_profile")=="stegverse.intr.org-boundary.v1"
 def sdk_manifest_ingress_bound(t:dict[str,Any])->bool:
     """The capability the SDK's manifest handoff resolves on is one of them."""
     return any((b.get("profile_id"),b.get("profile_name"),b.get("operation"))==("sdk-manifest-ingress","SDK:ManifestIngress","SUBMIT_MANIFEST") for b in capability_bindings(t))
 def validate()->dict[str,Any]:
-    a,t=load(ACT),load(TR); h=t["heartbeat_derived_carrier"]; checks={"activation_owner":a.get("organization")==ORG and a.get("owner_repository")==f"{ORG}/.github","activation_local":a.get("activation_source_scope")=="ORG_DOT_GITHUB_ONLY","runtime_sovereign":a.get("runtime_execution_surface")=="SOVEREIGN_RESIDENT_PROCESS","transport_owner":t.get("organization")==ORG and t.get("owner_repository")==f"{ORG}/.github","all_io_here":t.get("communication_policy")=="ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY","tvtvc":a.get("credential_authority")=="TV/TVC" and t.get("credential_authority")=="TV/TVC","github_none":a.get("github_token_runtime_authority")=="NONE" and t.get("github_token_runtime_authority")=="NONE","effects_transition_derived":a.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS" and t.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS","hb_non_authorizing":all(h.get(k) is False for k in ("carrier_grants_admission_authority","carrier_grants_execution_authority","carrier_grants_credential_authority","carrier_grants_routing_authority","carrier_grants_transition_authority","carrier_grants_receiving_authority")),"capability_bindings_resolve":capability_bindings_resolve(t),"sdk_manifest_ingress_bound":sdk_manifest_ingress_bound(t)}; return {"schema":"stegverse.organization-boundary-validation/v1","organization":ORG,"checks":checks,"valid":all(checks.values()),"authority_effect":"NONE_VALIDATION_ONLY"}
+    a,t=load(ACT),load(TR); h=t["heartbeat_derived_carrier"]; checks={"activation_owner":a.get("organization")==ORG and a.get("owner_repository")==f"{ORG}/.github","activation_local":a.get("activation_source_scope")=="ORG_DOT_GITHUB_ONLY","runtime_sovereign":a.get("runtime_execution_surface")=="SOVEREIGN_RESIDENT_PROCESS","transport_owner":t.get("organization")==ORG and t.get("owner_repository")==f"{ORG}/.github","all_io_here":t.get("communication_policy")=="ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY","tvtvc":a.get("credential_authority")=="TV/TVC" and t.get("credential_authority")=="TV/TVC","github_none":a.get("github_token_runtime_authority")=="NONE" and t.get("github_token_runtime_authority")=="NONE","effects_transition_derived":a.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS" and t.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS","hb_non_authorizing":all(h.get(k) is False for k in ("carrier_grants_admission_authority","carrier_grants_execution_authority","carrier_grants_credential_authority","carrier_grants_routing_authority","carrier_grants_transition_authority","carrier_grants_receiving_authority")),"capability_bindings_resolve":capability_bindings_resolve(t),"sdk_manifest_ingress_bound":sdk_manifest_ingress_bound(t),"egress_emitting_operation_bound":egress_emitting_operation_bound(t),"egress_destinations_resolve_from_the_directory":egress_destinations_resolve_from_the_directory(t)}; return {"schema":"stegverse.organization-boundary-validation/v1","organization":ORG,"checks":checks,"valid":all(checks.values()),"authority_effect":"NONE_VALIDATION_ONLY"}
 def activation_request(runtime_id:str)->dict[str,Any]:
     body={"schema":"stegverse.organization-resident-runtime-activation-request/v1","organization":ORG,"runtime_id":runtime_id,"owner_repository":f"{ORG}/.github","state":"REQUESTED","credential_authority":"TV/TVC","request_granted_authority":False,"github_token_runtime_authority":"NONE","authority_transfer_assumed":False,"authority_effect_resolution":"DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS"}; return {**body,"request_sha256":canonical(body)}
 def envelope(direction:str,peer_org:str,interlock_id:str,payload_sha256:str,transition_elements_ref:str,authority_ref:str|None)->dict[str,Any]:

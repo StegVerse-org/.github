@@ -49,7 +49,49 @@
     "interlock_required": true,
     "intr_required": true,
     "direction": "EGRESS",
-    "standing_resolution": "APPLICABLE_TRANSITION_ELEMENTS"
+    "standing_resolution": "APPLICABLE_TRANSITION_ELEMENTS",
+    "peer_destination_resolution": {
+      "source": "ORGANIZATION_FEDERATION_DIRECTORY",
+      "directory": "org-boundary/registry/federation.json",
+      "resolved_from_caller_argument": false,
+      "destination_must_declare_this_transport_profile": "stegverse.intr.org-boundary.v1"
+    },
+    "emitting_operation": {
+      "owner_repository": "StegVerse-org/.github",
+      "operation_id": "ORGANIZATION_INTER_ORG_EGRESS",
+      "operation": "resident-runtime/organization_egress_boundary.py",
+      "emission": "resident-runtime/organization_egress_boundary.py::emit",
+      "closure": "resident-runtime/organization_egress_boundary.py::close",
+      "carrier": "org-kernel/kernel.py::publish_packet",
+      "receipt_append": "resident-runtime/aggregate_repo_transition.py::append",
+      "emits": "stegverse.organization-transition-receipt/v1",
+      "transport": "INTERLOCK_INTR",
+      "address_form": "REPOSITORY_OWNED_OPERATION_NOT_HOST_OR_URL",
+      "host_required": false,
+      "environment_url_required": false,
+      "credential_authority": "TV/TVC",
+      "github_token_runtime_authority": "NONE",
+      "emission_transition_classes": [
+        "ORGANIZATION_EGRESS_EMITTED",
+        "ORGANIZATION_EGRESS_REFUSED"
+      ],
+      "closure_transition_classes": [
+        "ORGANIZATION_EGRESS_CLOSED",
+        "ORGANIZATION_EGRESS_CLOSURE_REFUSED"
+      ],
+      "every_disposition_is_receipted": true,
+      "absence_of_a_response_is_not_a_transition": true,
+      "binding_role": "ORGANIZATION_EMITTING_OPERATION_RESOLUTION",
+      "authority_effect": "NONE_BINDING_ONLY",
+      "grants_routing_authority": false,
+      "grants_admission_authority": false,
+      "grants_execution_authority": false,
+      "environment_selected_ingress": false,
+      "origin_attestation_state": "NOT_PROVEN",
+      "origin_is_verified_by_this_boundary": false,
+      "far_side_receipt_reconstructed_here": false
+    },
+    "emitting_operation_rule": "OUTBOUND_ORGANIZATION_CROSSINGS_RESOLVE_ONE_EMITTING_OPERATION_OWNED_HERE"
   },
   "heartbeat_derived_carrier": {
     "reference_frequency_hz": 100,
