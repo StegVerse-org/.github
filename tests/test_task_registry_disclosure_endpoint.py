@@ -33,6 +33,14 @@ MANIFEST = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-
 REGISTRY = ROOT / "orchestration/task-registry.json"
 RECEIPT_CHAIN = ["INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED", "RESULT_BOUND", "EGRESS_EMITTED"]
 
+# Ingress requires canonical node standing, so this crossing declares its chain
+# position like any other. This fixture is an ingress manifest and carries none
+# of its own, so the caller declares it; `predecessor` is present and null,
+# which is explicit genesis rather than a default.
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "StegVerse-independent-evaluator",
+           "predecessor": None}
+
+
 CAPABILITY = "ecosystem_diagnostic"
 ROUTE_ID = "stegverse.route.ecosystem-diagnostic.v1"
 
@@ -63,7 +71,8 @@ class CrossingServesTheRegistryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.manifest = json.loads(MANIFEST.read_text())
-        cls.result = bridge.cross(cls.manifest, packet_id="task-registry-disclosure-test")
+        cls.result = bridge.cross(cls.manifest, standing=GENESIS,
+                                  packet_id="task-registry-disclosure-test")
         cls.served = (cls.result["egress"]["payload"]["execution_result"]["application_result"])
 
     def test_the_declared_capability_was_actually_processed(self):
