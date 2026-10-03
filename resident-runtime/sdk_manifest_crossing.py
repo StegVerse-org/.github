@@ -104,9 +104,34 @@ def resolve_surface(surface, registry):
     return matches[0]
 
 
-def crossing_packet(manifest, destination, service, registry, origin, packet_id):
-    """Build the InTr ingress packet that carries this manifest."""
-    return intr_transport.build_ingress(
+def manifest_standing(manifest, declared=None):
+    """Derive this crossing's standing from the manifest, or take what was declared.
+
+    A generation manifest already carries `generation` and `predecessor`, which
+    is where the chain position belongs; deriving it means the envelope and the
+    manifest cannot disagree. An ingress manifest declares no chain position, so
+    the caller declares one, and there is no default: a silent default is the
+    defaulting `CANONICAL-NODE-INGRESS-CONTRACT-001` exists to prevent.
+    """
+    if isinstance(manifest, dict) and "generation" in manifest and "predecessor" in manifest:
+        generation, predecessor = manifest["generation"], manifest["predecessor"]
+        source = (manifest.get("source_organization") or {}).get("organization_id")
+        return {"mode": "ESTABLISH_GENESIS" if generation == 1 and predecessor is None
+                        else "VERIFY_EXISTING",
+                "node_ref": source or str(manifest.get("source_framework") or "unknown"),
+                "generation": generation, "predecessor": predecessor}
+    if declared is None:
+        raise SystemExit("CROSSING_REQUIRES_DECLARED_STANDING:"
+                         "this manifest declares no chain position, so one must be supplied")
+    if not isinstance(declared, dict) or "predecessor" not in declared:
+        raise SystemExit("CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY:"
+                         "null is explicit genesis; an absent key fails closed")
+    return declared
+
+
+def crossing_packet(manifest, destination, service, registry, origin, packet_id, standing):
+    """Build the InTr ingress packet that carries this manifest and its standing."""
+    envelope = intr_transport.build_ingress(
         origin,
         {"org": registry["organization"], "service": service["service_id"]},
         {"schema": "stegverse.sdk-manifest-crossing-payload/v1",
@@ -118,15 +143,21 @@ def crossing_packet(manifest, destination, service, registry, origin, packet_id)
         authority_effect=str((manifest.get("transition") or {}).get("authority_effect", "NONE")),
         packet_id=packet_id,
     )
+    # Carried on the envelope so the receiving boundary can validate it without
+    # parsing an arbitrary payload, which is what
+    # `organization_boundary_must_carry_predecessor` asks for.
+    return {**envelope, "standing": standing}
 
 
-def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing"):
+def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing", standing=None):
     """Drive the manifest's declared crossing and return what it produced."""
     registry = load(REGISTRY)
     destination = declared_destination(manifest)
     service = resolve_surface(destination["surface"], registry)
     origin = origin or {"org": "StegVerse-org", "service": "stegverse-org.stegverse-sdk"}
-    ingress = crossing_packet(manifest, destination, service, registry, origin, packet_id)
+    resolved_standing = manifest_standing(manifest, standing)
+    ingress = crossing_packet(manifest, destination, service, registry, origin, packet_id,
+                              resolved_standing)
     intr_transport.validate_org_crossing(ingress, "INGRESS")
 
     with tempfile.TemporaryDirectory() as work:
@@ -183,10 +214,14 @@ def main():
     parser.add_argument("--origin-org", default="StegVerse-org")
     parser.add_argument("--origin-service", default="stegverse-org.stegverse-sdk")
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--standing", type=Path, default=None,
+                        help="JSON file declaring mode, node_ref and the predecessor key; "
+                             "required unless the manifest declares its own generation and predecessor")
     args = parser.parse_args()
     result = cross(load(args.manifest),
                    origin={"org": args.origin_org, "service": args.origin_service},
-                   packet_id=args.packet_id)
+                   packet_id=args.packet_id,
+                   standing=load(args.standing) if args.standing else None)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

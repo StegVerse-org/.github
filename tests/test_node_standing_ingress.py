@@ -42,6 +42,13 @@ STANDING_SPEC.loader.exec_module(NS)
 
 CONTRACT_DOC = json.loads((ROOT / CONTRACT).read_text())
 
+def load_module(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 DIGEST = "a" * 64
 OTHER_DIGEST = "b" * 64
 
@@ -308,6 +315,73 @@ class ResponsesDoNotFabricateASuccessorTests(unittest.TestCase):
     def test_a_request_with_no_standing_cannot_produce_a_response(self):
         with self.assertRaisesRegex(ValueError, "response_requires_request_standing"):
             K.carried_standing({"packet_id": "x"})
+
+
+class EverySeparatelyInvocableIngressSurfaceIsGatedTests(unittest.TestCase):
+    """A gate in one entry point is not a gate on the boundary.
+
+    `process_boundary.py` is a complete ingress surface in its own right: it
+    resolves the registry, checks the destination, selects processing and mints
+    receipts, and `resident-runtime/sdk_manifest_crossing.py` runs it directly
+    as a subprocess without ever entering `kernel.dispatch`. So standing
+    resolved only in the kernel left the SDK manifest crossing -- the external
+    lane, the one an evaluator actually uses -- ungated, which is the inverse of
+    what the contract requires. These cases hold both surfaces.
+    """
+
+    def test_the_crossing_lane_refuses_an_envelope_with_no_standing(self):
+        """The lane that bypasses the kernel must still fail closed."""
+        import subprocess, sys
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        envelope = root / "ingress.json"
+        envelope.write_text(json.dumps({
+            "schema_version": "x", "packet_id": "p1", "direction": "INGRESS",
+            "origin": {"org": "Source-Org", "service": "source.sdk"},
+            "destination": {"org": "StegVerse-org", "service": "stegverse-org.boundary-diagnostic"},
+            "carrier": {"kind": "HB_DERIVED", "reference": "canonical"},
+            "intr_profile": "stegverse.intr.org-boundary.v1",
+            "transition": {"reference": "diagnostic", "authority_effect": "NONE"},
+            "payload": {"probe": "ping"}, "evidence": {}}))
+        completed = subprocess.run(
+            [sys.executable, str(ROOT / "org-boundary/runtime/process_boundary.py"),
+             "--envelope", str(envelope), "--out", str(root / "out.json")],
+            cwd=str(ROOT), capture_output=True, text=True)
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("no-standing-declared", completed.stdout + completed.stderr)
+        self.assertFalse((root / "out.json").exists(),
+                         "a refused crossing must not write an execution result")
+
+    def test_process_boundary_resolves_standing_before_it_selects_processing(self):
+        """Selection is processing; a crossing without standing never reaches it."""
+        source = (ROOT / "org-boundary/runtime/process_boundary.py").read_text()
+        standing_at = source.index("node_standing.require(")
+        selection_at = source.index("selection.select_processing(")
+        self.assertLess(standing_at, selection_at)
+
+    def test_the_crossing_refuses_to_run_without_a_declared_chain_position(self):
+        """An ingress manifest declares none, so `cross` will not invent one."""
+        crossing = load_module("sdk_manifest_crossing",
+                               ROOT / "resident-runtime/sdk_manifest_crossing.py")
+        with self.assertRaisesRegex(SystemExit, "CROSSING_REQUIRES_DECLARED_STANDING"):
+            crossing.manifest_standing({"manifest_profile": "stegverse.ingress-manifest.v1"}, None)
+        with self.assertRaisesRegex(SystemExit, "MUST_DECLARE_THE_PREDECESSOR_KEY"):
+            crossing.manifest_standing({}, {"mode": "ESTABLISH_GENESIS", "node_ref": "n"})
+
+    def test_a_generation_manifest_supplies_its_own_chain_position(self):
+        """Derived, so the envelope and the manifest cannot disagree."""
+        crossing = load_module("sdk_manifest_crossing",
+                               ROOT / "resident-runtime/sdk_manifest_crossing.py")
+        derived = crossing.manifest_standing({
+            "generation": 1, "predecessor": None,
+            "source_organization": {"organization_id": "Evaluator-Org"}})
+        self.assertEqual(derived, {"mode": "ESTABLISH_GENESIS", "node_ref": "Evaluator-Org",
+                                   "generation": 1, "predecessor": None})
+        successor = crossing.manifest_standing({
+            "generation": 2, "predecessor": binding(),
+            "source_organization": {"organization_id": "Evaluator-Org"}})
+        self.assertEqual(successor["mode"], "VERIFY_EXISTING")
+        self.assertEqual(successor["predecessor"], binding())
 
 
 if __name__ == "__main__":

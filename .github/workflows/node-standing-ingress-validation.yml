@@ -6,7 +6,9 @@ on:
     paths:
       - docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json
       - org-boundary/runtime/node_standing.py
+      - org-boundary/runtime/process_boundary.py
       - org-kernel/kernel.py
+      - resident-runtime/sdk_manifest_crossing.py
       - resident-runtime/sdk_self_characterization_egress.py
       - resident-runtime/submit_org_transition_to_master_records.py
       - tests/test_node_standing_ingress.py
@@ -16,7 +18,9 @@ on:
     paths:
       - docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json
       - org-boundary/runtime/node_standing.py
+      - org-boundary/runtime/process_boundary.py
       - org-kernel/kernel.py
+      - resident-runtime/sdk_manifest_crossing.py
       - resident-runtime/sdk_self_characterization_egress.py
       - resident-runtime/submit_org_transition_to_master_records.py
       - tests/test_node_standing_ingress.py
@@ -35,6 +39,8 @@ jobs:
           set -eu
           python -m unittest tests.test_node_standing_ingress -v
           python -m py_compile org-boundary/runtime/node_standing.py org-kernel/kernel.py \
+            org-boundary/runtime/process_boundary.py \
+            resident-runtime/sdk_manifest_crossing.py \
             resident-runtime/sdk_self_characterization_egress.py \
             resident-runtime/submit_org_transition_to_master_records.py
 
@@ -65,7 +71,20 @@ jobs:
           # contract exists to prevent.
           assert 'standing:dict[str,Any]' in kernel
           assert 'standing=None' not in kernel and 'standing={}' not in kernel
+          # Every separately invocable ingress surface must be gated, not just
+          # the kernel. process_boundary.py is run directly as a subprocess by
+          # the SDK manifest crossing, so a kernel-only gate leaves the
+          # external lane open.
+          boundary = Path('org-boundary/runtime/process_boundary.py').read_text(encoding='utf-8')
+          assert 'node_standing.require(' in boundary, 'the crossing surface must resolve standing'
+          assert boundary.index('node_standing.require(') < boundary.index('selection.select_processing('), \
+              'standing must resolve before processing is selected'
+
+          crossing = Path('resident-runtime/sdk_manifest_crossing.py').read_text(encoding='utf-8')
+          assert 'CROSSING_REQUIRES_DECLARED_STANDING' in crossing
+          assert '"standing": standing' in crossing, 'the envelope must carry the declaration'
           print('NODE_STANDING_CONTRACT_IS_THE_AUTHORITY=PASS')
+          print('EVERY_INGRESS_SURFACE_GATED=PASS')
           PY
 
       - name: Record non-authorizing standing

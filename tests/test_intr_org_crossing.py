@@ -28,11 +28,15 @@ spec = importlib.util.spec_from_file_location("intr_transport", TRANSPORT)
 transport = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(transport)
 
+# Ingress requires canonical node standing, so a crossing declares its chain
+# position. `predecessor` is present and null: explicit genesis, not a default.
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "test-node", "predecessor": None}
+
 RECEIPT_KINDS = ["INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED", "RESULT_BOUND", "EGRESS_EMITTED"]
 
 
-def ingress_packet(service=DIAGNOSTIC, packet_id="intr-crossing-001"):
-    return transport.build_ingress(
+def ingress_packet(service=DIAGNOSTIC, packet_id="intr-crossing-001", standing=None):
+    envelope = transport.build_ingress(
         {"org": "StegVerse-Labs", "service": "stegverse-labs.org-control"},
         {"org": ORGANIZATION, "service": service},
         {"probe": "crossing"},
@@ -40,6 +44,9 @@ def ingress_packet(service=DIAGNOSTIC, packet_id="intr-crossing-001"):
         "intr:transition:" + packet_id,
         packet_id=packet_id,
     )
+    if standing is False:
+        return envelope
+    return {**envelope, "standing": standing or GENESIS}
 
 
 class CrossingContractTests(unittest.TestCase):
