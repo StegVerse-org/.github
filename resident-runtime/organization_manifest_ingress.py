@@ -134,6 +134,23 @@ def boundary() -> dict[str, Any]:
     return json.loads(BOUNDARY.read_text(encoding="utf-8"))
 
 
+def submitted_capability(manifest: Any) -> dict[str, Any]:
+    """What the submission itself declared it wanted processed, or nulls.
+
+    Read defensively, because some refusals happen before the manifest is known
+    to be well formed. A submission that declared nothing records nulls rather
+    than being omitted: the distinction between "declared nothing" and "we did
+    not record it" is the whole value of having the field.
+    """
+    processing = (manifest or {}).get("processing") if isinstance(manifest, Mapping) else None
+    processing = processing if isinstance(processing, Mapping) else {}
+    return {
+        "submitted_processing_capability": processing.get("capability"),
+        "submitted_route_id": processing.get("route_id"),
+        "submitted_capability_is_as_declared_by_the_submission": True,
+    }
+
+
 def refusal_record(failed_predicate: str, detail: str,
                    manifest: Any) -> dict[str, Any]:
     """What a refused submission records.
@@ -142,10 +159,23 @@ def refusal_record(failed_predicate: str, detail: str,
     would have produced appears here -- no resolved service, no boundary receipt
     chain, no runtime result -- because the organization produced none, and a
     record naming them would read as a submission that was received.
+
+    What a refusal *does* carry is which capability's receiving operation
+    refused, and what the submission declared it wanted. Those are not things an
+    admitted crossing produced -- the first is a constant of this operation and
+    the second is the submitter's own declaration -- and without them a
+    capability that only ever refuses is indistinguishable from one nothing has
+    ever exercised. `destination_resolution_source` is deliberately *not* here:
+    a refusal resolved no destination, and marking it as a record that did would
+    put it in a population measured for target and scope fields it correctly
+    lacks.
     """
     return {
         "schema": REFUSAL_SCHEMA,
         "receiving_operation": OPERATION_ID,
+        "profile_id": PROFILE_ID,
+        "operation": OPERATION,
+        **submitted_capability(manifest),
         "intended_action": INTENDED_ACTION,
         "disposition": "DENY",
         "transition_is_the_disposition_of_the_intended_action": True,
