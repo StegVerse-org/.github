@@ -33,6 +33,12 @@ _spec = importlib.util.spec_from_file_location(
 ingress = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ingress)
 
+# The digest function the organization ledger verifies a repository receipt with.
+_ospec = importlib.util.spec_from_file_location(
+    "aggregate_repo_transition", ROOT / "resident-runtime/aggregate_repo_transition.py")
+organization_ledger = importlib.util.module_from_spec(_ospec)
+_ospec.loader.exec_module(organization_ledger)
+
 
 def manifest() -> dict:
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -43,18 +49,30 @@ def standing() -> dict:
 
 
 class ReceivingOperationTests(unittest.TestCase):
+    LEDGER_ROOTS = ("STEGVERSE_REPO_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_ROOT")
+
     def setUp(self):
+        # Both levels are redirected. A test that appended into either default
+        # location would be writing runtime reality from a test run.
         self._ledger = tempfile.TemporaryDirectory()
-        self._previous = os.environ.get("STEGVERSE_ORG_LEDGER_ROOT")
-        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = self._ledger.name
+        self._previous = {name: os.environ.get(name) for name in self.LEDGER_ROOTS}
+        for name in self.LEDGER_ROOTS:
+            os.environ[name] = str(Path(self._ledger.name) / name.lower())
         self.addCleanup(self._restore)
 
     def _restore(self):
-        if self._previous is None:
-            os.environ.pop("STEGVERSE_ORG_LEDGER_ROOT", None)
-        else:
-            os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = self._previous
+        for name, previous in self._previous.items():
+            if previous is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = previous
         self._ledger.cleanup()
+
+    def ledger_receipts(self, variable, schema):
+        root = Path(os.environ[variable])
+        return [json.loads(path.read_text(encoding="utf-8"))
+                for path in root.rglob("*.json")
+                if json.loads(path.read_text(encoding="utf-8")).get("schema") == schema]
 
     def receive(self, **overrides):
         payload = {"standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}
@@ -89,6 +107,91 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertEqual(admitted["reconstruction_status"], "PASS")
         self.assertIs(admitted["terminal_state"]["records_only"], True)
         self.assertIs(admitted["terminal_state"]["continued_authority"], False)
+
+    def test_the_organization_consumes_a_repository_receipt_it_did_not_author(self):
+        """The organization ledger's job is to consume the level below, not to write it.
+
+        Authoring the source receipt and recording it as the organization's own
+        in one call left `preserves_repo_receipt` with nothing to preserve and
+        organization replay resting on a receipt that same call had minted.
+        """
+        result = self.receive()
+        self.assertIs(result["repository_receipt_observed"], True)
+        self.assertEqual(result["repository"], OWNER)
+        self.assertIs(result["organization_receipt_preserves_repository_receipt"], True)
+
+        organization = self.ledger_receipts(
+            "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1")
+        self.assertEqual(len(organization), 1)
+        receipt = organization[0]
+        # The three fields that were null when one writer stood in for two levels.
+        self.assertEqual(receipt["source_receipt_schema"],
+                         "stegverse.repo-transition-receipt/v1")
+        self.assertEqual(receipt["source_repository"], OWNER)
+        self.assertEqual(receipt["repo_receipt_sha256"], result["repository_receipt_sha256"])
+        self.assertEqual(receipt["repo_transition_id"], result["organization_transition_id"])
+        self.assertEqual(receipt["org_transition_class"], "REPO_STATE_PROPAGATION")
+
+    def test_the_repository_receipt_is_durable_and_verifies_against_its_own_body(self):
+        """Organization replay needs a verified repository receipt underneath it."""
+        result = self.receive()
+        repository = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+        self.assertEqual(len(repository), 1)
+        receipt = repository[0]
+        self.assertEqual(receipt["receipt_sha256"], result["repository_receipt_sha256"])
+        self.assertEqual(receipt["repository"], OWNER)
+        self.assertEqual(receipt["transition_class"], "ORGANIZATION_SDK_MANIFEST_INGRESS")
+        # Verified the way the organization ledger verifies it: the claimed
+        # digest is the digest of the rest of the receipt.
+        body = {key: value for key, value in receipt.items() if key != "receipt_sha256"}
+        self.assertEqual(receipt["receipt_sha256"], organization_ledger.sha(body))
+        self.assertIs(result["replay_requires_only_verified_repo_and_organization_receipts"],
+                      True)
+
+    def test_the_repository_chain_continues_rather_than_forking(self):
+        """A second ingress links to the first; the chain position is the ledger's."""
+        first = self.receive()
+        second = self.receive(packet_id="org-ingress-test-2")
+        self.assertNotEqual(first["repository_receipt_sha256"],
+                            second["repository_receipt_sha256"])
+        repository = {receipt["receipt_sha256"]: receipt for receipt in self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")}
+        self.assertEqual(len(repository), 2)
+        self.assertIsNone(repository[first["repository_receipt_sha256"]]["previous_receipt_sha256"])
+        self.assertEqual(repository[second["repository_receipt_sha256"]]["previous_receipt_sha256"],
+                         first["repository_receipt_sha256"])
+
+    def test_the_transition_evidence_is_inline_rather_than_a_reference(self):
+        self.receive()
+        receipt, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+        evidence = receipt["evidence"]
+        self.assertEqual(evidence["receiving_operation"], "ORGANIZATION_SDK_MANIFEST_INGRESS")
+        self.assertEqual(evidence["destination_resolution_source"],
+                         "CANONICAL_CONNECTOR_CAPABILITY_OVERLAY")
+        self.assertEqual([closure["transition_id"] for closure in evidence["transition_closures"]],
+                         ["INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED",
+                          "RESULT_BOUND", "EGRESS_EMITTED"])
+        self.assertEqual(receipt["authority_effect"], "NONE")
+
+    def test_a_refused_crossing_writes_neither_ledger(self):
+        """Nothing is recorded at either level when the crossing does not happen."""
+        governed = build_manifest(
+            data={"probe": True}, source_framework="organization-boundary-test",
+            source_output_id="refused-writes-nothing",
+            processor_request={"candidate": {"action": "inspect"}, "judgment": {}, "signal": {},
+                              "execution": {}, "capability": {}, "continuity": {},
+                              "approval": {}, "permission_present": False},
+            created_at="2026-10-03T00:00:00Z")
+        result = self.receive(manifest=governed,
+                              standing={"mode": "ESTABLISH_GENESIS", "node_ref": "test",
+                                        "predecessor": None})
+        self.assertEqual(result["disposition"], "FAIL_CLOSED")
+        self.assertEqual(self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1"), [])
+        self.assertEqual(self.ledger_receipts(
+            "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1"), [])
 
     def test_the_result_is_bound_to_the_receipt_that_exists(self):
         """`manifest_receipt_id` is the appended receipt, not an id minted for the occasion."""

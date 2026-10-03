@@ -17,10 +17,19 @@ caller name its own organization.
 The sequence is the one the binding declares, in that order:
 
     derive_execution_request(manifest, this organization's boundary)
-    resident-runtime/sdk_manifest_crossing.py::cross     admission
-    org-boundary/runtime/process_boundary.py             processing
-    resident-runtime/aggregate_repo_transition.py::append    organization receipt
+    resident-runtime/sdk_manifest_crossing.py::cross       admission
+    org-boundary/runtime/process_boundary.py               processing
+    .stegverse/transition-ledger/emit.py::append           repository receipt
+    resident-runtime/aggregate_repo_transition.py::append  organization receipt
     stegverse.manifest_state_transition_runtime.admit_runtime_result
+
+The two ledger levels are both written, in that order, because the transition
+occurs in this repository and the organization ledger's job is to consume a
+receipt from the level below. One writer standing in for both levels is what
+`preserves_repo_receipt: true` has nothing to preserve from, and it leaves
+organization replay resting on a receipt the same call minted, where
+`ORGANIZATION_REPLAY_MUST_REQUIRE_ONLY_VERIFIED_REPO_RECEIPTS_AND_ORG_RECEIPTS`
+asks for a verified repository receipt underneath.
 
 Two resolutions happen at two boundaries and must not be confused. The overlay
 resolves *organization* ingress: which organization receives this capability,
@@ -64,7 +73,6 @@ PROFILE_ID = "sdk-manifest-ingress"
 PROFILE_NAME = "SDK:ManifestIngress"
 OPERATION = "SUBMIT_MANIFEST"
 RESULT_SCHEMA_ORG = "stegverse.organization-manifest-ingress-result/v1"
-CANONICAL_RECEIPT_SCHEMA = "stegverse.canonical-state-transition-receipt/v1"
 # The organization ledger is its own runtime reality locus, so replay of this
 # transition terminates on this chain. That is the contract's own replay_rule,
 # not a claim about any higher level.
@@ -79,6 +87,7 @@ def _module(name: str, relative: str):
 
 
 crossing_module = _module("sdk_manifest_crossing", "resident-runtime/sdk_manifest_crossing.py")
+repository_ledger = _module("repo_transition_emit", ".stegverse/transition-ledger/emit.py")
 organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
 
@@ -176,17 +185,14 @@ def reconstruct_closures(crossing: Mapping[str, Any]) -> list[dict[str, Any]]:
     return closures
 
 
-def canonical_receipt(request: Mapping[str, Any], crossing: Mapping[str, Any],
-                      closures: list[dict[str, Any]], sequence: int) -> dict[str, Any]:
-    """The canonical state transition this ingress performed, with its evidence inline.
+def transition_evidence(request: Mapping[str, Any], crossing: Mapping[str, Any],
+                        closures: list[dict[str, Any]]) -> dict[str, Any]:
+    """What this ingress transition is evidenced by, inline.
 
-    The organization ledger admits a canonical transition on its own terms and
-    requires exact inline evidence bytes, because organization replay must
-    terminate on this chain alone rather than on a promise that something is
-    reachable.
+    Replay reads these bytes rather than following a reference, because a
+    reachability promise is not evidence.
     """
-    transition_id = "ORGANIZATION-SDK-MANIFEST-INGRESS-" + request["request_sha256"][:16]
-    evidence = {
+    return {
         "receiving_operation": OPERATION_ID,
         "profile_id": PROFILE_ID,
         "profile_name": PROFILE_NAME,
@@ -200,21 +206,6 @@ def canonical_receipt(request: Mapping[str, Any], crossing: Mapping[str, Any],
         "route_id": request["route_id"],
         "crossing": {key: value for key, value in crossing.items() if key != "egress"},
         "transition_closures": closures,
-    }
-    return {
-        "schema": CANONICAL_RECEIPT_SCHEMA,
-        "transition_id": transition_id,
-        "transition_sequence": sequence,
-        "subject_or_correlation_id": crossing["ingress_packet_id"],
-        "transition_outcome": "OBSERVED",
-        "required_evidence_manifest": [{
-            "evidence_id": "organization_sdk_manifest_ingress",
-            "evidence_type": "CANONICAL_STATE_TRANSITION_ELEMENTS",
-            "origin_transition_id": transition_id,
-            "encoding": "canonical-json",
-            "content": evidence,
-            "sha256": sha(evidence),
-        }],
     }
 
 
@@ -245,7 +236,7 @@ def runtime_result(request: Mapping[str, Any], closures: list[dict[str, Any]],
 
 def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None = None,
             packet_id: str = "organization-sdk-manifest-ingress",
-            hb_epoch: int | None = None, sequence: int = 1) -> dict[str, Any]:
+            hb_epoch: int | None = None) -> dict[str, Any]:
     """Receive a submitted manifest on this organization's ingress operation."""
     try:
         request = derive_execution_request(manifest, boundary())
@@ -273,11 +264,24 @@ def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None =
         return _refused("BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY", str(exc),
                         request_sha256=request["request_sha256"])
 
-    receipt = canonical_receipt(request, crossing, closures, sequence)
+    # The transition occurred in this repository, so the repository ledger
+    # records it first and the organization ledger consumes that receipt. The
+    # organization authoring its own source receipt and then recording it as its
+    # own was one writer standing in for two levels: it left
+    # `preserves_repo_receipt` with nothing to preserve, and left organization
+    # replay resting on a receipt the same call had just minted, when the
+    # replay rule asks for verified repo receipts beneath the organization ones.
+    transition_id = "ORGANIZATION-SDK-MANIFEST-INGRESS-" + request["request_sha256"][:16]
+    predecessor_state = "sha256:" + request["canonical_manifest_sha256"]
+    successor_state = "sha256:" + closures[-1]["receipt_sha256"]
+    repository_receipt = repository_ledger.append(
+        transition_id, "ORGANIZATION_SDK_MANIFEST_INGRESS",
+        predecessor_state, successor_state,
+        transition_evidence(request, crossing, closures),
+        "NONE", hb_epoch=hb_epoch)
     organization_receipt = organization_ledger.append(
-        receipt, "ORGANIZATION_STATE_TRANSITION",
-        "sha256:" + request["canonical_manifest_sha256"],
-        "sha256:" + closures[-1]["receipt_sha256"],
+        repository_receipt, "REPO_STATE_PROPAGATION",
+        predecessor_state, successor_state,
         {"receiving_operation": OPERATION_ID,
          "resolved_service_id": crossing["resolved_service_id"],
          "ingress_packet_id": crossing["ingress_packet_id"],
@@ -303,6 +307,7 @@ def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None =
             # does not unmake a transition that occurred here.
             "organization_receipt_observed": True,
             "organization_receipt_sha256": organization_receipt["receipt_sha256"],
+            "repository_receipt_sha256": repository_receipt["receipt_sha256"],
             "request_sha256": request["request_sha256"],
             "authority_effect": "NONE_REFUSAL_ONLY",
         }
@@ -328,7 +333,15 @@ def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None =
         "transition_closures": closures,
         "organization_receipt_observed": True,
         "organization_receipt_sha256": organization_receipt["receipt_sha256"],
-        "organization_transition_id": receipt["transition_id"],
+        "organization_transition_id": transition_id,
+        # Both levels, so a reader can see the organization consumed a receipt
+        # from the level below rather than one it wrote itself.
+        "repository_receipt_observed": True,
+        "repository_receipt_sha256": repository_receipt["receipt_sha256"],
+        "repository": repository_receipt["repository"],
+        "organization_receipt_preserves_repository_receipt":
+            organization_receipt["repo_receipt_sha256"] == repository_receipt["receipt_sha256"],
+        "replay_requires_only_verified_repo_and_organization_receipts": True,
         "sdk_admitted_result": admitted,
         # Custody is published separately and is not awaited here:
         # `propagation_gates_organization_runtime_reality` is false and Master
@@ -351,7 +364,6 @@ def main() -> int:
     parser.add_argument("--hb-epoch", type=int, default=None,
                         help="heartbeat epoch; derived from the host clock, and marked as "
                              "derived, when absent")
-    parser.add_argument("--sequence", type=int, default=1)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
 
@@ -359,7 +371,7 @@ def main() -> int:
         json.loads(args.manifest.read_text(encoding="utf-8")),
         standing=(json.loads(args.standing.read_text(encoding="utf-8"))
                   if args.standing else None),
-        packet_id=args.packet_id, hb_epoch=args.hb_epoch, sequence=args.sequence)
+        packet_id=args.packet_id, hb_epoch=args.hb_epoch)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
