@@ -1,0 +1,111 @@
+name: Validate Organization Repository Propagation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/propagate_repository_receipts.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'resident-runtime/federation_cycle.py'
+      - 'resident-runtime/ledger_store.py'
+      - 'org-boundary/registry/services.json'
+      - '.stegverse/transition-ledger/org-contract.json'
+      - 'tests/test_organization_repository_propagation.py'
+      - 'docs/ORGANIZATION_REPOSITORY_PROPAGATION_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-repository-propagation-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/propagate_repository_receipts.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'resident-runtime/federation_cycle.py'
+      - 'resident-runtime/ledger_store.py'
+      - 'org-boundary/registry/services.json'
+      - '.stegverse/transition-ledger/org-contract.json'
+      - 'tests/test_organization_repository_propagation.py'
+      - 'docs/ORGANIZATION_REPOSITORY_PROPAGATION_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-repository-propagation-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-repository-propagation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Both ledgers are durable sovereign state. A run that appended into
+      # either default location would be writing runtime reality from CI, so
+      # every step that can append is pointed at the runner's temporary
+      # directory. `runner` is a step-level context, not a job-level one.
+      - name: Validate repository propagation onto the organization chain
+        env:
+          STEGVERSE_REPO_LEDGER_HOME: ${{ runner.temp }}/repo-ledgers
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: python -m unittest tests.test_organization_repository_propagation -v
+
+      - name: The resident cycle carries receipts without anyone naming them
+        env:
+          STEGVERSE_REPO_LEDGER_HOME: ${{ runner.temp }}/cycle-repo-ledgers
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/cycle-org-ledger
+        run: |
+          python - <<'PY'
+          import importlib.util, json, os
+          from pathlib import Path
+
+          root = Path(".")
+          def load(name, relative):
+              spec = importlib.util.spec_from_file_location(name, root / relative)
+              module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+              return module
+
+          ledger = load("aggregate_repo_transition", "resident-runtime/aggregate_repo_transition.py")
+          repository = "StegVerse-org/LLM-adapter"
+
+          # A repository receipt of the shape a repository emitter writes.
+          body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": repository,
+                  "transition_id": "NODE_INGRESS_ADMITTED:ci-node", "transition_class": "NODE_INGRESS_ADMITTED",
+                  "predecessor_state_sha256": "sha256:" + "1" * 64,
+                  "successor_state_sha256": "sha256:" + "2" * 64,
+                  "evidence": {"ci": True}, "authority_effect": "NONE",
+                  "hb_reference": {"epoch": 32, "progression_dependency": "OSCILLATOR_ONLY"},
+                  "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY", "previous_receipt_sha256": None}
+          digest = ledger.sha(body)
+          receipt = {**body, "receipt_sha256": digest}
+          receipts = Path(os.environ["STEGVERSE_REPO_LEDGER_HOME"]) / repository / "receipts"
+          receipts.mkdir(parents=True, exist_ok=True)
+          (receipts / (digest.split(":", 1)[1] + ".json")).write_text(json.dumps(receipt, indent=2, sort_keys=True))
+          (receipts.parent / "HEAD.json").write_text(json.dumps(
+              {"repository": repository, "receipt_sha256": digest}, indent=2, sort_keys=True))
+
+          cycle = load("federation_cycle", "resident-runtime/federation_cycle.py")
+          cycle.main()
+          reported = json.loads((root / "resident-runtime/federation/latest-cycle.json").read_text())
+          carried = reported["repository_propagation"]
+          assert carried["receipts_propagated"] == 1, carried
+          assert carried["repositories_present"] == 1, carried
+          assert carried["crossed_an_organization_boundary"] is False
+          assert carried["interlock_intr_involved"] is False
+
+          # The organization chain carries it, bound to the repository receipt.
+          organization = [json.loads(p.read_text()) for p in
+                          (Path(os.environ["STEGVERSE_ORG_LEDGER_ROOT"]) / "receipts").glob("*.json")]
+          organization = [r for r in organization
+                          if r.get("schema") == "stegverse.organization-transition-receipt/v1"]
+          assert len(organization) == 1, len(organization)
+          assert organization[0]["source_repository"] == repository
+          assert organization[0]["repo_receipt_sha256"] == digest
+          assert organization[0]["org_transition_class"] == "REPO_STATE_PROPAGATION"
+
+          # Running the cycle again carries nothing rather than failing on a duplicate.
+          cycle.main()
+          again = json.loads((root / "resident-runtime/federation/latest-cycle.json").read_text())
+          assert again["repository_propagation"]["receipts_propagated"] == 0
+          assert again["repository_propagation"]["receipts_already_carried"] == 1
+          print("RESIDENT_CYCLE_CARRIES_REPOSITORY_RECEIPTS=PASS", organization[0]["repo_transition_id"])
+          PY
