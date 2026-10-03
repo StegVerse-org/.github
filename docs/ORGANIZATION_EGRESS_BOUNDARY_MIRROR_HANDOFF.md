@@ -92,18 +92,37 @@ Recorded, not hidden, in every record and in the declaration:
   one level up. `origin_attestation_state` stays `NOT_PROVEN`,
   `origin_is_verified_by_this_boundary` is false, and `credential_authority`
   names TV/TVC as the authority that would change it.
-* **The far side's receipt is carried, not verified.** Its terminal receipt id
-  comes back in the response and this organization does not hold its ledger, so
-  the chain cannot be reconstructed here. What *is* checked is listed beside
-  what is not: that the response answers the packet that was emitted, comes
-  from the organization that was resolved, carries an acknowledgement class, and
-  carries a terminal receipt at all.
+* **The far side's receipt is reconstructed, not carried.** This claim was
+  retracted after it shipped. The first version of this operation said the far
+  side's chain could not be verified here, and the validator *enforced* that — a
+  declared limit that is not real. A boundary receipt id is
+  `kind-sha256(canon({kind, packet_id, subject, previous_receipt_id,
+  detail}))[:24]`, and every input is something this organization already
+  holds: the packet id it minted, the service id it resolved from its own
+  directory, and the digest of its own payload. So the terminal id that comes
+  back is **recomputed and compared**, and a response that does not recompute
+  did not come from a boundary that ran this packet. It is the same move
+  `organization_manifest_ingress.reconstruct_closures` already makes inbound.
 
-The validator refuses a declaration claiming otherwise:
+  Reconstruction proves a boundary ran this packet and minted the chain this
+  packet determines. It does **not** prove which organization that boundary
+  belongs to, and it does not prove the far side persisted the chain on its own
+  ledger. Those are the bilateral match, which needs the far side's chain
+  readable and is not available at closure.
+
+  A closure also requires **this organization's own emission record**, read off
+  its own chain: that is the local half of the bilateral match, and a crossing
+  with no emission receipt here is one this organization has no record of
+  making, so it cannot be closed.
+
+The validator refuses a declaration claiming otherwise. An
 `origin_attestation_state` other than `NOT_PROVEN`,
-`origin_is_verified_by_this_boundary` true, or
-`far_side_receipt_reconstructed_here` true each fail
-`egress_emitting_operation_bound`.
+`origin_is_verified_by_this_boundary` true,
+`reconstruction_proves_who_the_far_side_is` true or
+`reconstruction_proves_the_far_side_persisted_its_chain` true each fail
+`egress_emitting_operation_bound` — and so now does declaring
+`far_side_receipt_reconstructed_here` **false**, because understating what the
+chain establishes is as wrong as overstating it.
 
 ## The declaration is enforced
 
@@ -169,35 +188,64 @@ Both ledger roots are redirected per test and per CI step. The ledgers are
 durable sovereign state and a run appending into either default location would
 be writing runtime reality from a test.
 
-## Next, and why it is next
+## What identifies the initiator, and where a credential is still needed
 
-**TV/TVC origin attestation.** This is now the only thing standing between a
-recorded crossing and a *trusted* one, and it is no longer a vague step 5: the
-egress record has the field, the validator refuses a false claim about it, and
-the declaration names TV/TVC as the authority. The shape of the work is a
-signature over the emitted packet produced under TVC authority, carried on the
-frame, and verified at the receiving organization's ingress before it admits —
-which turns `origin_attestation_state` from `NOT_PROVEN` into a verified
-recognition and lets `origin_is_verified_by_this_boundary` become true on both
-sides.
+Not a field. The **matching pair** does: a forged origin cannot produce one,
+because the claimed initiator's own ledger would hold no
+`ORGANIZATION_EGRESS_EMITTED` receipt binding that packet id. Identification is
+by chain, not by credential, and `origin_attestation_state` is a disclaimer that
+no credential was presented rather than the thing that establishes who sent it.
 
-TVC (`StegVerse-Labs/TVC`) is an authority and evidence provider for scoped
-execution tokens and receipt-bound admissibility evidence, and holds certificate
-root key custody. Which of its surfaces issues an organization-level signing
-authority — as opposed to a runtime-package execution token — is a design
-decision for the repository owner and is not taken here.
+The match is available in two places and not in a third:
 
-**Receipt lineage for reversibility.** `Admissible-Existence/RE`'s lineage
-contract requires `receipt_id`, `event_type`, `predecessor_id`, `payload_hash`
-and `sequence`. A real eight-receipt StegVerse chain fed to RE's own
-`validate_re_lineage.evaluate` returns `FAIL_CLOSED`, and
-`LINEAGE_RECONSTRUCTABLE` through a field adapter supplying exactly two things:
-`sequence`, which is derivable from chain position, and `event_type`
-(`ORIGINAL / CORRECTION / INVALIDATION / SUPPLEMENT`), which is **not** —
-nothing in a StegVerse receipt says that one transition corrects or invalidates
-another. Inter-organization crossings are the chains most likely to need
-reversing, so this is a prerequisite for the remediation lane rather than a
-cleanup.
+* **At closure, emitter side** — reconstruction, above. Needs no counterparty
+  cooperation and runs today.
+* **At audit, bilaterally** — both chains readable, each binding the same packet
+  id and payload digest.
+* **Not at ingress.** The receiving organization would have to read the claimed
+  initiator's ledger synchronously, and a ledger is addressed, not located: the
+  propagation sweep found 1 of 18 declared repositories present on that node.
+  So the far side admits structurally and a forgery is caught afterwards.
+
+That is sufficient while admission confers nothing — `authority_effect` is
+`NONE` on every surface and nothing executes on the strength of a frame. It
+stops being sufficient at the first irreversible consequence, which is **custody
+transfer to Master Records**: discovering afterwards that a frame was forged is
+a far worse position than refusing it at the door.
+
+So TV/TVC attestation is **not** a prerequisite for inter-organization
+transport. It is a prerequisite for custody. TVC (`StegVerse-Labs/TVC`) is an
+authority and evidence provider for scoped execution tokens and receipt-bound
+admissibility evidence, and holds certificate root key custody; which of its
+surfaces issues an organization-level signing authority — as opposed to a
+runtime-package execution token — is a design decision for the repository
+owner and is not taken here.
+
+## Receipt lineage for reversibility, and why it is smaller than it looked
+
+`Admissible-Existence/RE`'s lineage contract requires `receipt_id`,
+`event_type`, `predecessor_id`, `payload_hash` and `sequence`. A real egress
+chain fed to RE's own `validate_re_lineage.evaluate` returns `FAIL_CLOSED` as
+stored, and `LINEAGE_RECONSTRUCTABLE` once projected:
+
+```text
+real egress chain   : EGRESS_EMITTED, EGRESS_CLOSED, EGRESS_REFUSED
+derived event_types : ORIGINAL, SUPPLEMENT, SUPPLEMENT
+RE lineage verdict  : LINEAGE_RECONSTRUCTABLE
+raw receipts        : FAIL_CLOSED
+```
+
+Both missing fields are **derivable**, so no receipt schema changes and no
+repository that writes receipts is touched. `ORIGINAL` is the receipt with no
+predecessor — the first receipt of a chain, which is exactly what RE requires
+a new process to mark. Every ordinary append that adds to the chain without
+superseding anything is a `SUPPLEMENT`. `sequence` is chain position. All three
+come from `previous_receipt_sha256`, which every receipt already carries.
+
+Only `CORRECTION` and `INVALIDATION` carry information the chain does not
+already hold, because they *reference* a prior receipt they supersede or void.
+Those are additive optional fields appearing only on a transition that actually
+does it, not a rewrite of the receipt shape.
 
 Nothing here grants authority. It records a crossing that occurred and the
 disposition it reached.

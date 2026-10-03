@@ -89,7 +89,11 @@
       "environment_selected_ingress": false,
       "origin_attestation_state": "NOT_PROVEN",
       "origin_is_verified_by_this_boundary": false,
-      "far_side_receipt_reconstructed_here": false
+      "far_side_receipt_reconstructed_here": true,
+      "far_side_chain_recomputed_from_emitter_held_inputs": true,
+      "reconstruction_proves_who_the_far_side_is": false,
+      "reconstruction_proves_the_far_side_persisted_its_chain": false,
+      "closure_requires_this_organizations_own_emission_record": true
     },
     "emitting_operation_rule": "OUTBOUND_ORGANIZATION_CROSSINGS_RESOLVE_ONE_EMITTING_OPERATION_OWNED_HERE"
   },

@@ -129,7 +129,23 @@ jobs:
           assert closed["disposition"] == "ALLOW", closed
           assert closed["closed"] is True and closed["closure_findings"] == []
           assert closed["responding_organization"] == PEER
-          assert closed["far_side_receipt_carried_not_verified"] is True
+          # Reconstructed, not carried: the terminal id that came back is
+          # recomputed from inputs this organization already held.
+          assert closed["far_side_receipt_reconstructed_here"] is True
+          assert closed["far_side_terminal_receipt"] == closed["far_side_terminal_receipt_recomputed"]
+          record = closed["closure_record"]
+          assert record["verified_the_far_side_terminal_receipt_recomputes"] is True
+          assert len(record["far_side_receipt_chain_recomputed"]) == 5
+          assert record["reconstruction_proves_the_boundary_ran_this_packet"] is True
+          assert record["reconstruction_proves_who_the_far_side_is"] is False
+          assert record["reconstruction_proves_the_far_side_persisted_its_chain"] is False
+          assert "far_side_receipt_carried_not_verified" not in record
+
+          # A crossing this organization has no record of emitting cannot close.
+          orphan = egress.close(PEER, "pkt-never-emitted-here", "ci-egress-001",
+                                mesh_root=mesh, hb_epoch=32)
+          assert orphan["disposition"] == "DENY", orphan
+          assert "THIS_ORGANIZATION_HAS_NO_EMISSION_RECORD_FOR_THIS_PACKET" in orphan["closure_findings"]
 
           # A refusal is recorded too, and never as a crossing that left.
           refused = egress.emit("Not-A-Declared-Peer", {"message_class": "ecosystem.communication",
@@ -155,9 +171,10 @@ jobs:
           chain.reverse()
           assert [r["transition_class"] for r in chain] == [
               "ORGANIZATION_EGRESS_EMITTED", "ORGANIZATION_EGRESS_CLOSED",
-              "ORGANIZATION_EGRESS_REFUSED"
+              "ORGANIZATION_EGRESS_CLOSURE_REFUSED", "ORGANIZATION_EGRESS_REFUSED"
           ], [r["transition_class"] for r in chain]
-          assert [r["evidence"]["disposition"] for r in chain] == ["ALLOW", "ALLOW", "DENY"]
+          assert [r["evidence"]["disposition"] for r in chain] == [
+              "ALLOW", "ALLOW", "DENY", "DENY"]
           for receipt in chain:
               evidence = receipt["evidence"]
               assert evidence["intended_action"], receipt["transition_class"]
@@ -171,6 +188,7 @@ jobs:
           assert all(o["org_transition_class"] == "REPO_STATE_PROPAGATION" for o in organization)
           assert all(o["source_repository"] == "StegVerse-org/.github" for o in organization)
           print("INTER_ORG_ROUND_TRIP_ON_ONE_CHAIN=PASS", len(chain), "transitions")
+          print("FAR_SIDE_CHAIN_RECONSTRUCTED=PASS", closed["far_side_terminal_receipt_recomputed"])
           PY
 
       - name: Declare what an outbound crossing does not prove
