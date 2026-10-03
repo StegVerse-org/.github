@@ -147,6 +147,33 @@ def node_standing(root:Path):
     module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
 
+#: The boundary role whose dispatch resolves a bound capability's address.
+#:
+#: The role vocabulary is this kernel's, as `BOUNDARY_LOCAL_DIAGNOSTIC` and
+#: `BOUNDARY_LOCAL_CONTROL` already are. `capability_ingress.ROLE` is that
+#: module's assertion of which role it serves, and a test holds the two equal:
+#: a resolver serving a role the kernel never dispatches would be unreachable
+#: in exactly the way the address it resolves used to be.
+CAPABILITY_INGRESS_ROLE="BOUNDARY_LOCAL_CAPABILITY_INGRESS"
+
+def capability_ingress(root:Path):
+    """Load the organization's capability-ingress module from its boundary runtime.
+
+    A registered capability is bound to a receiving operation in the
+    organization's own overlay, and that binding named a destination nothing
+    could be addressed to: `dispatch` resolves `destination.service` against
+    `services.json` and refuses `unknown_service` for anything absent from it.
+    This resolves the address to the bound operation, from the dispatch root for
+    the same reason as `manifest_selection` and `node_standing`. A root without
+    it fails closed: an address that cannot resolve which capability it serves
+    must not run anything.
+    """
+    path=root/"org-boundary/runtime/capability_ingress.py"
+    if not path.is_file(): raise ValueError("org_boundary_capability_ingress_missing")
+    spec=importlib.util.spec_from_file_location("capability_ingress",path)
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
 def load_registry(root:Path)->dict[str,Any]:
     return json.loads((root/"org-boundary/registry/services.json").read_text())
 
@@ -180,7 +207,7 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
             result=json.loads(out.read_text())
             if not isinstance(result,dict): raise ValueError("endpoint_adapter_result_invalid")
             return {**result,**standing}
-    if role not in {"BOUNDARY_LOCAL_DIAGNOSTIC","BOUNDARY_LOCAL_CONTROL"}:
+    if role not in {"BOUNDARY_LOCAL_DIAGNOSTIC","BOUNDARY_LOCAL_CONTROL",CAPABILITY_INGRESS_ROLE}:
         raise ValueError("endpoint_adapter_not_installed")
     # Resolved before any receipt is minted: a dispatch that cannot state how
     # processing was selected must not leave a chain implying it was consumed.
@@ -191,6 +218,22 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
         receipts.append(r); prev=r["receipt_id"]
     if role=="BOUNDARY_LOCAL_CONTROL":
         application_result=handle_control_message(root,packet,registry)
+    elif role==CAPABILITY_INGRESS_ROLE:
+        # The address resolves to the receiving operation the overlay binds,
+        # which records its own dispositions at both ledger levels. Its refusal
+        # is surfaced as this boundary's refusal rather than becoming a consumed
+        # crossing with a refusal buried in its application result.
+        #
+        # Resolved here rather than beside the other two boundary runtimes
+        # because this one gates a single role. `manifest_selection` and
+        # `node_standing` gate every dispatch, so a root without them cannot
+        # dispatch at all; a root that never serves a capability address is not
+        # defective for having no capability resolver, and failing its control
+        # dispatch over one would be a limit that is not real.
+        try:
+            application_result=capability_ingress(root).receive(root,service,packet)
+        except SystemExit as refused:
+            raise ValueError("capability_ingress_refused:"+str(refused)) from None
     else:
         application_result={"echo":packet["payload"]}
     return {"schema_version":SCHEMA,"organization":registry["organization"],"packet_id":packet["packet_id"],
@@ -222,7 +265,7 @@ def ingest_frame(root:Path, frame:dict[str,Any])->dict[str,Any]:
     return {"status":"CONSUMED","packet":packet,"execution_result":result}
 
 __all__=["hb_reference","derive_channel","carrier_frame","recover_packet","dispatch","persist_outbox",
-         "node_standing","carried_standing",
+         "node_standing","capability_ingress","CAPABILITY_INGRESS_ROLE","carried_standing",
          "ingest_frame","mesh_store","node_state_store","node_state_provenance",
          "resolve_federation_root","resolve_node_state_root","addressed_node_state_store",
          "record_federation_cycle","federation_cycles"]

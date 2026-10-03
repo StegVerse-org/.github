@@ -22,6 +22,20 @@
       "runtime_required_for_consumption": false
     },
     {
+      "service_id": "stegverse-org.sdk-manifest-ingress",
+      "repository": "StegVerse-org/.github",
+      "boundary_role": "BOUNDARY_LOCAL_CAPABILITY_INGRESS",
+      "profile_status": "ACTIVE",
+      "capability_profile_id": "sdk-manifest-ingress",
+      "capability_binding_authority": "org-runtime/interlock-intr.json",
+      "accepts": [
+        "stegverse.sdk-manifest-crossing-payload/v1"
+      ],
+      "runtime_required_for_consumption": true,
+      "address_grants_admission_authority": false,
+      "selects_processing_at_this_address": false
+    },
+    {
       "service_id": "stegverse-org.tvc",
       "repository": "StegVerse-org/TVC",
       "boundary_role": "INTERNAL_ENDPOINT",

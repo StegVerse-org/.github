@@ -1,0 +1,194 @@
+name: Validate Capability Ingress Address
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'org-boundary/runtime/capability_ingress.py'
+      - 'org-boundary/registry/services.json'
+      - 'org-kernel/kernel.py'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-runtime/runtime_boundary.py'
+      - 'resident-runtime/organization_manifest_ingress.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'tests/test_capability_ingress_address.py'
+      - 'docs/CAPABILITY_INGRESS_ADDRESS_MIRROR_HANDOFF.md'
+      - '.github/workflows/capability-ingress-address-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'org-boundary/runtime/capability_ingress.py'
+      - 'org-boundary/registry/services.json'
+      - 'org-kernel/kernel.py'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-runtime/runtime_boundary.py'
+      - 'resident-runtime/organization_manifest_ingress.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'tests/test_capability_ingress_address.py'
+      - 'docs/CAPABILITY_INGRESS_ADDRESS_MIRROR_HANDOFF.md'
+      - '.github/workflows/capability-ingress-address-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-capability-address:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The receiving operation the address resolves to derives its request and
+      # admits its result through the SDK, so the SDK has to be present at the
+      # commit that owns those functions.
+      - name: Checkout exact merged SDK manifest state-transition runtime
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: e67851968fb6b45b0a02529152824770cbcf5f95
+          path: sdk
+          persist-credentials: false
+
+      - name: Install SDK test dependency surface
+        run: python -m pip install -e ./sdk
+
+      - name: The boundary enforces that every bound capability is addressable
+        run: |
+          python org-runtime/runtime_boundary.py validate > boundary.json
+          python - <<'PY'
+          import json
+          x = json.load(open("boundary.json"))
+          assert x["valid"] is True, x["checks"]
+          assert x["checks"]["capability_addresses_resolve"] is True
+          assert x["checks"]["peer_capability_addresses_derive"] is True
+          print("CAPABILITY_ADDRESS_ENFORCED=PASS", len(x["checks"]), "checks")
+          PY
+
+      # Both ledgers are durable sovereign state. A run that appended into
+      # either default location would be writing runtime reality from CI.
+      - name: Validate the capability address
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: python -m unittest tests.test_capability_ingress_address -v
+
+      - name: A peer organization submits a manifest over the mesh, end to end
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/e2e-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/e2e-org-ledger
+        run: |
+          python - <<'PY'
+          import importlib.util, json, os
+          from pathlib import Path
+
+          os.environ["STEGVERSE_ORG_FEDERATION_ROOT"] = os.environ["RUNNER_TEMP"] + "/mesh"
+          os.environ["STEGVERSE_NODE_STATE_ROOT"] = os.environ["RUNNER_TEMP"] + "/node"
+
+          def module(name, relative):
+              spec = importlib.util.spec_from_file_location(name, relative)
+              loaded = importlib.util.module_from_spec(spec); spec.loader.exec_module(loaded)
+              return loaded
+
+          kernel = module("kernel", "org-kernel/kernel.py")
+          manifest = json.loads(Path(
+              "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json").read_text())
+          standing = {k: v for k, v in json.loads(Path(
+              "tests/fixtures/crossing-standing-genesis.json").read_text()).items()
+              if not k.startswith("_")}
+
+          # No checkout of this repository on the submitting side, and no CLI:
+          # a frame in the shared mesh addressed to this organization's address
+          # for the capability. This is the path that did not exist.
+          address = kernel.organization_slug("StegVerse-org") + ".sdk-manifest-ingress"
+          packet = kernel.build_packet(
+              origin_org="StegVerse-Labs",
+              origin_service=kernel.organization_slug("StegVerse-Labs") + ".sdk-manifest-ingress",
+              destination_org="StegVerse-org",
+              destination_service=address,
+              payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
+                       "declared_transition_surface": "LLM_ADAPTER",
+                       "manifest_sha256": kernel.sha(manifest),
+                       "manifest": manifest},
+              standing=standing,
+              transition_reference="intr:transition:ci-peer-manifest-submission",
+              authority_effect="NONE", packet_id="ci-peer-manifest-submission")
+          kernel.publish_packet(packet)
+
+          consumed = kernel.consume_addressed_frames(Path.cwd())
+          assert len(consumed) == 1, consumed
+          execution = consumed[0]["result"]["execution_result"]
+          assert consumed[0]["result"]["status"] == "CONSUMED"
+          assert execution["service_id"] == address
+          assert execution["consumed"] is True
+          # No processor is selected at the address; the capability is processed
+          # one layer in, by the operation the overlay binds.
+          assert execution["processing_selection"] == "BOUNDARY_LOCAL_NO_PROCESSOR_SELECTED"
+
+          application = execution["application_result"]
+          assert application["capability_received"] is True
+          assert application["capability_profile_id"] == "sdk-manifest-ingress"
+          assert application["receiving_operation_id"] == "ORGANIZATION_SDK_MANIFEST_INGRESS"
+          assert application["capability_resolution_source"] == "ORGANIZATION_CAPABILITY_OVERLAY"
+          assert application["declared_capability_processed_at_this_address"] is False
+          assert application["addressability_grants_admission_authority"] is False
+
+          operation = application["receiving_operation_result"]
+          assert operation["disposition"] == "ALLOW", operation.get("detail")
+          assert operation["received"] is True
+          assert operation["resolved_service_id"] == "stegverse-org.llm-adapter"
+          assert operation["intr_admission_observed"] is True
+          assert operation["far_side_transition_observed"] is True
+          assert operation["organization_receipt_observed"] is True
+          assert operation["repository_receipt_observed"] is True
+          assert operation["organization_receipt_preserves_repository_receipt"] is True
+
+          # Both levels recorded it, from a submission published by a peer.
+          def receipts(variable, schema):
+              return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
+                      if json.loads(p.read_text()).get("schema") == schema]
+
+          repository, = receipts("STEGVERSE_REPO_LEDGER_ROOT",
+                                 "stegverse.repo-transition-receipt/v1")
+          organization, = receipts("STEGVERSE_ORG_LEDGER_ROOT",
+                                   "stegverse.organization-transition-receipt/v1")
+          assert repository["transition_class"] == "ORGANIZATION_SDK_MANIFEST_INGRESS"
+          assert organization["repo_receipt_sha256"] == repository["receipt_sha256"]
+          print("PEER_MANIFEST_SUBMISSION_OVER_THE_MESH=PASS",
+                execution["reconstruction"]["terminal_receipt_id"])
+          PY
+
+      - name: An outbound capability crossing addresses the capability, not the control service
+        run: |
+          python - <<'PY'
+          import importlib.util
+
+          spec = importlib.util.spec_from_file_location(
+              "egress", "resident-runtime/organization_egress_boundary.py")
+          egress = importlib.util.module_from_spec(spec); spec.loader.exec_module(egress)
+
+          control = egress.resolve_destination("StegVerse-Labs")
+          assert control["destination_service"] == control["destination_org_control_service"]
+          assert control["destination_capability_profile_id"] is None
+
+          capability = egress.resolve_destination("StegVerse-Labs",
+                                                  capability="sdk-manifest-ingress")
+          assert capability["destination_service"] == "stegverse-labs.sdk-manifest-ingress"
+          assert capability["destination_service"] != capability["destination_org_control_service"]
+          # The derivation is the one this organization itself answers at.
+          assert egress.peer_capability_service(
+              "StegVerse-org", "sdk-manifest-ingress") == "stegverse-org.sdk-manifest-ingress"
+          # And what it does not prove is recorded rather than implied.
+          assert capability["peer_serves_this_capability_is_proven_here"] is False
+          assert capability["destination_capability_declared_by_the_peer_directory"] is False
+
+          try:
+              egress.resolve_destination("StegVerse-Labs", capability="not-declared-anywhere")
+          except egress.EgressRefused as refused:
+              assert refused.failed_predicate == "CAPABILITY_IS_DECLARED_IN_THIS_ORGANIZATIONS_OVERLAY"
+          else:
+              raise AssertionError("an undeclared capability was not refused")
+          print("PEER_CAPABILITY_ADDRESS=PASS", capability["destination_service"])
+          PY
