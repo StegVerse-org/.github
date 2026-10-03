@@ -250,6 +250,17 @@ def resolve_destination(organization: str, *, capability: str | None = None,
             "destination_capability_declared_by_the_peer_directory": False,
             "peer_serves_this_capability_is_proven_here": False,
             "unserved_capability_is_observable_as_an_unclosed_crossing": True,
+            # `kernel_required` is carried from the directory and checked by
+            # nothing, unlike `transport_profile`, which is refused on
+            # mismatch. A peer's kernel generation is not readable from here at
+            # resolution time, so the field is a requirement this organization
+            # declares and cannot verify. Observed in practice: a peer
+            # declaring kernel_version 1.3.1 ran a kernel that gates neither
+            # node standing nor processing selection, while this organization's
+            # 1.3.1 gates both. Same declared version, different enforcement.
+            "destination_kernel_generation_is_proven_here": False,
+            "destination_kernel_required_is_checked_at_resolution": False,
+            "declared_kernel_version_does_not_establish_the_enforcement_it_implies": True,
         }
     raise EgressRefused(
         "DESTINATION_IS_A_DECLARED_PEER_OF_THIS_ORGANIZATION",

@@ -167,6 +167,51 @@ class EgressBoundaryTests(unittest.TestCase):
                 if control is not None:
                     self.assertTrue(control.endswith(".org-control"), control)
 
+    # --- a carried requirement is not a verified one ----------------------
+
+    def test_the_peers_kernel_generation_is_not_proven_at_resolution(self):
+        """`transport_profile` is refused on mismatch; `kernel_required` is only
+        carried. A field that reads as verified while nothing verifies it is the
+        declaration-without-enforcement defect, so the record says so."""
+        resolved = egress.resolve_destination(PEER)
+        self.assertIsNotNone(resolved["destination_kernel_required"])
+        self.assertIs(resolved["destination_kernel_generation_is_proven_here"], False)
+        self.assertIs(resolved["destination_kernel_required_is_checked_at_resolution"], False)
+        self.assertIs(
+            resolved["declared_kernel_version_does_not_establish_the_enforcement_it_implies"],
+            True)
+
+    def test_a_peer_below_the_declared_kernel_requirement_is_not_refused(self):
+        """Recorded because it is true, not because it is desirable: this
+        boundary cannot read a peer's kernel, so it must not read as though a
+        crossing were gated on one."""
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "org-boundary/registry").mkdir(parents=True)
+        shutil.copy2(ROOT / "org-boundary/registry/services.json",
+                     root / "org-boundary/registry/services.json")
+        (root / "org-boundary/registry/federation.json").write_text(json.dumps({
+            "schema_version": "stegverse.org-federation-directory.v1",
+            "organizations": [{"organization": "Old-Kernel-Peer",
+                               "repository": "Old-Kernel-Peer/.github",
+                               "org_control_service": "old-kernel-peer.org-control",
+                               "kernel_required": "9.9.9",
+                               "transport_profile": "stegverse.intr.org-boundary.v1"}],
+            "denominator": 1}), encoding="utf-8")
+        resolved = egress.resolve_destination("Old-Kernel-Peer", root=root)
+        self.assertEqual(resolved["destination_kernel_required"], "9.9.9")
+        self.assertEqual(resolved["destination_service"], "old-kernel-peer.org-control")
+        self.assertIs(resolved["destination_kernel_generation_is_proven_here"], False)
+
+    def test_the_boundary_declares_the_kernel_requirement_as_unchecked(self):
+        resolution = json.loads(
+            (ROOT / "org-runtime/interlock-intr.json").read_text(encoding="utf-8")
+        )["egress"]["peer_destination_resolution"]
+        self.assertIs(resolution["kernel_required_is_declared_per_peer"], True)
+        self.assertIs(resolution["kernel_required_is_checked_at_resolution"], False)
+        self.assertIs(resolution["peer_kernel_generation_is_proven_here"], False)
+        self.assertIs(resolution["peer_kernel_generation_is_the_peers_to_establish"], True)
+
     # --- the crossing as a transition -------------------------------------
 
     def test_an_emitted_crossing_is_recorded_at_both_levels(self):

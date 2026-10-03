@@ -249,3 +249,48 @@ does it, not a rewrite of the receipt shape.
 
 Nothing here grants authority. It records a crossing that occurred and the
 disposition it reached.
+
+## A carried requirement is not a verified one
+
+`federation.json` declares `kernel_required` for every peer. `resolve_destination`
+read it, carried it into the record as `destination_kernel_required`, and
+**checked nothing**. `transport_profile`, beside it in the same row, is refused
+on mismatch. So one field in the row was enforced and the other only looked
+like it was.
+
+This was found while confirming whether `Admissible-Existence` is wired for
+InTr. It is: a crossing resolves to `admissible-existence.org-control`, emits,
+and is CONSUMED by that organization's own kernel with the full five-receipt
+chain. What the crossing also showed is why the unchecked field matters.
+
+```text
+StegVerse-org/.github        org-kernel/kernel.py   779 lines   kernel_version 1.3.1
+Admissible-Existence/.github org-kernel/kernel.py   499 lines   kernel_version 1.3.1
+```
+
+Both declare `1.3.1`. The 779-line kernel resolves `node_standing` and
+`manifest_selection` before admitting anything and records
+`node_standing_disposition` and `processing_selection` on every dispatch. The
+499-line kernel references neither, and the crossing's execution result carries
+neither field. Same declared version, materially different enforcement.
+
+So a declared kernel version does not establish the enforcement it implies, and
+a peer's generation is not readable from here at resolution time — the same
+shape as `peer_serves_this_capability_is_proven_here: false`. The record now
+says so rather than letting a carried requirement read as a checked one:
+
+```text
+destination_kernel_required                           carried from the directory
+destination_kernel_required_is_checked_at_resolution  false
+destination_kernel_generation_is_proven_here           false
+declared_kernel_version_does_not_establish_the_enforcement_it_implies  true
+```
+
+A peer below its declared requirement is **not** refused, and a test asserts
+that — recorded because it is true, not because it is desirable. Gating a
+crossing on a peer's kernel generation would need that generation readable,
+which it is not. Establishing it is the peer's to do, and bringing a peer's
+kernel forward is a migration in that organization under ST-020 and ST-014,
+not something this directory can assert by carrying a number.
+
+Nothing here grants authority.

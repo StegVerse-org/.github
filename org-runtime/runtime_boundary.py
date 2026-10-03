@@ -98,6 +98,14 @@ def egress_destinations_resolve_from_the_directory(t:dict[str,Any])->bool:
     # service field at something that is not one would make this directory
     # assert a capability the peer never declared.
     if resolution.get("addressed_service_field")!="addressed_service": return False
+    # kernel_required is carried and unchecked. Saying so is required, because
+    # a directory field that reads as a verified requirement while nothing
+    # verifies it is the declaration-without-enforcement defect.
+    if resolution.get("kernel_required_is_declared_per_peer") is not True: return False
+    if resolution.get("kernel_required_is_checked_at_resolution") is not False: return False
+    if resolution.get("peer_kernel_generation_is_proven_here") is not False: return False
+    if resolution.get("declared_kernel_version_does_not_establish_the_enforcement_it_implies") is not True: return False
+    if resolution.get("peer_kernel_generation_is_the_peers_to_establish") is not True: return False
     for required in ("addressed_service_defaults_to_the_organization_control_service",
                      "a_peer_may_be_addressed_at_a_service_that_is_not_a_control_service",
                      "control_service_field_is_never_pointed_at_a_non_control_service",

@@ -67,7 +67,12 @@
       "a_peer_may_be_addressed_at_a_service_that_is_not_a_control_service": true,
       "control_service_field_is_never_pointed_at_a_non_control_service": true,
       "peer_declares_the_addressed_service_in_its_own_registry": true,
-      "a_peer_declaring_no_addressable_service_is_refused": true
+      "a_peer_declaring_no_addressable_service_is_refused": true,
+      "kernel_required_is_declared_per_peer": true,
+      "kernel_required_is_checked_at_resolution": false,
+      "peer_kernel_generation_is_proven_here": false,
+      "declared_kernel_version_does_not_establish_the_enforcement_it_implies": true,
+      "peer_kernel_generation_is_the_peers_to_establish": true
     },
     "peer_capability_resolution": {
       "address_form": "ORGANIZATION_SLUG_DOT_CAPABILITY_PROFILE_ID",
