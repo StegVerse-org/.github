@@ -1,0 +1,155 @@
+name: Validate Observation Window
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/observation_window.py'
+      - 'resident-runtime/receipt_lineage_projection.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'org-kernel/kernel.py'
+      - 'tests/test_observation_window.py'
+      - '.github/workflows/observation-window-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/observation_window.py'
+      - 'resident-runtime/receipt_lineage_projection.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'org-kernel/kernel.py'
+      - 'tests/test_observation_window.py'
+      - '.github/workflows/observation-window-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-observation-window:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The ledgers are durable sovereign state, so every step that can append
+      # is pointed at the runner's temporary directory rather than a default
+      # location. `runner` is a step-level context, not a job-level one.
+      - name: Validate the window
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/window-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/window-org-ledger
+        run: python -m unittest tests.test_observation_window -v
+
+      - name: A window over a real chain reports what moved it, and stops at zero
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/real-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/real-org-ledger
+        run: |
+          python - <<'PY'
+          import importlib.util, json, shutil, tempfile
+          from pathlib import Path
+
+          def load(name, relative):
+              spec = importlib.util.spec_from_file_location(name, relative)
+              module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+              return module
+
+          egress = load("egress", "resident-runtime/organization_egress_boundary.py")
+          lineage = load("lineage", "resident-runtime/receipt_lineage_projection.py")
+          window = load("window", "resident-runtime/observation_window.py")
+          K = egress.kernel
+
+          PEER, PEER_CONTROL = "StegVerse-Labs", "stegverse-labs.org-control"
+          CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+          mesh = Path(tempfile.mkdtemp()); peer = Path(tempfile.mkdtemp())
+          (peer / "org-boundary/registry").mkdir(parents=True)
+          (peer / "org-boundary/registry/services.json").write_text(json.dumps({
+              "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
+              "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
+              "services": [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
+                            "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
+          (peer / "org-boundary/runtime").mkdir(parents=True)
+          for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
+              shutil.copy2("org-boundary/runtime/" + name, peer / "org-boundary/runtime" / name)
+          (peer / "docs").mkdir(parents=True, exist_ok=True)
+          shutil.copy2(CONTRACT, peer / CONTRACT)
+
+          genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci-window", "predecessor": None}
+
+          def crossing(number):
+              emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
+                  "communication_id": "ci-window-%03d" % number, "subject": "ci window",
+                  "body": {"ci": True, "n": number}}, standing=genesis,
+                  mesh_root=mesh, hb_epoch=32)
+              K.consume_and_respond(peer, mesh_root=mesh)
+              egress.close(PEER, emitted["packet_id"], "ci-window-%03d" % number,
+                           mesh_root=mesh, hb_epoch=32)
+
+          # The baseline: a real chain this ecosystem produced, not a fixture.
+          crossing(1)
+          baseline = lineage.repository_chain()
+          assert baseline, "no baseline chain"
+          snapshot = window.open_window(baseline, countdown_hb=300, epoch=5000,
+                                        observed_through="ci:runner-temp-ledger")
+          assert snapshot["baseline_record_count"] == len(baseline), snapshot
+          assert snapshot["epoch_derived_from_clock"] is False, snapshot
+          assert snapshot["delivery_is_pull_not_push"] is True, snapshot
+          assert snapshot["authority_effect"] == "NONE_OBSERVATION_ONLY", snapshot
+          print("WINDOW_SNAPSHOT=" + snapshot["snapshot_id"],
+                "baseline", snapshot["baseline_record_count"],
+                "closes_at", snapshot["closes_at_epoch"])
+
+          # Now move it, and sample.
+          crossing(2)
+          first = window.observe(snapshot, lineage.repository_chain(), epoch=5100)
+          crossing(3)
+          second = window.observe(snapshot, lineage.repository_chain(), epoch=5200,
+                                  cursor=first["cursor"])
+
+          moved = first["observed_count"] + second["observed_count"]
+          assert moved > 0, "a chain that grew reported nothing"
+          for observation in (first, second):
+              assert observation["window_closed"] is False, observation
+              for report in observation["reports"]:
+                  # Every report binds the baseline it extends, so a reader can
+                  # prove the sequence describes the snapshot it was given.
+                  assert report["snapshot_id"] == snapshot["snapshot_id"], report
+                  assert report["observed_through"] == snapshot["observed_through"], report
+                  assert report["authority_effect"] == "NONE_OBSERVATION_ONLY", report
+                  assert report["remaining_hb"] > 0, report
+          print("WINDOW_REPORTED=" + str(moved), "transitions over 2 samples")
+
+          # The declared bound is the bound.
+          at_zero = window.observe(snapshot, lineage.repository_chain(), epoch=5300,
+                                   cursor=second["cursor"])
+          assert at_zero["window_closed"] is True, at_zero
+          assert at_zero["reports"] == [], at_zero
+          assert at_zero["remaining_hb"] == 0, at_zero
+
+          closed = window.close(snapshot, epoch=5300, observed_count=moved,
+                                cursor=second["cursor"])
+          assert closed["countdown_reached_zero"] is True, closed
+          assert closed["close_is_a_disposition_not_an_observed_transition"] is True, closed
+          assert closed["no_observed_transition_is_not_proof_none_occurred"] is True, closed
+          assert closed["ordering"] == "OSCILLATOR_HEARTBEAT_EPOCH_ONLY", closed
+          print("WINDOW_CLOSED=PASS observed", closed["observed_count"],
+                "remaining", closed["remaining_hb"])
+
+          # A quiet window must not read as proof of stillness.
+          quiet_chain = lineage.repository_chain()
+          quiet = window.open_window(quiet_chain, countdown_hb=10, epoch=6000,
+                                     observed_through="ci:runner-temp-ledger")
+          run = window.follow(quiet, lambda epoch: quiet_chain, [6005, 6010])
+          assert run["observed_count"] == 0, run
+          assert run["observation_is_sampled_not_continuous"] is True, run
+          assert run["close"]["no_observed_transition_is_not_proof_none_occurred"] is True
+          print("WINDOW_QUIET=PASS zero observed, zero not presented as proof")
+          PY
+
+      - name: Declare what the window does not do
+        run: |
+          echo 'authority_effect=NONE_OBSERVATION_ONLY; delivery=PULL_NOT_PUSH'
+          echo 'ordering=OSCILLATOR_HEARTBEAT_EPOCH_ONLY; wall_clock_ordering=false'
+          echo 'zero_observed_is_not_proof_none_occurred=true; sampling_is_not_continuity=true'
