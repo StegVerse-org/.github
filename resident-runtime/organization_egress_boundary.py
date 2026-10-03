@@ -87,6 +87,9 @@ BOUNDARY_RELATIVE = "org-runtime/interlock-intr.json"
 #: kernel's own slug rule, which is how every `.org-control` address has always
 #: been derived and how this organization's own capability address is spelled.
 CAPABILITY_ADDRESS_FORM = "ORGANIZATION_SLUG_DOT_CAPABILITY_PROFILE_ID"
+#: The directory field naming the service a peer is addressed at when it is not
+#: an organization control service.
+ADDRESSED_SERVICE_FIELD = "addressed_service"
 CREDENTIAL_AUTHORITY = "TV/TVC"
 
 #: The intended action each half of an outbound crossing carries.
@@ -216,11 +219,27 @@ def resolve_destination(organization: str, *, capability: str | None = None,
                 "peer declares transport_profile " + str(profile)
                 + "; this boundary speaks " + TRANSPORT_PROFILE)
         control = row.get("org_control_service")
-        service = control if capability is None else peer_capability_service(organization, capability)
+        # A peer is addressed at the service it declares it serves, which is not
+        # always a control service. `addressed_service` says so when it differs;
+        # `org_control_service` remains the default for every peer that serves
+        # one. Pointing `org_control_service` at something that is not one would
+        # make this directory assert a capability the peer never declared, which
+        # is the error `peer_declares_its_capability_services_in_the_peer_
+        # directory: false` already refuses in the other direction.
+        addressed = row.get(ADDRESSED_SERVICE_FIELD) or control
+        service = addressed if capability is None else peer_capability_service(organization, capability)
+        if not service:
+            raise EgressRefused(
+                "DESTINATION_DECLARES_A_SERVICE_THIS_DIRECTORY_CAN_ADDRESS",
+                "peer declares neither " + ADDRESSED_SERVICE_FIELD
+                + " nor org_control_service: " + str(organization))
         return {
             "destination_organization": organization,
             "destination_repository": row.get("repository"),
             "destination_org_control_service": control,
+            "destination_addressed_service": addressed,
+            "destination_addressed_service_role": row.get("addressed_service_role"),
+            "destination_serves_an_organization_control_service": bool(control),
             "destination_kernel_required": row.get("kernel_required"),
             "transport_profile": profile,
             "destination_resolution_source": "ORGANIZATION_FEDERATION_DIRECTORY",

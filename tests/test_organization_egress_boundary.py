@@ -111,6 +111,62 @@ class EgressBoundaryTests(unittest.TestCase):
         body.update(overrides)
         return egress.emit(destination, body.pop("payload"), **body)
 
+    # --- a peer is addressed at the service it declares -------------------
+
+    def test_an_ordinary_peer_resolves_at_its_organization_control_service(self):
+        resolved = egress.resolve_destination(PEER)
+        self.assertEqual(resolved["destination_service"], PEER_CONTROL)
+        self.assertEqual(resolved["destination_addressed_service"], PEER_CONTROL)
+        self.assertIs(resolved["destination_serves_an_organization_control_service"], True)
+
+    def test_a_peer_declaring_a_non_control_service_is_addressed_there(self):
+        """SV-011 serves a diagnostic and no control service. Naming it in the
+        control service field would assert a capability it never declared."""
+        resolved = egress.resolve_destination("SV-011")
+        self.assertEqual(resolved["destination_service"], "sv-011.boundary-diagnostic")
+        self.assertEqual(resolved["destination_addressed_service_role"],
+                         "BOUNDARY_LOCAL_DIAGNOSTIC")
+        self.assertIsNone(resolved["destination_org_control_service"])
+        self.assertIs(resolved["destination_serves_an_organization_control_service"], False)
+
+    def test_a_peer_declaring_no_addressable_service_is_refused(self):
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "org-boundary/registry").mkdir(parents=True)
+        shutil.copy2(ROOT / "org-boundary/registry/services.json",
+                     root / "org-boundary/registry/services.json")
+        (root / "org-boundary/registry/federation.json").write_text(json.dumps({
+            "schema_version": "stegverse.org-federation-directory.v1",
+            "organizations": [{"organization": "Nowhere", "repository": "Nowhere/.github",
+                               "transport_profile": "stegverse.intr.org-boundary.v1"}],
+            "denominator": 1}), encoding="utf-8")
+        with self.assertRaises(egress.EgressRefused) as refused:
+            egress.resolve_destination("Nowhere", root=root)
+        self.assertEqual(refused.exception.failed_predicate,
+                         "DESTINATION_DECLARES_A_SERVICE_THIS_DIRECTORY_CAN_ADDRESS")
+
+    def test_sv_011_is_a_declared_peer_of_this_organization(self):
+        directory = json.loads(
+            (ROOT / "org-boundary/registry/federation.json").read_text(encoding="utf-8"))
+        rows = {row["organization"]: row for row in directory["organizations"]}
+        self.assertIn("SV-011", rows)
+        self.assertEqual(directory["denominator"], len(directory["organizations"]))
+        row = rows["SV-011"]
+        self.assertEqual(row["repository"], "SV-011/entity")
+        self.assertEqual(row["transport_profile"], "stegverse.intr.org-boundary.v1")
+        # The peer's own registry is where the addressed service is declared.
+        self.assertIn("org-boundary/registry/services.json",
+                      row["peer_declares_this_in_its_own_registry"])
+
+    def test_no_row_points_the_control_service_field_at_a_non_control_service(self):
+        directory = json.loads(
+            (ROOT / "org-boundary/registry/federation.json").read_text(encoding="utf-8"))
+        for row in directory["organizations"]:
+            with self.subTest(organization=row["organization"]):
+                control = row.get("org_control_service")
+                if control is not None:
+                    self.assertTrue(control.endswith(".org-control"), control)
+
     # --- the crossing as a transition -------------------------------------
 
     def test_an_emitted_crossing_is_recorded_at_both_levels(self):

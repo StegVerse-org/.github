@@ -93,7 +93,30 @@ def egress_destinations_resolve_from_the_directory(t:dict[str,Any])->bool:
     if resolution.get("source")!="ORGANIZATION_FEDERATION_DIRECTORY": return False
     if resolution.get("directory")!="org-boundary/registry/federation.json": return False
     if resolution.get("resolved_from_caller_argument") is not False: return False
-    return resolution.get("destination_must_declare_this_transport_profile")=="stegverse.intr.org-boundary.v1"
+    if resolution.get("destination_must_declare_this_transport_profile")!="stegverse.intr.org-boundary.v1": return False
+    # A peer is addressed at the service it declares. Pointing the control
+    # service field at something that is not one would make this directory
+    # assert a capability the peer never declared.
+    if resolution.get("addressed_service_field")!="addressed_service": return False
+    for required in ("addressed_service_defaults_to_the_organization_control_service",
+                     "a_peer_may_be_addressed_at_a_service_that_is_not_a_control_service",
+                     "control_service_field_is_never_pointed_at_a_non_control_service",
+                     "peer_declares_the_addressed_service_in_its_own_registry",
+                     "a_peer_declaring_no_addressable_service_is_refused"):
+        if resolution.get(required) is not True: return False
+    # Every declared peer is addressable, and no row names a non-control
+    # service in the control service field.
+    directory=load(ROOT/"org-boundary/registry/federation.json")
+    rows=[r for r in directory.get("organizations",[]) if isinstance(r,dict)]
+    if not rows or directory.get("denominator")!=len(rows): return False
+    for row in rows:
+        control=row.get("org_control_service")
+        addressed=row.get("addressed_service") or control
+        if not addressed: return False
+        if control is not None and not str(control).endswith(".org-control"): return False
+        if row.get("addressed_service") and row.get("serves_an_organization_control_service") is not False:
+            return False
+    return True
 REGISTRY=ROOT/"org-boundary/registry/services.json"
 CAPABILITY_INGRESS_ROLE="BOUNDARY_LOCAL_CAPABILITY_INGRESS"
 def capability_addresses_resolve(t:dict[str,Any])->bool:
