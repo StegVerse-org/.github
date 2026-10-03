@@ -141,31 +141,74 @@ jobs:
           print("ORGANIZATION_CONSUMES_A_REPOSITORY_RECEIPT=PASS", repository["transition_id"])
           PY
 
-      - name: A capability the internal endpoint does not admit mints no receipt
+      # A separate ledger pair: this step records refusals, and the steps above
+      # assert exactly one admitted receipt on theirs.
+      - name: A refused submission is recorded, and never as an admission
         env:
-          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
-          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/refusal-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/refusal-org-ledger
         run: |
           python - <<'PY'
-          import importlib.util, json
+          import importlib.util, json, os
           from pathlib import Path
           from stegverse.manifest_builder import build_manifest
           spec = importlib.util.spec_from_file_location(
               "ingress", "resident-runtime/organization_manifest_ingress.py")
           ingress = importlib.util.module_from_spec(spec); spec.loader.exec_module(ingress)
-          governed = build_manifest(
-              data={"ci": True}, source_framework="organization-boundary-ci",
-              source_output_id="unadmitted-capability-ci",
-              processor_request={"candidate": {"action": "inspect"}, "judgment": {},
-                                 "signal": {}, "execution": {}, "capability": {},
-                                 "continuity": {}, "approval": {},
-                                 "permission_present": False},
-              created_at="2026-10-03T00:00:00Z")
-          out = ingress.receive(governed, packet_id="ci-unadmitted", hb_epoch=32,
-                                standing={"mode": "ESTABLISH_GENESIS", "node_ref": "ci",
-                                          "predecessor": None})
+
+          def receipts(variable, schema):
+              return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
+                      if json.loads(p.read_text()).get("schema") == schema]
+
+          def governed(output_id):
+              return build_manifest(
+                  data={"ci": True}, source_framework="organization-boundary-ci",
+                  source_output_id=output_id,
+                  processor_request={"candidate": {"action": "inspect"}, "judgment": {},
+                                     "signal": {}, "execution": {}, "capability": {},
+                                     "continuity": {}, "approval": {},
+                                     "permission_present": False},
+                  created_at="2026-10-03T00:00:00Z")
+
+          genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci", "predecessor": None}
+          out = ingress.receive(governed("unadmitted-capability-ci"),
+                                packet_id="ci-unadmitted", hb_epoch=32, standing=genesis)
           assert out["disposition"] == "FAIL_CLOSED"
           assert out["received"] is False
+          # The submission arrived, so its disposition is a transition and is recorded.
+          assert out["refusal_recorded"] is True
+          assert out["refusal_transition_class"] == "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED"
+          assert out["refusal_repository_receipt_sha256"].startswith("sha256:")
+          assert out["refusal_organization_receipt_sha256"].startswith("sha256:")
+          # And never as an admission: this means an admitted crossing was observed.
           assert out["organization_receipt_observed"] is False
-          print("UNADMITTED_CAPABILITY_MINTS_NO_RECEIPT=PASS", out["failed_predicate"])
+          assert "organization_receipt_sha256" not in out
+
+          # A manifest the crossing cannot drive at all used to leave by exception.
+          raised = ingress.receive(governed("no-declared-standing-ci"),
+                                   packet_id="ci-no-standing", hb_epoch=32, standing=None)
+          assert raised["failed_predicate"] == "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED"
+          assert raised["refusal_recorded"] is True
+
+          # Two refusals, recorded at both levels, the organization consuming the
+          # repository receipt rather than authoring its own.
+          repository = receipts("STEGVERSE_REPO_LEDGER_ROOT",
+                                "stegverse.repo-transition-receipt/v1")
+          organization = receipts("STEGVERSE_ORG_LEDGER_ROOT",
+                                  "stegverse.organization-transition-receipt/v1")
+          assert len(repository) == 2, len(repository)
+          assert len(organization) == 2, len(organization)
+          assert all(r["transition_class"] == "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED"
+                     for r in repository), [r["transition_class"] for r in repository]
+          carried = {o["repo_receipt_sha256"] for o in organization}
+          assert carried == {r["receipt_sha256"] for r in repository}
+          assert all(o["source_repository"] == "StegVerse-org/.github" for o in organization)
+          assert all(o["org_transition_class"] == "REPO_STATE_PROPAGATION" for o in organization)
+          for r in repository:
+              record = r["evidence"]
+              assert record["disposition"] == "DENY", record
+              assert record["intended_action"] == "RECEIVE_A_SUBMITTED_SDK_MANIFEST"
+              assert record["transition_is_the_disposition_of_the_intended_action"] is True
+              assert "resolved_service_id" not in record
+          print("REFUSED_SUBMISSION_IS_RECORDED=PASS", out["failed_predicate"])
           PY

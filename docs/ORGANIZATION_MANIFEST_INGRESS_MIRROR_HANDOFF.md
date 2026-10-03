@@ -110,7 +110,9 @@ authority_effect                                       NONE_RECEIVING_OPERATION_
 
 ## What this does not claim
 
-A refused crossing stays refused and mints no organization receipt — a capability the internal endpoint does not admit fails closed with its own disposition, and a crossing that declares no standing fails before anything is minted.
+A refused submission is refused, never retried into a success — and it is recorded. A state transition is the disposition of an intended action, not only a successful one: a submission that arrived and was refused is a transition whose disposition is DENY, and `organization_scope_rule` makes no exception for it. Every refusal path through `receive` — an unresolvable destination, a capability bound elsewhere, a manifest the crossing cannot drive, a far side that refused, a boundary chain that does not reconstruct — appends a repository receipt under `ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED` and the organization receipt that consumes it, in that order, because a refusal is not an exception to the layering the replay rule requires. A manifest with no declared standing used to leave the operation by exception with nothing written; it is now recorded as `CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED`.
+
+What the refusal record does *not* claim is anything the organization did not produce: no resolved service, no boundary receipt chain, no runtime result. And `organization_receipt_observed` stays false on every refusal, because it means an admitted crossing was observed and a refusal receipt is not that — a caller reading one as the other would treat a refused submission as a completed transition. The refusal's own digests are returned under `refusal_repository_receipt_sha256` and `refusal_organization_receipt_sha256`.
 
 The capability this organization's internal endpoint currently serves is `ecosystem_diagnostic`. `governance` is refused at the far side as a capability that service does not admit.
 

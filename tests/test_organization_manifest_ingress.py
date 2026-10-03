@@ -175,23 +175,95 @@ class ReceivingOperationTests(unittest.TestCase):
                           "RESULT_BOUND", "EGRESS_EMITTED"])
         self.assertEqual(receipt["authority_effect"], "NONE")
 
-    def test_a_refused_crossing_writes_neither_ledger(self):
-        """Nothing is recorded at either level when the crossing does not happen."""
-        governed = build_manifest(
+    def unadmitted(self, source_output_id="refused-submission"):
+        """A manifest the internal endpoint does not admit, so the crossing refuses."""
+        return build_manifest(
             data={"probe": True}, source_framework="organization-boundary-test",
-            source_output_id="refused-writes-nothing",
+            source_output_id=source_output_id,
             processor_request={"candidate": {"action": "inspect"}, "judgment": {}, "signal": {},
                               "execution": {}, "capability": {}, "continuity": {},
                               "approval": {}, "permission_present": False},
             created_at="2026-10-03T00:00:00Z")
-        result = self.receive(manifest=governed,
-                              standing={"mode": "ESTABLISH_GENESIS", "node_ref": "test",
-                                        "predecessor": None})
+
+    def refuse(self, **overrides):
+        payload = {"manifest": self.unadmitted(),
+                   "standing": {"mode": "ESTABLISH_GENESIS", "node_ref": "test",
+                                "predecessor": None}}
+        payload.update(overrides)
+        return self.receive(**payload)
+
+    def test_a_refused_submission_is_recorded_at_both_levels(self):
+        """The submission arrived. Its disposition is the transition."""
+        result = self.refuse()
         self.assertEqual(result["disposition"], "FAIL_CLOSED")
-        self.assertEqual(self.ledger_receipts(
-            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1"), [])
-        self.assertEqual(self.ledger_receipts(
-            "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1"), [])
+        self.assertIs(result["refusal_recorded"], True)
+        self.assertEqual(result["refusal_transition_class"],
+                         "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        self.assertEqual(result["refusal_intended_action"],
+                         "RECEIVE_A_SUBMITTED_SDK_MANIFEST")
+        repository, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+        organization, = self.ledger_receipts(
+            "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1")
+        self.assertEqual(repository["transition_class"],
+                         "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        self.assertEqual(repository["receipt_sha256"],
+                         result["refusal_repository_receipt_sha256"])
+        self.assertEqual(organization["receipt_sha256"],
+                         result["refusal_organization_receipt_sha256"])
+
+    def test_the_organization_consumes_the_refusal_receipt_it_did_not_author(self):
+        """A refusal is not an exception to the layering the replay rule requires."""
+        self.refuse()
+        repository, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+        organization, = self.ledger_receipts(
+            "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1")
+        self.assertEqual(organization["source_repository"], "StegVerse-org/.github")
+        self.assertEqual(organization["repo_receipt_sha256"], repository["receipt_sha256"])
+        self.assertEqual(organization["org_transition_class"], "REPO_STATE_PROPAGATION")
+
+    def test_the_refusal_record_carries_the_disposition_and_nothing_it_did_not_produce(self):
+        self.refuse()
+        repository, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+        record = repository["evidence"]
+        self.assertEqual(record["disposition"], "DENY")
+        self.assertEqual(record["intended_action"], "RECEIVE_A_SUBMITTED_SDK_MANIFEST")
+        self.assertIs(record["transition_is_the_disposition_of_the_intended_action"], True)
+        self.assertIs(record["received"], False)
+        self.assertTrue(record["submitted_manifest_sha256"].startswith("sha256:"))
+        # Nothing an admitted crossing would have produced.
+        for absent in ("resolved_service_id", "boundary_receipts", "sdk_admitted_result",
+                       "egress_packet_id", "reconstruction"):
+            self.assertNotIn(absent, record, absent)
+
+    def test_a_refusal_is_never_reported_as_an_observed_organization_receipt(self):
+        """It means an admitted crossing was observed, and a refusal is not that."""
+        result = self.refuse()
+        self.assertIs(result["organization_receipt_observed"], False)
+        self.assertNotIn("organization_receipt_sha256", result)
+
+    def test_a_manifest_the_crossing_cannot_drive_is_recorded_rather_than_raised(self):
+        """No declared standing used to leave the operation by exception."""
+        result = self.refuse(standing=None)
+        self.assertEqual(result["failed_predicate"],
+                         "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED")
+        self.assertIs(result["refusal_recorded"], True)
+        self.assertIn("CROSSING_REQUIRES_DECLARED_STANDING", result["detail"])
+        repository, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+        self.assertEqual(repository["transition_class"],
+                         "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+
+    def test_two_refused_submissions_are_two_transitions_on_the_chain(self):
+        """A retry is a signal, so the chain shows both attempts."""
+        self.refuse(manifest=self.unadmitted("first-attempt"))
+        self.refuse(manifest=self.unadmitted("second-attempt"))
+        repository = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+        self.assertEqual(len(repository), 2)
+        self.assertEqual(len({r["receipt_sha256"] for r in repository}), 2)
 
     def test_the_result_is_bound_to_the_receipt_that_exists(self):
         """`manifest_receipt_id` is the appended receipt, not an id minted for the occasion."""
@@ -266,27 +338,21 @@ class ReceivingOperationTests(unittest.TestCase):
                          "ORGANIZATION_INGRESS_RESOLVED_A_DIFFERENT_CAPABILITY")
 
     def test_a_capability_the_internal_endpoint_does_not_admit_is_refused(self):
-        """A refused crossing stays refused and mints no organization receipt."""
-        governed = build_manifest(
-            data={"probe": True}, source_framework="organization-boundary-test",
-            source_output_id="unadmitted-capability",
-            processor_request={"candidate": {"action": "inspect"}, "judgment": {}, "signal": {},
-                              "execution": {}, "capability": {}, "continuity": {},
-                              "approval": {}, "permission_present": False},
-            created_at="2026-10-03T00:00:00Z")
-        result = self.receive(manifest=governed,
-                              standing={"mode": "ESTABLISH_GENESIS", "node_ref": "test",
-                                        "predecessor": None})
+        """Refused as a disposition, and recorded as one rather than as an admission."""
+        result = self.refuse(manifest=self.unadmitted("unadmitted-capability"))
         self.assertEqual(result["disposition"], "FAIL_CLOSED")
         self.assertIs(result["received"], False)
         self.assertEqual(result["failed_predicate"],
                          "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT")
         self.assertIs(result["organization_receipt_observed"], False)
+        self.assertIs(result["refusal_recorded"], True)
 
-    def test_a_crossing_without_declared_standing_never_reaches_the_ledger(self):
-        """Standing is an ingress precondition, so it fails before anything is minted."""
-        with self.assertRaises(SystemExit):
-            self.receive(standing=None)
+    def test_standing_is_still_an_ingress_precondition_when_called_directly(self):
+        """The crossing itself refuses; `receive` records that rather than raising."""
+        with self.assertRaises(SystemExit) as refused:
+            ingress.crossing_module.cross(
+                manifest(), standing=None, packet_id="org-ingress-test")
+        self.assertIn("CROSSING_REQUIRES_DECLARED_STANDING", str(refused.exception))
 
 
 class CrossingReconstructabilityTests(unittest.TestCase):
