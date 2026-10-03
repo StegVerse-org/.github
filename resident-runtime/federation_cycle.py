@@ -8,6 +8,13 @@ SPEC=importlib.util.spec_from_file_location("org_kernel",ROOT/"org-kernel"/"kern
 K=importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(K)
 GWSPEC=importlib.util.spec_from_file_location("federation_gateway_transport",ROOT/"resident-runtime"/"federation_gateway_transport.py")
 GW=importlib.util.module_from_spec(GWSPEC); GWSPEC.loader.exec_module(GW)
+# Repositories in this organization append their own transitions to their own
+# ledgers. `organization_scope_rule` is that every transition occurring within
+# the organization emits an organization receipt, so carrying them up is part of
+# the resident cycle rather than something a person runs by hand. It is
+# intra-organization: no boundary is crossed and no InTr is involved.
+PRSPEC=importlib.util.spec_from_file_location("propagate_repository_receipts",ROOT/"resident-runtime"/"propagate_repository_receipts.py")
+PR=importlib.util.module_from_spec(PRSPEC); PRSPEC.loader.exec_module(PR)
 
 def main():
     if os.getenv("STEGVERSE_ORG_FEDERATION_GATEWAY_URL","").strip():
@@ -28,10 +35,25 @@ def main():
           "authority_effect":"NONE_CARRIER_ONLY",
           "transport":"LOCAL_SPOOL_FALLBACK"
         }
-    out=ROOT/"resident-runtime"/"federation"/"latest-cycle.json"
-    out.parent.mkdir(parents=True,exist_ok=True)
-    out.write_text(json.dumps(receipt,indent=2,sort_keys=True)+"\n")
-    print(json.dumps(receipt,sort_keys=True))
+    # Propagated after the frames are handled, so a cycle that failed to consume
+    # does not report having carried receipts it never reached.
+    propagation=PR.propagate_all()
+    receipt["repository_propagation"]={
+      "repositories_declared":propagation["repositories_declared"],
+      "repositories_present":propagation["repositories_present"],
+      "receipts_propagated":propagation["receipts_propagated"],
+      "receipts_already_carried":propagation["receipts_already_carried"],
+      "crossed_an_organization_boundary":False,
+      "interlock_intr_involved":False,
+    }
+    # Recorded in this node's own state, through the seam that already owns
+    # where node state lives. It was written into the repository checkout, which
+    # made a run mutate committed space and kept only the most recent pass.
+    # The cycle is addressed by what it reported, so the locator is returned to
+    # the caller rather than written back into the document it addresses.
+    recorded=K.record_federation_cycle(receipt)
+    print(json.dumps({**receipt,"recorded_at":str(recorded)},sort_keys=True))
+    return receipt
 
 if __name__=="__main__":
     main()

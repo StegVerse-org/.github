@@ -44,6 +44,7 @@ MESH_FRAME_PREFIX = "frames.d/"
 NODE_SEEN_PREFIX = "federation/seen.d/"
 NODE_OUTBOX_PREFIX = "federation/outbox/"
 NODE_INTAKE_PREFIX = "control/inbox/"
+NODE_CYCLE_PREFIX = "federation/cycles.d/"
 
 # How a store came to know where it is. A node that was told is portable; a
 # node that derived its location from the host it happens to be running on is
@@ -81,6 +82,21 @@ def outbox_key(packet_id):
 def intake_key(packet_id, communication_id):
     digest = hashlib.sha256((packet_id + "|" + str(communication_id)).encode()).hexdigest()
     return NODE_INTAKE_PREFIX + digest + ".json"
+
+
+def cycle_key(receipt):
+    """Address a resident cycle by what it reported.
+
+    A cycle receipt is this node's own record of one pass, so it belongs with
+    the node's other markers rather than in a checkout. Addressed by content
+    for the same reason frames are: two writers of the same report agree byte
+    for byte, and a report that differs is a different cycle rather than an
+    overwrite of the last one. A `latest` file would keep only the most recent
+    pass and lose every one before it.
+    """
+    digest = hashlib.sha256(json.dumps(
+        receipt, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+    return NODE_CYCLE_PREFIX + digest + ".json"
 
 
 class WriteOnceCollision(ValueError):

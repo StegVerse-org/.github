@@ -47,6 +47,14 @@ Both ledger levels are written, in order. The transition occurs in this reposito
 
 The organization does not grade its own result: it reports what it observed to the SDK's own `admit_runtime_result` and returns that verdict, with `manifest_receipt_id` bound to the organization receipt that exists. Custody is published through `resident-runtime/submit_org_transition_to_master_records.py` and never awaited — `propagation_gates_organization_runtime_reality` is false and Master Records `may_be_awaited_by_a_transition` is false — so `master_records_closure_observed` stays false and says so.
 
+### Repository transitions reach the organization chain
+
+`organization_scope_rule` is that every state transition occurring within the organization emits an organization receipt. Repositories here append their own transitions to their own ledgers — the LLM-adapter records a node's arrival at its ingress boundary — and nothing carried them up, so the organization's record began at its own boundary.
+
+`resident-runtime/propagate_repository_receipts.py` walks a repository's chain and hands the receipts to the organization ledger as `REPO_STATE_PROPAGATION`, in repository chain order, each verified against its own body first, and skipping what the organization chain already carries so a second run carries nothing rather than failing on a duplicate. The repositories in scope are read off `org-boundary/registry/services.json`, and a declared repository whose ledger is not present on this node reports its absence rather than failing — that is what an ephemeral node materializing a subset of capabilities looks like. `resident-runtime/federation_cycle.py` runs it on each cycle and reports what it carried, so this happens without anyone naming a repository.
+
+None of this is a crossing. `StegVerse-org/LLM-adapter` and `StegVerse-org/.github` are both inside `StegVerse-org`, so no organization boundary is between them and no Interlock/InTr is involved; the receipts record that explicitly. The hop that does need Interlock/InTr is organization to `propagation_target: master-records/.github`.
+
 Two resolutions happen at two boundaries and are not interchangeable. The capability overlay resolves which organization receives a capability and on what operation; a manifest's `completion.egress` resolves which internal endpoint of that organization serves the declared surface. `completion_egress_controls_outbound_organization_routing: false` is about the first.
 
 ---
