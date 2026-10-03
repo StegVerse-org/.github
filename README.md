@@ -37,6 +37,16 @@ The provider-neutral WorkSpace resource consumer is exposed through the register
 
 This keeps the organization boundary extensible without hardcoding each future service into the boundary processor.
 
+### Where a registered capability is received
+
+`org-runtime/interlock-intr.json` carries `ingress.capability_endpoint_bindings`: one binding per capability, keyed on the `profile_id`, `profile_name` and `operation` the SDK resolves against, declaring the operation **this repository** receives it on. `sdk-manifest-ingress` / `SDK:ManifestIngress` / `SUBMIT_MANIFEST` resolves to `ORGANIZATION_SDK_MANIFEST_INGRESS`, which is an operation this repository owns and not an address — `host_required` and `environment_url_required` are both false, and the validator refuses a binding that sets either. The binding resolves a destination; it confers no routing, admission or execution authority, and the validator refuses a binding that claims any of them or that gives one capability two receiving operations.
+
+`resident-runtime/organization_manifest_ingress.py` is that operation. It resolves its own destination from the organization's own boundary document — not handed one and not fetched, because a document supplied by a caller would let the caller name its own organization — then drives admission through the registered crossing, processing through the boundary processor, and appends the organization transition receipt. It recomputes every boundary receipt from its own subject before appending anything, so the boundary's `RECONSTRUCTED` is checked here rather than taken on trust, and a chain that does not recompute fails closed.
+
+The organization does not grade its own result: it reports what it observed to the SDK's own `admit_runtime_result` and returns that verdict, with `manifest_receipt_id` bound to the organization receipt that exists. Custody is published through `resident-runtime/submit_org_transition_to_master_records.py` and never awaited — `propagation_gates_organization_runtime_reality` is false and Master Records `may_be_awaited_by_a_transition` is false — so `master_records_closure_observed` stays false and says so.
+
+Two resolutions happen at two boundaries and are not interchangeable. The capability overlay resolves which organization receives a capability and on what operation; a manifest's `completion.egress` resolves which internal endpoint of that organization serves the declared surface. `completion_egress_controls_outbound_organization_routing: false` is about the first.
+
 ---
 
 ## Canonical external node ingress — review contract

@@ -158,6 +158,11 @@ def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing", standing=
     resolved_standing = manifest_standing(manifest, standing)
     ingress = crossing_packet(manifest, destination, service, registry, origin, packet_id,
                               resolved_standing)
+    # The boundary binds each receipt to the packet, the service and this
+    # digest. Returning only the receipt kinds left the chain unreconstructible
+    # from outside, so a caller had to take `RECONSTRUCTED` on the boundary's
+    # word. It is returned so the chain can be recomputed independently.
+    payload_hash = sha(ingress["payload"])
     intr_transport.validate_org_crossing(ingress, "INGRESS")
 
     with tempfile.TemporaryDirectory() as work:
@@ -196,6 +201,8 @@ def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing", standing=
         "consumed": bool(result.get("consumed")),
         "reconstruction": (result.get("reconstruction") or {}).get("status"),
         "receipts": [receipt["kind"] for receipt in result.get("receipts", [])],
+        "boundary_receipts": [dict(receipt) for receipt in result.get("receipts", [])],
+        "payload_hash": payload_hash,
         "terminal_receipt_id": (result.get("reconstruction") or {}).get("terminal_receipt_id"),
         "ingress_packet_id": ingress["packet_id"],
         "egress_packet_id": egress["packet_id"],
