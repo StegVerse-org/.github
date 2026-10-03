@@ -61,7 +61,13 @@
       "source": "ORGANIZATION_FEDERATION_DIRECTORY",
       "directory": "org-boundary/registry/federation.json",
       "resolved_from_caller_argument": false,
-      "destination_must_declare_this_transport_profile": "stegverse.intr.org-boundary.v1"
+      "destination_must_declare_this_transport_profile": "stegverse.intr.org-boundary.v1",
+      "addressed_service_field": "addressed_service",
+      "addressed_service_defaults_to_the_organization_control_service": true,
+      "a_peer_may_be_addressed_at_a_service_that_is_not_a_control_service": true,
+      "control_service_field_is_never_pointed_at_a_non_control_service": true,
+      "peer_declares_the_addressed_service_in_its_own_registry": true,
+      "a_peer_declaring_no_addressable_service_is_refused": true
     },
     "peer_capability_resolution": {
       "address_form": "ORGANIZATION_SLUG_DOT_CAPABILITY_PROFILE_ID",

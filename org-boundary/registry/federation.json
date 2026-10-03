@@ -94,6 +94,17 @@
       "transport_profile": "stegverse.intr.org-boundary.v1"
     },
     {
+      "organization": "SV-011",
+      "repository": "SV-011/entity",
+      "addressed_service": "sv-011.boundary-diagnostic",
+      "addressed_service_role": "BOUNDARY_LOCAL_DIAGNOSTIC",
+      "serves_an_organization_control_service": false,
+      "peer_declares_this_in_its_own_registry": "SV-011/entity:org-boundary/registry/services.json",
+      "peer_class": "PREPARED_EXTERNAL_DEPENDENCY",
+      "kernel_required": "1.3.0",
+      "transport_profile": "stegverse.intr.org-boundary.v1"
+    },
+    {
       "organization": "Triad-Test",
       "repository": "Triad-Test/.github",
       "org_control_service": "triad-test.org-control",
@@ -101,7 +112,7 @@
       "transport_profile": "stegverse.intr.org-boundary.v1"
     }
   ],
-  "denominator": 14,
+  "denominator": 15,
   "authority_effect": "NONE",
   "carrier": "HB_DERIVED"
 }
