@@ -44,6 +44,22 @@ hands that to the SDK's own `admit_runtime_result`, which is the authority on
 whether a runtime result closes the transition. A refusal is returned verbatim,
 naming its own predicate, rather than being retried into a success.
 
+A refusal is also recorded. A state transition is the disposition of an intended
+action, not only a successful one: a submission that arrived and was refused is
+a transition whose disposition is DENY, and `organization_scope_rule` makes no
+exception for it. Every refusal path through `receive` -- an unresolvable
+destination, a capability bound elsewhere, a crossing this manifest cannot
+drive, a far side that refused, a boundary chain that does not reconstruct --
+appends a repository receipt and the organization receipt that consumes it,
+under `ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED`. Before this they returned a
+refusal and wrote nothing, which made a held or retried submission
+indistinguishable from one that never arrived.
+
+`organization_receipt_observed` stays false on a refusal regardless. It means an
+admitted crossing was observed, and a refusal receipt is not that; a caller
+reading one as the other would treat a refused submission as a completed
+transition. The refusal's own digests are returned under their own names.
+
 Nothing here grants authority. The organization appends its own receipt, which
 is its own runtime reality; it publishes for custody separately and does not
 claim an observed Master Records closure it has not seen.
@@ -51,6 +67,7 @@ claim an observed Master Records closure it has not seen.
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import importlib.util
 import json
@@ -73,6 +90,18 @@ PROFILE_ID = "sdk-manifest-ingress"
 PROFILE_NAME = "SDK:ManifestIngress"
 OPERATION = "SUBMIT_MANIFEST"
 RESULT_SCHEMA_ORG = "stegverse.organization-manifest-ingress-result/v1"
+REFUSAL_SCHEMA = "stegverse.organization-manifest-ingress-refusal-record/v1"
+
+#: The intended action every submission carries, whatever its disposition.
+#:
+#: A state transition is the disposition of an intended action, not only a
+#: successful one. `organization_scope_rule` is that every state transition
+#: occurring within the organization emits an organization receipt, and a
+#: refused submission is one: it arrived, it was dispositioned, and nothing
+#: recorded it. Refusing and keeping no record makes a held or retried
+#: submission indistinguishable from one that never arrived.
+INTENDED_ACTION = "RECEIVE_A_SUBMITTED_SDK_MANIFEST"
+REFUSED_CLASS = "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED"
 # The organization ledger is its own runtime reality locus, so replay of this
 # transition terminates on this chain. That is the contract's own replay_rule,
 # not a claim about any higher level.
@@ -105,7 +134,60 @@ def boundary() -> dict[str, Any]:
     return json.loads(BOUNDARY.read_text(encoding="utf-8"))
 
 
-def _refused(failed_predicate: str, detail: str, **extra: Any) -> dict[str, Any]:
+def refusal_record(failed_predicate: str, detail: str,
+                   manifest: Any) -> dict[str, Any]:
+    """What a refused submission records.
+
+    The manifest reaches the chain by digest only. Nothing an admitted crossing
+    would have produced appears here -- no resolved service, no boundary receipt
+    chain, no runtime result -- because the organization produced none, and a
+    record naming them would read as a submission that was received.
+    """
+    return {
+        "schema": REFUSAL_SCHEMA,
+        "receiving_operation": OPERATION_ID,
+        "intended_action": INTENDED_ACTION,
+        "disposition": "DENY",
+        "transition_is_the_disposition_of_the_intended_action": True,
+        "failed_predicate": failed_predicate,
+        "detail": detail,
+        "refusal_is_verbatim": True,
+        "submitted_manifest_sha256": "sha256:" + sha(
+            dict(manifest) if isinstance(manifest, Mapping) else manifest),
+        "received": False,
+        "retry_is_a_transition_not_a_lost_signal": True,
+        "authority_effect": "NONE_REFUSAL_RECORD_ONLY",
+    }
+
+
+def _record_refusal(record: Mapping[str, Any], hb_epoch: int | None) -> dict[str, Any]:
+    """Append a refusal at both levels, in the order the replay rule requires.
+
+    The repository ledger records it first and the organization ledger consumes
+    that receipt, exactly as an admitted submission is recorded. One writer
+    standing in for both levels would leave `preserves_repo_receipt` with
+    nothing to preserve -- a refusal is not an exception to that.
+    """
+    predecessor = record["submitted_manifest_sha256"]
+    successor = "sha256:" + sha(dict(record))
+    repository_receipt = repository_ledger.append(
+        "ORGANIZATION-SDK-MANIFEST-INGRESS-REFUSED-" + sha(dict(record))[:16],
+        REFUSED_CLASS, predecessor, successor, dict(record), "NONE", hb_epoch=hb_epoch)
+    organization_receipt = organization_ledger.append(
+        repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
+        {"receiving_operation": OPERATION_ID,
+         "intended_action": INTENDED_ACTION,
+         "disposition": "DENY",
+         "failed_predicate": record["failed_predicate"]},
+        "NONE", hb_epoch=hb_epoch)
+    return {"repository_receipt": repository_receipt,
+            "organization_receipt": organization_receipt}
+
+
+def _refused(failed_predicate: str, detail: str, *, manifest: Any,
+             hb_epoch: int | None = None, **extra: Any) -> dict[str, Any]:
+    record = refusal_record(failed_predicate, detail, manifest)
+    appended = _record_refusal(record, hb_epoch)
     return {
         "schema": RESULT_SCHEMA_ORG,
         "organization": "StegVerse-org",
@@ -114,7 +196,18 @@ def _refused(failed_predicate: str, detail: str, **extra: Any) -> dict[str, Any]
         "received": False,
         "failed_predicate": failed_predicate,
         "detail": detail,
+        # The refusal is recorded at both levels. `organization_receipt_observed`
+        # stays false regardless: it means an admitted crossing was observed, and
+        # a refusal receipt is not that. A caller reading it as one would treat a
+        # refused submission as a completed transition.
         "organization_receipt_observed": False,
+        "refusal_recorded": True,
+        "refusal_transition_class": REFUSED_CLASS,
+        "refusal_intended_action": INTENDED_ACTION,
+        "refusal_repository_receipt_sha256":
+            appended["repository_receipt"]["receipt_sha256"],
+        "refusal_organization_receipt_sha256":
+            appended["organization_receipt"]["receipt_sha256"],
         "authority_effect": "NONE_REFUSAL_ONLY",
         **extra,
     }
@@ -238,31 +331,41 @@ def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None =
             packet_id: str = "organization-sdk-manifest-ingress",
             hb_epoch: int | None = None) -> dict[str, Any]:
     """Receive a submitted manifest on this organization's ingress operation."""
+    refused = functools.partial(_refused, manifest=manifest, hb_epoch=hb_epoch)
     try:
         request = derive_execution_request(manifest, boundary())
     except ValueError as exc:
-        return _refused("ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION", str(exc))
+        return refused("ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION", str(exc))
     try:
         receiving = bound_here(request)
     except ValueError as exc:
-        return _refused("CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION", str(exc),
-                        request_sha256=request.get("request_sha256"))
+        return refused("CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION", str(exc),
+                       request_sha256=request.get("request_sha256"))
 
-    crossing = crossing_module.cross(manifest, standing=standing, packet_id=packet_id)
+    try:
+        crossing = crossing_module.cross(manifest, standing=standing, packet_id=packet_id)
+    except SystemExit as exc:
+        # The crossing refuses a manifest it cannot drive as declared -- no
+        # egress, a non-InTr transport, an unresolvable surface, no declared
+        # standing. Those are dispositions of this submission, so they are
+        # recorded here rather than leaving the operation by exception with
+        # nothing written.
+        return refused("CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED", str(exc))
     if not crossing.get("crossing_completed"):
         # The far side refused. That is its disposition to state, not something
-        # this operation rewrites into a receipt.
-        return _refused("ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT",
-                        str(crossing.get("far_side_disposition")),
-                        request_sha256=request["request_sha256"],
-                        resolved_service_id=crossing.get("resolved_service_id"),
-                        crossing=crossing)
+        # this operation rewrites into an admission -- but the submission still
+        # arrived here, so the refusal is recorded.
+        return refused("ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT",
+                       str(crossing.get("far_side_disposition")),
+                       request_sha256=request["request_sha256"],
+                       resolved_service_id=crossing.get("resolved_service_id"),
+                       crossing=crossing)
 
     try:
         closures = reconstruct_closures(crossing)
     except ValueError as exc:
-        return _refused("BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY", str(exc),
-                        request_sha256=request["request_sha256"])
+        return refused("BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY", str(exc),
+                       request_sha256=request["request_sha256"])
 
     # The transition occurred in this repository, so the repository ledger
     # records it first and the organization ledger consumes that receipt. The
