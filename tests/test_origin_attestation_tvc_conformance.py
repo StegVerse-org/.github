@@ -18,7 +18,10 @@ not present, and the skip is loud rather than silent: a skipped conformance run
 is reported as unproven, never as passed. Point `STEGVERSE_TVC_ROOT` at a TVC
 checkout to run it, which is what makes it runnable from TVC's own CI -- where
 it belongs, because TVC's source-validation receipt records
-`tv_consumer_integration_observed: false` and this is that consumer.
+`tv_consumer_integration_observed: false` -- which it no longer does, because
+this consumer is now observed there against those functions as of
+`StegVerse-Labs/tvc@1e6c909`. The module stays here because a skip in this CI
+must keep reporting what this CI did not prove.
 
 The key is a test key, exactly as TVC's own `test_tv_credential_signing.py`
 passes one. The production key is loaded from a systemd credential directory on
