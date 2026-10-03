@@ -267,15 +267,82 @@ class EgressBoundaryTests(unittest.TestCase):
         self.assertEqual(self.repo_receipts(egress.CLOSED_CLASS), [])
         self.assertEqual(len(self.repo_receipts(egress.CLOSURE_REFUSED_CLASS)), 1)
 
-    def test_the_closure_record_does_not_claim_the_far_side_receipt_was_verified(self):
-        """This organization does not hold the peer's ledger, so it says so."""
+    def test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it(self):
+        """The terminal id that came back is recomputed here and compared.
+
+        An earlier version of this record said the far side's receipt could not
+        be verified here. It can: a boundary receipt id derives from the packet
+        id, the service id and the payload digest, all of which this
+        organization holds.
+        """
+        emitted = self.emit()
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
+                              mesh_root=self.mesh, hb_epoch=32)
+        record = closed["closure_record"]
+        self.assertIs(record["far_side_receipt_reconstructed_here"], True)
+        self.assertIs(record["verified_the_far_side_terminal_receipt_recomputes"], True)
+        self.assertEqual(record["far_side_terminal_receipt"],
+                         record["far_side_terminal_receipt_recomputed"])
+        self.assertEqual(len(record["far_side_receipt_chain_recomputed"]),
+                         len(egress.FAR_SIDE_RECEIPT_KINDS))
+        self.assertNotIn("far_side_receipt_carried_not_verified", record)
+
+    def test_the_recomputation_uses_only_inputs_this_organization_holds(self):
+        """Not a claim about the far side's honesty -- a recomputation."""
+        emitted = self.emit()
+        emission = emitted["emission_record"]
+        recomputed = egress.reconstruct_far_side_chain(
+            emitted["packet_id"], emission["far_side_service_id"],
+            emission["far_side_payload_hash"])
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
+                              mesh_root=self.mesh, hb_epoch=32)
+        self.assertEqual(closed["far_side_terminal_receipt"], recomputed[-1])
+
+    def test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure(self):
+        """A response that does not recompute did not run this packet."""
+        emitted = self.emit()
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        real = egress.reconstruct_far_side_chain
+        egress.reconstruct_far_side_chain = lambda *a, **k: ["forged-terminal-receipt"]
+        self.addCleanup(setattr, egress, "reconstruct_far_side_chain", real)
+        closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
+                              mesh_root=self.mesh, hb_epoch=32)
+        self.assertEqual(closed["disposition"], "DENY")
+        self.assertTrue(any(f.startswith("FAR_SIDE_TERMINAL_RECEIPT_DOES_NOT_RECOMPUTE")
+                            for f in closed["closure_findings"]), closed["closure_findings"])
+        self.assertEqual(len(self.repo_receipts(egress.CLOSURE_REFUSED_CLASS)), 1)
+
+    def test_a_crossing_with_no_emission_record_here_cannot_be_closed(self):
+        """The local half of the bilateral match: no record of emitting it."""
+        self.emit()
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        # A response exists, but this organization's chain holds no emission
+        # receipt for the packet id being closed.
+        closed = egress.close(PEER, "pkt-never-emitted-here", "egress-test-001",
+                              mesh_root=self.mesh, hb_epoch=32)
+        self.assertEqual(closed["disposition"], "DENY")
+        self.assertIn("THIS_ORGANIZATION_HAS_NO_EMISSION_RECORD_FOR_THIS_PACKET",
+                      closed["closure_findings"])
+
+    def test_the_closure_record_states_what_reconstruction_does_not_establish(self):
+        """It proves a boundary ran the packet, not whose boundary it was."""
         emitted = self.emit()
         kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
         record = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)["closure_record"]
-        self.assertIs(record["far_side_receipt_carried_not_verified"], True)
-        self.assertIs(record["far_side_receipt_reconstructed_here"], False)
-        self.assertTrue(record["far_side_terminal_receipt"])
+        self.assertIs(record["reconstruction_proves_the_boundary_ran_this_packet"], True)
+        self.assertIs(record["reconstruction_proves_who_the_far_side_is"], False)
+        self.assertIs(record["reconstruction_proves_the_far_side_persisted_its_chain"], False)
+        self.assertIs(record["bilateral_match_requires_the_far_side_chain_to_be_readable"], True)
+
+    def test_the_emission_records_the_digest_the_far_side_will_bind(self):
+        """Closure reconstructs against this organization's own record of what it sent."""
+        record = self.emit()["emission_record"]
+        self.assertEqual(record["far_side_service_id"], PEER_CONTROL)
+        self.assertTrue(record["far_side_payload_hash"].startswith("sha256:"))
+        self.assertEqual(record["far_side_payload_hash"], kernel.sha(payload()))
 
     # --- what the crossing does not prove ----------------------------------
 
@@ -354,10 +421,21 @@ class BoundaryDocumentDeclaresEgressTests(unittest.TestCase):
         """The overclaim the records exist to avoid, refused in the declaration too."""
         for field, value in (("origin_attestation_state", "PROVEN"),
                              ("origin_is_verified_by_this_boundary", True),
-                             ("far_side_receipt_reconstructed_here", True)):
+                             ("reconstruction_proves_who_the_far_side_is", True),
+                             ("reconstruction_proves_the_far_side_persisted_its_chain", True)):
             with self.subTest(field=field):
                 document = json.loads(json.dumps(self.document))
                 document["egress"]["emitting_operation"][field] = value
+                self.assertIs(self.boundary.egress_emitting_operation_bound(document), False)
+
+    def test_the_validator_requires_the_declaration_to_claim_reconstruction(self):
+        """The retracted limit: declaring it unreconstructable is now refused."""
+        for field in ("far_side_receipt_reconstructed_here",
+                      "far_side_chain_recomputed_from_emitter_held_inputs",
+                      "closure_requires_this_organizations_own_emission_record"):
+            with self.subTest(field=field):
+                document = json.loads(json.dumps(self.document))
+                document["egress"]["emitting_operation"][field] = False
                 self.assertIs(self.boundary.egress_emitting_operation_bound(document), False)
 
     def test_the_validator_refuses_a_destination_resolved_from_the_caller(self):

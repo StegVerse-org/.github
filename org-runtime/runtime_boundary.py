@@ -51,10 +51,13 @@ def egress_emitting_operation(t:dict[str,Any])->dict[str,Any]:
 def egress_emitting_operation_bound(t:dict[str,Any])->bool:
     """One emitting operation, owned here, granting nothing, and attesting nothing it cannot.
 
-    The same shape the receiving operation is held to, plus the two claims an
-    outbound crossing must not make: that the origin on a frame was verified
-    here, and that the far side's receipt was reconstructed here. Declaring
-    either as true would be the overclaim the records are written to avoid.
+    The same shape the receiving operation is held to, plus what an outbound
+    crossing may and may not claim. It must not claim the origin on a frame was
+    verified here -- nothing verifies that. It must claim the far side's chain
+    is reconstructed here, because it is, and it must not claim that
+    reconstruction establishes who the far side is or that the far side
+    persisted its own chain. Those are the bilateral match, which needs the far
+    side's chain readable.
     """
     operation=egress_emitting_operation(t)
     if not operation: return False
@@ -71,7 +74,17 @@ def egress_emitting_operation_bound(t:dict[str,Any])->bool:
     if operation.get("every_disposition_is_receipted") is not True: return False
     if operation.get("origin_attestation_state")!="NOT_PROVEN": return False
     if operation.get("origin_is_verified_by_this_boundary") is not False: return False
-    if operation.get("far_side_receipt_reconstructed_here") is not False: return False
+    # Reconstruction is required, not forbidden. The first version of this
+    # check enforced that the far side's chain could NOT be reconstructed here,
+    # which declared a limit that is not real: a boundary receipt id derives
+    # from the packet id, the service id and the payload digest, all of which
+    # the emitter holds. What must stay false are the two things reconstruction
+    # genuinely does not establish.
+    if operation.get("far_side_receipt_reconstructed_here") is not True: return False
+    if operation.get("far_side_chain_recomputed_from_emitter_held_inputs") is not True: return False
+    if operation.get("reconstruction_proves_who_the_far_side_is") is not False: return False
+    if operation.get("reconstruction_proves_the_far_side_persisted_its_chain") is not False: return False
+    if operation.get("closure_requires_this_organizations_own_emission_record") is not True: return False
     return True
 def egress_destinations_resolve_from_the_directory(t:dict[str,Any])->bool:
     """Destinations come from the organization's own peer directory, not a caller."""

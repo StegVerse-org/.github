@@ -52,11 +52,14 @@ Two things this records honestly rather than claiming:
   one level up. `credential_authority` is TV/TVC and
   `origin_attestation_state` stays `NOT_PROVEN`, so the record says the
   crossing was unattested instead of reading as though it were signed.
-* **The far side's receipt is carried, not verified.** Its terminal receipt id
-  comes back in the response and this organization does not hold its ledger, so
-  it cannot be reconstructed here. What *is* checked is that the response
-  answers the packet that was emitted, comes from the organization that was
-  resolved, and carries the acknowledgement class and a terminal receipt at all.
+* **The far side's receipt is reconstructed, not carried.** A boundary receipt
+  id is derived from the packet id, the service id and the payload digest, all
+  of which this organization already holds, so the terminal id that comes back
+  is recomputed and compared rather than trusted. That proves a boundary ran
+  this packet and minted the chain this packet determines. It does *not* prove
+  which organization that boundary belongs to, and it does not prove the far
+  side persisted the chain on its own ledger -- that is the bilateral match,
+  which needs the far side's chain readable and is not available at closure.
 
 Nothing here grants authority. It records a crossing that occurred and the
 disposition it reached.
@@ -112,6 +115,7 @@ kernel = _module("org_kernel", "org-kernel/kernel.py")
 repository_ledger = _module("repo_transition_emit", ".stegverse/transition-ledger/emit.py")
 organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
+ledger_store = _module("ledger_store", "resident-runtime/ledger_store.py")
 
 
 class EgressRefused(Exception):
@@ -201,6 +205,12 @@ def emission_record(resolved: Mapping[str, Any], origin: str, packet: Mapping[st
         "packet_id": packet["packet_id"],
         "frame_sha256": frame.get("frame_sha256"),
         "payload_sha256": sha(dict(payload)),
+        # The digest the far side's boundary will bind into its own receipt
+        # chain, in the kernel's own canonical form. Recorded at emission so a
+        # closure reconstructs against this organization's own record of what
+        # it sent rather than against anything the response carries.
+        "far_side_payload_hash": kernel.sha(dict(payload)),
+        "far_side_service_id": resolved["destination_org_control_service"],
         "transition_reference": (packet.get("transition") or {}).get("reference"),
         # This one really does cross an organization boundary, unlike repository
         # propagation, which records that it crossed none.
@@ -241,7 +251,7 @@ def emit_refusal_record(failed_predicate: str, reason: str, organization: Any,
 
 def closure_record(resolved: Mapping[str, Any], origin: str, packet_id: str,
                    communication_id: str, response: Mapping[str, Any],
-                   findings: list[str]) -> dict[str, Any]:
+                   findings: list[str], recomputed: list[str]) -> dict[str, Any]:
     """What an observed closure recorded, verified or refused."""
     verified = not findings
     return {
@@ -259,16 +269,32 @@ def closure_record(resolved: Mapping[str, Any], origin: str, packet_id: str,
         "response_packet_id": response.get("response_packet_id"),
         "response_message_class": response.get("message_class"),
         "response_frame_sha256": response.get("frame_sha256"),
-        # Carried, not verified. This organization does not hold the far side's
-        # ledger, so its chain cannot be reconstructed here, and a record
-        # claiming otherwise would be the overclaim this ecosystem exists to
-        # catch. What was checked is listed beside what was not.
+        # Reconstructed, not carried. A boundary receipt id is derived from the
+        # packet id, the service id and the payload digest -- all of which this
+        # organization already holds -- so the terminal id that came back is
+        # recomputed here and compared. An earlier version of this record said
+        # the far side's receipt could not be verified here, which understated
+        # the chain: it can, and a response that does not recompute did not come
+        # from a boundary that ran this packet.
         "far_side_terminal_receipt": response.get("receipt_terminal"),
-        "far_side_receipt_carried_not_verified": True,
-        "far_side_receipt_reconstructed_here": False,
+        "far_side_terminal_receipt_recomputed": recomputed[-1] if recomputed else None,
+        "far_side_receipt_chain_recomputed": recomputed,
+        "far_side_receipt_reconstructed_here": True,
+        "far_side_chain_recomputed_from_emitter_held_inputs": True,
         "verified_the_response_answers_the_emitted_packet": True,
         "verified_the_response_came_from_the_resolved_peer": True,
         "verified_the_response_carries_an_acknowledgement_class": True,
+        "verified_the_far_side_terminal_receipt_recomputes": not findings,
+        # What reconstruction establishes, and what it does not. It proves a
+        # boundary ran this packet and minted the chain this packet determines.
+        # It does not prove which organization that boundary belongs to, and it
+        # does not prove the far side persisted the chain on its own ledger --
+        # that is the bilateral match, which needs the far side's chain to be
+        # readable and is not available at this moment.
+        "reconstruction_proves_the_boundary_ran_this_packet": True,
+        "reconstruction_proves_who_the_far_side_is": False,
+        "reconstruction_proves_the_far_side_persisted_its_chain": False,
+        "bilateral_match_requires_the_far_side_chain_to_be_readable": True,
         "closure_findings": findings,
         "crossed_an_organization_boundary": True,
         "interlock_intr_involved": True,
@@ -368,8 +394,72 @@ def _refusal_result(record: Mapping[str, Any], appended: Mapping[str, Any]) -> d
     }
 
 
+#: The boundary receipt kinds every organization's process boundary mints, in
+#: order. Fixed by `org-boundary/runtime/process_boundary.py`, which is the same
+#: module every peer runs, so the sequence is not a guess about the far side.
+FAR_SIDE_RECEIPT_KINDS = ("INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED",
+                          "RESULT_BOUND", "EGRESS_EMITTED")
+
+
+def reconstruct_far_side_chain(packet_id: str, service_id: str,
+                               payload_hash: str) -> list[str]:
+    """Recompute the receipt chain the far side must have minted for this packet.
+
+    Not a claim about the far side's honesty -- a recomputation. A boundary
+    receipt id is `kind-sha256(canon({kind, packet_id, subject,
+    previous_receipt_id, detail}))[:24]`, and every input is something this
+    organization already holds: the packet id it minted, the service id it
+    resolved from its own directory, and the digest of its own payload. So the
+    terminal id that comes back on the response is checkable rather than
+    carried, and a response that does not recompute did not come from a boundary
+    that ran this packet.
+
+    This is the same move `organization_manifest_ingress.reconstruct_closures`
+    already makes inbound, which is why the inbound path never had to trust a
+    chain it was handed. The outbound path was shipped saying the far side's
+    receipt could not be verified here. It can.
+    """
+    chain, previous = [], None
+    for kind in FAR_SIDE_RECEIPT_KINDS:
+        receipt = kernel.receipt(kind, packet_id, service_id, previous,
+                                 {"payload_hash": payload_hash})
+        chain.append(receipt["receipt_id"])
+        previous = receipt["receipt_id"]
+    return chain
+
+
+def recorded_emission(packet_id: str) -> dict[str, Any] | None:
+    """This organization's own emission record for a packet, read off its chain.
+
+    Returns the emission record the receipt carries as its evidence, or None
+    when this organization's chain holds no emission for that packet.
+
+    A closure is verified against what this organization recorded emitting, not
+    against what the response asserts. Walking its own chain is also the local
+    half of the bilateral match: a crossing with no emission receipt here is one
+    this organization has no record of making, and it cannot be closed.
+    """
+    store = ledger_store.PosixLedgerStore(repository_ledger.lr())
+    head = store.get(ledger_store.HEAD_KEY)
+    cursor = (head or {}).get("receipt_sha256")
+    wanted = EMITTED_CLASS + ":" + packet_id
+    while cursor:
+        receipt = store.get(ledger_store.receipt_key(cursor))
+        if receipt is None:
+            return None
+        if (receipt.get("transition_class") == EMITTED_CLASS
+                and receipt.get("transition_id") == wanted):
+            # The emission record itself, which the receipt carries as its
+            # evidence. Callers need what was recorded, not its envelope.
+            evidence = receipt.get("evidence")
+            return dict(evidence) if isinstance(evidence, Mapping) else None
+        cursor = receipt.get("previous_receipt_sha256")
+    return None
+
+
 def verify_closure(resolved: Mapping[str, Any], packet_id: str,
-                   response: Mapping[str, Any]) -> list[str]:
+                   response: Mapping[str, Any],
+                   emission: Mapping[str, Any] | None = None) -> list[str]:
     """What fails to hold about a response that arrived. Empty means it closes."""
     findings = []
     if response.get("request_packet_id") != packet_id:
@@ -384,6 +474,17 @@ def verify_closure(resolved: Mapping[str, Any], packet_id: str,
     terminal = response.get("receipt_terminal")
     if not isinstance(terminal, str) or not terminal.strip():
         findings.append("RESPONSE_CARRIES_NO_FAR_SIDE_TERMINAL_RECEIPT")
+        return findings
+    # Reconstructed, not trusted. Without this organization's own emission
+    # record there is nothing to reconstruct against, and a crossing it has no
+    # record of emitting is not one it can close.
+    if emission is None:
+        findings.append("THIS_ORGANIZATION_HAS_NO_EMISSION_RECORD_FOR_THIS_PACKET")
+        return findings
+    recomputed = reconstruct_far_side_chain(
+        packet_id, emission["far_side_service_id"], emission["far_side_payload_hash"])
+    if terminal != recomputed[-1]:
+        findings.append("FAR_SIDE_TERMINAL_RECEIPT_DOES_NOT_RECOMPUTE:" + terminal)
     return findings
 
 
@@ -417,8 +518,13 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
             "authority_effect": "NONE_OBSERVATION_ONLY",
         }
     response = responses[0]
-    findings = verify_closure(resolved, packet_id, response)
-    record = closure_record(resolved, origin, packet_id, communication_id, response, findings)
+    emission = recorded_emission(packet_id)
+    findings = verify_closure(resolved, packet_id, response, emission)
+    recomputed = reconstruct_far_side_chain(
+        packet_id, emission["far_side_service_id"], emission["far_side_payload_hash"]
+    ) if emission else []
+    record = closure_record(resolved, origin, packet_id, communication_id, response,
+                            findings, recomputed)
     transition_class = CLOSED_CLASS if not findings else CLOSURE_REFUSED_CLASS
     appended = _record(transition_class + ":" + packet_id, transition_class,
                        sha({"packet_id": packet_id, "communication_id": communication_id}),
@@ -435,7 +541,8 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
         "destination_organization": resolved["destination_organization"],
         "responding_organization": response.get("organization"),
         "far_side_terminal_receipt": response.get("receipt_terminal"),
-        "far_side_receipt_carried_not_verified": True,
+        "far_side_receipt_reconstructed_here": True,
+        "far_side_terminal_receipt_recomputed": recomputed[-1] if recomputed else None,
         "closure_record": record,
         "closure_transition_class": transition_class,
         "closure_repository_receipt_sha256": appended["repository_receipt"]["receipt_sha256"],
