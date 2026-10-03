@@ -156,11 +156,61 @@ def peer_capability_addresses_derive(t:dict[str,Any])->bool:
     proven=r.get("proven_on_this_organization")
     rows={row.get("service_id") for row in load(REGISTRY).get("services",[]) if isinstance(row,dict)}
     return isinstance(proven,str) and proven in rows
+ATTESTATION_MODULE=ROOT/"org-boundary/runtime/origin_attestation.py"
+def origin_attestation_is_bound(t:dict[str,Any])->bool:
+    """Origin is attested by the credential authority, and the limit is declared.
+
+    `origin_attestation_state` read NOT_PROVEN on every inter-organization
+    record, and RE measured that single dimension as the whole disorder score.
+    The settled specification's section 4 says TV/TVC already holds the
+    primitive, so this holds the binding to it: the declared authority and its
+    two operations, a statement the receiver reconstructs rather than one that
+    travels beside its own signature, no key material and no verification
+    algorithm here, and an unreachable authority refused rather than passed.
+
+    What attestation does not establish is required to be declared too. It
+    proves the authority signed the statement; it does not prove the authority
+    authenticated the asker, and claiming otherwise would be the overclaim this
+    check exists to refuse.
+    """
+    a=(t.get("egress") or {}).get("origin_attestation")
+    if not isinstance(a,dict): return False
+    if a.get("credential_authority")!="TV/TVC": return False
+    if a.get("sign_operation")!="TV_EXPORT_HMAC_SIGN": return False
+    if a.get("verify_operation")!="TV_EXPORT_HMAC_VERIFY": return False
+    if a.get("signature_algorithm")!="hmac-sha256": return False
+    if a.get("statement_fields")!=["origin_organization","destination_organization",
+                                   "destination_service","packet_id","payload_sha256",
+                                   "transport_profile"]: return False
+    for required in ("statement_reconstructed_by_the_receiver_from_the_packet",
+                     "signature_travels_inside_the_packet",
+                     "authority_is_asked_to_sign_then_asked_to_verify",
+                     "unreachable_authority_is_a_hold_not_a_pass",
+                     "offered_attestation_that_failed_refuses_the_emission",
+                     "proves_the_authority_signed_the_statement",
+                     "initiator_identification_also_requires_the_bilateral_match"):
+        if a.get(required) is not True: return False
+    for forbidden in ("statement_travels_beside_its_signature","boundary_holds_key_material",
+                      "verification_algorithm_implemented_here",
+                      "proves_the_authority_authenticated_the_asker"):
+        if a.get(forbidden) is not False: return False
+    # The disposition for a crossing that offers no attestation is declared
+    # rather than implicit: every peer is unattested today, and whether that
+    # stays admitted is the owner's policy, not this boundary's silence.
+    if a.get("unattested_crossing_disposition")!="ADMITTED_AND_RECORDED_AS_UNATTESTED": return False
+    if a.get("requiring_attestation_is_an_owner_policy_decision_not_made_here") is not True: return False
+    binding=a.get("statement_binding")
+    if not isinstance(binding,str) or not (ROOT/binding.split("::",1)[0]).is_file(): return False
+    # No second implementation of the credential authority's algorithm lives
+    # here. A repository that could verify a signature itself would be a second
+    # credential authority, which the TV/TVC split exists to prevent.
+    source=ATTESTATION_MODULE.read_text(encoding="utf-8")
+    return not any(token in source for token in ("import hmac","hmac.new","hashlib.sha256"))
 def sdk_manifest_ingress_bound(t:dict[str,Any])->bool:
     """The capability the SDK's manifest handoff resolves on is one of them."""
     return any((b.get("profile_id"),b.get("profile_name"),b.get("operation"))==("sdk-manifest-ingress","SDK:ManifestIngress","SUBMIT_MANIFEST") for b in capability_bindings(t))
 def validate()->dict[str,Any]:
-    a,t=load(ACT),load(TR); h=t["heartbeat_derived_carrier"]; checks={"activation_owner":a.get("organization")==ORG and a.get("owner_repository")==f"{ORG}/.github","activation_local":a.get("activation_source_scope")=="ORG_DOT_GITHUB_ONLY","runtime_sovereign":a.get("runtime_execution_surface")=="SOVEREIGN_RESIDENT_PROCESS","transport_owner":t.get("organization")==ORG and t.get("owner_repository")==f"{ORG}/.github","all_io_here":t.get("communication_policy")=="ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY","tvtvc":a.get("credential_authority")=="TV/TVC" and t.get("credential_authority")=="TV/TVC","github_none":a.get("github_token_runtime_authority")=="NONE" and t.get("github_token_runtime_authority")=="NONE","effects_transition_derived":a.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS" and t.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS","hb_non_authorizing":all(h.get(k) is False for k in ("carrier_grants_admission_authority","carrier_grants_execution_authority","carrier_grants_credential_authority","carrier_grants_routing_authority","carrier_grants_transition_authority","carrier_grants_receiving_authority")),"capability_bindings_resolve":capability_bindings_resolve(t),"sdk_manifest_ingress_bound":sdk_manifest_ingress_bound(t),"egress_emitting_operation_bound":egress_emitting_operation_bound(t),"egress_destinations_resolve_from_the_directory":egress_destinations_resolve_from_the_directory(t),"capability_addresses_resolve":capability_addresses_resolve(t),"peer_capability_addresses_derive":peer_capability_addresses_derive(t)}; return {"schema":"stegverse.organization-boundary-validation/v1","organization":ORG,"checks":checks,"valid":all(checks.values()),"authority_effect":"NONE_VALIDATION_ONLY"}
+    a,t=load(ACT),load(TR); h=t["heartbeat_derived_carrier"]; checks={"activation_owner":a.get("organization")==ORG and a.get("owner_repository")==f"{ORG}/.github","activation_local":a.get("activation_source_scope")=="ORG_DOT_GITHUB_ONLY","runtime_sovereign":a.get("runtime_execution_surface")=="SOVEREIGN_RESIDENT_PROCESS","transport_owner":t.get("organization")==ORG and t.get("owner_repository")==f"{ORG}/.github","all_io_here":t.get("communication_policy")=="ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY","tvtvc":a.get("credential_authority")=="TV/TVC" and t.get("credential_authority")=="TV/TVC","github_none":a.get("github_token_runtime_authority")=="NONE" and t.get("github_token_runtime_authority")=="NONE","effects_transition_derived":a.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS" and t.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS","hb_non_authorizing":all(h.get(k) is False for k in ("carrier_grants_admission_authority","carrier_grants_execution_authority","carrier_grants_credential_authority","carrier_grants_routing_authority","carrier_grants_transition_authority","carrier_grants_receiving_authority")),"capability_bindings_resolve":capability_bindings_resolve(t),"sdk_manifest_ingress_bound":sdk_manifest_ingress_bound(t),"egress_emitting_operation_bound":egress_emitting_operation_bound(t),"egress_destinations_resolve_from_the_directory":egress_destinations_resolve_from_the_directory(t),"capability_addresses_resolve":capability_addresses_resolve(t),"peer_capability_addresses_derive":peer_capability_addresses_derive(t),"origin_attestation_is_bound":origin_attestation_is_bound(t)}; return {"schema":"stegverse.organization-boundary-validation/v1","organization":ORG,"checks":checks,"valid":all(checks.values()),"authority_effect":"NONE_VALIDATION_ONLY"}
 def activation_request(runtime_id:str)->dict[str,Any]:
     body={"schema":"stegverse.organization-resident-runtime-activation-request/v1","organization":ORG,"runtime_id":runtime_id,"owner_repository":f"{ORG}/.github","state":"REQUESTED","credential_authority":"TV/TVC","request_granted_authority":False,"github_token_runtime_authority":"NONE","authority_transfer_assumed":False,"authority_effect_resolution":"DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS"}; return {**body,"request_sha256":canonical(body)}
 def envelope(direction:str,peer_org:str,interlock_id:str,payload_sha256:str,transition_elements_ref:str,authority_ref:str|None)->dict[str,Any]:
