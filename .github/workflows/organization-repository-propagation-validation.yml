@@ -8,6 +8,8 @@ on:
       - 'resident-runtime/aggregate_repo_transition.py'
       - 'resident-runtime/federation_cycle.py'
       - 'resident-runtime/ledger_store.py'
+      - 'org-kernel/kernel.py'
+      - 'org-kernel/node_store.py'
       - 'org-boundary/registry/services.json'
       - '.stegverse/transition-ledger/org-contract.json'
       - 'tests/test_organization_repository_propagation.py'
@@ -20,6 +22,8 @@ on:
       - 'resident-runtime/aggregate_repo_transition.py'
       - 'resident-runtime/federation_cycle.py'
       - 'resident-runtime/ledger_store.py'
+      - 'org-kernel/kernel.py'
+      - 'org-kernel/node_store.py'
       - 'org-boundary/registry/services.json'
       - '.stegverse/transition-ledger/org-contract.json'
       - 'tests/test_organization_repository_propagation.py'
@@ -53,6 +57,7 @@ jobs:
         env:
           STEGVERSE_REPO_LEDGER_HOME: ${{ runner.temp }}/cycle-repo-ledgers
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/cycle-org-ledger
+          STEGVERSE_NODE_STATE_ROOT: ${{ runner.temp }}/cycle-node-state
         run: |
           python - <<'PY'
           import importlib.util, json, os
@@ -83,9 +88,9 @@ jobs:
           (receipts.parent / "HEAD.json").write_text(json.dumps(
               {"repository": repository, "receipt_sha256": digest}, indent=2, sort_keys=True))
 
+          kernel = load("org_kernel", "org-kernel/kernel.py")
           cycle = load("federation_cycle", "resident-runtime/federation_cycle.py")
-          cycle.main()
-          reported = json.loads((root / "resident-runtime/federation/latest-cycle.json").read_text())
+          reported = cycle.main()
           carried = reported["repository_propagation"]
           assert carried["receipts_propagated"] == 1, carried
           assert carried["repositories_present"] == 1, carried
@@ -103,9 +108,20 @@ jobs:
           assert organization[0]["org_transition_class"] == "REPO_STATE_PROPAGATION"
 
           # Running the cycle again carries nothing rather than failing on a duplicate.
-          cycle.main()
-          again = json.loads((root / "resident-runtime/federation/latest-cycle.json").read_text())
+          again = cycle.main()
           assert again["repository_propagation"]["receipts_propagated"] == 0
           assert again["repository_propagation"]["receipts_already_carried"] == 1
+
+          # A cycle is recorded in this node's own state, addressed by what it
+          # reported, and the run leaves nothing behind in the checkout.
+          recorded = kernel.federation_cycles()
+          assert len(recorded) == 2, len(recorded)
+          assert sorted(r["repository_propagation"]["receipts_propagated"] for r in recorded) == [0, 1]
+          # The node state root was told to the node, so it is portable, and
+          # the run left nothing behind in the checkout.
+          resolved, provenance = kernel.resolve_node_state_root()
+          assert provenance == "DERIVED_FROM_ENVIRONMENT", provenance
+          assert str(resolved) == os.environ["STEGVERSE_NODE_STATE_ROOT"], resolved
+          assert not (root / "resident-runtime/federation").exists()
           print("RESIDENT_CYCLE_CARRIES_REPOSITORY_RECEIPTS=PASS", organization[0]["repo_transition_id"])
           PY

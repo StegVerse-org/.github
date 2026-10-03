@@ -24,6 +24,8 @@ Source validation only. No authority effect is claimed.
 """
 import hashlib
 import importlib.util
+import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -266,6 +268,67 @@ class MeshProvenanceTests(unittest.TestCase):
         path, provenance = kernel.resolve_federation_root({})
         self.assertEqual(provenance, node_store.FROM_HOME_DIRECTORY)
         self.assertEqual(kernel.federation_root({}), path)
+
+
+class ResidentCycleRecordTests(unittest.TestCase):
+    """A cycle is this node's report of one pass, not a file in the checkout.
+
+    `federation_cycle.py` wrote it to `resident-runtime/federation/latest-cycle.json`
+    inside the repository tree, so running the resident runtime mutated committed
+    space and only the most recent pass survived.
+    """
+
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.root, True)
+
+    def cycle(self, propagated):
+        return {"schema_version": "stegverse.org-federation-cycle.v1",
+                "organization": ORGANIZATION,
+                "repository_propagation": {"receipts_propagated": propagated},
+                "authority_effect": "NONE_CARRIER_ONLY"}
+
+    def test_a_cycle_is_recorded_where_the_node_state_root_resolves(self):
+        recorded = kernel.record_federation_cycle(self.cycle(1), root=self.root)
+        self.assertTrue(recorded.is_file())
+        self.assertIn("federation/cycles.d/", recorded.as_posix())
+        self.assertEqual(json.loads(recorded.read_text()), self.cycle(1))
+
+    def test_every_pass_is_kept_rather_than_the_last_overwriting_the_rest(self):
+        """A `latest` file kept one pass. Two passes are two records."""
+        kernel.record_federation_cycle(self.cycle(1), root=self.root)
+        kernel.record_federation_cycle(self.cycle(0), root=self.root)
+        kept = kernel.federation_cycles(root=self.root)
+        self.assertEqual(sorted(c["repository_propagation"]["receipts_propagated"]
+                                for c in kept), [0, 1])
+
+    def test_recording_the_same_pass_twice_is_not_a_collision(self):
+        """Addressed by what it reported, so two writers of one report agree."""
+        first = kernel.record_federation_cycle(self.cycle(1), root=self.root)
+        again = kernel.record_federation_cycle(self.cycle(1), root=self.root)
+        self.assertEqual(first, again)
+        self.assertEqual(len(kernel.federation_cycles(root=self.root)), 1)
+
+    def test_nothing_is_written_into_the_repository_tree(self):
+        kernel.record_federation_cycle(self.cycle(1), root=self.root)
+        self.assertFalse((ROOT / "resident-runtime/federation/latest-cycle.json").exists())
+
+    def test_a_node_state_root_it_was_told_is_portable(self):
+        resolved, provenance = kernel.resolve_node_state_root(
+            {kernel.NODE_STATE_ROOT_ENV: str(self.root)})
+        self.assertEqual(resolved, self.root.resolve())
+        self.assertEqual(provenance, node_store.FROM_ENVIRONMENT)
+
+    def test_a_node_state_root_derived_from_the_host_says_so(self):
+        resolved, provenance = kernel.resolve_node_state_root({})
+        self.assertEqual(provenance, node_store.FROM_HOME_DIRECTORY)
+        self.assertTrue(resolved.as_posix().endswith("stegverse/node-state"))
+
+    def test_the_markers_that_already_live_in_the_checkout_do_not_migrate(self):
+        """Keys keep the names the filesystem gave them; nothing is moved."""
+        node = fixture(self)
+        self.assertEqual(Path(node.state.root), node.node_root / "resident-runtime")
+        self.assertEqual(node.state.provenance, node_store.SUPPLIED)
 
 
 if __name__ == "__main__":

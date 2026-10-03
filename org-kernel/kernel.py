@@ -224,7 +224,8 @@ def ingest_frame(root:Path, frame:dict[str,Any])->dict[str,Any]:
 __all__=["hb_reference","derive_channel","carrier_frame","recover_packet","dispatch","persist_outbox",
          "node_standing","carried_standing",
          "ingest_frame","mesh_store","node_state_store","node_state_provenance",
-         "resolve_federation_root"]
+         "resolve_federation_root","resolve_node_state_root","addressed_node_state_store",
+         "record_federation_cycle","federation_cycles"]
 
 
 # --- Federation mesh v1.1 additions ---
@@ -678,3 +679,58 @@ def mark_federation_frame_seen(repo_root:Path, frame_path:str, frame:dict[str,An
     except node_store_module.WriteOnceCollision:
         raise ValueError("federation_seen_marker_collision")
     return Path(target.locator(key))
+
+# --- Resident cycle records, addressed rather than located ---
+NODE_STATE_ROOT_ENV="STEGVERSE_NODE_STATE_ROOT"
+
+def resolve_node_state_root(env:dict[str,str]|None=None)->tuple[Path,str]:
+    """Where this node's own state is, and how it came to believe that.
+
+    The mesh resolves this way already. Node state did not: `node_state_store`
+    takes a root, and every resident caller passed the repository checkout, so
+    a node's markers and reports landed in committed space and a run mutated
+    the tree it was running from. That resolution is kept for the documents
+    that already live there -- nothing migrates -- and anything newly recorded
+    resolves here instead: told where its state is, or derived from the host it
+    happens to be on and saying so rather than appearing equivalent.
+    """
+    values=os.environ if env is None else env
+    override=values.get(NODE_STATE_ROOT_ENV)
+    if override:
+        return Path(override).expanduser().resolve(), node_store_module.FROM_ENVIRONMENT
+    base=Path(values.get("XDG_STATE_HOME",str(Path.home()/".local"/"state")))
+    return (base/"stegverse"/"node-state").resolve(), node_store_module.FROM_HOME_DIRECTORY
+
+def addressed_node_state_store(root:Path|None=None, env:dict[str,str]|None=None)->Any:
+    """This node's state, at the root it was told or the one it resolved to."""
+    if root is not None:
+        return PosixStateStore(Path(root).resolve(), provenance=node_store_module.SUPPLIED)
+    resolved,provenance=resolve_node_state_root(env)
+    return PosixStateStore(resolved, provenance=provenance)
+
+def record_federation_cycle(receipt:dict[str,Any], *, root:Path|None=None,
+                            store:Any|None=None, env:dict[str,str]|None=None)->Path:
+    """Record one resident cycle in this node's own state.
+
+    The cycle receipt is this node's report of one pass. It was written to
+    `resident-runtime/federation/latest-cycle.json` inside the repository
+    checkout, so running the resident runtime mutated committed space and kept
+    only the most recent pass -- the rest were overwritten and gone. It is now
+    addressed by what it reported, in a node state root that is resolved rather
+    than assumed, and every pass is kept.
+    """
+    target=store or addressed_node_state_store(root,env)
+    key=node_store_module.cycle_key(receipt)
+    target.put_once(key,receipt)
+    return Path(target.locator(key))
+
+def federation_cycles(*, root:Path|None=None, store:Any|None=None,
+                      env:dict[str,str]|None=None)->list[dict[str,Any]]:
+    """Every cycle this node recorded, in reproducible key order."""
+    target=store or addressed_node_state_store(root,env)
+    out=[]
+    for key in target.list_prefix(node_store_module.NODE_CYCLE_PREFIX):
+        value=target.get(key)
+        if isinstance(value,dict):
+            out.append(value)
+    return out

@@ -61,11 +61,20 @@ registration at the adapter's ingress boundary
 
 Both ledger homes are redirected per test and per CI step. The ledgers are durable sovereign state, and a run that appended into either default location would be writing runtime reality from a test.
 
-`federation_cycle.py` had no CI coverage before this; the new workflow is the first to exercise it.
+`federation_cycle.py` had no CI coverage before this; the new workflow is the first to exercise it. It now also asserts that two cycles are recorded in the node state root the node was told to use, that the resolution reports `DERIVED_FROM_ENVIRONMENT`, and that the run leaves `resident-runtime/federation/` absent from the checkout.
 
-## Two things recorded, not fixed here
+## The cycle receipt no longer lands in the repository tree
 
-1. `federation_cycle.py` writes its cycle receipt to `resident-runtime/federation/latest-cycle.json` — inside the repository tree. That is the same defect class registered in `StegVerse-org/LLM-adapter:.stegverse/pre-protocol-receipt-register.json`: a run writing an artifact into committed space. Pre-existing, and left alone rather than changed as a side effect of this.
-2. The organization to Master Records hop still reaches only `PUBLISHED_FOR_CUSTODY`. That one *is* inter-organization, does need Interlock/InTr, and carries the validator conflict recorded on `.github` #40.
+`federation_cycle.py` wrote its cycle receipt to `resident-runtime/federation/latest-cycle.json`, inside the repository tree — the same defect class registered in `StegVerse-org/LLM-adapter:.stegverse/pre-protocol-receipt-register.json`, a run writing an artifact into committed space. It also kept only the most recent pass; every earlier one was overwritten and gone.
+
+Fixed rather than noted. Node state already had a seam, `org-kernel/node_store.py`, but every resident caller passed the repository checkout as the node root, so the seam existed and the resolution still landed in the tree. `kernel.resolve_node_state_root` now resolves it the way `resolve_federation_root` already resolved the mesh — `STEGVERSE_NODE_STATE_ROOT`, else `XDG_STATE_HOME/stegverse/node-state` — and returns the provenance with the path, so a node that was told where its state is reads as portable and one that derived it from its host says so instead of appearing equivalent.
+
+A cycle is recorded through `kernel.record_federation_cycle`, addressed by what it reported under `federation/cycles.d/`, write-once like every other node document. Two writers of the same report agree byte for byte; a report that differs is a different cycle rather than an overwrite. Every pass is kept.
+
+The documents that already live under a checkout — consumption markers, outbox, work intake — keep resolving exactly where they did. `node_store.py` states that as a property: keys keep the names the filesystem gave them and nothing migrates. Only newly recorded state resolves through the addressed root.
+
+## One thing recorded, not fixed here
+
+The organization to Master Records hop still reaches only `PUBLISHED_FOR_CUSTODY`. That one *is* inter-organization, does need Interlock/InTr, and carries the validator conflict recorded on `.github` #40.
 
 Nothing here grants authority, performs a transition, or claims custody. It records, at the organization level, transitions that already occurred.

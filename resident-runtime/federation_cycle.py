@@ -46,10 +46,14 @@ def main():
       "crossed_an_organization_boundary":False,
       "interlock_intr_involved":False,
     }
-    out=ROOT/"resident-runtime"/"federation"/"latest-cycle.json"
-    out.parent.mkdir(parents=True,exist_ok=True)
-    out.write_text(json.dumps(receipt,indent=2,sort_keys=True)+"\n")
-    print(json.dumps(receipt,sort_keys=True))
+    # Recorded in this node's own state, through the seam that already owns
+    # where node state lives. It was written into the repository checkout, which
+    # made a run mutate committed space and kept only the most recent pass.
+    # The cycle is addressed by what it reported, so the locator is returned to
+    # the caller rather than written back into the document it addresses.
+    recorded=K.record_federation_cycle(receipt)
+    print(json.dumps({**receipt,"recorded_at":str(recorded)},sort_keys=True))
+    return receipt
 
 if __name__=="__main__":
     main()
