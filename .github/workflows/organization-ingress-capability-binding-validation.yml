@@ -1,0 +1,96 @@
+name: Validate Organization Ingress Capability Binding
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'org-runtime/interlock-intr.json'
+      - 'org-runtime/runtime_boundary.py'
+      - 'tests/test_organization_ingress_capability_binding.py'
+      - 'docs/ORGANIZATION_INGRESS_CAPABILITY_BINDING_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-ingress-capability-binding-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'org-runtime/interlock-intr.json'
+      - 'org-runtime/runtime_boundary.py'
+      - 'tests/test_organization_ingress_capability_binding.py'
+      - 'docs/ORGANIZATION_INGRESS_CAPABILITY_BINDING_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-ingress-capability-binding-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-capability-binding:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The SDK is the enforcing authority for this resolution. The test asserts
+      # against its own resolver rather than a local restatement of its rules, so
+      # the SDK has to be present at the exact commit that owns them.
+      - name: Checkout exact merged SDK organization ingress resolver
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: e67851968fb6b45b0a02529152824770cbcf5f95
+          path: sdk
+          persist-credentials: false
+
+      - name: Install SDK test dependency surface
+        run: python -m pip install -e ./sdk
+
+      - name: Validate the organization ingress capability binding
+        run: python -m unittest tests.test_organization_ingress_capability_binding -v
+
+      - name: The organization boundary validator requires a non-authorizing binding
+        run: |
+          python org-runtime/runtime_boundary.py validate | tee /tmp/org-boundary.json
+          python -c 'import json; x=json.load(open("/tmp/org-boundary.json")); assert x["valid"] is True; assert x["checks"]["capability_bindings_resolve"] is True; assert x["checks"]["sdk_manifest_ingress_bound"] is True; assert x["authority_effect"]=="NONE_VALIDATION_ONLY"'
+
+      - name: The registered capability resolves, and resolution still grants nothing
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from stegverse.connector_capability_overlay import resolve_organization_ingress
+          from stegverse.manifest_builder import build_manifest
+          from stegverse.manifest_state_transition_runtime import execute_manifest
+
+          boundary = json.loads(Path('org-runtime/interlock-intr.json').read_text())
+          resolution = resolve_organization_ingress(
+              boundary, profile_id='sdk-manifest-ingress',
+              profile_name='SDK:ManifestIngress', operation='SUBMIT_MANIFEST')
+          assert resolution['owner_repository'] == 'StegVerse-org/.github'
+          assert resolution['resolution_source'] == 'ORG_DOT_GITHUB_INTERLOCK_INTR_BOUNDARY'
+          assert resolution['authority_effect'] == 'NONE_BINDING_ONLY'
+          assert resolution['environment_inputs'] == []
+
+          manifest = build_manifest(
+              data={'binding': 'ci'}, source_framework='organization-boundary-ci',
+              source_output_id='organization-ingress-capability-binding-ci',
+              processor_request={'candidate': {'action': 'inspect'}, 'judgment': {},
+                                 'signal': {}, 'execution': {}, 'capability': {},
+                                 'continuity': {}, 'approval': {},
+                                 'permission_present': False},
+              created_at='2026-10-03T00:00:00Z')
+
+          unresolved = execute_manifest(manifest)
+          assert unresolved['failure_code'] == 'CANONICAL_ORGANIZATION_INGRESS_ENDPOINT_NOT_RESOLVED'
+
+          resolved = execute_manifest(manifest, boundary)
+          assert resolved['disposition'] == 'ALLOW'
+          assert resolved['state'] == 'MANIFESTED_FOR_INTERLOCK_INTR_HANDOFF'
+          assert resolved['destination_resolution_source'] == 'CANONICAL_CONNECTOR_CAPABILITY_OVERLAY'
+          # A named destination is not a reached one.
+          for unobserved in ('intr_admission_observed', 'far_side_transition_observed',
+                             'organization_receipt_observed', 'consequence_committed',
+                             'receiver_contacted'):
+              assert resolved[unobserved] is False, unobserved
+          print('ORGANIZATION_INGRESS_CAPABILITY_BINDING=PASS')
+          PY

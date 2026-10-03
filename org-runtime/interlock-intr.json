@@ -8,7 +8,42 @@
     "interlock_required": true,
     "intr_required": true,
     "direction": "INGRESS",
-    "standing_resolution": "APPLICABLE_TRANSITION_ELEMENTS"
+    "standing_resolution": "APPLICABLE_TRANSITION_ELEMENTS",
+    "capability_endpoint_bindings": [
+      {
+        "profile_id": "sdk-manifest-ingress",
+        "profile_name": "SDK:ManifestIngress",
+        "operation": "SUBMIT_MANIFEST",
+        "payload_schema": "stegverse.ingress-manifest.v1",
+        "capability_declaration_owner": "StegVerse-Labs/StegOS",
+        "capability_binding_owner": "StegVerse-org/StegVerse-SDK",
+        "receiving_operation": {
+          "owner_repository": "StegVerse-org/.github",
+          "operation_id": "ORGANIZATION_SDK_MANIFEST_INGRESS",
+          "admission": "resident-runtime/sdk_manifest_crossing.py::cross",
+          "processing": "org-boundary/runtime/process_boundary.py",
+          "receipt_append": "resident-runtime/aggregate_repo_transition.py::append",
+          "emits": "stegverse.organization-transition-receipt/v1",
+          "transport": "INTERLOCK_INTR",
+          "address_form": "REPOSITORY_OWNED_OPERATION_NOT_HOST_OR_URL",
+          "host_required": false,
+          "environment_url_required": false,
+          "credential_authority": "TV/TVC",
+          "github_token_runtime_authority": "NONE"
+        },
+        "binding_role": "ORGANIZATION_RECEIVING_OPERATION_RESOLUTION",
+        "authority_effect": "NONE_BINDING_ONLY",
+        "grants_routing_authority": false,
+        "grants_admission_authority": false,
+        "grants_execution_authority": false,
+        "environment_selected_ingress": false,
+        "completion_egress_is_outbound_routing_authority": false,
+        "llm_adapter_is_outbound_organization_destination": false,
+        "publisher_is_outbound_organization_destination": false
+      }
+    ],
+    "capability_endpoint_binding_rule": "REGISTERED_CAPABILITY_RESOLVES_TO_ONE_ORGANIZATION_RECEIVING_OPERATION_OWNED_HERE",
+    "capability_endpoint_binding_consumer": "stegverse.connector_capability_overlay.resolve_organization_ingress"
   },
   "egress": {
     "interlock_required": true,
