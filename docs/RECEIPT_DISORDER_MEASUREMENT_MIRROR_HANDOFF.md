@@ -165,3 +165,55 @@ happens the reduction can be proven without hidden disorder.
 
 Nothing here grants authority. `authority_effect` is `NONE_MEASUREMENT_ONLY`,
 and all five RE obligations remain `tested_not_proven`.
+
+## Correction: two resolution surfaces, not one
+
+Two classes measured every record that resolved a target against the fields an
+*outbound* crossing carries. That was right while an outbound crossing was the
+only resolution in any ledger. It is not right in general, and it became wrong
+in practice the moment a bound capability got an address, because an inbound
+submission then resolves a target too — and resolves a different kind of one.
+
+An outbound crossing resolves a **peer organization** from this organization's
+peer directory. An inbound submission resolves a **receiving operation** from
+the capability overlay. Measured against the peer directory's fields, every
+manifest submission scored:
+
+```text
+target_or_scope_ambiguity      1.0    no destination_organization, no peer address
+policy_or_delegation_mismatch  1.0    resolution_source is the overlay, not the directory
+```
+
+Both false. The ingress record carries no peer address because it addressed no
+peer, and a record resolved through the overlay is not mis-delegated for having
+been resolved through the overlay — the overlay *is* the delegation structure
+this class measures against.
+
+The fix measures each record against the surface it declares it resolved
+through. `TARGET_SCOPE_FIELDS` is now keyed by resolution surface, and the
+delegation links differ by surface: for an outbound crossing, directory
+resolution and the declared transport profile and owning repository; for an
+inbound submission, that the capability is one the overlay binds and that the
+operation reached is the one that binding names. A resolution through a surface
+nothing declares is counted as a finding rather than skipped — it resolved a
+target against something undeclared, which is what scope ambiguity is.
+
+Coverage grew rather than narrowed, which is the point: narrowing the population
+to outbound crossings would have removed the false finding by leaving the inbound
+lane unmeasured, and an unmeasured dimension is where `hidden_disorder_tolerance:
+0.0` says disorder hides.
+
+Measured over a ledger holding both lanes — an outbound crossing emitted and
+closed, and a peer's manifest submission received at the capability address:
+
+```text
+target_or_scope_ambiguity      0.0    0/9    (4 peer fields + 5 overlay fields)
+policy_or_delegation_mismatch  0.0    0/6    (3 links + 3 links)
+unresolved_actor_identity      1.0    2/2
+all seven others               0.0
+observed                       10 of 10
+```
+
+Recorded for the same reason the first false finding was: a measurement surface
+that produces false findings is worse than none, because it sends a repair after
+a defect that does not exist.

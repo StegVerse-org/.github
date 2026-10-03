@@ -94,11 +94,73 @@ def egress_destinations_resolve_from_the_directory(t:dict[str,Any])->bool:
     if resolution.get("directory")!="org-boundary/registry/federation.json": return False
     if resolution.get("resolved_from_caller_argument") is not False: return False
     return resolution.get("destination_must_declare_this_transport_profile")=="stegverse.intr.org-boundary.v1"
+REGISTRY=ROOT/"org-boundary/registry/services.json"
+CAPABILITY_INGRESS_ROLE="BOUNDARY_LOCAL_CAPABILITY_INGRESS"
+def capability_addresses_resolve(t:dict[str,Any])->bool:
+    """Every bound capability is reachable, which is what binding one implies.
+
+    `capability_endpoint_binding_rule` resolved a receiving operation and
+    stopped there. `dispatch` resolves `destination.service` against the service
+    registry and refuses `unknown_service` for anything absent from it, so a
+    binding whose operation had no registered address named a destination
+    transport could not reach -- the declaration was real and the reachability
+    it implied was not. This is `capability_address_rule`, enforced: the
+    addressed service exists, carries the role whose dispatch resolves a
+    capability, agrees with the binding on which capability arrives there, and
+    names an operation module that is present in this repository.
+    """
+    if (t.get("ingress") or {}).get("capability_address_rule")!=\
+       "A_BOUND_RECEIVING_OPERATION_IS_ADDRESSABLE_IN_THE_SERVICE_REGISTRY_OR_IT_IS_UNREACHABLE": return False
+    bindings=capability_bindings(t)
+    if not bindings: return False
+    rows={r.get("service_id"):r for r in load(REGISTRY).get("services",[]) if isinstance(r,dict)}
+    for b in bindings:
+        receiving=b.get("receiving_operation")
+        if not isinstance(receiving,dict): return False
+        row=rows.get(receiving.get("addressed_service"))
+        if row is None: return False
+        if row.get("boundary_role")!=CAPABILITY_INGRESS_ROLE: return False
+        if receiving.get("addressed_service_boundary_role")!=CAPABILITY_INGRESS_ROLE: return False
+        if row.get("capability_profile_id")!=b.get("profile_id"): return False
+        if receiving.get("address_is_resolvable_from_the_service_registry") is not True: return False
+        # The address selects no processor, and must not read as one that did.
+        if receiving.get("selects_processing_at_the_capability_address") is not False: return False
+        if row.get("selects_processing_at_this_address") is not False: return False
+        if row.get("address_grants_admission_authority") is not False: return False
+        operation=receiving.get("operation")
+        if not isinstance(operation,str) or not (ROOT/operation).is_file(): return False
+        resolution=receiving.get("address_resolution")
+        if not isinstance(resolution,str) or not (ROOT/resolution.split("::",1)[0]).is_file(): return False
+    return True
+def peer_capability_addresses_derive(t:dict[str,Any])->bool:
+    """A peer's capability address is derived, and what that does not prove is said.
+
+    Enumerating a service per peer would be this organization writing down what
+    its peers serve, which is a declaration none of them made. Deriving it is
+    honest only while the record says so: the form is the organization's own and
+    the same one this organization answers at, and it is not evidence that a
+    given peer installed the receiving operation. Claiming otherwise is the
+    overclaim; declaring the derivation unusable would be the limit that is not
+    real.
+    """
+    r=(t.get("egress") or {}).get("peer_capability_resolution")
+    if not isinstance(r,dict): return False
+    if r.get("address_form")!="ORGANIZATION_SLUG_DOT_CAPABILITY_PROFILE_ID": return False
+    if r.get("capability_must_be_declared_in_this_organizations_overlay") is not True: return False
+    if r.get("derivation_is_the_same_one_this_organization_answers_at") is not True: return False
+    if r.get("peer_serves_this_capability_is_proven_here") is not False: return False
+    if r.get("peer_declares_its_capability_services_in_the_peer_directory") is not False: return False
+    if r.get("unserved_capability_address_is_observable_as_an_unclosed_crossing") is not True: return False
+    if r.get("default_without_a_declared_capability")!="ORG_CONTROL_SERVICE": return False
+    # The address it says it is proven on must actually be served here.
+    proven=r.get("proven_on_this_organization")
+    rows={row.get("service_id") for row in load(REGISTRY).get("services",[]) if isinstance(row,dict)}
+    return isinstance(proven,str) and proven in rows
 def sdk_manifest_ingress_bound(t:dict[str,Any])->bool:
     """The capability the SDK's manifest handoff resolves on is one of them."""
     return any((b.get("profile_id"),b.get("profile_name"),b.get("operation"))==("sdk-manifest-ingress","SDK:ManifestIngress","SUBMIT_MANIFEST") for b in capability_bindings(t))
 def validate()->dict[str,Any]:
-    a,t=load(ACT),load(TR); h=t["heartbeat_derived_carrier"]; checks={"activation_owner":a.get("organization")==ORG and a.get("owner_repository")==f"{ORG}/.github","activation_local":a.get("activation_source_scope")=="ORG_DOT_GITHUB_ONLY","runtime_sovereign":a.get("runtime_execution_surface")=="SOVEREIGN_RESIDENT_PROCESS","transport_owner":t.get("organization")==ORG and t.get("owner_repository")==f"{ORG}/.github","all_io_here":t.get("communication_policy")=="ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY","tvtvc":a.get("credential_authority")=="TV/TVC" and t.get("credential_authority")=="TV/TVC","github_none":a.get("github_token_runtime_authority")=="NONE" and t.get("github_token_runtime_authority")=="NONE","effects_transition_derived":a.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS" and t.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS","hb_non_authorizing":all(h.get(k) is False for k in ("carrier_grants_admission_authority","carrier_grants_execution_authority","carrier_grants_credential_authority","carrier_grants_routing_authority","carrier_grants_transition_authority","carrier_grants_receiving_authority")),"capability_bindings_resolve":capability_bindings_resolve(t),"sdk_manifest_ingress_bound":sdk_manifest_ingress_bound(t),"egress_emitting_operation_bound":egress_emitting_operation_bound(t),"egress_destinations_resolve_from_the_directory":egress_destinations_resolve_from_the_directory(t)}; return {"schema":"stegverse.organization-boundary-validation/v1","organization":ORG,"checks":checks,"valid":all(checks.values()),"authority_effect":"NONE_VALIDATION_ONLY"}
+    a,t=load(ACT),load(TR); h=t["heartbeat_derived_carrier"]; checks={"activation_owner":a.get("organization")==ORG and a.get("owner_repository")==f"{ORG}/.github","activation_local":a.get("activation_source_scope")=="ORG_DOT_GITHUB_ONLY","runtime_sovereign":a.get("runtime_execution_surface")=="SOVEREIGN_RESIDENT_PROCESS","transport_owner":t.get("organization")==ORG and t.get("owner_repository")==f"{ORG}/.github","all_io_here":t.get("communication_policy")=="ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY","tvtvc":a.get("credential_authority")=="TV/TVC" and t.get("credential_authority")=="TV/TVC","github_none":a.get("github_token_runtime_authority")=="NONE" and t.get("github_token_runtime_authority")=="NONE","effects_transition_derived":a.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS" and t.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS","hb_non_authorizing":all(h.get(k) is False for k in ("carrier_grants_admission_authority","carrier_grants_execution_authority","carrier_grants_credential_authority","carrier_grants_routing_authority","carrier_grants_transition_authority","carrier_grants_receiving_authority")),"capability_bindings_resolve":capability_bindings_resolve(t),"sdk_manifest_ingress_bound":sdk_manifest_ingress_bound(t),"egress_emitting_operation_bound":egress_emitting_operation_bound(t),"egress_destinations_resolve_from_the_directory":egress_destinations_resolve_from_the_directory(t),"capability_addresses_resolve":capability_addresses_resolve(t),"peer_capability_addresses_derive":peer_capability_addresses_derive(t)}; return {"schema":"stegverse.organization-boundary-validation/v1","organization":ORG,"checks":checks,"valid":all(checks.values()),"authority_effect":"NONE_VALIDATION_ONLY"}
 def activation_request(runtime_id:str)->dict[str,Any]:
     body={"schema":"stegverse.organization-resident-runtime-activation-request/v1","organization":ORG,"runtime_id":runtime_id,"owner_repository":f"{ORG}/.github","state":"REQUESTED","credential_authority":"TV/TVC","request_granted_authority":False,"github_token_runtime_authority":"NONE","authority_transfer_assumed":False,"authority_effect_resolution":"DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS"}; return {**body,"request_sha256":canonical(body)}
 def envelope(direction:str,peer_org:str,interlock_id:str,payload_sha256:str,transition_elements_ref:str,authority_ref:str|None)->dict[str,Any]:

@@ -81,6 +81,12 @@ class DisorderMeasurementTests(unittest.TestCase):
         shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
         return root
 
+    def append_resolved(self, evidence, transition_id="INBOUND-SUBMISSION"):
+        """Append one record that resolved a target, through the ledger's own writer."""
+        return repository_ledger.append(
+            transition_id, "ORGANIZATION_SDK_MANIFEST_INGRESS",
+            "sha256:" + "a" * 64, "sha256:" + "b" * 64, evidence, "NONE", hb_epoch=32)
+
     def crossing(self, communication_id="disorder-1"):
         """A real inter-organization crossing: emitted, closed, and one refused."""
         emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
@@ -154,8 +160,62 @@ class DisorderMeasurementTests(unittest.TestCase):
         self.assertEqual(classes["policy_or_delegation_mismatch"]["severity"], 0.0)
         # One emission resolved a destination; the closure and the refusal did not.
         self.assertEqual(classes["target_or_scope_ambiguity"]["denominator"],
-                         len(disorder.TARGET_SCOPE_FIELDS))
+                         len(disorder.TARGET_SCOPE_FIELDS[disorder.PEER_DIRECTORY]))
         self.assertEqual(classes["policy_or_delegation_mismatch"]["denominator"], 3)
+
+    def test_an_inbound_resolution_is_measured_against_the_overlay_not_the_directory(self):
+        """Two resolution surfaces exist and they are not interchangeable.
+
+        An inbound submission resolves a receiving operation from the capability
+        overlay. It carries no peer address because it addressed no peer, and it
+        is not mis-delegated for having resolved through the overlay. Measuring
+        it against the peer directory's fields scored both classes 1.0 on every
+        manifest submission -- a false finding, and the normal lane now that a
+        bound capability has an address.
+        """
+        self.crossing()
+        ingress = {
+            "receiving_operation": "ORGANIZATION_SDK_MANIFEST_INGRESS",
+            "profile_id": "sdk-manifest-ingress",
+            "operation": "SUBMIT_MANIFEST",
+            "processing_capability": "ecosystem_diagnostic",
+            "route_id": "stegverse.route.ecosystem-diagnostic.v1",
+            "destination_resolution_source": disorder.CAPABILITY_OVERLAY,
+        }
+        self.append_resolved(ingress)
+        classes = disorder.measure()["classes"]
+        self.assertEqual(classes["target_or_scope_ambiguity"]["severity"], 0.0)
+        self.assertEqual(classes["policy_or_delegation_mismatch"]["severity"], 0.0)
+        # Measured, not skipped: both populations grew by this record.
+        self.assertEqual(
+            classes["target_or_scope_ambiguity"]["denominator"],
+            len(disorder.TARGET_SCOPE_FIELDS[disorder.PEER_DIRECTORY])
+            + len(disorder.TARGET_SCOPE_FIELDS[disorder.CAPABILITY_OVERLAY]))
+        self.assertEqual(classes["policy_or_delegation_mismatch"]["denominator"], 6)
+
+    def test_a_resolution_through_an_undeclared_surface_is_a_finding(self):
+        """Not an exemption: it resolved a target against something nothing declares."""
+        self.crossing()
+        self.append_resolved({"destination_resolution_source": "SOMEWHERE_UNDECLARED"})
+        classes = disorder.measure()["classes"]
+        self.assertGreater(classes["target_or_scope_ambiguity"]["severity"], 0.0)
+        self.assertGreater(classes["policy_or_delegation_mismatch"]["severity"], 0.0)
+
+    def test_a_submission_received_on_an_unbound_operation_is_a_mismatch(self):
+        """The overlay is the delegation, so the bound operation is the only one."""
+        self.crossing()
+        self.append_resolved({
+            "receiving_operation": "SOME_OTHER_OPERATION",
+            "profile_id": "sdk-manifest-ingress",
+            "operation": "SUBMIT_MANIFEST",
+            "processing_capability": "ecosystem_diagnostic",
+            "route_id": "stegverse.route.ecosystem-diagnostic.v1",
+            "destination_resolution_source": disorder.CAPABILITY_OVERLAY,
+        })
+        classes = disorder.measure()["classes"]
+        self.assertGreater(classes["policy_or_delegation_mismatch"]["severity"], 0.0)
+        # The target fields are all present, so only the delegation is wrong.
+        self.assertEqual(classes["target_or_scope_ambiguity"]["severity"], 0.0)
 
     # --- the measurements that catch real damage ---------------------------
 

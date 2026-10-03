@@ -80,9 +80,28 @@ CLASSES = (
 #: The two RE marks critical: either at one fails closed whatever the score.
 CRITICAL_BINARIES = ("repair_without_reentry", "sandbox_authority_confusion")
 
-#: The target and scope fields a resolved crossing must carry.
-TARGET_SCOPE_FIELDS = ("destination_organization", "destination_repository",
-                       "destination_org_control_service", "transport_profile")
+#: The resolution surfaces a record may declare it resolved its target through.
+#:
+#: Two exist and they are not interchangeable. An outbound crossing resolves a
+#: *peer organization* from this organization's peer directory. An inbound
+#: submission resolves a *receiving operation* from the capability overlay.
+#: Measuring one against the other's fields reports disorder that is not there:
+#: an ingress record carries no peer address because it addressed no peer, and
+#: a record resolved through the overlay is not mis-delegated for having been.
+PEER_DIRECTORY = "ORGANIZATION_FEDERATION_DIRECTORY"
+CAPABILITY_OVERLAY = "CANONICAL_CONNECTOR_CAPABILITY_OVERLAY"
+
+#: The target and scope fields each resolution surface must carry, by surface.
+#:
+#: A resolution through a surface neither names is itself a finding rather than
+#: an exemption: it resolved a target against something nothing declares, which
+#: is precisely scope ambiguity.
+TARGET_SCOPE_FIELDS = {
+    PEER_DIRECTORY: ("destination_organization", "destination_repository",
+                     "destination_org_control_service", "transport_profile"),
+    CAPABILITY_OVERLAY: ("receiving_operation", "profile_id", "operation",
+                         "processing_capability", "route_id"),
+}
 
 
 def _module(name: str, relative: str):
@@ -259,13 +278,23 @@ def measure(*, repository_root: Path | None = None,
                  if _evidence(r).get("destination_resolution_source")]
     required_fields, ambiguous = 0, 0
     for evidence in resolving:
-        for field in TARGET_SCOPE_FIELDS:
+        source = evidence.get("destination_resolution_source")
+        fields = TARGET_SCOPE_FIELDS.get(source)
+        if fields is None:
+            # Resolved through a surface nothing declares. One unresolvable
+            # link, counted rather than skipped: an undeclared resolution
+            # surface is scope ambiguity, not an absence of evidence about it.
+            required_fields += 1
+            ambiguous += 1
+            continue
+        for field in fields:
             required_fields += 1
             if not evidence.get(field):
                 ambiguous += 1
     classes["target_or_scope_ambiguity"] = _ratio(
         ambiguous, required_fields,
-        "target and scope fields on records that resolved a destination")
+        "target and scope fields on records that resolved a target, against "
+        "the fields the surface each one resolved through requires")
 
     # 7. policy_or_delegation_mismatch -- the capability overlay is the
     #    delegation structure, so a crossing either resolves through it or not.
@@ -276,20 +305,52 @@ def measure(*, repository_root: Path | None = None,
     emitting = egress.get("emitting_operation") or {}
     declared_profile = resolution.get("destination_must_declare_this_transport_profile")
     declared_owner = emitting.get("owner_repository")
+    ingress_bindings = {
+        entry.get("profile_id"): entry
+        for entry in ((boundary.get("ingress") or {}).get("capability_endpoint_bindings") or [])
+        if isinstance(entry, dict)}
     links, mismatches = 0, 0
     for evidence in resolving:
-        links += 3
-        if evidence.get("destination_resolution_source") != "ORGANIZATION_FEDERATION_DIRECTORY":
-            mismatches += 1
-        if evidence.get("transport_profile") != declared_profile:
-            mismatches += 1
-        if evidence.get("owner_repository") != declared_owner:
-            mismatches += 1
+        source = evidence.get("destination_resolution_source")
+        if source == PEER_DIRECTORY:
+            # An outbound crossing's delegation: it resolved through the peer
+            # directory, the peer speaks the declared transport profile, and the
+            # operation that emitted it is the one the overlay declares owns
+            # outbound crossings.
+            links += 3
+            if evidence.get("transport_profile") != declared_profile:
+                mismatches += 1
+            if evidence.get("owner_repository") != declared_owner:
+                mismatches += 1
+            if not evidence.get("destination_organization"):
+                mismatches += 1
+        elif source == CAPABILITY_OVERLAY:
+            # An inbound submission's delegation: the capability it resolved is
+            # one the overlay binds, and the operation it reached is the one that
+            # binding names. The overlay *is* the delegation, so a submission
+            # received on an operation other than the bound one is the mismatch.
+            links += 3
+            binding = ingress_bindings.get(evidence.get("profile_id"))
+            if binding is None:
+                mismatches += 2
+            else:
+                if evidence.get("operation") != binding.get("operation"):
+                    mismatches += 1
+                if evidence.get("receiving_operation") != (
+                        binding.get("receiving_operation") or {}).get("operation_id"):
+                    mismatches += 1
+            if not evidence.get("route_id"):
+                mismatches += 1
+        else:
+            # Delegated through a surface nothing declares: every link on this
+            # record is unresolvable against the overlay.
+            links += 3
+            mismatches += 3
     classes["policy_or_delegation_mismatch"] = _ratio(
         mismatches, links,
-        "delegation links per crossing -- directory resolution, declared "
-        "transport profile and declared owning repository -- against the "
-        "capability overlay")
+        "delegation links per resolved record, against the surface it "
+        "resolved through -- the peer directory for an outbound crossing, "
+        "the capability overlay binding for an inbound submission")
 
     # 8. replay_divergence -- the far side's recomputed chain against what came back.
     steps, divergent = 0, 0

@@ -82,6 +82,11 @@ RESULT_SCHEMA = "stegverse.organization-egress-result/v1"
 EMISSION_SCHEMA = "stegverse.organization-egress-emission-record/v1"
 CLOSURE_SCHEMA = "stegverse.organization-egress-closure-record/v1"
 TRANSPORT_PROFILE = "stegverse.intr.org-boundary.v1"
+BOUNDARY_RELATIVE = "org-runtime/interlock-intr.json"
+#: How a peer's address for a declared capability is spelled. Derived by the
+#: kernel's own slug rule, which is how every `.org-control` address has always
+#: been derived and how this organization's own capability address is spelled.
+CAPABILITY_ADDRESS_FORM = "ORGANIZATION_SLUG_DOT_CAPABILITY_PROFILE_ID"
 CREDENTIAL_AUTHORITY = "TV/TVC"
 
 #: The intended action each half of an outbound crossing carries.
@@ -140,15 +145,64 @@ def this_organization(root: Path | None = None) -> str:
     return kernel.load_registry(root or ROOT)["organization"]
 
 
-def resolve_destination(organization: str, *, root: Path | None = None) -> dict[str, Any]:
+def declared_capabilities(root: Path | None = None) -> dict[str, dict[str, Any]]:
+    """The capabilities this organization's own overlay declares, by profile id.
+
+    The overlay is the authority on which capabilities exist and what each is
+    called. Emitting under a name taken from a caller's argument alone would
+    address a capability nothing declares -- the same error, in the outbound
+    direction, as letting a caller name its own peer.
+    """
+    boundary = json.loads((Path(root or ROOT) / BOUNDARY_RELATIVE).read_text())
+    declared = (boundary.get("ingress") or {}).get("capability_endpoint_bindings") or []
+    return {entry["profile_id"]: entry for entry in declared
+            if isinstance(entry, dict) and entry.get("profile_id")}
+
+
+def peer_capability_service(organization: str, capability: str) -> str:
+    """The address a peer answers this capability at.
+
+    Derived, not enumerated, and derived by the same rule this organization
+    answers at: `kernel.organization_slug(org) + "." + profile_id` is exactly
+    how `stegverse-org.sdk-manifest-ingress` is spelled in this organization's
+    own registry, and how `organization_slug(org) + ".org-control"` has always
+    been derived for every peer. Enumerating a service per peer in this
+    organization's directory would be this organization writing down what its
+    peers serve, which is a declaration none of them made.
+    """
+    return kernel.organization_slug(organization) + "." + capability
+
+
+def resolve_destination(organization: str, *, capability: str | None = None,
+                        root: Path | None = None) -> dict[str, Any]:
     """Resolve a peer organization from this organization's own peer directory.
 
     The directory is the authority on who this organization's peers are and how
     each is addressed. A destination taken from a caller's argument alone would
     let the caller name its own peer, which is the same error as letting a
     caller name its own organization at ingress.
+
+    With no `capability`, the destination is the peer's organization control
+    service, which is what every outbound crossing addressed before capabilities
+    were addressable at all. With one, the destination is the peer's address for
+    that capability -- which is what a *manifest* needs, because a manifest
+    delivered to a control service arrives somewhere that does not receive
+    manifests.
+
+    What this resolution proves and does not prove is recorded with it. The
+    address form is the organization's own, shared by every peer that declares
+    this transport profile, and it is the form this organization itself answers
+    at. It is not evidence that a given peer has installed that receiving
+    operation; that is the peer's own registry to declare and this boundary
+    cannot read it. The gap is observable rather than silent: a peer that does
+    not serve the capability mints no boundary chain, so the crossing never
+    closes and `close` records the refusal.
     """
     directory = kernel.load_federation_directory(root or ROOT)
+    if capability is not None and capability not in declared_capabilities(root):
+        raise EgressRefused(
+            "CAPABILITY_IS_DECLARED_IN_THIS_ORGANIZATIONS_OVERLAY",
+            "no capability_endpoint_binding declares profile_id " + str(capability))
     for row in directory.get("organizations", []):
         if row.get("organization") != organization:
             continue
@@ -158,14 +212,22 @@ def resolve_destination(organization: str, *, root: Path | None = None) -> dict[
                 "DESTINATION_SPEAKS_THIS_BOUNDARY_TRANSPORT_PROFILE",
                 "peer declares transport_profile " + str(profile)
                 + "; this boundary speaks " + TRANSPORT_PROFILE)
+        control = row.get("org_control_service")
+        service = control if capability is None else peer_capability_service(organization, capability)
         return {
             "destination_organization": organization,
             "destination_repository": row.get("repository"),
-            "destination_org_control_service": row.get("org_control_service"),
+            "destination_org_control_service": control,
             "destination_kernel_required": row.get("kernel_required"),
             "transport_profile": profile,
             "destination_resolution_source": "ORGANIZATION_FEDERATION_DIRECTORY",
             "destination_resolved_from_caller_argument": False,
+            "destination_capability_profile_id": capability,
+            "destination_service": service,
+            "destination_capability_address_form": CAPABILITY_ADDRESS_FORM,
+            "destination_capability_declared_by_the_peer_directory": False,
+            "peer_serves_this_capability_is_proven_here": False,
+            "unserved_capability_is_observable_as_an_unclosed_crossing": True,
         }
     raise EgressRefused(
         "DESTINATION_IS_A_DECLARED_PEER_OF_THIS_ORGANIZATION",
@@ -210,7 +272,12 @@ def emission_record(resolved: Mapping[str, Any], origin: str, packet: Mapping[st
         # closure reconstructs against this organization's own record of what
         # it sent rather than against anything the response carries.
         "far_side_payload_hash": kernel.sha(dict(payload)),
-        "far_side_service_id": resolved["destination_org_control_service"],
+        # The service actually addressed, which is the peer's capability
+        # address when one was declared and its control service otherwise. The
+        # closure reconstructs against this, so recording the control service
+        # while having addressed a capability would make every capability
+        # crossing unclosable.
+        "far_side_service_id": resolved["destination_service"],
         "transition_reference": (packet.get("transition") or {}).get("reference"),
         # This one really does cross an organization boundary, unlike repository
         # propagation, which records that it crossed none.
@@ -321,10 +388,23 @@ def _record(transition_id: str, transition_class: str, predecessor: str, success
 
 
 def emit(destination_organization: Any, payload: Mapping[str, Any], *,
-         standing: Mapping[str, Any], transition_reference: str = "ecosystem.transition.interorg.v1",
+         standing: Mapping[str, Any], capability: str | None = None,
+         transition_reference: str = "ecosystem.transition.interorg.v1",
          root: Path | None = None, mesh_root: Path | None = None,
          hb_epoch: int | None = None) -> dict[str, Any]:
     """Emit an outbound crossing to a declared peer, and record its disposition.
+
+    `capability` is the profile id of a capability this organization's overlay
+    declares, and it selects the peer address the crossing is sent to. Without
+    one the crossing addresses the peer's organization control service, which
+    is correct for a control message and wrong for a manifest: a submission
+    delivered to a control service arrives at a surface that does not receive
+    submissions, and the crossing completes as a control acknowledgement rather
+    than as the capability it declared.
+
+    The origin service is addressed symmetrically. A reply to a capability
+    crossing belongs at this organization's own address for that capability,
+    not at its control service.
 
     The record is appended *after* the frame is published, because the record is
     of an emission and carries the frame's digest. Minting it first would be a
@@ -332,12 +412,14 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
     """
     origin = this_organization(root)
     try:
-        resolved = resolve_destination(destination_organization, root=root)
+        resolved = resolve_destination(destination_organization, capability=capability,
+                                       root=root)
         packet = kernel.build_packet(
             origin_org=origin,
-            origin_service=kernel.organization_slug(origin) + ".org-control",
+            origin_service=peer_capability_service(origin, capability) if capability
+                           else kernel.organization_slug(origin) + ".org-control",
             destination_org=resolved["destination_organization"],
-            destination_service=resolved["destination_org_control_service"],
+            destination_service=resolved["destination_service"],
             payload=dict(payload), standing=dict(standing),
             transition_reference=transition_reference, authority_effect="NONE")
         published = kernel.publish_packet(packet, root=mesh_root)
@@ -365,7 +447,10 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
         "packet_id": packet["packet_id"],
         "communication_id": (payload or {}).get("communication_id"),
         **{k: record[k] for k in ("destination_organization", "destination_repository",
-                                  "destination_org_control_service", "transport_profile",
+                                  "destination_org_control_service", "destination_service",
+                                  "destination_capability_profile_id",
+                                  "peer_serves_this_capability_is_proven_here",
+                                  "transport_profile",
                                   "destination_resolution_source", "frame_sha256",
                                   "crossed_an_organization_boundary",
                                   "origin_attestation_state")},
@@ -563,6 +648,9 @@ def main() -> int:
                         help="observe the far side's closure of --packet-id instead of emitting")
     parser.add_argument("--packet-id")
     parser.add_argument("--communication-id")
+    parser.add_argument("--capability",
+                        help="profile_id of a capability this organization's overlay declares; "
+                             "selects the peer address the crossing is sent to")
     parser.add_argument("--out")
     args = parser.parse_args()
 
@@ -578,6 +666,7 @@ def main() -> int:
     else:
         payload = json.loads(Path(args.payload).read_text(encoding="utf-8"))
         result = emit(args.destination_organization, payload, standing=standing,
+                      capability=args.capability,
                       transition_reference=args.transition_reference, hb_epoch=args.hb_epoch)
     rendered = json.dumps(result, indent=2, sort_keys=True)
     if args.out:
