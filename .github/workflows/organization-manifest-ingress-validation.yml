@@ -7,6 +7,9 @@ on:
       - 'resident-runtime/organization_manifest_ingress.py'
       - 'resident-runtime/sdk_manifest_crossing.py'
       - 'resident-runtime/aggregate_repo_transition.py'
+      - '.stegverse/transition-ledger/emit.py'
+      - '.stegverse/transition-ledger/contract.json'
+      - '.stegverse/transition-ledger/org-contract.json'
       - 'org-runtime/interlock-intr.json'
       - 'org-boundary/runtime/process_boundary.py'
       - 'org-boundary/registry/services.json'
@@ -20,6 +23,9 @@ on:
       - 'resident-runtime/organization_manifest_ingress.py'
       - 'resident-runtime/sdk_manifest_crossing.py'
       - 'resident-runtime/aggregate_repo_transition.py'
+      - '.stegverse/transition-ledger/emit.py'
+      - '.stegverse/transition-ledger/contract.json'
+      - '.stegverse/transition-ledger/org-contract.json'
       - 'org-runtime/interlock-intr.json'
       - 'org-boundary/runtime/process_boundary.py'
       - 'org-boundary/registry/services.json'
@@ -55,17 +61,19 @@ jobs:
       - name: Install SDK test dependency surface
         run: python -m pip install -e ./sdk
 
-      # The organization ledger is durable sovereign state. A run that appended
-      # into the default location would be writing runtime reality from CI, so
+      # Both ledgers are durable sovereign state. A run that appended into
+      # either default location would be writing runtime reality from CI, so
       # every step that can append is pointed at the runner's temporary
       # directory. `runner` is a step-level context, not a job-level one.
       - name: Validate the organization receiving operation
         env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: python -m unittest tests.test_organization_manifest_ingress -v
 
       - name: Receive a submitted manifest end-to-end and emit the organization receipt
         env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: |
           python resident-runtime/organization_manifest_ingress.py \
@@ -87,6 +95,13 @@ jobs:
           assert x["far_side_transition_observed"] is True
           assert x["organization_receipt_observed"] is True
           assert x["organization_receipt_sha256"].startswith("sha256:")
+          # Two levels, written in order: the organization consumed a repository
+          # receipt rather than one it wrote itself.
+          assert x["repository_receipt_observed"] is True
+          assert x["repository"] == "StegVerse-org/.github"
+          assert x["repository_receipt_sha256"].startswith("sha256:")
+          assert x["organization_receipt_preserves_repository_receipt"] is True
+          assert x["replay_requires_only_verified_repo_and_organization_receipts"] is True
           # The SDK admitted it, bound to the receipt that exists.
           assert x["sdk_admitted_result"]["state"] == "COMPLETE"
           assert x["sdk_admitted_result"]["manifest_receipt_id"] == x["organization_receipt_sha256"]
@@ -99,8 +114,36 @@ jobs:
           print("ORGANIZATION_MANIFEST_INGRESS=PASS", x["organization_transition_id"])
           PY
 
+      - name: The organization receipt names the repository receipt it consumed
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          def receipts(variable, schema):
+              return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
+                      if json.loads(p.read_text()).get("schema") == schema]
+
+          repository, = receipts("STEGVERSE_REPO_LEDGER_ROOT",
+                                 "stegverse.repo-transition-receipt/v1")
+          organization, = receipts("STEGVERSE_ORG_LEDGER_ROOT",
+                                   "stegverse.organization-transition-receipt/v1")
+          # The three fields that read null while one writer stood in for both levels.
+          assert organization["source_receipt_schema"] == "stegverse.repo-transition-receipt/v1"
+          assert organization["source_repository"] == "StegVerse-org/.github"
+          assert organization["repo_receipt_sha256"] == repository["receipt_sha256"]
+          assert organization["repo_transition_id"] == repository["transition_id"]
+          assert organization["org_transition_class"] == "REPO_STATE_PROPAGATION"
+          assert repository["transition_class"] == "ORGANIZATION_SDK_MANIFEST_INGRESS"
+          print("ORGANIZATION_CONSUMES_A_REPOSITORY_RECEIPT=PASS", repository["transition_id"])
+          PY
+
       - name: A capability the internal endpoint does not admit mints no receipt
         env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: |
           python - <<'PY'

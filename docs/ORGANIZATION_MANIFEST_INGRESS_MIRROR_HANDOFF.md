@@ -28,6 +28,7 @@ consequence_committed            false
 derive_execution_request(manifest, this organization's own boundary document)
 resident-runtime/sdk_manifest_crossing.py::cross              admission
 org-boundary/runtime/process_boundary.py                      processing
+.stegverse/transition-ledger/emit.py::append                  repository receipt
 resident-runtime/aggregate_repo_transition.py::append         organization receipt
 stegverse.manifest_state_transition_runtime.admit_runtime_result
 ```
@@ -51,6 +52,31 @@ The boundary reports `RECONSTRUCTED`. `cross` previously returned only the recei
 
 Those recomputed digests become the `transition_closures` the SDK validates, chained predecessor to successor.
 
+## Both ledger levels are written, in order
+
+The transition occurs in this repository, so the repository ledger records it and the organization ledger consumes that receipt.
+
+The first version of this operation authored its own source receipt and then recorded it as the organization's own, in one call. That is one writer standing in for two levels, and it showed:
+
+```text
+source_receipt_schema  stegverse.canonical-state-transition-receipt/v1
+source_repository      null
+repo_receipt_sha256    null
+repo_transition_id     null
+```
+
+`preserves_repo_receipt: true` had nothing to preserve, and organization replay rested on a receipt the same call had just minted, where `ORGANIZATION_REPLAY_MUST_REQUIRE_ONLY_VERIFIED_REPO_RECEIPTS_AND_ORG_RECEIPTS` asks for a verified repository receipt underneath. It now reads:
+
+```text
+source_receipt_schema  stegverse.repo-transition-receipt/v1
+source_repository      StegVerse-org/.github
+repo_receipt_sha256    == the repository receipt's own digest
+repo_transition_id     == the repository receipt's own transition id
+org_transition_class   REPO_STATE_PROPAGATION
+```
+
+`.stegverse/transition-ledger/emit.py` grew an in-process `append` rather than a second implementation of the same write: it is one store with one lock, and a second writer is the chain fork that lock exists to prevent. The chain position comes from the ledger's own HEAD, so a second ingress links to the first instead of declaring its own sequence.
+
 ## The organization does not grade its own result
 
 The operation reports what it observed and hands that to the SDK's own `admit_runtime_result`, which is the authority on whether a runtime result closes a transition. A refusal is returned verbatim, naming its own predicate, and is never retried into a success. `manifest_receipt_id` is the organization receipt's own digest, so the result is bound to the receipt that exists rather than to an identifier minted for the occasion.
@@ -71,6 +97,8 @@ destination_resolution_environment_inputs              []
 intr_admission_observed                                true
 far_side_transition_observed                           true
 organization_receipt_observed                          true
+repository_receipt_observed                            true
+organization_receipt_preserves_repository_receipt      true
 boundary_receipt_chain_reconstructed_independently     true
 sdk_admitted_result.state                              COMPLETE
 sdk_admitted_result.manifest_receipt_id                == organization_receipt_sha256
