@@ -1,0 +1,134 @@
+name: Validate Receipt Disorder Measurement
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/receipt_disorder_measurement.py'
+      - 'resident-runtime/receipt_lineage_projection.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'resident-runtime/ledger_store.py'
+      - 'org-runtime/interlock-intr.json'
+      - '.stegverse/transition-ledger/emit.py'
+      - 'tests/test_receipt_disorder_measurement.py'
+      - 'docs/RECEIPT_DISORDER_MEASUREMENT_MIRROR_HANDOFF.md'
+      - '.github/workflows/receipt-disorder-measurement-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/receipt_disorder_measurement.py'
+      - 'resident-runtime/receipt_lineage_projection.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'resident-runtime/ledger_store.py'
+      - 'org-runtime/interlock-intr.json'
+      - '.stegverse/transition-ledger/emit.py'
+      - 'tests/test_receipt_disorder_measurement.py'
+      - 'docs/RECEIPT_DISORDER_MEASUREMENT_MIRROR_HANDOFF.md'
+      - '.github/workflows/receipt-disorder-measurement-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-disorder-measurement:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The ledgers are durable sovereign state. A run appending into either
+      # default location would be writing runtime reality from CI, so every
+      # step that can append is pointed at the runner's temporary directory.
+      # `runner` is a step-level context, not a job-level one.
+      - name: Validate the measurement
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/disorder-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/disorder-org-ledger
+        run: python -m unittest tests.test_receipt_disorder_measurement -v
+
+      # All ten, on a real chain. Nine of ten reading zero is not the point --
+      # the point is that none is unobserved, because an unobserved dimension is
+      # where hidden disorder hides and `hidden_disorder_tolerance` is zero.
+      - name: A real chain is measured across all ten classes
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/real-disorder-repo
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/real-disorder-org
+        run: |
+          python - <<'PY'
+          import importlib.util, json, shutil, tempfile
+          from pathlib import Path
+
+          def load(name, relative):
+              spec = importlib.util.spec_from_file_location(name, relative)
+              module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+              return module
+
+          egress = load("egress", "resident-runtime/organization_egress_boundary.py")
+          disorder = load("disorder", "resident-runtime/receipt_disorder_measurement.py")
+          K = egress.kernel
+
+          PEER, PEER_CONTROL = "StegVerse-Labs", "stegverse-labs.org-control"
+          CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+          mesh = Path(tempfile.mkdtemp()); peer = Path(tempfile.mkdtemp())
+          (peer / "org-boundary/registry").mkdir(parents=True)
+          (peer / "org-boundary/registry/services.json").write_text(json.dumps({
+              "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
+              "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
+              "services": [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
+                            "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
+          (peer / "org-boundary/runtime").mkdir(parents=True)
+          for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
+              shutil.copy2("org-boundary/runtime/" + name, peer / "org-boundary/runtime" / name)
+          (peer / "docs").mkdir(parents=True, exist_ok=True)
+          shutil.copy2(CONTRACT, peer / CONTRACT)
+
+          genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci-disorder", "predecessor": None}
+          emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
+              "communication_id": "ci-disorder-001", "subject": "ci disorder",
+              "body": {"ci": True}}, standing=genesis, mesh_root=mesh, hb_epoch=32)
+          K.consume_and_respond(peer, mesh_root=mesh)
+          egress.close(PEER, emitted["packet_id"], "ci-disorder-001",
+                       mesh_root=mesh, hb_epoch=32)
+          egress.emit("Not-A-Declared-Peer", {"message_class": "ecosystem.communication",
+              "communication_id": "ci-disorder-002", "body": {}}, standing=genesis,
+              mesh_root=mesh, hb_epoch=32)
+
+          report = disorder.measure()
+          assert set(report["classes"]) == set(disorder.CLASSES), sorted(report["classes"])
+          assert report["all_ten_observed"] is True, report["unobserved_dimensions"]
+          assert report["classes_observed"] == 10, report["classes_observed"]
+          assert report["unobserved_dimensions"] == []
+          assert set(report["severity"]) == set(disorder.CLASSES)
+          for name, row in report["classes"].items():
+              assert row["observed"] is True, name
+              assert 0.0 <= row["severity"] <= 1.0, (name, row)
+              assert row["counted"], name
+              if row.get("critical_binary"):
+                  assert row["severity"] in (0.0, 1.0), (name, row)
+              else:
+                  assert row["denominator"] > 0, (name, row)
+          # The one dimension that is not zero, and why.
+          actor = report["classes"]["unresolved_actor_identity"]
+          assert actor["severity"] == 1.0, actor
+          assert actor["numerator"] == actor["denominator"], actor
+          # The formula and the verdict are not here.
+          assert report["formula_is_not_restated_here"] is True
+          assert report["verdict_is_res_to_give_not_this_measurements"] is True
+          for absent in ("score", "posture", "weights", "thresholds", "verdict"):
+              assert absent not in report, absent
+          assert report["authority_effect"] == "NONE_MEASUREMENT_ONLY"
+          print("DISORDER_MEASURED_ALL_TEN=PASS",
+                report["classes_observed"], "of",
+                report["classes_declared_by_the_contract"],
+                "| unattested origin:", actor["severity"])
+          PY
+
+      - name: Declare what the measurement does not do
+        run: |
+          echo 'authority_effect=NONE_MEASUREMENT_ONLY; formula_owner=Admissible-Existence/RE'
+          echo 'verdict_owner=Admissible-Existence/RE; all_ten_observed=true'
