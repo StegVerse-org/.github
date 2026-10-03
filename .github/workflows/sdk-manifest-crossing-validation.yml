@@ -76,7 +76,12 @@ jobs:
           bridge = load("crossing", "resident-runtime/sdk_manifest_crossing.py")
 
           manifest = builder.rebuild()["hold-to-boundary-diagnostic"]
-          result = bridge.cross(manifest, packet_id="ci-sdk-built-manifest-crossing")
+          # An ingress manifest declares no chain position, so the crossing is
+          # given one. There is no default: a crossing with no standing fails
+          # closed at the boundary.
+          standing = json.loads(Path("tests/fixtures/crossing-standing-genesis.json").read_text())
+          result = bridge.cross(manifest, standing=standing,
+                                packet_id="ci-sdk-built-manifest-crossing")
           assert result["crossing_completed"] is True, result
           assert result["consumed"] is True
           assert result["reconstruction"] == "RECONSTRUCTED"
@@ -94,5 +99,6 @@ jobs:
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
             --manifest tests/fixtures/sdk-manifests/hold-to-llm-adapter.json \
+            --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-sdk-manifest-crossing-gap --out /tmp/gap.json || true
           python -c 'import json; x=json.load(open("/tmp/gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is False; assert isinstance(x["far_side_disposition"],str) and x["far_side_disposition"].strip(), "a refused crossing must name its disposition"; print("DECLARED_FAR_SIDE_GAP_REPORTED=PASS")'

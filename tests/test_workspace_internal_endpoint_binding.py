@@ -66,6 +66,10 @@ def envelope(*, operation: str = "MATERIALIZE", unresolved: bool = False, servic
         "carrier": {"class": "TEST", "authority_effect": "NONE"},
         "intr_profile": "test",
         "transition": {"authority_effect": "NONE"},
+        # Ingress requires canonical node standing; predecessor is present and
+        # null, which is explicit genesis rather than a default.
+        "standing": {"mode": "ESTABLISH_GENESIS", "node_ref": "workspace-test-node",
+                     "predecessor": None},
         "payload": {
             "schema": "stegverse.workspace-resource-request.v1",
             "operation": operation,

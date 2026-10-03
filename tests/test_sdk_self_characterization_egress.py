@@ -23,6 +23,11 @@ import hashlib, importlib.util, json, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Every covered ingress class requires canonical node standing, so a packet
+# declares its chain position or it does not cross. `predecessor` is present
+# and null: explicit genesis, not a default.
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "test-node", "predecessor": None}
+
 SPEC = importlib.util.spec_from_file_location(
     "eg", ROOT / "resident-runtime/sdk_self_characterization_egress.py")
 M = importlib.util.module_from_spec(SPEC)

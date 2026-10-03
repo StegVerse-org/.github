@@ -1,0 +1,7 @@
+{
+  "mode": "ESTABLISH_GENESIS",
+  "node_ref": "StegVerse-independent-evaluator",
+  "predecessor": null,
+  "_why_predecessor_is_present_and_null": "CANONICAL-NODE-INGRESS-CONTRACT-001 requires the predecessor key on every standing declaration. null is explicit generation-1 genesis and is data, not a default; an absent key fails closed.",
+  "_what_this_is_not": "A declared standing is not authenticated standing. attestation_owner_state remains NOT_PROVEN and this fixture establishes no identity."
+}

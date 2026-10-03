@@ -28,6 +28,12 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# A crossing is ingress, so it declares its chain position. These fixtures are
+# ingress manifests and carry none of their own, so the caller declares it;
+# `predecessor` is present and null, which is explicit genesis.
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "StegVerse-independent-evaluator",
+           "predecessor": None}
+
 FIXTURES = ROOT / "tests/fixtures/sdk-manifests"
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 
@@ -132,7 +138,7 @@ class CompleteCrossingTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.source = manifest("hold-to-boundary-diagnostic")
-        cls.result = bridge.cross(cls.source, packet_id="sdk-manifest-crossing-test")
+        cls.result = bridge.cross(cls.source, standing=GENESIS, packet_id="sdk-manifest-crossing-test")
 
     def test_the_crossing_completes_and_is_reconstructable(self):
         self.assertIs(self.result["crossing_completed"], True)
@@ -194,7 +200,7 @@ class CompleteCrossingTests(unittest.TestCase):
                          "NOT_RESOLVED_AT_BOUNDARY_ROUTE_OWNER_IS_SDK")
 
     def test_the_same_manifest_crosses_reproducibly(self):
-        again = bridge.cross(self.source, packet_id="sdk-manifest-crossing-test")
+        again = bridge.cross(self.source, standing=GENESIS, packet_id="sdk-manifest-crossing-test")
         self.assertEqual(again["terminal_receipt_id"], self.result["terminal_receipt_id"])
         self.assertEqual(again["manifest_sha256"], self.result["manifest_sha256"])
 
@@ -204,7 +210,7 @@ class UninstalledFarSideTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.result = bridge.cross(manifest("hold-to-llm-adapter"),
+        cls.result = bridge.cross(manifest("hold-to-llm-adapter"), standing=GENESIS,
                                   packet_id="sdk-manifest-crossing-gap")
 
     def test_the_surface_resolves_but_the_crossing_does_not_complete(self):

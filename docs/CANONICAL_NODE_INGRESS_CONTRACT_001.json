@@ -147,9 +147,16 @@
   "boundary_lineage_requirement": {
     "organization_boundary_must_carry_predecessor": true,
     "receiving_boundary_must_validate_predecessor": true,
-    "current_organization_boundary_support": "NOT_PROVEN",
+    "current_organization_boundary_support": "SOURCE_ENFORCED_AT_ORGANIZATION_BOUNDARY",
     "known_review_finding": "Current boundary receipt lane begins with previous_receipt_id null and does not yet express cross-lane predecessor standing.",
-    "repair_constraint": "Reuse SDK lineage semantics; do not make receipt-chain previous_receipt_id a second definition of canonical predecessor."
+    "repair_constraint": "Reuse SDK lineage semantics; do not make receipt-chain previous_receipt_id a second definition of canonical predecessor.",
+    "support_evidence": [
+      "org-boundary/runtime/node_standing.py",
+      "org-kernel/kernel.py:dispatch",
+      "tests/test_node_standing_ingress.py",
+      ".github/workflows/node-standing-ingress-validation.yml"
+    ],
+    "deployed_support": "NOT_PROVEN"
   },
   "llm_adapter_continuation": {
     "external_framework_role": "TRANSPORT_OR_PROCESSING_CONSUMER_THROUGH_A_NODE; NOT_ASSUMED_TO_BE_THE_NODE",

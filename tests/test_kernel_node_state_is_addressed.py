@@ -29,6 +29,13 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Every covered ingress class requires canonical node standing, so a packet
+# declares its chain position or it does not cross. `predecessor` is present
+# and null: explicit genesis, not a default.
+CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "test-node", "predecessor": None}
+
 
 spec = importlib.util.spec_from_file_location("kernel", ROOT / "org-kernel/kernel.py")
 kernel = importlib.util.module_from_spec(spec)
@@ -62,6 +69,12 @@ class NodeFixture:
         (self.node_root / "org-boundary/runtime").mkdir(parents=True)
         shutil.copy2(ROOT / "org-boundary/runtime/manifest_selection.py",
                      self.node_root / "org-boundary/runtime/manifest_selection.py")
+        # And the standing module plus the contract it reads: ingress requires
+        # canonical node standing before any processing is selected at all.
+        shutil.copy2(ROOT / "org-boundary/runtime/node_standing.py",
+                     self.node_root / "org-boundary/runtime/node_standing.py")
+        (self.node_root / "docs").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / CONTRACT, self.node_root / CONTRACT)
         self.mesh = kernel.mesh_store(self.mesh_root)
         self.state = kernel.node_state_store(self.node_root)
 
@@ -69,7 +82,7 @@ class NodeFixture:
         return kernel.build_packet(
             origin_org="Peer", origin_service="peer.org-control",
             destination_org=ORGANIZATION, destination_service=service,
-            payload=payload if payload is not None else {"probe": "ping"})
+            payload=payload if payload is not None else {"probe": "ping"}, standing=GENESIS)
 
 
 def fixture(case):
@@ -97,7 +110,7 @@ class FederationRoundTripTests(unittest.TestCase):
         node = fixture(self)
         other = kernel.build_packet(origin_org="Peer", origin_service="peer.org-control",
                                     destination_org="Somewhere-Else",
-                                    destination_service="somewhere-else.org-control", payload={})
+                                    destination_service="somewhere-else.org-control", payload={}, standing=GENESIS)
         kernel.publish_packet(other, root=node.mesh_root, now_ns=TICK)
         self.assertEqual(kernel.scan_addressed_frames(ORGANIZATION, store=node.mesh), [])
 
