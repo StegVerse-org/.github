@@ -304,19 +304,29 @@ class LiveRegistryTests(unittest.TestCase):
     def setUpClass(cls):
         cls.registry = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 
-    def test_no_service_yet_declares_an_admitted_capability_route_binding(self):
-        """The current state, asserted so it cannot drift unnoticed.
+    def test_every_service_declaring_an_admitted_binding_can_serve_it(self):
+        """The gap this case used to assert has closed, so it now covers the binding.
 
-        No surface in this organization has declared a capability bound to a
-        route that it admits. That is the remaining gap, not a passing
-        condition: `stegverse-org.llm-adapter` -- the surface the SDK's own
-        default manifest declares -- carries neither an endpoint adapter nor an
-        admitted binding. When one is declared, this case must be replaced with
-        coverage of that binding rather than left asserting a gap that closed.
+        It previously held that no surface in this organization declared a
+        capability bound to a route it admits, with the requirement that the
+        case be replaced by coverage of a real binding when one landed.
+        `stegverse-org.llm-adapter` is that binding: it admits
+        `ecosystem_diagnostic` on the diagnostic route and serves the
+        committed task registry. The end-to-end path is covered in
+        `tests/test_task_registry_disclosure_endpoint.py`.
+
+        What is held here is the pairing that makes a declaration servable: a
+        row that admits processing must also name an installed adapter, or it
+        admits something nothing can serve.
         """
-        declared = [s["service_id"] for s in self.registry["services"]
-                    if s.get("admits_processing")]
-        self.assertEqual(declared, [])
+        declared = [row for row in self.registry["services"] if row.get("admits_processing")]
+        self.assertTrue(declared, "no service declares an admitted binding")
+        for row in declared:
+            with self.subTest(service=row["service_id"]):
+                selection.admitted_bindings(row)
+                adapter = row.get("endpoint_adapter")
+                self.assertTrue(adapter, f"{row['service_id']} admits processing with no adapter")
+                self.assertTrue((ROOT / adapter).is_file(), adapter)
 
     def test_any_declared_admission_is_a_complete_binding(self):
         """Holds now by vacuity, and refuses a half-declaration the moment one lands."""
@@ -328,7 +338,13 @@ class LiveRegistryTests(unittest.TestCase):
                 selection.admitted_bindings(row)
 
     def test_no_live_internal_endpoint_silently_admits_everything(self):
-        """An INTERNAL_ENDPOINT with no admission list must refuse, not default open."""
+        """An INTERNAL_ENDPOINT must refuse a pair it did not declare.
+
+        This holds for a row with no admission list, which admits nothing, and
+        equally for the one row that now admits a pair: `governance` on the
+        canonical-governed route is not that pair, so every internal endpoint
+        in this registry refuses it.
+        """
         endpoints = [s for s in self.registry["services"]
                      if s.get("boundary_role") == "INTERNAL_ENDPOINT"]
         self.assertTrue(endpoints, "registry exposes no internal endpoint")

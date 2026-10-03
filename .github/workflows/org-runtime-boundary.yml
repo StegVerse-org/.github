@@ -22,6 +22,7 @@ on:
       - 'resident-runtime/org_boundary_runtime.py'
       - 'resident-runtime/sdk_self_characterization_egress.py'
       - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'resident-runtime/task_registry_disclosure_endpoint.py'
       - 'tests/test_sdk_manifest_crossing.py'
       - 'tests/fixtures/sdk-manifests/**'
       - 'tests/test_intr_org_crossing.py'
@@ -57,6 +58,7 @@ on:
       - 'resident-runtime/org_boundary_runtime.py'
       - 'resident-runtime/sdk_self_characterization_egress.py'
       - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'resident-runtime/task_registry_disclosure_endpoint.py'
       - 'tests/test_sdk_manifest_crossing.py'
       - 'tests/fixtures/sdk-manifests/**'
       - 'tests/test_intr_org_crossing.py'
@@ -99,13 +101,20 @@ jobs:
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-sdk-manifest-crossing --out /tmp/sdk-crossing.json
           python -c 'import json; x=json.load(open("/tmp/sdk-crossing.json")); assert x["crossing_completed"] is True; assert x["consumed"] is True; assert x["reconstruction"]=="RECONSTRUCTED"; assert x["authority_effect"]=="NONE"; assert len(x["receipts"])==5'
-      - name: Report the declared far side that has no installed endpoint
+      - name: An installed far side still refuses a pair it does not admit
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
             --manifest tests/fixtures/sdk-manifests/hold-to-llm-adapter.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-sdk-manifest-crossing-gap --out /tmp/sdk-crossing-gap.json || true
-          python -c 'import json; x=json.load(open("/tmp/sdk-crossing-gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is False; assert isinstance(x["far_side_disposition"],str) and x["far_side_disposition"].strip(), "a refused crossing must name its disposition"'
+          python -c 'import json; x=json.load(open("/tmp/sdk-crossing-gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is True; assert isinstance(x["far_side_disposition"],str) and x["far_side_disposition"].strip(), "a refused crossing must name its disposition"'
+
+      - name: The declared capability is served at the far side
+        run: |
+          python resident-runtime/sdk_manifest_crossing.py \
+            --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
+            --packet-id ci-task-registry-disclosure --out /tmp/task-registry-disclosure.json
+          python -c 'import json; x=json.load(open("/tmp/task-registry-disclosure.json")); assert x["declared_capability_processed"] is True; assert x["processing_selection"]=="MANIFEST_DECLARED"; assert x["reconstruction"]=="RECONSTRUCTED"; assert len(x["receipts"])==5'
       - name: Test repository ledger append is serialized and atomically published
         run: python -m unittest tests.test_repo_ledger_serialized_append -v
       - name: Test canonical receipts are timed by the heartbeat, not a clock

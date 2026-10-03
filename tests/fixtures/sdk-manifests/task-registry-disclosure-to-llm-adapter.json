@@ -1,0 +1,119 @@
+{
+  "attestation": null,
+  "canonicalization_profile": "steggate.jcs.v1",
+  "completion": {
+    "direction": "SOUTH",
+    "egress": {
+      "far_side_transition_required": true,
+      "final_stegverse_transition_surface": "LLM_ADAPTER",
+      "transport": "INTERLOCK_INTR"
+    },
+    "initiator": {
+      "class": "external_framework",
+      "ref": "StegVerse-independent-evaluator"
+    },
+    "publisher": {
+      "package_profile": "stegverse.publisher.evidence-report-package/v1",
+      "required": false,
+      "stage": "PUBLISHER"
+    }
+  },
+  "context_refs": [],
+  "created_at": "2026-09-26T00:00:00Z",
+  "declared_intent": "Read this organization's current task registry generation",
+  "extensions": {
+    "capability_resolution": {
+      "authority_effect": "NONE_CLASSIFICATION_ONLY",
+      "capability": "ecosystem_diagnostic",
+      "next_action": "BUILD_AND_SUBMIT_MANIFEST",
+      "route_id": "stegverse.route.ecosystem-diagnostic.v1",
+      "schema": "stegverse.manifest-capability-resolution.v1",
+      "solution_required": false,
+      "status": "ONLINE"
+    },
+    "manifest_builder": {
+      "builder_grants_authority": false,
+      "capability_status": "ONLINE",
+      "external_review_requested": false,
+      "processing_capability": "ecosystem_diagnostic",
+      "profile": "stegverse.manifest-builder.v1",
+      "publisher_required_by_review_default": false,
+      "return_depth": "full-trace",
+      "route_id": "stegverse.route.ecosystem-diagnostic.v1",
+      "source_semantic_custody": "EXTERNAL"
+    },
+    "source_data_class": "sv.hold.independent.source-only.v1",
+    "stegverse_ecosystem_diagnostic_request": {
+      "diagnostic_request_id": "TASK-REGISTRY-DISCLOSURE-001",
+      "expected_evidence_fields": [
+        "registry_sha256",
+        "active_goal",
+        "tasks"
+      ],
+      "mutation_permitted": false,
+      "schema": "stegverse.ecosystem-diagnostic-request.v1",
+      "scope": "repository",
+      "tests": [
+        {
+          "authority_owner": "StegVerse-org/.github",
+          "component_id": "StegVerse-org/.github:orchestration/task-registry.json",
+          "observation": null,
+          "predicate_id": "REGISTRY_SERVED_MATCHES_COMMITTED_DIGEST",
+          "test_id": "CURRENT_TASK_REGISTRY_GENERATION_IS_SERVED"
+        }
+      ]
+    },
+    "stegverse_route": {
+      "containment": "READ_ONLY_DIAGNOSTIC",
+      "external_consequence_enabled": false,
+      "lane_class": "DIAGNOSTIC_OBSERVATION",
+      "route_id": "stegverse.route.ecosystem-diagnostic.v1",
+      "routing_surface": "ECOSYSTEM_DIAGNOSTIC",
+      "sandbox_required": false
+    }
+  },
+  "freshness": {},
+  "hashes": {
+    "payload_sha256": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+  },
+  "manifest_labels": {
+    "mode": "NONE"
+  },
+  "manifest_profile": "stegverse.ingress-manifest.v1",
+  "manifest_profile_version": "1",
+  "payload": {
+    "authority_declaration": {
+      "actor_current": false,
+      "authenticated_grant_observed": false,
+      "delegation_current": false,
+      "permission_present": false,
+      "validity_window_open": true
+    },
+    "condition_id": "HOLD_ENTERED",
+    "evidence_class": "INDEPENDENT_SV_EXPERIMENT_DESIGN_NOT_NATIVE_RUNTIME",
+    "expected_evidence": [
+      "actual_intr_admissibility_snapshot",
+      "original_protected_operation_effect_or_prevention",
+      "predecessor_linked_organization_receipts",
+      "applicable_master_records_reconstruction"
+    ],
+    "experiment_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926",
+    "native_stev_inference": null,
+    "other_framework_output_consumed": false,
+    "protected_operation": "bounded_no_external_side_effect_test",
+    "relative_time": "T1",
+    "temporal_sampling": "EXPERIMENT_RELATIVE_ONLY_NOT_MEASURED"
+  },
+  "processing": {
+    "capability": "ecosystem_diagnostic",
+    "route_id": "stegverse.route.ecosystem-diagnostic.v1"
+  },
+  "requested_consequence": "Return the committed registry and its digest; admit nothing",
+  "return_projection": {
+    "mode": "ALL",
+    "transition_classes": []
+  },
+  "source_framework": "StegVerse-independent-evaluator",
+  "source_instance": null,
+  "source_output_id": "TASK-REGISTRY-DISCLOSURE-001:CURRENT"
+}

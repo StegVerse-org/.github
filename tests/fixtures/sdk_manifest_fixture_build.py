@@ -32,12 +32,14 @@ def rebuild():
     spec = json.loads(SPEC.read_text(encoding="utf-8"))
     built = {}
     for name, overrides in sorted(spec["manifests"].items()):
-        manifest = build_manifest(
-            data=spec["data"],
-            processor_request=spec["processor_request"],
-            **spec["common"],
-            **overrides,
-        )
+        # Merged, not double-unpacked: `f(**common, **overrides)` raises
+        # TypeError on any shared key, which meant a per-manifest entry could
+        # add arguments but never actually override one.
+        # Each published capability has its own processor_request schema, so a
+        # manifest entry may supply one; the governance request is the default.
+        arguments = {"data": spec["data"], "processor_request": spec["processor_request"],
+                     **spec["common"], **overrides}
+        manifest = build_manifest(**arguments)
         validate_ingress_manifest(manifest)
         built[name] = manifest
     return built
