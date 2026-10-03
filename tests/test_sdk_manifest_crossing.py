@@ -28,6 +28,12 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# A crossing is ingress, so it declares its chain position. These fixtures are
+# ingress manifests and carry none of their own, so the caller declares it;
+# `predecessor` is present and null, which is explicit genesis.
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "StegVerse-independent-evaluator",
+           "predecessor": None}
+
 FIXTURES = ROOT / "tests/fixtures/sdk-manifests"
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 
@@ -132,7 +138,7 @@ class CompleteCrossingTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.source = manifest("hold-to-boundary-diagnostic")
-        cls.result = bridge.cross(cls.source, packet_id="sdk-manifest-crossing-test")
+        cls.result = bridge.cross(cls.source, standing=GENESIS, packet_id="sdk-manifest-crossing-test")
 
     def test_the_crossing_completes_and_is_reconstructable(self):
         self.assertIs(self.result["crossing_completed"], True)
@@ -194,17 +200,30 @@ class CompleteCrossingTests(unittest.TestCase):
                          "NOT_RESOLVED_AT_BOUNDARY_ROUTE_OWNER_IS_SDK")
 
     def test_the_same_manifest_crosses_reproducibly(self):
-        again = bridge.cross(self.source, packet_id="sdk-manifest-crossing-test")
+        again = bridge.cross(self.source, standing=GENESIS, packet_id="sdk-manifest-crossing-test")
         self.assertEqual(again["terminal_receipt_id"], self.result["terminal_receipt_id"])
         self.assertEqual(again["manifest_sha256"], self.result["manifest_sha256"])
 
 
-class UninstalledFarSideTests(unittest.TestCase):
-    """The remaining gap must be reported as a gap, never as a crossing."""
+class UnadmittedPairAtAnInstalledFarSideTests(unittest.TestCase):
+    """The refusal is now semantic, not structural, and must stay a refusal.
+
+    This case used to assert a gap: `stegverse-org.llm-adapter` carried no
+    endpoint adapter, so the crossing stopped before one was sought. That gap
+    has closed -- the surface now serves `ecosystem_diagnostic` bound to
+    the diagnostic route, covered in `tests/test_task_registry_disclosure_endpoint.py`.
+
+    What this fixture declares is `governance` on the canonical-governed route,
+    which the service does *not* admit. So the interesting assertion changed
+    rather than disappeared: an installed far side with a working adapter still
+    refuses a pair it never declared, and refuses it before the adapter runs.
+    An installed adapter must not become a reason to serve anything addressed
+    to it.
+    """
 
     @classmethod
     def setUpClass(cls):
-        cls.result = bridge.cross(manifest("hold-to-llm-adapter"),
+        cls.result = bridge.cross(manifest("hold-to-llm-adapter"), standing=GENESIS,
                                   packet_id="sdk-manifest-crossing-gap")
 
     def test_the_surface_resolves_but_the_crossing_does_not_complete(self):
@@ -212,12 +231,13 @@ class UninstalledFarSideTests(unittest.TestCase):
         self.assertEqual(self.result["resolved_service_id"], "stegverse-org.llm-adapter")
         self.assertIs(self.result["crossing_completed"], False)
 
-    def test_the_result_names_where_the_chain_stops(self):
-        """Refused before its adapter is sought, because a service that has not
-        declared what processing it admits must not have one resolved for it."""
+    def test_the_result_names_the_unadmitted_capability(self):
         self.assertEqual(self.result["far_side_disposition"],
-                         "service-declares-no-admitted-processing:stegverse-org.llm-adapter")
-        self.assertIs(self.result["endpoint_adapter_installed"], False)
+                         "declared-capability-not-admitted-by-service:governance")
+
+    def test_an_installed_adapter_does_not_make_the_surface_serve_anything(self):
+        """The adapter is present and was still never reached."""
+        self.assertIs(self.result["endpoint_adapter_installed"], True)
         self.assertEqual(self.result["profile_status"],
                          "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION")
 
@@ -226,12 +246,16 @@ class UninstalledFarSideTests(unittest.TestCase):
             self.assertNotIn(key, self.result)
         self.assertEqual(self.result["authority_effect"], "NONE_CROSSING_ATTEMPT_ONLY")
 
-    def test_the_registry_still_describes_the_gap_this_case_reports(self):
-        """When the LLM adapter endpoint lands, this case must be updated with it
-        rather than keep asserting a gap that has closed."""
+    def test_the_registry_admits_one_pair_and_this_fixture_is_not_it(self):
         llm = service("stegverse-org.llm-adapter")
-        self.assertNotIn("endpoint_adapter", llm)
         self.assertEqual(llm["repository"], "StegVerse-org/LLM-adapter")
+        self.assertEqual(llm["admits_processing"],
+                         [{"capability": "ecosystem_diagnostic",
+                           "route_id": "stegverse.route.ecosystem-diagnostic.v1"}])
+        declared = manifest("hold-to-llm-adapter")["processing"]
+        self.assertNotIn({"capability": declared["capability"],
+                          "route_id": declared["route_id"]},
+                         llm["admits_processing"])
 
 
 if __name__ == "__main__":

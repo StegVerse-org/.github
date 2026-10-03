@@ -1,0 +1,214 @@
+name: Validate Organization Manifest Ingress
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/organization_manifest_ingress.py'
+      - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - '.stegverse/transition-ledger/emit.py'
+      - '.stegverse/transition-ledger/contract.json'
+      - '.stegverse/transition-ledger/org-contract.json'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - 'tests/test_organization_manifest_ingress.py'
+      - 'tests/fixtures/sdk-manifests/**'
+      - 'docs/ORGANIZATION_MANIFEST_INGRESS_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-manifest-ingress-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/organization_manifest_ingress.py'
+      - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - '.stegverse/transition-ledger/emit.py'
+      - '.stegverse/transition-ledger/contract.json'
+      - '.stegverse/transition-ledger/org-contract.json'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - 'tests/test_organization_manifest_ingress.py'
+      - 'tests/fixtures/sdk-manifests/**'
+      - 'docs/ORGANIZATION_MANIFEST_INGRESS_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-manifest-ingress-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-manifest-ingress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The SDK derives the request and admits the result. The tests assert
+      # against its own functions, so it has to be present at the commit that
+      # owns them.
+      - name: Checkout exact merged SDK manifest state-transition runtime
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: e67851968fb6b45b0a02529152824770cbcf5f95
+          path: sdk
+          persist-credentials: false
+
+      - name: Install SDK test dependency surface
+        run: python -m pip install -e ./sdk
+
+      # Both ledgers are durable sovereign state. A run that appended into
+      # either default location would be writing runtime reality from CI, so
+      # every step that can append is pointed at the runner's temporary
+      # directory. `runner` is a step-level context, not a job-level one.
+      - name: Validate the organization receiving operation
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: python -m unittest tests.test_organization_manifest_ingress -v
+
+      - name: Receive a submitted manifest end-to-end and emit the organization receipt
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: |
+          python resident-runtime/organization_manifest_ingress.py \
+            --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
+            --standing tests/fixtures/crossing-standing-genesis.json \
+            --packet-id ci-organization-manifest-ingress --hb-epoch 32 \
+            --out "$RUNNER_TEMP/org-ingress.json"
+          python - <<'PY'
+          import json, os
+          x = json.load(open(os.environ["RUNNER_TEMP"] + "/org-ingress.json"))
+          assert x["disposition"] == "ALLOW", x.get("detail")
+          assert x["received"] is True
+          assert x["owner_repository"] == "StegVerse-org/.github"
+          assert x["receiving_operation"] == "ORGANIZATION_SDK_MANIFEST_INGRESS"
+          assert x["destination_resolution_source"] == "CANONICAL_CONNECTOR_CAPABILITY_OVERLAY"
+          assert x["destination_resolution_environment_inputs"] == []
+          # The three that were false on every handoff before this operation existed.
+          assert x["intr_admission_observed"] is True
+          assert x["far_side_transition_observed"] is True
+          assert x["organization_receipt_observed"] is True
+          assert x["organization_receipt_sha256"].startswith("sha256:")
+          # Two levels, written in order: the organization consumed a repository
+          # receipt rather than one it wrote itself.
+          assert x["repository_receipt_observed"] is True
+          assert x["repository"] == "StegVerse-org/.github"
+          assert x["repository_receipt_sha256"].startswith("sha256:")
+          assert x["organization_receipt_preserves_repository_receipt"] is True
+          assert x["replay_requires_only_verified_repo_and_organization_receipts"] is True
+          # The SDK admitted it, bound to the receipt that exists.
+          assert x["sdk_admitted_result"]["state"] == "COMPLETE"
+          assert x["sdk_admitted_result"]["manifest_receipt_id"] == x["organization_receipt_sha256"]
+          assert x["boundary_receipt_chain_reconstructed_independently"] is True
+          assert [c["transition_id"] for c in x["transition_closures"]] == [
+              "INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED", "RESULT_BOUND", "EGRESS_EMITTED"]
+          # Custody is published separately and is never awaited.
+          assert x["master_records_closure_observed"] is False
+          assert x["authority_effect"] == "NONE_RECEIVING_OPERATION_ONLY"
+          print("ORGANIZATION_MANIFEST_INGRESS=PASS", x["organization_transition_id"])
+          PY
+
+      - name: The organization receipt names the repository receipt it consumed
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          def receipts(variable, schema):
+              return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
+                      if json.loads(p.read_text()).get("schema") == schema]
+
+          repository, = receipts("STEGVERSE_REPO_LEDGER_ROOT",
+                                 "stegverse.repo-transition-receipt/v1")
+          organization, = receipts("STEGVERSE_ORG_LEDGER_ROOT",
+                                   "stegverse.organization-transition-receipt/v1")
+          # The three fields that read null while one writer stood in for both levels.
+          assert organization["source_receipt_schema"] == "stegverse.repo-transition-receipt/v1"
+          assert organization["source_repository"] == "StegVerse-org/.github"
+          assert organization["repo_receipt_sha256"] == repository["receipt_sha256"]
+          assert organization["repo_transition_id"] == repository["transition_id"]
+          assert organization["org_transition_class"] == "REPO_STATE_PROPAGATION"
+          assert repository["transition_class"] == "ORGANIZATION_SDK_MANIFEST_INGRESS"
+          print("ORGANIZATION_CONSUMES_A_REPOSITORY_RECEIPT=PASS", repository["transition_id"])
+          PY
+
+      # A separate ledger pair: this step records refusals, and the steps above
+      # assert exactly one admitted receipt on theirs.
+      - name: A refused submission is recorded, and never as an admission
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/refusal-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/refusal-org-ledger
+        run: |
+          python - <<'PY'
+          import importlib.util, json, os
+          from pathlib import Path
+          from stegverse.manifest_builder import build_manifest
+          spec = importlib.util.spec_from_file_location(
+              "ingress", "resident-runtime/organization_manifest_ingress.py")
+          ingress = importlib.util.module_from_spec(spec); spec.loader.exec_module(ingress)
+
+          def receipts(variable, schema):
+              return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
+                      if json.loads(p.read_text()).get("schema") == schema]
+
+          def governed(output_id):
+              return build_manifest(
+                  data={"ci": True}, source_framework="organization-boundary-ci",
+                  source_output_id=output_id,
+                  processor_request={"candidate": {"action": "inspect"}, "judgment": {},
+                                     "signal": {}, "execution": {}, "capability": {},
+                                     "continuity": {}, "approval": {},
+                                     "permission_present": False},
+                  created_at="2026-10-03T00:00:00Z")
+
+          genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci", "predecessor": None}
+          out = ingress.receive(governed("unadmitted-capability-ci"),
+                                packet_id="ci-unadmitted", hb_epoch=32, standing=genesis)
+          assert out["disposition"] == "FAIL_CLOSED"
+          assert out["received"] is False
+          # The submission arrived, so its disposition is a transition and is recorded.
+          assert out["refusal_recorded"] is True
+          assert out["refusal_transition_class"] == "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED"
+          assert out["refusal_repository_receipt_sha256"].startswith("sha256:")
+          assert out["refusal_organization_receipt_sha256"].startswith("sha256:")
+          # And never as an admission: this means an admitted crossing was observed.
+          assert out["organization_receipt_observed"] is False
+          assert "organization_receipt_sha256" not in out
+
+          # A manifest the crossing cannot drive at all used to leave by exception.
+          raised = ingress.receive(governed("no-declared-standing-ci"),
+                                   packet_id="ci-no-standing", hb_epoch=32, standing=None)
+          assert raised["failed_predicate"] == "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED"
+          assert raised["refusal_recorded"] is True
+
+          # Two refusals, recorded at both levels, the organization consuming the
+          # repository receipt rather than authoring its own.
+          repository = receipts("STEGVERSE_REPO_LEDGER_ROOT",
+                                "stegverse.repo-transition-receipt/v1")
+          organization = receipts("STEGVERSE_ORG_LEDGER_ROOT",
+                                  "stegverse.organization-transition-receipt/v1")
+          assert len(repository) == 2, len(repository)
+          assert len(organization) == 2, len(organization)
+          assert all(r["transition_class"] == "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED"
+                     for r in repository), [r["transition_class"] for r in repository]
+          carried = {o["repo_receipt_sha256"] for o in organization}
+          assert carried == {r["receipt_sha256"] for r in repository}
+          assert all(o["source_repository"] == "StegVerse-org/.github" for o in organization)
+          assert all(o["org_transition_class"] == "REPO_STATE_PROPAGATION" for o in organization)
+          for r in repository:
+              record = r["evidence"]
+              assert record["disposition"] == "DENY", record
+              assert record["intended_action"] == "RECEIVE_A_SUBMITTED_SDK_MANIFEST"
+              assert record["transition_is_the_disposition_of_the_intended_action"] is True
+              assert "resolved_service_id" not in record
+          print("REFUSED_SUBMISSION_IS_RECORDED=PASS", out["failed_predicate"])
+          PY

@@ -37,6 +37,26 @@ The provider-neutral WorkSpace resource consumer is exposed through the register
 
 This keeps the organization boundary extensible without hardcoding each future service into the boundary processor.
 
+### Where a registered capability is received
+
+`org-runtime/interlock-intr.json` carries `ingress.capability_endpoint_bindings`: one binding per capability, keyed on the `profile_id`, `profile_name` and `operation` the SDK resolves against, declaring the operation **this repository** receives it on. `sdk-manifest-ingress` / `SDK:ManifestIngress` / `SUBMIT_MANIFEST` resolves to `ORGANIZATION_SDK_MANIFEST_INGRESS`, which is an operation this repository owns and not an address — `host_required` and `environment_url_required` are both false, and the validator refuses a binding that sets either. The binding resolves a destination; it confers no routing, admission or execution authority, and the validator refuses a binding that claims any of them or that gives one capability two receiving operations.
+
+`resident-runtime/organization_manifest_ingress.py` is that operation. It resolves its own destination from the organization's own boundary document — not handed one and not fetched, because a document supplied by a caller would let the caller name its own organization — then drives admission through the registered crossing, processing through the boundary processor, and appends the organization transition receipt. It recomputes every boundary receipt from its own subject before appending anything, so the boundary's `RECONSTRUCTED` is checked here rather than taken on trust, and a chain that does not recompute fails closed.
+
+Both ledger levels are written, in order. The transition occurs in this repository, so `.stegverse/transition-ledger/emit.py` records a `stegverse.repo-transition-receipt/v1` first and the organization ledger consumes *that* — the organization authoring its own source receipt and then recording it as its own was one writer standing in for two levels, which left `preserves_repo_receipt` with nothing to preserve and left organization replay resting on a receipt the same call had minted. The organization receipt now carries `source_repository`, `repo_receipt_sha256` and `repo_transition_id`, so `ORGANIZATION_REPLAY_MUST_REQUIRE_ONLY_VERIFIED_REPO_RECEIPTS_AND_ORG_RECEIPTS` has a verified repository receipt underneath it.
+
+The organization does not grade its own result: it reports what it observed to the SDK's own `admit_runtime_result` and returns that verdict, with `manifest_receipt_id` bound to the organization receipt that exists. Custody is published through `resident-runtime/submit_org_transition_to_master_records.py` and never awaited — `propagation_gates_organization_runtime_reality` is false and Master Records `may_be_awaited_by_a_transition` is false — so `master_records_closure_observed` stays false and says so.
+
+### Repository transitions reach the organization chain
+
+`organization_scope_rule` is that every state transition occurring within the organization emits an organization receipt. Repositories here append their own transitions to their own ledgers — the LLM-adapter records a node's arrival at its ingress boundary — and nothing carried them up, so the organization's record began at its own boundary.
+
+`resident-runtime/propagate_repository_receipts.py` walks a repository's chain and hands the receipts to the organization ledger as `REPO_STATE_PROPAGATION`, in repository chain order, each verified against its own body first, and skipping what the organization chain already carries so a second run carries nothing rather than failing on a duplicate. The repositories in scope are read off `org-boundary/registry/services.json`, and a declared repository whose ledger is not present on this node reports its absence rather than failing — that is what an ephemeral node materializing a subset of capabilities looks like. `resident-runtime/federation_cycle.py` runs it on each cycle and reports what it carried, so this happens without anyone naming a repository.
+
+None of this is a crossing. `StegVerse-org/LLM-adapter` and `StegVerse-org/.github` are both inside `StegVerse-org`, so no organization boundary is between them and no Interlock/InTr is involved; the receipts record that explicitly. The hop that does need Interlock/InTr is organization to `propagation_target: master-records/.github`.
+
+Two resolutions happen at two boundaries and are not interchangeable. The capability overlay resolves which organization receives a capability and on what operation; a manifest's `completion.egress` resolves which internal endpoint of that organization serves the declared surface. `completion_egress_controls_outbound_organization_routing: false` is about the first.
+
 ---
 
 ## Canonical external node ingress — review contract
@@ -107,3 +127,13 @@ The source-owned [organization inventory](docs/OPEN_SOURCE_ORGANIZATION_INVENTOR
 
 
 PR #31 also requires discovery to publish two machine-readable continuation recipes using existing owners only: `LLM_MACHINE_CONTINUATION` for a machine/LLM that can supply a canonical manifest to the governed LLM-adapter path, and `EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION` for a framework that must use the SDK Manifest Builder / external-framework handoff first. Both require canonical node standing and preserve manifest capability + route binding; neither instruction grants authority or creates an endpoint.
+
+
+
+## Test 5/6 external submission boundary — 2026-10-02
+
+External instructions terminate at `SUBMIT_CANONICAL_MANIFEST` and `RETAIN_SUBMISSION_RESULT_AND_EVIDENCE`. Interlock/InTr is `INTERNAL_POST_SUBMISSION`; `EXTERNAL_INTERLOCK_INTR` is deferred to a separate successor expansion after Tests 5/6. This changes the caller instruction boundary, not the retained experiment, Test 5-before-Test 6 ordering, or downstream receipt/custody acceptance. Source tests are not Test 5/6 runtime results.
+
+`SDK_MACHINE_CONTRACT` derives from existing SDK builder signatures, processor/route declarations, return projections and console commands. The adapter consumes that SDK projection instead of maintaining a second instruction recipe. The console wrapper already dispatched manifest/external-run; its top-level help omitted them. Shared dispatch/help declarations repair that discovery mismatch.
+
+The external-framework helper currently reports `SDK_LOCAL_MANIFEST_HANDOFF`; it does not prove receiver observation. Adapter predecessor checks establish structural validity only, not authenticated standing. Production endpoint binding, authentic standing, runtime execution, deployment and custody remain NOT_PROVEN. No endpoint, runtime, credential path or authority was created.

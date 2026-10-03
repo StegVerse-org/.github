@@ -40,6 +40,33 @@
     },
     "hold-to-llm-adapter": {
       "egress_surface": "LLM_ADAPTER"
+    },
+    "task-registry-disclosure-to-llm-adapter": {
+      "declared_intent": "Read this organization's current task registry generation",
+      "egress_surface": "LLM_ADAPTER",
+      "process": "ecosystem_diagnostic",
+      "processor_request": {
+        "diagnostic_request_id": "TASK-REGISTRY-DISCLOSURE-001",
+        "expected_evidence_fields": [
+          "registry_sha256",
+          "active_goal",
+          "tasks"
+        ],
+        "mutation_permitted": false,
+        "schema": "stegverse.ecosystem-diagnostic-request.v1",
+        "scope": "repository",
+        "tests": [
+          {
+            "authority_owner": "StegVerse-org/.github",
+            "component_id": "StegVerse-org/.github:orchestration/task-registry.json",
+            "observation": null,
+            "predicate_id": "REGISTRY_SERVED_MATCHES_COMMITTED_DIGEST",
+            "test_id": "CURRENT_TASK_REGISTRY_GENERATION_IS_SERVED"
+          }
+        ]
+      },
+      "requested_consequence": "Return the committed registry and its digest; admit nothing",
+      "source_output_id": "TASK-REGISTRY-DISCLOSURE-001:CURRENT"
     }
   },
   "processor_request": {

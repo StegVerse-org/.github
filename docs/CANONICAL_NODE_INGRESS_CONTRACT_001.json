@@ -1,5 +1,5 @@
 {
-  "schema_version": "stegverse.canonical-node-ingress-contract.v0.2",
+  "schema_version": "stegverse.canonical-node-ingress-contract.v0.3",
   "document_id": "CANONICAL-NODE-INGRESS-CONTRACT-001",
   "status": "DRAFT_FOR_REVIEW",
   "date": "2026-10-02",
@@ -169,9 +169,16 @@
   "boundary_lineage_requirement": {
     "organization_boundary_must_carry_predecessor": true,
     "receiving_boundary_must_validate_predecessor": true,
-    "current_organization_boundary_support": "NOT_PROVEN",
+    "current_organization_boundary_support": "SOURCE_ENFORCED_AT_ORGANIZATION_BOUNDARY",
     "known_review_finding": "Current boundary receipt lane begins with previous_receipt_id null and does not yet express cross-lane predecessor standing.",
-    "repair_constraint": "Reuse SDK lineage semantics; do not make receipt-chain previous_receipt_id a second definition of canonical predecessor."
+    "repair_constraint": "Reuse SDK lineage semantics; do not make receipt-chain previous_receipt_id a second definition of canonical predecessor.",
+    "support_evidence": [
+      "org-boundary/runtime/node_standing.py",
+      "org-kernel/kernel.py:dispatch",
+      "tests/test_node_standing_ingress.py",
+      ".github/workflows/node-standing-ingress-validation.yml"
+    ],
+    "deployed_support": "NOT_PROVEN"
   },
   "llm_adapter_continuation": {
     "external_framework_role": "TRANSPORT_OR_PROCESSING_CONSUMER_THROUGH_A_NODE; NOT_ASSUMED_TO_BE_THE_NODE",
@@ -297,9 +304,11 @@
     "direct_bypass_rejection_at_every_destination": "NOT_PROVEN",
     "kv_as_established_node": "NOT_PROVEN",
     "stegbrowser_as_kv_surface": "NOT_PROVEN",
-    "sdk_predecessor_source_contract": "PROVEN_AT_50d6ed8",
+    "sdk_predecessor_source_contract": "SOURCE_CONTRACT_PROVEN_AT_50d6ed8",
     "sdk_manifest_only_route_selection": "SOURCE_CONTRACT_EXISTS",
     "no_status_is_upgraded_by_this_document": true,
+    "authenticated_node_standing": "NOT_PROVEN_BY_ADAPTER_STRUCTURAL_VALIDATION",
+    "production_sdk_endpoint_binding": "NOT_PROVEN",
     "canonical_discovery_host_declared": "NOT_PROVEN"
   },
   "machine_readable_instructions": {
@@ -315,26 +324,27 @@
     "LLM_MACHINE_CONTINUATION": {
       "consumer": "LLM_OR_MACHINE_ALREADY_CAPABLE_OF_EMITTING_A_CANONICAL_MANIFEST",
       "steps": [
-        "GET canonical node advertisement and health endpoint",
-        "establish explicit genesis standing or verify existing canonical predecessor standing",
-        "construct or retain canonical manifest whose processing.capability and processing.route_id bind an installed SDK route",
-        "submit through the existing LLM-adapter governed-manifest ingress/Interlock-InTr continuation",
-        "accept only the returned ALLOW, DENY, or FAIL_CLOSED disposition and retained evidence"
+        "GET_NODE_ADVERTISEMENT_AND_HEALTH",
+        "ESTABLISH_OR_VERIFY_CANONICAL_NODE_STANDING",
+        "VALIDATE_CANONICAL_MANIFEST_WITH_SDK",
+        "SUBMIT_CANONICAL_MANIFEST",
+        "RETAIN_SUBMISSION_RESULT_AND_EVIDENCE"
       ],
       "canonical_receiving_owner": "StegVerse-org/LLM-adapter:llm_adapter/governed_manifest_ingress.py",
       "processing_selector": "manifest.processing.capability + manifest.processing.route_id",
       "message_content_selects_processing": false,
-      "direct_adapter_bypass_without_standing": "FAIL_CLOSED"
+      "direct_adapter_bypass_without_standing": "FAIL_CLOSED",
+      "interlock_intr": "INTERNAL_POST_SUBMISSION",
+      "external_interlock_intr": "DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6"
     },
     "EXTERNAL_FRAMEWORK_MANIFEST_CONTINUATION": {
       "consumer": "EXTERNAL_FRAMEWORK_REQUIRING_CANONICAL_MANIFEST_CONSTRUCTION",
       "steps": [
-        "GET canonical node advertisement and health endpoint",
-        "establish explicit genesis standing or verify existing canonical predecessor standing",
-        "use StegVerse-SDK stegverse.manifest_builder.build_manifest or the stegverse manifest build CLI to construct and validate the canonical manifest",
-        "for evaluator/governance framework submission use stegverse.external_framework_runner.manifest_external_framework_submission or stegverse external-run without --execute-enclosed",
-        "handoff through the existing SDK manifest state-transition/Interlock-InTr path to the registered receiving continuation",
-        "do not promote SDK-local handoff, enclosed validation, or unobserved far-side state into canonical completion"
+        "GET_NODE_ADVERTISEMENT_AND_HEALTH",
+        "ESTABLISH_OR_VERIFY_CANONICAL_NODE_STANDING",
+        "BUILD_AND_VALIDATE_CANONICAL_MANIFEST_WITH_SDK",
+        "SUBMIT_CANONICAL_MANIFEST",
+        "RETAIN_SUBMISSION_RESULT_AND_EVIDENCE"
       ],
       "builder_owner": "StegVerse-org/StegVerse-SDK:stegverse/manifest_builder.py",
       "framework_owner": "StegVerse-org/StegVerse-SDK:stegverse/external_framework_runner.py",
@@ -342,10 +352,39 @@
       "builder_cli": "stegverse manifest build",
       "framework_cli": "stegverse external-run",
       "enclosed_validation_flag": "--execute-enclosed",
-      "enclosed_validation_is_canonical": false
+      "enclosed_validation_is_canonical": false,
+      "interlock_intr": "INTERNAL_POST_SUBMISSION",
+      "external_interlock_intr": "DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6"
     },
     "no_new_endpoint_required": true,
     "no_new_host_required": true,
-    "authority_effect": "NONE_INSTRUCTIONS_ONLY"
+    "authority_effect": "NONE_INSTRUCTIONS_ONLY",
+    "sdk_machine_contract": {
+      "owner": "StegVerse-org/StegVerse-SDK",
+      "api": "stegverse.machine_contract.sdk_machine_contract",
+      "cli": "stegverse machine-contract",
+      "derivation": "Existing builder signature, PROCESSOR_ROUTES, PUBLISHED_ROUTES, RETURN_DEPTHS and shared console command declarations",
+      "source_status": "SOURCE_IMPLEMENTED_PENDING_MERGE",
+      "authority_effect": "NONE_INSTRUCTIONS_ONLY",
+      "source_commit": "1b24ab0fe4ca1690994a7bacb4ac2286a35f2603",
+      "pull_request": "https://github.com/StegVerse-org/StegVerse-SDK/pull/424"
+    }
+  },
+  "test_5_6_external_boundary": {
+    "terminal_steps": [
+      "SUBMIT_CANONICAL_MANIFEST",
+      "RETAIN_SUBMISSION_RESULT_AND_EVIDENCE"
+    ],
+    "interlock_intr": "INTERNAL_POST_SUBMISSION",
+    "external_interlock_intr": "DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6",
+    "source_submission_tests_are_runtime_evidence": false,
+    "sdk_local_handoff_is_observed_receiver_submission": false,
+    "existing_downstream_runtime_acceptance_preserved": true,
+    "test_6_runtime_requires_test_5_closure": true,
+    "runtime_evidence_owners": [
+      "StegVerse-Labs/.github:docs/EPHEMERAL_STEGBROWSER_EXTERNAL_AI_AUTHENTIC_RUNTIME_MIRROR_HANDOFF.md",
+      "StegVerse-Labs/.github:docs/EPHEMERAL_STEGBROWSER_EXTERNAL_AI_ACTIVATION_MIRROR_HANDOFF.md"
+    ],
+    "successor_registration_condition": "Test 5/6 external boundary retained on canonical main; external reciprocal transport remains separate from current tests"
   }
 }

@@ -192,9 +192,27 @@ def validate_request(req):
         if bindings.get(k)!=v: raise ValueError(f"bindings.{k} mismatch")
     return manifest,transport
 
+def packet_standing(manifest):
+    """Derive the envelope's standing from the manifest's own declared chain position.
+
+    The manifest already carries `generation` and `predecessor`, and
+    `validate_request` has already held them to the owner's rule. Re-declaring
+    a chain position beside it would create a second place to say where this
+    generation sits, and the two could then disagree. Deriving it means they
+    agree by construction, and the boundary's own agreement check then has
+    something true to confirm rather than two independent claims to reconcile.
+    """
+    generation=manifest.get("generation"); predecessor=manifest.get("predecessor")
+    mode="ESTABLISH_GENESIS" if generation==1 and predecessor is None else "VERIFY_EXISTING"
+    return {"mode":mode,
+            "node_ref":manifest["source_organization"]["organization_id"],
+            "generation":generation,
+            "predecessor":predecessor}
+
 def build_packet(req):
     manifest,transport=validate_request(req)
     return K.build_packet(
+      standing=packet_standing(manifest),
       origin_org="StegVerse-org",
       origin_service="stegverse-org.stegverse-sdk",
       destination_org=transport["target_organization"],

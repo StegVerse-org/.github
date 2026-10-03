@@ -27,6 +27,12 @@ from stegverse.manifest_contract import validate_ingress_manifest
 from stegverse.manifest_state_transition_runtime import manifest_declared_destination
 
 ROOT = Path(__file__).resolve().parents[1]
+# A crossing is ingress, so it declares its chain position. These fixtures are
+# ingress manifests and carry none of their own, so the caller declares it;
+# `predecessor` is present and null, which is explicit genesis.
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "StegVerse-independent-evaluator",
+           "predecessor": None}
+
 FIXTURES = ROOT / "tests/fixtures/sdk-manifests"
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 
@@ -121,7 +127,7 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
         cls.manifest = builder.rebuild()["hold-to-boundary-diagnostic"]
 
     def test_a_freshly_built_sdk_manifest_crosses_the_boundary(self):
-        result = bridge.cross(self.manifest, packet_id="live-sdk-manifest-crossing")
+        result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
         self.assertIs(result["crossing_completed"], True)
         self.assertIs(result["consumed"], True)
         self.assertEqual(result["reconstruction"], "RECONSTRUCTED")
@@ -129,7 +135,7 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
         self.assertEqual(result["authority_effect"], "NONE")
 
     def test_the_manifest_the_sdk_built_is_the_manifest_that_arrived(self):
-        result = bridge.cross(self.manifest, packet_id="live-sdk-manifest-crossing")
+        result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
         far_side = (result["egress"]["payload"]["execution_result"]
                     ["application_result"]["echo"])
         self.assertEqual(far_side["manifest"], self.manifest)
@@ -138,7 +144,7 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
     def test_the_sdk_declared_far_side_is_the_surface_that_was_crossed_to(self):
         canonical = validate_ingress_manifest(self.manifest)
         sdk = manifest_declared_destination(canonical)
-        result = bridge.cross(self.manifest, packet_id="live-sdk-manifest-crossing")
+        result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
         self.assertEqual(result["declared_transition_surface"],
                          sdk["final_stegverse_transition_surface"])
         self.assertEqual(result["resolved_service_id"], "stegverse-org.boundary-diagnostic")

@@ -1,0 +1,138 @@
+name: Validate Receipt Lineage Projection
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/receipt_lineage_projection.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'resident-runtime/ledger_store.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - '.stegverse/transition-ledger/emit.py'
+      - 'tests/test_receipt_lineage_projection.py'
+      - 'docs/RECEIPT_LINEAGE_PROJECTION_MIRROR_HANDOFF.md'
+      - '.github/workflows/receipt-lineage-projection-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/receipt_lineage_projection.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'resident-runtime/ledger_store.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - '.stegverse/transition-ledger/emit.py'
+      - 'tests/test_receipt_lineage_projection.py'
+      - 'docs/RECEIPT_LINEAGE_PROJECTION_MIRROR_HANDOFF.md'
+      - '.github/workflows/receipt-lineage-projection-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-lineage-projection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The ledgers are durable sovereign state. A run that appended into
+      # either default location would be writing runtime reality from CI, so
+      # every step that can append is pointed at the runner's temporary
+      # directory. `runner` is a step-level context, not a job-level one.
+      - name: Validate the derivation
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/lineage-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/lineage-org-ledger
+        run: python -m unittest tests.test_receipt_lineage_projection -v
+
+      # This repository asserts the projection it owns. Whether the records
+      # reconstruct is RE's verdict, and RE is a private repository in another
+      # organization: a checkout here would need a credential secret, and
+      # `github_token_runtime_authority` is NONE. RE's own CI holds a projected
+      # chain to its own validator instead, so neither repository restates the
+      # other's rules.
+      - name: A real chain projects to the declared shape at both levels
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/real-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/real-org-ledger
+        run: |
+          python - <<'PY'
+          import importlib.util, json, shutil, tempfile
+          from pathlib import Path
+
+          def load(name, relative):
+              spec = importlib.util.spec_from_file_location(name, relative)
+              module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+              return module
+
+          egress = load("egress", "resident-runtime/organization_egress_boundary.py")
+          lineage = load("lineage", "resident-runtime/receipt_lineage_projection.py")
+          K = egress.kernel
+
+          PEER, PEER_CONTROL = "StegVerse-Labs", "stegverse-labs.org-control"
+          CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+          mesh = Path(tempfile.mkdtemp()); peer = Path(tempfile.mkdtemp())
+          (peer / "org-boundary/registry").mkdir(parents=True)
+          (peer / "org-boundary/registry/services.json").write_text(json.dumps({
+              "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
+              "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
+              "services": [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
+                            "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
+          (peer / "org-boundary/runtime").mkdir(parents=True)
+          for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
+              shutil.copy2("org-boundary/runtime/" + name, peer / "org-boundary/runtime" / name)
+          (peer / "docs").mkdir(parents=True, exist_ok=True)
+          shutil.copy2(CONTRACT, peer / CONTRACT)
+
+          # A real inter-organization crossing, so the chain projected is one
+          # this ecosystem actually produces rather than a synthetic fixture.
+          genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci-lineage", "predecessor": None}
+          emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
+              "communication_id": "ci-lineage-001", "subject": "ci lineage",
+              "body": {"ci": True}}, standing=genesis, mesh_root=mesh, hb_epoch=32)
+          K.consume_and_respond(peer, mesh_root=mesh)
+          egress.close(PEER, emitted["packet_id"], "ci-lineage-001",
+                       mesh_root=mesh, hb_epoch=32)
+          egress.emit("Not-A-Declared-Peer", {"message_class": "ecosystem.communication",
+              "communication_id": "ci-lineage-002", "body": {}}, standing=genesis,
+              mesh_root=mesh, hb_epoch=32)
+
+          for level in (lineage.REPOSITORY, lineage.ORGANIZATION):
+              report = lineage.projection(level)
+              records = report["records"]
+              assert records, level
+              # The shape this module declares it produces.
+              for record in records:
+                  for field in lineage.PROJECTED_FIELDS:
+                      assert field in record, (level, field, record)
+                  assert record["payload_hash"], (level, record)
+                  assert record["event_type"] in (
+                      lineage.ORIGINAL, lineage.CORRECTION,
+                      lineage.INVALIDATION, lineage.SUPPLEMENT), record
+              # The first receipt of the chain is its ORIGINAL and has no
+              # predecessor; every later one names the one before it.
+              assert records[0]["event_type"] == lineage.ORIGINAL, records[0]
+              assert records[0]["predecessor_id"] is None, records[0]
+              assert [r["sequence"] for r in records] == list(range(1, len(records) + 1))
+              for earlier, later in zip(records, records[1:]):
+                  assert later["predecessor_id"] == earlier["receipt_id"], (earlier, later)
+              # Derived, not stored, and granting nothing.
+              assert report["verdict_is_res_to_give_not_this_projections"] is True
+              assert report["lineage_reconstruction_creates_authority"] is False
+              assert report["authority_effect"] == "NONE_PROJECTION_ONLY"
+              assert report["ledger_unchanged_by_this_projection"] is True
+              chain = (lineage.repository_chain() if level == lineage.REPOSITORY
+                       else lineage.organization_chain())
+              for receipt in chain:
+                  assert "event_type" not in receipt, level
+                  assert "sequence" not in receipt, level
+              print("LINEAGE_PROJECTION=" + level + "=PASS", len(records), "records",
+                    report["event_type_counts"])
+          PY
+
+      - name: Declare what the projection does not do
+        run: |
+          echo 'authority_effect=NONE_PROJECTION_ONLY; ledger_unchanged=true'
+          echo 'verdict_owner=Admissible-Existence/RE; nothing_stored_to_make_it_work=true'

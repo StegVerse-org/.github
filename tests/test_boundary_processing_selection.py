@@ -36,6 +36,13 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Every covered ingress class requires canonical node standing, so a packet
+# declares its chain position or it does not cross. `predecessor` is present
+# and null: explicit genesis, not a default.
+CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "test-node", "predecessor": None}
+
 
 spec = importlib.util.spec_from_file_location(
     "manifest_selection", ROOT / "org-boundary/runtime/manifest_selection.py")
@@ -213,15 +220,19 @@ class DispatchRecordsSelectionTests(unittest.TestCase):
         (root / "org-boundary/runtime").mkdir(parents=True)
         (root / "org-boundary/registry/services.json").write_text(
             json.dumps({"organization": "Target-Org", "services": [row]}))
-        for name in ("process_boundary.py", "manifest_selection.py"):
+        for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
             shutil.copy2(ROOT / "org-boundary/runtime" / name, root / "org-boundary/runtime" / name)
+        # The boundary reads standing semantics from the contract rather than
+        # restating them, so a fixture root needs the contract to admit anything.
+        (root / "docs").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
         self.addCleanup(shutil.rmtree, root)
         return root
 
     def packet(self, service_id, payload):
         return K.build_packet(origin_org="Source-Org", origin_service="source.sdk",
                               destination_org="Target-Org", destination_service=service_id,
-                              payload=payload)
+                              payload=payload, standing=GENESIS)
 
     def test_an_internal_endpoint_result_carries_the_manifest_selection(self):
         row = service(admits_processing=[{"capability": "governance", "route_id": GOVERNANCE_ROUTE}])
@@ -247,14 +258,41 @@ class DispatchRecordsSelectionTests(unittest.TestCase):
         self.assertIs(result["declared_capability_processed"], False)
         self.assertEqual(result["application_result"]["echo"], manifest("governance", GOVERNANCE_ROUTE))
 
-    def test_a_root_with_no_selection_module_fails_closed(self):
-        """A boundary that cannot say how processing was selected must not dispatch."""
+    def bare_root(self):
         root = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, root)
         (root / "org-boundary/registry").mkdir(parents=True)
+        (root / "org-boundary/runtime").mkdir(parents=True)
         (root / "org-boundary/registry/services.json").write_text(json.dumps(
             {"organization": "Target-Org",
              "services": [{"service_id": "target.diag", "boundary_role": "BOUNDARY_LOCAL_DIAGNOSTIC"}]}))
+        return root
+
+    def test_a_root_with_no_standing_module_fails_closed(self):
+        """A boundary required to validate the predecessor must not admit without it."""
+        with self.assertRaisesRegex(ValueError, "org_boundary_node_standing_missing"):
+            K.dispatch(self.bare_root(), self.packet("target.diag", {"hello": "world"}))
+
+    def test_a_root_with_no_ingress_contract_fails_closed(self):
+        """Standing semantics come from the contract; a root without it cannot state them."""
+        root = self.bare_root()
+        shutil.copy2(ROOT / "org-boundary/runtime/node_standing.py",
+                     root / "org-boundary/runtime/node_standing.py")
+        with self.assertRaisesRegex(ValueError, "org_boundary_node_ingress_contract_missing"):
+            K.dispatch(root, self.packet("target.diag", {"hello": "world"}))
+
+    def test_a_root_with_no_selection_module_fails_closed(self):
+        """A boundary that cannot say how processing was selected must not dispatch.
+
+        Standing resolves first now, so this root carries standing and its
+        contract and still fails closed on selection -- the two preconditions
+        are independent, and neither substitutes for the other.
+        """
+        root = self.bare_root()
+        shutil.copy2(ROOT / "org-boundary/runtime/node_standing.py",
+                     root / "org-boundary/runtime/node_standing.py")
+        (root / "docs").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
         with self.assertRaisesRegex(ValueError, "org_boundary_manifest_selection_missing"):
             K.dispatch(root, self.packet("target.diag", {"hello": "world"}))
 
@@ -266,19 +304,29 @@ class LiveRegistryTests(unittest.TestCase):
     def setUpClass(cls):
         cls.registry = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 
-    def test_no_service_yet_declares_an_admitted_capability_route_binding(self):
-        """The current state, asserted so it cannot drift unnoticed.
+    def test_every_service_declaring_an_admitted_binding_can_serve_it(self):
+        """The gap this case used to assert has closed, so it now covers the binding.
 
-        No surface in this organization has declared a capability bound to a
-        route that it admits. That is the remaining gap, not a passing
-        condition: `stegverse-org.llm-adapter` -- the surface the SDK's own
-        default manifest declares -- carries neither an endpoint adapter nor an
-        admitted binding. When one is declared, this case must be replaced with
-        coverage of that binding rather than left asserting a gap that closed.
+        It previously held that no surface in this organization declared a
+        capability bound to a route it admits, with the requirement that the
+        case be replaced by coverage of a real binding when one landed.
+        `stegverse-org.llm-adapter` is that binding: it admits
+        `ecosystem_diagnostic` on the diagnostic route and serves the
+        committed task registry. The end-to-end path is covered in
+        `tests/test_task_registry_disclosure_endpoint.py`.
+
+        What is held here is the pairing that makes a declaration servable: a
+        row that admits processing must also name an installed adapter, or it
+        admits something nothing can serve.
         """
-        declared = [s["service_id"] for s in self.registry["services"]
-                    if s.get("admits_processing")]
-        self.assertEqual(declared, [])
+        declared = [row for row in self.registry["services"] if row.get("admits_processing")]
+        self.assertTrue(declared, "no service declares an admitted binding")
+        for row in declared:
+            with self.subTest(service=row["service_id"]):
+                selection.admitted_bindings(row)
+                adapter = row.get("endpoint_adapter")
+                self.assertTrue(adapter, f"{row['service_id']} admits processing with no adapter")
+                self.assertTrue((ROOT / adapter).is_file(), adapter)
 
     def test_any_declared_admission_is_a_complete_binding(self):
         """Holds now by vacuity, and refuses a half-declaration the moment one lands."""
@@ -290,7 +338,13 @@ class LiveRegistryTests(unittest.TestCase):
                 selection.admitted_bindings(row)
 
     def test_no_live_internal_endpoint_silently_admits_everything(self):
-        """An INTERNAL_ENDPOINT with no admission list must refuse, not default open."""
+        """An INTERNAL_ENDPOINT must refuse a pair it did not declare.
+
+        This holds for a row with no admission list, which admits nothing, and
+        equally for the one row that now admits a pair: `governance` on the
+        canonical-governed route is not that pair, so every internal endpoint
+        in this registry refuses it.
+        """
         endpoints = [s for s in self.registry["services"]
                      if s.get("boundary_role") == "INTERNAL_ENDPOINT"]
         self.assertTrue(endpoints, "registry exposes no internal endpoint")

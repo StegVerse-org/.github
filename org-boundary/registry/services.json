@@ -139,7 +139,17 @@
       "repository": "StegVerse-org/LLM-adapter",
       "boundary_role": "INTERNAL_ENDPOINT",
       "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
-      "runtime_required_for_consumption": true
+      "runtime_required_for_consumption": true,
+      "endpoint_adapter": "resident-runtime/task_registry_disclosure_endpoint.py",
+      "admits_processing": [
+        {
+          "capability": "ecosystem_diagnostic",
+          "route_id": "stegverse.route.ecosystem-diagnostic.v1"
+        }
+      ],
+      "accepts": [
+        "stegverse.task-registry-disclosure-request/v1"
+      ]
     },
     {
       "service_id": "stegverse-org.hps-runtime",
