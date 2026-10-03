@@ -57,9 +57,11 @@ It proves TV/TVC signed this statement, and that whoever assembled the frame
 could not have produced the signature themselves. It does **not** prove TV/TVC
 authenticated the asker as the organization the statement names: TV/TVC signs
 what it is handed, and binding the asker to the claimed origin is TV/TVC's to
-do. Its own source-validation receipt records `consumer_secret_received: false`
-and `tv_consumer_integration_observed: false`, so that binding is not yet
-observed anywhere.
+do. Its own receipts record `consumer_secret_received: false`, so that binding
+is not yet observed anywhere. `tv_consumer_integration_observed` is a different
+flag and is now true -- TV/TVC observes this consumer against its own functions
+as of `StegVerse-Labs/tvc@1e6c909` -- which closes the integration question and
+not the asker one.
 
 What closes that gap is the bilateral match, which is already here: an attested
 statement names a packet id, and a forged origin would need the claimed

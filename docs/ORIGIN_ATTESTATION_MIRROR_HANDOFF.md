@@ -94,9 +94,16 @@ It proves TV/TVC signed this statement, and that whoever assembled the frame
 could not have produced the signature. It does **not** prove TV/TVC
 authenticated the asker as the organization the statement names: TV/TVC signs
 what it is handed, and binding the asker to the claimed origin is TV/TVC's to
-do. Its own source-validation receipt records `consumer_secret_received: false`
-and `tv_consumer_integration_observed: false`, so that binding is observed
-nowhere yet.
+do. Its own receipts record `consumer_secret_received: false`, so that binding
+is observed nowhere yet.
+
+`tv_consumer_integration_observed` **is** now true, in
+`StegVerse-Labs/tvc:receipts/security/tv-consumer-integration-origin-attestation-2026-10-03.json`
+(merged at `1e6c909`), which observes this consumer against those functions
+from TV/TVC's own side. That is a different flag and it closes a different
+gap: the exchange is integrated, and the asker is still not authenticated.
+Citing the integration flag as evidence for the asker gap would read the one as
+the other.
 
 What closes the gap is already here. Three layers, each necessary, none
 sufficient alone:
@@ -176,9 +183,12 @@ needs a credential while `github_token_runtime_authority` is NONE — the same
 constraint RE's validators are under. So the conformance module **skips** in
 this CI and the skip is reported as
 `TVC_CONFORMANCE=UNPROVEN_HERE_TVC_NOT_CHECKED_OUT`, never as a pass. It runs
-wherever TVC is present via `STEGVERSE_TVC_ROOT`, and it belongs in TVC's own
-CI: its source-validation receipt records `tv_consumer_integration_observed:
-false`, and this is that consumer.
+wherever TVC is present via `STEGVERSE_TVC_ROOT`, and it now **also runs in
+TVC's own CI**: `tv-consumer-integration-validation.yml` there exercises these
+same functions against this consumer's pinned statement shape, and
+`tv_consumer_integration_observed` is true as of `1e6c909`. So the exchange is
+proven on the side that holds the key, and this repository's skip remains
+honest about what it did not prove here.
 
 What this repository's CI does prove is the binding it owns — the statement
 shape, the two-call exchange, every refusal predicate, that no credential
