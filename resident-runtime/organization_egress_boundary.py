@@ -117,6 +117,9 @@ def _module(name: str, relative: str):
 
 
 kernel = _module("org_kernel", "org-kernel/kernel.py")
+attestation_module = _module("origin_attestation",
+                             "org-boundary/runtime/origin_attestation.py")
+
 repository_ledger = _module("repo_transition_emit", ".stegverse/transition-ledger/emit.py")
 organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
@@ -234,21 +237,26 @@ def resolve_destination(organization: str, *, capability: str | None = None,
         "organization not in org-boundary/registry/federation.json: " + str(organization))
 
 
-def _attestation() -> dict[str, Any]:
-    """What this boundary can and cannot say about who sent the packet."""
-    return {
-        # The gap, recorded rather than hidden. A frame in a shared mesh carries
-        # whatever origin its writer put in it.
-        "origin_attestation_state": "NOT_PROVEN",
-        "origin_is_asserted_by_the_sender": True,
-        "origin_is_verified_by_this_boundary": False,
-        "credential_authority": CREDENTIAL_AUTHORITY,
-        "attestation_is_required_before_an_unattested_crossing_confers_trust": True,
-    }
+def _attestation(attested: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """What this boundary can say about who sent the packet.
+
+    With an attestation record from `org-boundary/runtime/origin_attestation.py`,
+    that record is what is carried: the credential authority signed a statement
+    naming this origin for this packet and confirmed its own signature, so
+    `origin_attestation_state` is `PROVEN` rather than the assertion it replaces.
+
+    Without one, the gap is recorded rather than hidden, exactly as before. A
+    frame in a shared mesh carries whatever origin its writer put in it, and an
+    unattested crossing says so.
+    """
+    if attested is not None:
+        return dict(attested)
+    return attestation_module.unattested_record()
 
 
 def emission_record(resolved: Mapping[str, Any], origin: str, packet: Mapping[str, Any],
-                    frame: Mapping[str, Any], payload: Mapping[str, Any]) -> dict[str, Any]:
+                    frame: Mapping[str, Any], payload: Mapping[str, Any],
+                    attested: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """What an emitted crossing recorded.
 
     Digests, not payloads: the body a caller sent is its own, and what the chain
@@ -283,7 +291,7 @@ def emission_record(resolved: Mapping[str, Any], origin: str, packet: Mapping[st
         # propagation, which records that it crossed none.
         "crossed_an_organization_boundary": True,
         "interlock_intr_involved": True,
-        **_attestation(),
+        **_attestation(attested),
         "authority_effect": "NONE_EGRESS_RECORD_ONLY",
     }
 
@@ -318,8 +326,17 @@ def emit_refusal_record(failed_predicate: str, reason: str, organization: Any,
 
 def closure_record(resolved: Mapping[str, Any], origin: str, packet_id: str,
                    communication_id: str, response: Mapping[str, Any],
-                   findings: list[str], recomputed: list[str]) -> dict[str, Any]:
-    """What an observed closure recorded, verified or refused."""
+                   findings: list[str], recomputed: list[str],
+                   attested: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """What an observed closure recorded, verified or refused.
+
+    A closure makes the same origin claim the emission did, about the same
+    packet, so it carries the attestation already recorded for that packet
+    rather than asking the credential authority a second time. Read off this
+    organization's own emission record, which `recorded_emission` already
+    retrieves: an attestation the chain does not hold is not one a closure may
+    claim.
+    """
     verified = not findings
     return {
         "schema": CLOSURE_SCHEMA,
@@ -365,7 +382,7 @@ def closure_record(resolved: Mapping[str, Any], origin: str, packet_id: str,
         "closure_findings": findings,
         "crossed_an_organization_boundary": True,
         "interlock_intr_involved": True,
-        **_attestation(),
+        **_attestation(attested),
         "authority_effect": "NONE_CLOSURE_RECORD_ONLY",
     }
 
@@ -389,6 +406,7 @@ def _record(transition_id: str, transition_class: str, predecessor: str, success
 
 def emit(destination_organization: Any, payload: Mapping[str, Any], *,
          standing: Mapping[str, Any], capability: str | None = None,
+         credential_authority: Mapping[str, Any] | None = None,
          transition_reference: str = "ecosystem.transition.interorg.v1",
          root: Path | None = None, mesh_root: Path | None = None,
          hb_epoch: int | None = None) -> dict[str, Any]:
@@ -422,6 +440,26 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
             destination_service=resolved["destination_service"],
             payload=dict(payload), standing=dict(standing),
             transition_reference=transition_reference, authority_effect="NONE")
+        # Attested after the packet exists, because the statement binds the
+        # packet id, and before it is published, because the signature travels
+        # inside the packet where `packet_sha256` binds it. The statement itself
+        # does not include the signature, so attaching it changes nothing the
+        # authority signed.
+        attested = None
+        if credential_authority is not None:
+            declared = attestation_module.statement_from_packet(
+                packet, kernel.sha(dict(payload)))
+            try:
+                signature, receipt = attestation_module.attest(
+                    declared, credential_authority)
+            except attestation_module.AttestationRefused as refused:
+                # An attestation was offered and did not establish. Emitting
+                # anyway would record it as an ordinary unattested crossing and
+                # lose the fact that one was attempted and failed, so the
+                # emission is refused instead.
+                raise EgressRefused(refused.failed_predicate, refused.reason) from None
+            attested = attestation_module.record(declared, signature, receipt)
+            packet = {**packet, "attestation": signature}
         published = kernel.publish_packet(packet, root=mesh_root)
     except EgressRefused as exc:
         record = emit_refusal_record(exc.failed_predicate, exc.reason,
@@ -436,7 +474,8 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
                            record["payload_sha256"], sha(record), record, hb_epoch)
         return _refusal_result(record, appended)
 
-    record = emission_record(resolved, origin, packet, published["frame"], payload)
+    record = emission_record(resolved, origin, packet, published["frame"], payload,
+                             attested)
     appended = _record(EMITTED_CLASS + ":" + packet["packet_id"], EMITTED_CLASS,
                        record["payload_sha256"], sha(record), record, hb_epoch)
     return {
@@ -453,7 +492,8 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
                                   "transport_profile",
                                   "destination_resolution_source", "frame_sha256",
                                   "crossed_an_organization_boundary",
-                                  "origin_attestation_state")},
+                                  "origin_attestation_state",
+                                  "origin_is_attested_by_the_credential_authority")},
         "emission_record": record,
         "emission_transition_class": EMITTED_CLASS,
         "emission_repository_receipt_sha256": appended["repository_receipt"]["receipt_sha256"],
@@ -573,6 +613,31 @@ def verify_closure(resolved: Mapping[str, Any], packet_id: str,
     return findings
 
 
+ATTESTATION_FIELDS = ("origin_attestation_state", "attested_statement",
+                      "attested_statement_sha256", "signature_sha256",
+                      "credential_authority_operation", "credential_authority_source",
+                      "signature_algorithm",
+                      "origin_is_attested_by_the_credential_authority",
+                      "proves_the_authority_signed_this_statement",
+                      "proves_the_authority_authenticated_the_asker",
+                      "initiator_identification_also_requires_the_bilateral_match")
+
+
+def _recorded_attestation(emission: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """The attestation this organization already recorded for this packet.
+
+    None when the emission carried none, so the closure records an unattested
+    origin exactly as the emission did. Nothing is reconstructed on the
+    closure's behalf: a closure claiming an attestation its own emission record
+    does not hold would be the assertion this whole change removes.
+    """
+    if not emission or emission.get("origin_attestation_state") != attestation_module.PROVEN:
+        return None
+    carried = {field: emission[field] for field in ATTESTATION_FIELDS if field in emission}
+    return {**carried, "schema": attestation_module.RECORD_SCHEMA,
+            "attestation_read_from_this_organizations_own_emission_record": True}
+
+
 def close(destination_organization: str, packet_id: str, communication_id: str, *,
           root: Path | None = None, mesh_root: Path | None = None,
           hb_epoch: int | None = None) -> dict[str, Any]:
@@ -609,7 +674,7 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
         packet_id, emission["far_side_service_id"], emission["far_side_payload_hash"]
     ) if emission else []
     record = closure_record(resolved, origin, packet_id, communication_id, response,
-                            findings, recomputed)
+                            findings, recomputed, _recorded_attestation(emission))
     transition_class = CLOSED_CLASS if not findings else CLOSURE_REFUSED_CLASS
     appended = _record(transition_class + ":" + packet_id, transition_class,
                        sha({"packet_id": packet_id, "communication_id": communication_id}),
