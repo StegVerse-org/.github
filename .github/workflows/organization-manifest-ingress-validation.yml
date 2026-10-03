@@ -1,0 +1,128 @@
+name: Validate Organization Manifest Ingress
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/organization_manifest_ingress.py'
+      - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - 'tests/test_organization_manifest_ingress.py'
+      - 'tests/fixtures/sdk-manifests/**'
+      - 'docs/ORGANIZATION_MANIFEST_INGRESS_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-manifest-ingress-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/organization_manifest_ingress.py'
+      - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - 'tests/test_organization_manifest_ingress.py'
+      - 'tests/fixtures/sdk-manifests/**'
+      - 'docs/ORGANIZATION_MANIFEST_INGRESS_MIRROR_HANDOFF.md'
+      - '.github/workflows/organization-manifest-ingress-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-manifest-ingress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The SDK derives the request and admits the result. The tests assert
+      # against its own functions, so it has to be present at the commit that
+      # owns them.
+      - name: Checkout exact merged SDK manifest state-transition runtime
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: e67851968fb6b45b0a02529152824770cbcf5f95
+          path: sdk
+          persist-credentials: false
+
+      - name: Install SDK test dependency surface
+        run: python -m pip install -e ./sdk
+
+      # The organization ledger is durable sovereign state. A run that appended
+      # into the default location would be writing runtime reality from CI, so
+      # every step that can append is pointed at the runner's temporary
+      # directory. `runner` is a step-level context, not a job-level one.
+      - name: Validate the organization receiving operation
+        env:
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: python -m unittest tests.test_organization_manifest_ingress -v
+
+      - name: Receive a submitted manifest end-to-end and emit the organization receipt
+        env:
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: |
+          python resident-runtime/organization_manifest_ingress.py \
+            --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
+            --standing tests/fixtures/crossing-standing-genesis.json \
+            --packet-id ci-organization-manifest-ingress --hb-epoch 32 \
+            --out "$RUNNER_TEMP/org-ingress.json"
+          python - <<'PY'
+          import json, os
+          x = json.load(open(os.environ["RUNNER_TEMP"] + "/org-ingress.json"))
+          assert x["disposition"] == "ALLOW", x.get("detail")
+          assert x["received"] is True
+          assert x["owner_repository"] == "StegVerse-org/.github"
+          assert x["receiving_operation"] == "ORGANIZATION_SDK_MANIFEST_INGRESS"
+          assert x["destination_resolution_source"] == "CANONICAL_CONNECTOR_CAPABILITY_OVERLAY"
+          assert x["destination_resolution_environment_inputs"] == []
+          # The three that were false on every handoff before this operation existed.
+          assert x["intr_admission_observed"] is True
+          assert x["far_side_transition_observed"] is True
+          assert x["organization_receipt_observed"] is True
+          assert x["organization_receipt_sha256"].startswith("sha256:")
+          # The SDK admitted it, bound to the receipt that exists.
+          assert x["sdk_admitted_result"]["state"] == "COMPLETE"
+          assert x["sdk_admitted_result"]["manifest_receipt_id"] == x["organization_receipt_sha256"]
+          assert x["boundary_receipt_chain_reconstructed_independently"] is True
+          assert [c["transition_id"] for c in x["transition_closures"]] == [
+              "INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED", "RESULT_BOUND", "EGRESS_EMITTED"]
+          # Custody is published separately and is never awaited.
+          assert x["master_records_closure_observed"] is False
+          assert x["authority_effect"] == "NONE_RECEIVING_OPERATION_ONLY"
+          print("ORGANIZATION_MANIFEST_INGRESS=PASS", x["organization_transition_id"])
+          PY
+
+      - name: A capability the internal endpoint does not admit mints no receipt
+        env:
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: |
+          python - <<'PY'
+          import importlib.util, json
+          from pathlib import Path
+          from stegverse.manifest_builder import build_manifest
+          spec = importlib.util.spec_from_file_location(
+              "ingress", "resident-runtime/organization_manifest_ingress.py")
+          ingress = importlib.util.module_from_spec(spec); spec.loader.exec_module(ingress)
+          governed = build_manifest(
+              data={"ci": True}, source_framework="organization-boundary-ci",
+              source_output_id="unadmitted-capability-ci",
+              processor_request={"candidate": {"action": "inspect"}, "judgment": {},
+                                 "signal": {}, "execution": {}, "capability": {},
+                                 "continuity": {}, "approval": {},
+                                 "permission_present": False},
+              created_at="2026-10-03T00:00:00Z")
+          out = ingress.receive(governed, packet_id="ci-unadmitted", hb_epoch=32,
+                                standing={"mode": "ESTABLISH_GENESIS", "node_ref": "ci",
+                                          "predecessor": None})
+          assert out["disposition"] == "FAIL_CLOSED"
+          assert out["received"] is False
+          assert out["organization_receipt_observed"] is False
+          print("UNADMITTED_CAPABILITY_MINTS_NO_RECEIPT=PASS", out["failed_predicate"])
+          PY
