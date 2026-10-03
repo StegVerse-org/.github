@@ -35,10 +35,6 @@ permissions:
 jobs:
   validate-manifest-ingress:
     runs-on: ubuntu-latest
-    # The organization ledger is durable sovereign state. A run that appended
-    # into a default location would be writing runtime reality from CI.
-    env:
-      STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
     steps:
       - name: Checkout organization boundary
         uses: actions/checkout@v4
@@ -59,10 +55,18 @@ jobs:
       - name: Install SDK test dependency surface
         run: python -m pip install -e ./sdk
 
+      # The organization ledger is durable sovereign state. A run that appended
+      # into the default location would be writing runtime reality from CI, so
+      # every step that can append is pointed at the runner's temporary
+      # directory. `runner` is a step-level context, not a job-level one.
       - name: Validate the organization receiving operation
+        env:
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: python -m unittest tests.test_organization_manifest_ingress -v
 
       - name: Receive a submitted manifest end-to-end and emit the organization receipt
+        env:
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: |
           python resident-runtime/organization_manifest_ingress.py \
             --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
@@ -96,6 +100,8 @@ jobs:
           PY
 
       - name: A capability the internal endpoint does not admit mints no receipt
+        env:
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: |
           python - <<'PY'
           import importlib.util, json
