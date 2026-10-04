@@ -6,12 +6,10 @@
       "path": "orchestration/schemas/task-registry.schema.json",
       "source_repository": "StegVerse-Labs/repo-standards",
       "source_path": "schemas/task-registry.schema.json",
-      "source_commit": "67cae0198fbc250054c68daa5bd6f9bb37650e2f",
+      "source_commit": "e50f0c02d053f85e211e23a711fe8afd020ff9ff",
       "source_sha256": "sha256:1c83447413afaa278f29ea871133c8a87196974a3fee03d2a7f4f379a1fb6d97",
       "owner_standard": "ST-021 Goal Progression Automaton",
-      "drift_check": "tests/test_task_registry_schema_conformance.py compares this copy against the owner's whenever repo-standards is reachable; it cannot run in this repository's CI and is not a substitute for the owner's own validation",
-      "pin_state": "PRE_MERGE_OWNER_PULL_REQUEST_HEAD",
-      "pin_note": "source_commit is the head of StegVerse-Labs/repo-standards#68, which extends the record to admit an aggregate task. It is a real commit and the digest is exact, but it is not yet on the owner's default branch. Re-pin source_commit to that pull request's merge commit once it merges; source_sha256 does not change if the schema does not."
+      "drift_check": "tests/test_task_registry_schema_conformance.py compares this copy against the owner's whenever repo-standards is reachable; it cannot run in this repository's CI and is not a substitute for the owner's own validation"
     }
   ],
   "authority_effect": "NONE_COPY_ONLY"
