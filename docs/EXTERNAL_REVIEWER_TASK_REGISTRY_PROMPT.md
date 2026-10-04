@@ -35,7 +35,7 @@ than the registry being an internally tidy document nothing refers to.
 
 ## What the reviewer needs
 
-Nothing from us. `StegVerse-org/.github` is public. The nineteen-case registry
+Nothing from us. `StegVerse-org/.github` is public. The twenty-case registry
 suite is standard-library only. One further suite needs `jsonschema`, and the
 prompt says so where it matters rather than letting an import error read as a
 finding.
