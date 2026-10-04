@@ -293,4 +293,62 @@ which it is not. Establishing it is the peer's to do, and bringing a peer's
 kernel forward is a migration in that organization under ST-020 and ST-014,
 not something this directory can assert by carrying a number.
 
+## An unreachable closure is not a pending one
+
+Found while confirming whether `StegVerse-Labs` is wired for InTr. It is, and
+more completely than the probe that found this suggested: a crossing resolves to
+`stegverse-labs.org-control`, emits, is CONSUMED by that organization's own
+kernel with the full five-receipt chain, that kernel publishes a response, and
+`close` observes it, reconstructs the far-side terminal receipt, matches it and
+records `ORGANIZATION_EGRESS_CLOSED`. All three request classes the profile
+answers close end to end against the real tree.
+
+The first probe did not, and the reason was the probe's own payload:
+
+```text
+payload {"probe": "intr-wiring"}
+
+emit    ALLOW      frame published, standing carried
+peer    CONSUMED   five receipts, terminal receipt minted
+close   PENDING    forever
+```
+
+`consume_and_respond` answers only the request classes the transport profile
+names, and `close` correlates an answer by `communication_id`, which `emit` read
+from the payload and from nowhere else. A payload declaring neither is published,
+consumed and receipted — and never answered. So the crossing was not pending,
+which is a crossing still in flight. Its closure was **unreachable**, which
+`PENDING` cannot express, and `emit` returned `ALLOW` for it.
+
+Every caller already passed both fields. The precondition was honoured by
+convention and checked by nothing, which is the same shape as the unchecked
+`kernel_required` above — except this one is readable in this organization's own
+payload rather than in a peer's tree, so it is refused rather than recorded:
+
+```text
+PAYLOAD_DECLARES_A_REQUEST_CLASS_THE_BOUNDARY_ANSWERS          DENY
+PAYLOAD_CARRIES_THE_COMMUNICATION_ID_CLOSURE_CORRELATES_ON     DENY
+```
+
+The answering set had been a literal in the responder and, separately, the keys
+of the response-class mapping. It is now named once, as
+`org-kernel/kernel.py::RESPONDED_REQUEST_CLASSES`, and the boundary document's
+`closable_crossing_precondition` is validated against the kernel's own set
+rather than restating it, so the declaration cannot drift from the code.
+
+What the refusal does not establish: the set is **this** organization's
+responder's, and a peer's is not readable from here. The refusal therefore rests
+on the shared transport profile, which both sides declare, and the declaration
+says so:
+
+```text
+responded_request_classes_are_this_organizations_responders  true
+peer_responded_request_classes_are_readable_here             false
+```
+
+A peer that answered a class this profile does not name would have its crossing
+refused here. That is the fail-closed direction, and it is preferred to the
+alternative this section replaces: reporting ALLOW for a crossing that could
+never complete.
+
 Nothing here grants authority.

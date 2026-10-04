@@ -47,7 +47,9 @@ def payload(communication_id="egress-test-001"):
             "body": {"probe": True}}
 
 
-class EgressBoundaryTests(unittest.TestCase):
+class EgressHarness(unittest.TestCase):
+    """Redirected ledgers, a scratch mesh, and the peer's own node. No cases."""
+
     LEDGER_ROOTS = ("STEGVERSE_REPO_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_ROOT")
 
     def setUp(self):
@@ -110,6 +112,9 @@ class EgressBoundaryTests(unittest.TestCase):
                 "hb_epoch": 32}
         body.update(overrides)
         return egress.emit(destination, body.pop("payload"), **body)
+
+
+class EgressBoundaryTests(EgressHarness):
 
     # --- a peer is addressed at the service it declares -------------------
 
@@ -461,6 +466,99 @@ class EgressBoundaryTests(unittest.TestCase):
             self.assertEqual(record["authority_effect"].split("_")[0], "NONE")
 
 
+class UnclosableCrossingTests(EgressHarness):
+    """A crossing whose closure is unreachable is refused, not emitted as ALLOW.
+
+    Found by probing the real StegVerse-Labs tree. A payload with no
+    `message_class` emitted ALLOW, published a frame, was consumed by the peer
+    and receipted with a full five-stage chain -- and could never close, because
+    the responder answers only the request classes in the transport profile and
+    `close` correlates a response by `communication_id`. `PENDING` was returned
+    forever, which reads as a crossing still in flight rather than one that can
+    never complete.
+
+    Every caller already passed both fields, so nothing enforced them: a
+    precondition honoured by convention and checked by nothing.
+    """
+
+    def emit_payload(self, body):
+        return egress.emit(PEER, body, standing=GENESIS, mesh_root=self.mesh,
+                           hb_epoch=32)
+
+    def test_a_payload_declaring_no_request_class_is_refused(self):
+        result = self.emit_payload({"probe": True})
+        self.assertEqual(result["disposition"], "DENY")
+        self.assertEqual(result["emission_record"]["failed_predicate"],
+                         "PAYLOAD_DECLARES_A_REQUEST_CLASS_THE_BOUNDARY_ANSWERS")
+
+    def test_a_request_class_no_acknowledgement_answers_is_refused(self):
+        result = self.emit_payload({"message_class": "ecosystem.not.answered",
+                                    "communication_id": "c-1"})
+        self.assertEqual(result["disposition"], "DENY")
+        self.assertEqual(result["emission_record"]["failed_predicate"],
+                         "PAYLOAD_DECLARES_A_REQUEST_CLASS_THE_BOUNDARY_ANSWERS")
+
+    def test_a_payload_carrying_no_communication_id_is_refused(self):
+        """Closure correlates on it and reads it from nowhere else."""
+        for identifier in (None, "", "   "):
+            with self.subTest(communication_id=identifier):
+                body = {"message_class": "ecosystem.communication"}
+                if identifier is not None:
+                    body["communication_id"] = identifier
+                result = self.emit_payload(body)
+                self.assertEqual(result["disposition"], "DENY")
+                self.assertEqual(result["emission_record"]["failed_predicate"],
+                                 "PAYLOAD_CARRIES_THE_COMMUNICATION_ID_CLOSURE_CORRELATES_ON")
+
+    def test_an_unclosable_crossing_publishes_no_frame(self):
+        """It is refused before the packet is built, so nothing crosses."""
+        self.emit_payload({"probe": True})
+        self.assertEqual(list(Path(self.mesh).rglob("*.json")), [])
+
+    def test_an_unclosable_crossing_is_recorded_as_a_refusal(self):
+        before = len(self.repo_receipts())
+        self.emit_payload({"probe": True})
+        self.assertEqual(len(self.repo_receipts()), before + 1)
+        record, = self.repo_receipts(egress.EMIT_REFUSED_CLASS)
+        self.assertTrue(record["receipt_sha256"])
+
+    def test_every_request_class_the_profile_answers_closes(self):
+        """The refusal is the complement of what works, not a narrowing of it."""
+        for index, request_class in enumerate(sorted(kernel.RESPONDED_REQUEST_CLASSES)):
+            with self.subTest(message_class=request_class):
+                identifier = "closable-%d" % index
+                emitted = self.emit_payload(
+                    {"message_class": request_class, "communication_id": identifier,
+                     "subject": "s", "body": {}})
+                self.assertEqual(emitted["disposition"], "ALLOW")
+                kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+                closed = egress.close(PEER, emitted["packet_id"], identifier,
+                                      mesh_root=self.mesh, hb_epoch=32)
+                self.assertEqual(closed["disposition"], "ALLOW")
+                self.assertIs(closed["closed"], True)
+
+    def test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy(self):
+        """The set was a literal in the responder and keys in the response map.
+
+        Two copies of the same set drift, and a drift here would refuse a
+        crossing the peer would have answered, or admit one it would not.
+        """
+        self.assertEqual(set(kernel.RESPONDED_REQUEST_CLASSES),
+                         {"ecosystem.monitor.request", "ecosystem.work.request",
+                          "ecosystem.communication"})
+        for request_class, acknowledgement in kernel.RESPONDED_REQUEST_CLASSES.items():
+            with self.subTest(request_class=request_class):
+                self.assertEqual(kernel.response_message_class(request_class),
+                                 acknowledgement)
+                self.assertIn(acknowledgement, egress.ACK_CLASSES)
+
+    def test_what_the_check_does_not_establish_is_stated(self):
+        """The set is this organization's responder's; a peer's is not readable here."""
+        self.assertIn("peer", egress.closability_refusal.__doc__)
+        self.assertIsNone(egress.closability_refusal(
+            {"message_class": "ecosystem.communication", "communication_id": "c"}))
+
+
 class BoundaryDocumentDeclaresEgressTests(unittest.TestCase):
     """The organization's own boundary document binds the outbound half.
 
@@ -544,6 +642,44 @@ class BoundaryDocumentDeclaresEgressTests(unittest.TestCase):
         document["egress"]["peer_destination_resolution"]["resolved_from_caller_argument"] = True
         self.assertIs(
             self.boundary.egress_destinations_resolve_from_the_directory(document), False)
+
+    def test_the_validator_requires_the_unclosable_crossing_refusal(self):
+        report = self.boundary.validate()
+        self.assertIs(report["checks"]["egress_refuses_an_unclosable_crossing"], True)
+
+    def test_the_declared_answering_set_is_the_kernels_own(self):
+        """Restating the set here would let the declaration drift from the code."""
+        declared = self.document["egress"]["closable_crossing_precondition"]
+        self.assertEqual(declared["responded_request_classes_source"],
+                         "org-kernel/kernel.py::RESPONDED_REQUEST_CLASSES")
+        self.assertEqual(sorted(declared["responded_request_classes"]),
+                         sorted(kernel.RESPONDED_REQUEST_CLASSES))
+
+    def test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel(self):
+        drifted = dict(self.document)
+        egress_block = dict(drifted["egress"])
+        precondition = dict(egress_block["closable_crossing_precondition"])
+        precondition["responded_request_classes"] = ["ecosystem.communication"]
+        egress_block["closable_crossing_precondition"] = precondition
+        drifted["egress"] = egress_block
+        self.assertIs(self.boundary.egress_refuses_an_unclosable_crossing(drifted), False)
+
+    def test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set(self):
+        """The refusal rests on the shared profile, not on knowing the peer."""
+        overclaimed = dict(self.document)
+        egress_block = dict(overclaimed["egress"])
+        precondition = dict(egress_block["closable_crossing_precondition"])
+        precondition["peer_responded_request_classes_are_readable_here"] = True
+        egress_block["closable_crossing_precondition"] = precondition
+        overclaimed["egress"] = egress_block
+        self.assertIs(self.boundary.egress_refuses_an_unclosable_crossing(overclaimed), False)
+
+    def test_an_absent_precondition_declaration_fails_closed(self):
+        without = dict(self.document)
+        egress_block = {k: v for k, v in without["egress"].items()
+                        if k != "closable_crossing_precondition"}
+        without["egress"] = egress_block
+        self.assertIs(self.boundary.egress_refuses_an_unclosable_crossing(without), False)
 
     def test_the_validator_refuses_a_destination_directory_it_does_not_own(self):
         document = json.loads(json.dumps(self.document))
