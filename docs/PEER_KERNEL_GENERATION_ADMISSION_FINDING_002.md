@@ -6,6 +6,7 @@
     owners_of_the_fix: StegVerse-Labs, Admissible-Existence
     raised_from:      StegVerse-org/.github
     supersedes_nothing: true
+    answered_by:      PEER-KERNEL-GENERATION-ADMISSION-MIGRATION-002
 
 ## The finding
 
@@ -86,6 +87,13 @@ It does not change either organization's kernel. Neither profile repository can
 be written from the session that raised this -- both are named `.github`, and a
 repository whose name begins with `.` cannot be attached here, so read is the
 ceiling.
+
+The gate itself now exists as an applicable artifact, recorded separately in
+`docs/PEER_KERNEL_GENERATION_ADMISSION_MIGRATION_002.md`: two patches that
+apply cleanly to both current heads, bring each peer to disposition parity with
+this organization, and pass each peer's own test suite unchanged except by the
+patch. The ceiling above is unmoved -- a recorded patch is not an applied one,
+and applying it remains the owning organization's act.
 
 It does not assert that the older kernel is broken for its own purposes. It
 runs, it consumes, it mints a correct receipt chain, and it declines to infer
