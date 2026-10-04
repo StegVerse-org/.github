@@ -8,7 +8,7 @@
   "tasks": [
     {
       "task_id": "SVORG-STEGOS-PORTABILITY-001",
-      "issue": 22,
+      "issue": null,
       "title": "Remove every host dependency from StegOS node and mesh state",
       "status": "in_progress",
       "workstream": "stegos-portability",
@@ -23,7 +23,25 @@
         "resident-runtime/ledger_store.py"
       ],
       "tag_allowed": false,
-      "activation_condition": "every subordinate task reports a portable substrate and no surface derives its location from a host"
+      "activation_condition": "every subordinate task reports a portable substrate and no surface derives its location from a host",
+      "issue_refs": [
+        23,
+        24,
+        25,
+        26,
+        27
+      ],
+      "repository_artifact_history": [
+        {
+          "pull_request": 22,
+          "state": "MERGED",
+          "role": "PORTABILITY_PREDECESSOR_SOURCE_REPAIR"
+        }
+      ],
+      "unresolved_obligations": [
+        "SDK_MACHINE_DISCOVERY_AND_CANONICAL_MANIFEST_SUBMISSION",
+        "REMOVE_REMAINING_HOST_BOUND_PORTABILITY_SURFACES"
+      ]
     },
     {
       "task_id": "SVORG-MESH-LOCATION-BINDING-001",
