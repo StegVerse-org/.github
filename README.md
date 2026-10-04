@@ -141,4 +141,4 @@ The external-framework helper currently reports `SDK_LOCAL_MANIFEST_HANDOFF`; it
 
 ### ICV v1 Site propagation verification
 
-`ICV-V1-SITE-PROPAGATION-VERIFICATION-001` (issue #64) verifies the published ICV `v1.0.0` release at `9b691cfaac076b565153c5a1c0f6c4072b8b044e` against the existing `StegVerse-Labs/Site` public commercial mirror. Site is the only demonstrated destination; no propagation work is inferred for Publisher, admissibility-wiki, or stegguardian-wiki without an explicit contract. See `docs/ICV_V1_SITE_PROPAGATION_VERIFICATION_MIRROR_HANDOFF.md`.
+`ICV-V1-SITE-PROPAGATION-VERIFICATION-001` (issue #64) completed with `NO_PROPAGATION_REQUIRED`: it verified the published ICV `v1.0.0` release at `9b691cfaac076b565153c5a1c0f6c4072b8b044e` against the existing `StegVerse-Labs/Site` public commercial mirror. Site is the only demonstrated destination; no propagation work is inferred for Publisher, admissibility-wiki, or stegguardian-wiki without an explicit contract. See `docs/ICV_V1_SITE_PROPAGATION_VERIFICATION_MIRROR_HANDOFF.md`.
