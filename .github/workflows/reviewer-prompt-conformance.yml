@@ -1,0 +1,112 @@
+name: Validate Reviewer Prompt Conformance
+
+# The reviewer prompts are the artifact an outside party receives, and until
+# this workflow existed no path filter matched a documentation change. A
+# rename, a moved entry point or a dropped subcommand could break a documented
+# command while the repository stayed green, and the reviewer would be the one
+# to discover it. The prompts therefore trigger this job themselves, alongside
+# every surface whose behaviour they describe.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/EXTERNAL_REVIEWER_TASK_REGISTRY_PROMPT.md'
+      - 'docs/EXTERNAL_REVIEWER_NODE_STANDING_PROMPT.md'
+      - 'docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json'
+      - 'org-boundary/runtime/node_standing.py'
+      - 'orchestration/**'
+      - 'data/organization-role-runtime-reality-deployment.json'
+      - 'tests/test_task_registry.py'
+      - 'tests/test_task_registry_schema_conformance.py'
+      - 'tests/test_node_standing_ingress.py'
+      - 'tests/test_boundary_processing_selection.py'
+      - 'tests/test_reviewer_prompt_conformance.py'
+      - '.github/workflows/reviewer-prompt-conformance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/EXTERNAL_REVIEWER_TASK_REGISTRY_PROMPT.md'
+      - 'docs/EXTERNAL_REVIEWER_NODE_STANDING_PROMPT.md'
+      - 'docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json'
+      - 'org-boundary/runtime/node_standing.py'
+      - 'orchestration/**'
+      - 'data/organization-role-runtime-reality-deployment.json'
+      - 'tests/test_task_registry.py'
+      - 'tests/test_task_registry_schema_conformance.py'
+      - 'tests/test_node_standing_ingress.py'
+      - 'tests/test_boundary_processing_selection.py'
+      - 'tests/test_reviewer_prompt_conformance.py'
+      - '.github/workflows/reviewer-prompt-conformance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-reviewer-prompts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # One prompt documents a suite that needs jsonschema, and the prompt says
+      # so. Installing it here means the documented command is checked as
+      # written rather than skipped, which is the point of the job.
+      - name: Install the one dependency a documented command needs
+        run: python -m pip install --quiet jsonschema
+
+      - name: Every documented command still runs
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/prompt-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/prompt-org-ledger
+        run: python -m unittest tests.test_reviewer_prompt_conformance -v
+
+      - name: A broken documented command fails here, not in a reviewer's hands
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/injection-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/injection-org-ledger
+        run: |
+          python - <<'PY'
+          import pathlib, shutil, subprocess, sys, tempfile
+
+          # A conformance job that cannot fail proves nothing, so it is made to
+          # fail on purpose: a documented entry-point subcommand is renamed in
+          # a scratch copy and the suite must notice.
+          source = pathlib.Path("org-boundary/runtime/node_standing.py")
+          backup = pathlib.Path(tempfile.mkdtemp()) / "node_standing.py"
+          shutil.copy2(source, backup)
+          try:
+              text = source.read_text(encoding="utf-8")
+              broken = text.replace('sub.add_parser("readiness"',
+                                    'sub.add_parser("readiness_renamed"', 1)
+              assert broken != text, "the injection no longer matches; revisit it"
+              source.write_text(broken, encoding="utf-8")
+              result = subprocess.run(
+                  [sys.executable, "-m", "unittest",
+                   "tests.test_reviewer_prompt_conformance"],
+                  capture_output=True, text=True)
+              assert result.returncode != 0, (
+                  "a renamed documented subcommand did not fail the suite; "
+                  "the conformance check is not holding the prompts")
+              assert "documents a command that fails" in result.stderr, result.stderr
+              print("INJECTION_CAUGHT=PASS a renamed documented subcommand fails the suite")
+          finally:
+              shutil.copy2(backup, source)
+
+          # And the restored tree passes again, so the proof left nothing behind.
+          clean = subprocess.run(
+              [sys.executable, "-m", "unittest",
+               "tests.test_reviewer_prompt_conformance"],
+              capture_output=True, text=True)
+          assert clean.returncode == 0, clean.stderr
+          print("RESTORED=PASS the suite is green again")
+          PY
+
+      - name: Declare what this job does and does not hold
+        run: |
+          echo 'holds=every command block in the reviewer prompts, run in a tracked-files-only checkout'
+          echo 'does_not_hold=whether the prompts ask the right questions'
+          echo 'injection_proof=a renamed documented subcommand must fail this job'
