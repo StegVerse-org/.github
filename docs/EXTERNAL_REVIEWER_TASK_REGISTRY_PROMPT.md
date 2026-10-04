@@ -89,8 +89,19 @@ violate the claim and see whether anything notices.
    `orchestration/schemas/task-registry.schema.json`: the task item declares
    `additionalProperties: false` and no `assignee`, `agent`, `model`, `owner`,
    `session` or `worker_claim`. Then try to add one — give a task an
-   `assignee` and re-run the schema conformance suite. Decide for yourself
-   whether the refusal is structural or incidental.
+   `assignee` and re-run **both** suites, because the refusal has two layers
+   and the weaker one is the only one that needs a dependency:
+
+    python3 -m unittest tests.test_task_registry -v
+    python3 -m unittest tests.test_task_registry_schema_conformance -v
+
+   The schema suite refuses it as `not in the schema: ['assignee']`, which is
+   `additionalProperties` doing real work. The standard-library suite refuses it
+   independently, so entity neutrality survives `jsonschema` not being
+   installed. An earlier revision of this prompt named only the schema suite,
+   which understated the property; the first external reviewer found the second
+   layer anyway and said so. Decide for yourself whether the refusal is
+   structural or incidental.
 
 2. **Work intent named anywhere in the organization resolves in this registry.**
    This is the half that makes it an authority rather than a list: a registry
@@ -120,6 +131,16 @@ you should find a declaration and its test, and **no claim surface**. So the
 declared invariant has two halves and this organization holds one of them.
 Whether `in_review` is the right status for that is a judgement, and it is
 yours rather than mine.
+
+One reviewer has now answered it, and the answer is recorded in
+`EXTERNAL_REVIEW_RESULT_TASK_REGISTRY_001.md` rather than folded into this
+prompt as settled: a single status covering two halves "flatters one and insults
+the other", so the halves should be stated separately as **enforced** for
+work-intent authority and **not_started** for claim authority, on the ground
+that a thing with no surface is not in review but absent. That is one
+reviewer's judgement, which is evidence and not canon. The question above stays
+open for the next one, and a second reviewer disagreeing with the first is a
+result worth having.
 
 Report where a declaration is made but not enforced, and equally where an
 enforcement exists that nothing declares. That failure mode — an invariant
