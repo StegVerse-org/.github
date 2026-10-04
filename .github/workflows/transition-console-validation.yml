@@ -101,14 +101,17 @@ jobs:
           assert run["store_kind"] == "POSIX_FILESYSTEM", run
           print("CONSOLE_RUN_MODE=" + run["run_mode"], "| portable", run["mesh_portable"])
 
-          # And no mode claims a networked production reach.
+          # Every mode declares which axis it reports, and none answers for
+          # the route axis that decides local-versus-production for a caller.
           for root, env in ((mesh, {}), (None, {"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/m"}),
                             (None, {})):
               mode = console.run_mode(root=root, env=env)
-              assert mode["reaches_a_production_ecosystem_over_a_network"] is False, mode
-              assert mode["network_transport_implemented"] is False, mode
-              print("CONSOLE_MODE=" + mode["run_mode"],
-                    "reaches_production_over_network=False")
+              assert mode["axis"] == "MESH_MEDIUM", mode
+              assert mode["route_axis_is_not_resolved_here"] is True, mode
+              assert mode["route_axis_field"] == "routing_surface", mode
+              assert "reaches_a_production_ecosystem_over_a_network" not in mode, mode
+              print("CONSOLE_MODE=" + mode["run_mode"], "axis=" + mode["axis"],
+                    "route_axis_owner=" + mode["route_axis_owner"])
 
           # What would change it is a task this registry carries, not prose.
           registry = json.loads(Path("orchestration/task-registry.json").read_text())
@@ -127,4 +130,5 @@ jobs:
           echo 'authority_effect=NONE_CONSOLE_ONLY; ledger_unchanged=true'
           echo 'live=AT_THE_EPOCH_THE_READER_SAMPLES; is_a_pushed_stream=false'
           echo 'run_modes=LOCAL_ISOLATED,SHARED_MEDIUM_DECLARED,LOCAL_HOST_DERIVED'
-          echo 'network_transport_implemented=false; store_kind=POSIX_FILESYSTEM'
+          echo 'axis=MESH_MEDIUM; store_kind=POSIX_FILESYSTEM'
+          echo 'route_axis=routing_surface owned by StegVerse-SDK/stegverse/route_resolution.py'

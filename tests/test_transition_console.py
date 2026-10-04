@@ -93,19 +93,46 @@ class RunModeTests(unittest.TestCase):
                 self.assertIn(mode, TC._MODE_MEANS)
 
 
-class NoNetworkedModeTests(unittest.TestCase):
-    """The distinction that was missing: there is no production-over-network run."""
+class MeshAxisTests(unittest.TestCase):
+    """This console reports the mesh axis and must not answer for the route axis.
+
+    An earlier revision reported `reaches_a_production_ecosystem_over_a_network:
+    false` with the mesh store kind as the reason, which generalised a fact
+    about this organization's frame medium into a claim about the ecosystem.
+    The SDK publishes a `CANONICAL_PRODUCTION` routing surface whose runtime
+    binding is installed; what is unproven there is an authenticated crossing,
+    which is not the same as a path that does not exist.
+    """
 
     def modes(self):
         return [TC.run_mode(root=Path("/tmp/m"), env={}),
                 TC.run_mode(root=None, env={"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/m"}),
                 TC.run_mode(root=None, env={})]
 
-    def test_no_mode_claims_to_reach_a_production_ecosystem(self):
+    def test_every_mode_declares_which_axis_it_reports(self):
         for resolved in self.modes():
             with self.subTest(mode=resolved["run_mode"]):
-                self.assertFalse(resolved["reaches_a_production_ecosystem_over_a_network"])
-                self.assertFalse(resolved["network_transport_implemented"])
+                self.assertEqual(resolved["axis"], "MESH_MEDIUM")
+                self.assertTrue(resolved["route_axis_is_not_resolved_here"])
+
+    def test_no_mode_makes_a_claim_about_the_ecosystem_at_large(self):
+        # The retired overreach must not come back under its old name.
+        for resolved in self.modes():
+            with self.subTest(mode=resolved["run_mode"]):
+                self.assertNotIn("reaches_a_production_ecosystem_over_a_network", resolved)
+                self.assertNotIn("network_transport_implemented", resolved)
+
+    def test_the_mesh_claim_is_scoped_to_this_organizations_medium(self):
+        resolved = TC.run_mode(root=Path("/tmp/m"), env={})
+        self.assertTrue(resolved["mesh_medium_is_a_shared_filesystem_or_nothing"])
+        self.assertTrue(resolved["two_parties_sharing_no_filesystem_cannot_share_this_mesh"])
+        self.assertIn("this organization's mesh store kind", resolved["why"])
+
+    def test_the_route_axis_is_cited_to_the_surface_that_owns_it(self):
+        resolved = TC.run_mode(root=Path("/tmp/m"), env={})
+        self.assertEqual(resolved["route_axis_field"], "routing_surface")
+        self.assertIn("route_resolution.py", resolved["route_axis_owner"])
+        self.assertIn("StegVerse-SDK", resolved["route_axis_owner"])
 
     def test_the_reason_is_the_store_kind_rather_than_an_opinion(self):
         resolved = TC.run_mode(root=Path("/tmp/m"), env={})

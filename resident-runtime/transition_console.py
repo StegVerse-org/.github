@@ -33,19 +33,28 @@ is, and only a supplied root is considered portable:
 so the console derives the run mode from that rather than declaring a second
 vocabulary for it.
 
-**There is no networked mode.** The only store kind in this ecosystem is
-`POSIX_FILESYSTEM`. A mesh is a filesystem medium, so two parties who share no
-filesystem cannot share a mesh, and no amount of environment pointing changes
-that. A run therefore never reaches a production ecosystem over a network, and
-the console says so on every run with the reason rather than leaving a reader
-to assume otherwise. The roadmap item that would change it -- appenders on
-separate substrates producing one chain -- is recorded as blocked, pending an
-owner decision about what a lost compare-and-swap should leave behind.
+**This is the mesh axis, and only the mesh axis.** This organization's mesh
+store kind is `POSIX_FILESYSTEM`, so the medium is a filesystem and two
+parties who share no filesystem cannot share a mesh. The roadmap item that
+would change it -- appenders on separate substrates producing one chain -- is
+recorded as blocked, pending an owner decision about what a lost
+compare-and-swap should leave behind.
 
-That is the whole honest answer to "local download and run locally, versus
-local download with network capability against the production ecosystem": the
-first is what exists, the second is not implemented, and the difference is
-measurable rather than assumed.
+An earlier revision of this module turned that into
+`reaches_a_production_ecosystem_over_a_network: false` and offered the store
+kind as the reason, which generalised a fact about one organization's frame
+medium into a claim about the ecosystem. It is not one. The SDK publishes a
+`CANONICAL_PRODUCTION` routing surface whose runtime binding is installed;
+what is unproven there is an *authenticated* crossing, and a path that is not
+proven authentic is not the same as a path that does not exist. The correction
+matters because the two readings lead a reviewer to opposite conclusions.
+
+**Local versus production for an SDK caller is decided on the route axis, not
+here.** A manifest declares a route, the route declares a `routing_surface`,
+and `stegverse/route_resolution.py` refuses substitution and grants no
+authority by selection. This console cites that surface rather than answering
+for it; a second vocabulary over an axis that already has one would be the
+defect this ecosystem keeps correcting.
 """
 from __future__ import annotations
 
@@ -128,13 +137,28 @@ def run_mode(root: Path | None = None, env: Mapping[str, str] | None = None) -> 
         "mesh_provenance": provenance["mesh_provenance"],
         "mesh_portable": provenance["mesh_portable"],
         "store_kind": provenance["store_kind"],
-        # The distinction that was never established, stated on every run.
-        "network_transport_implemented": False,
-        "reaches_a_production_ecosystem_over_a_network": False,
-        "why": ("the only store kind in this ecosystem is " + provenance["store_kind"]
-                + ", so a mesh is a filesystem medium and parties sharing no "
-                  "filesystem cannot share one"),
+        # This is the mesh axis. It is not the route axis, and an earlier
+        # revision of this module conflated them -- it reported
+        # `reaches_a_production_ecosystem_over_a_network: false` and gave the
+        # mesh store kind as the reason, which generalised a fact about this
+        # organization's frame medium into a claim about the ecosystem. The
+        # SDK publishes a `CANONICAL_PRODUCTION` routing surface with its
+        # runtime installed; what is unproven there is an authenticated
+        # crossing, which is a different statement from a path not existing.
+        "axis": "MESH_MEDIUM",
+        "mesh_medium_is_a_shared_filesystem_or_nothing": True,
+        "two_parties_sharing_no_filesystem_cannot_share_this_mesh": True,
+        "why": ("this organization's mesh store kind is " + provenance["store_kind"]
+                + ", so the medium is a filesystem and reach over it is reach "
+                  "to that filesystem"),
         "changing_this_is_recorded_as": "SVORG-LEDGER-APPEND-SUBSTRATE-001",
+        # The other axis, cited to the surface that owns it rather than
+        # restated or answered here. A manifest declares a route, the route
+        # declares a routing surface, and that is where local-versus-production
+        # is decided for an SDK caller.
+        "route_axis_owner": "StegVerse-org/StegVerse-SDK:stegverse/route_resolution.py",
+        "route_axis_field": "routing_surface",
+        "route_axis_is_not_resolved_here": True,
         "authority_effect": AUTHORITY_EFFECT,
     }
 
@@ -208,9 +232,11 @@ def _main(argv: list[str] | None = None) -> int:
     print("           provenance " + run["mesh_provenance"]
           + " | portable " + str(run["mesh_portable"])
           + " | kind " + run["store_kind"])
-    print("reaches a production ecosystem over a network: "
-          + str(run["reaches_a_production_ecosystem_over_a_network"]))
+    print("axis     : " + run["axis"] + " -- this reports where the mesh is,")
+    print("           not which route a manifest declared")
     print("           " + run["why"])
+    print("route    : local-versus-production for an SDK caller is decided by")
+    print("           " + run["route_axis_field"] + ", owned by " + run["route_axis_owner"])
     print('live     : ordering ' + rendered["live"]["ordering"]
           + "; visible " + rendered["live"]["becomes_visible"])
     print("")
