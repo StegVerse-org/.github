@@ -173,13 +173,14 @@
       "task_id": "ICV-V1-SITE-PROPAGATION-VERIFICATION-001",
       "issue": 64,
       "title": "Verify ICV v1.0.0 propagation to Site public commercial mirror",
-      "status": "proposed",
+      "status": "complete",
       "workstream": "icv-release-propagation",
       "depends_on": [],
       "required_evidence": [
         "Infrastructure-Continuity-Ventures/.github v1.0.0 resolves exact commit 9b691cfaac076b565153c5a1c0f6c4072b8b044e",
         "released public-facing ICV catalog/request semantics compared against StegVerse-Labs/Site mirror",
-        "NO_PROPAGATION_REQUIRED evidence or exact-head Site propagation and served-body verification"
+        "NO_PROPAGATION_REQUIRED evidence or exact-head Site propagation and served-body verification",
+        "NO_PROPAGATION_REQUIRED: v1.0.0 public catalog/maturity/discovery-request/purchase-path semantics are already represented by current Site main"
       ],
       "outputs": [
         "StegVerse-Labs/Site/docs/ICV_PUBLIC_COMMERCIAL_CATALOG_MIRROR_HANDOFF.md"
@@ -188,7 +189,8 @@
       "activation_condition": "ICV v1.0.0 is published at exact release commit and Site remains an explicit ICV public commercial mirror",
       "destinations": [
         "StegVerse-Labs/Site"
-      ]
+      ],
+      "unresolved_obligations": []
     }
   ]
 }
