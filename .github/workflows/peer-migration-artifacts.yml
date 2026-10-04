@@ -1,0 +1,54 @@
+name: Validate Peer Migration Artifacts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/migrations/**'
+      - 'docs/PEER_KERNEL_GENERATION_ADMISSION_MIGRATION_002.md'
+      - 'org-boundary/runtime/node_standing.py'
+      - 'docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json'
+      - 'tests/test_peer_migration_artifacts.py'
+      - '.github/workflows/peer-migration-artifacts.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/migrations/**'
+      - 'docs/PEER_KERNEL_GENERATION_ADMISSION_MIGRATION_002.md'
+      - 'org-boundary/runtime/node_standing.py'
+      - 'docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json'
+      - 'tests/test_peer_migration_artifacts.py'
+      - '.github/workflows/peer-migration-artifacts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-peer-migration-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate the recorded patches
+        run: python -m unittest tests.test_peer_migration_artifacts -v
+
+      - name: Each patch is a unified diff git itself can read
+        run: |
+          # `git apply --check` needs the peer's tree and cannot run here, but
+          # a malformed diff is catchable without one: numstat parses the patch
+          # and reports its paths, and fails on a corrupt hunk header.
+          for patch in docs/migrations/*.patch; do
+            echo "== $patch"
+            git apply --numstat "$patch"
+          done
+
+      - name: Declare what a recorded patch is not
+        run: |
+          echo 'authority_effect=NONE_MIGRATION_ARTIFACT_ONLY'
+          echo 'patch_recorded_here_is_applied=false'
+          echo 'peer_default_branch_runs_the_gate=false'
+          echo 'standing_admitted_is_origin_authenticated=false'
