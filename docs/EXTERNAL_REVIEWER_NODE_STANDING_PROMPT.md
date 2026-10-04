@@ -1,9 +1,30 @@
 # External reviewer prompt — canonical node standing
 
 A purpose-specific prompt for an external reviewer who will use an LLM to
-review the in-review manifest invariant. It is not a general-purpose
-introduction to the ecosystem and should not be published as one: a reviewer
-with a different purpose or a different access type needs a different prompt.
+review `CANONICAL-NODE-INGRESS-CONTRACT-001`, the canonical node standing
+contract. It is not a general-purpose introduction to the ecosystem and should
+not be published as one: a reviewer with a different purpose or a different
+access type needs a different prompt.
+
+## Which invariant this is, and which it is not
+
+An earlier revision described this prompt's subject as "the in-review manifest
+invariant". That name is not uniquely this document's.
+`StegVerse-Engineering-Assessment` carries its own register of nine instances,
+eight `enforced` and one `in_review`, and the one it lists as open is a
+different thing entirely:
+
+    declared: the Task Registry is work-intent authority
+
+A reviewer asking for "the one still in_review" means that one, and
+`EXTERNAL_REVIEWER_TASK_REGISTRY_PROMPT.md` beside this file is the prompt for
+it. The contract reviewed *here* is separately under review -- its own
+`status` is `DRAFT_FOR_REVIEW` with fourteen of sixteen `current_proof_boundary`
+rows `NOT_PROVEN` -- so both are genuinely in review, which is precisely why
+the shared name was able to send a reader to the wrong surface. The ambiguity
+is recorded rather than quietly renamed, because a name that two documents
+answer to is the same defect class in a document that this prompt asks a
+reviewer to hunt in code.
 
 Why it reads this way. The point of `CANONICAL-NODE-INGRESS-CONTRACT-001` is
 that provenance becomes machine-verifiable rather than resolved by documents we
