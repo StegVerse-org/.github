@@ -50,6 +50,27 @@ Four things it deliberately does not do.
   An observer can prove the sequence it received describes the baseline it was
   given, rather than some later state the window quietly moved to.
 
+The window receipts its own dispositions. Opening one and closing one are
+dispositions of an intended action, and the first revision of this module said
+so in the close record's own
+`close_is_a_disposition_not_an_observed_transition` field and then wrote
+nothing anywhere -- a declaration made and not held, inside the plane built to
+catch exactly that. `OBSERVATION_WINDOW_OPENED` and
+`OBSERVATION_WINDOW_CLOSED` now append to the repository ledger, hash-linked
+to what came before, so an observation is reconstructable rather than merely
+asserted. A window opened from the carrier receipts reproducibly: two emitters
+of the same window at the same epoch produce the same digest, which is the
+property that lets a reader check the record instead of believing it. A quiet
+window is recorded too, because the disposition occurred -- and its receipt
+carries the zero as evidence of the window rather than as a transition in the
+observed scope.
+
+Recording is explicit and has no default, so an observation nobody can
+reconstruct cannot happen because nobody chose. An unrecorded window says
+`observation_recorded: false` and
+`unrecorded_observation_is_not_reconstructable_evidence: true`, rather than
+reading the same as a recorded one.
+
 Ordering is the contract's: `OSCILLATOR_HEARTBEAT_EPOCH_ONLY`, and
 `wall_clock_ordering_permitted` is false. An epoch supplied from the carrier is
 reproducible; an epoch sampled from a host clock is not, and the kernel's
@@ -115,6 +136,16 @@ def _module(name: str, relative: str):
 kernel = _module("org_kernel", "org-kernel/kernel.py")
 lineage = _module("receipt_lineage_projection",
                   "resident-runtime/receipt_lineage_projection.py")
+repository_ledger = _module("repo_transition_emit",
+                            ".stegverse/transition-ledger/emit.py")
+
+OPENED_CLASS = "OBSERVATION_WINDOW_OPENED"
+CLOSED_CLASS = "OBSERVATION_WINDOW_CLOSED"
+
+#: The baseline digest a window starts from when the scope it watches is empty.
+#: An empty baseline is a real starting state and gets a real predecessor,
+#: rather than a null that would make the receipt chain's first link unreadable.
+EMPTY_BASELINE = kernel.sha({"observation_window_baseline": "EMPTY_IN_DECLARED_SCOPE"})
 
 #: The scope vocabulary is the lineage projection's own event types. A second
 #: taxonomy here would be a second authority on what a transition is.
@@ -305,9 +336,86 @@ def close(snapshot: Mapping[str, Any], *, epoch: int, observed_count: int,
     }
 
 
+def _transition_id(prefix: str, snapshot_id: str) -> str:
+    return prefix + "-" + snapshot_id.split(":", 1)[-1][:16]
+
+
+def record_open(snapshot: Mapping[str, Any]) -> dict[str, Any]:
+    """Receipt the opening of a window.
+
+    Opening one is the disposition of an intended action -- an observer
+    declared a scope, a source and a countdown, and took a baseline against
+    them -- so it is recorded, like any other disposition. The window was
+    previously a projection that called its own close a disposition in the
+    close record's own field and then wrote nothing anywhere: a declaration
+    this module made and did not hold, inside the plane built to catch exactly
+    that.
+
+    The epoch is the snapshot's own, so a window opened from the carrier
+    receipts reproducibly: the same window at the same epoch yields the same
+    digest, which is the property that lets a reader check the record rather
+    than believe it.
+    """
+    return repository_ledger.append(
+        _transition_id("OBSERVATION-WINDOW-OPENED", snapshot["snapshot_id"]),
+        OPENED_CLASS,
+        snapshot["baseline_head_payload_hash"] or EMPTY_BASELINE,
+        snapshot["snapshot_id"],
+        {"scope": snapshot["scope"],
+         "observed_through": snapshot["observed_through"],
+         "countdown_hb": snapshot["countdown_hb"],
+         "opened_at_epoch": snapshot["opened_at_epoch"],
+         "closes_at_epoch": snapshot["closes_at_epoch"],
+         "baseline_record_count": snapshot["baseline_record_count"],
+         "baseline_head_receipt_id": snapshot["baseline_head_receipt_id"],
+         "epoch_derived_from_clock": snapshot["epoch_derived_from_clock"],
+         **delivery()},
+        "NONE", hb_epoch=snapshot["opened_at_epoch"])
+
+
+def record_close(snapshot: Mapping[str, Any], closed: Mapping[str, Any],
+                 resolution: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """Receipt the closing of a window, including one that observed nothing.
+
+    A quiet window is recorded for the same reason a refusal is: the
+    disposition occurred. What it must not do is record the zero as though it
+    were a transition in the observed scope, so the close receipt carries the
+    count as evidence of the window and keeps the statement that a zero is not
+    proof none occurred.
+
+    `resolution` carries the sampling the observer actually performed. It is
+    evidence rather than decoration: a reader reconstructing this observation
+    needs to know where the samples fell to know what the window could have
+    seen.
+    """
+    evidence = {
+        "observed_count": closed["observed_count"],
+        "countdown_reached_zero": closed["countdown_reached_zero"],
+        "remaining_hb": closed["remaining_hb"],
+        "scope": closed["scope"],
+        "observed_through": closed["observed_through"],
+        "opened_at_epoch": closed["opened_at_epoch"],
+        "closed_at_epoch": closed["closed_at_epoch"],
+        "final_cursor": closed["final_cursor"],
+        "epoch_derived_from_clock": closed["epoch_derived_from_clock"],
+        "no_observed_transition_is_not_proof_none_occurred": True,
+        "close_is_a_disposition_not_an_observed_transition": True,
+        **delivery(),
+    }
+    if resolution is not None:
+        evidence["sampling"] = dict(resolution)
+    return repository_ledger.append(
+        _transition_id("OBSERVATION-WINDOW-CLOSED", snapshot["snapshot_id"]),
+        CLOSED_CLASS,
+        snapshot["snapshot_id"],
+        kernel.sha(evidence),
+        evidence,
+        "NONE", hb_epoch=closed["closed_at_epoch"])
+
+
 def follow(snapshot: Mapping[str, Any],
            supplier: Callable[[int], Sequence[Mapping[str, Any]]],
-           epochs: Sequence[int]) -> dict[str, Any]:
+           epochs: Sequence[int], *, record: bool) -> dict[str, Any]:
     """Run the window across the epochs the observer actually sampled.
 
     `supplier` is the observer's own read of the chain at an epoch. Threading
@@ -320,6 +428,12 @@ def follow(snapshot: Mapping[str, Any],
     be told what to infer from it -- the misreading this guards against comes
     from being told the observation was continuous, or from not being told how
     it worked at all.
+
+    `record` has no default on purpose. An observation plane whose windows
+    leave no receipt is evidence that cannot be reconstructed, and a default
+    would let that happen without anyone choosing it. Made explicit, an
+    unrecorded window is a declared choice, and the result says which it was
+    rather than looking the same either way.
     """
     sampled = [int(value) for value in epochs]
     if sampled != sorted(sampled):
@@ -335,9 +449,37 @@ def follow(snapshot: Mapping[str, Any],
         reports.extend(observation["reports"])
 
     last = sampled[-1] if sampled else snapshot["opened_at_epoch"]
+    closed = close(snapshot, epoch=last, observed_count=len(reports), cursor=cursor)
+    resolution = {
+        "sampled_epochs": sampled,
+        "sample_count": len(sampled),
+        "sample_gaps_hb": [later - earlier for earlier, later in zip(sampled, sampled[1:])],
+        "first_sample_gap_from_open_hb": (sampled[0] - snapshot["opened_at_epoch"]
+                                          if sampled else 0),
+    }
+    if record:
+        opened_receipt = record_open(snapshot)
+        closed_receipt = record_close(snapshot, closed, resolution)
+        recording = {
+            "observation_recorded": True,
+            "opened_receipt_sha256": opened_receipt["receipt_sha256"],
+            "closed_receipt_sha256": closed_receipt["receipt_sha256"],
+            "recorded_transition_classes": [OPENED_CLASS, CLOSED_CLASS],
+        }
+    else:
+        # Said plainly, because an observation nobody can reconstruct must not
+        # read the same as one anybody can.
+        recording = {
+            "observation_recorded": False,
+            "opened_receipt_sha256": None,
+            "closed_receipt_sha256": None,
+            "this_observation_left_no_receipt": True,
+            "unrecorded_observation_is_not_reconstructable_evidence": True,
+        }
     return {
         "schema": WINDOW_SCHEMA,
         "snapshot": dict(snapshot),
+        **recording,
         "sampled_epochs": sampled,
         "sample_count": len(sampled),
         # The resolution of the observation, given as the gaps themselves.
@@ -352,6 +494,6 @@ def follow(snapshot: Mapping[str, Any],
         "observations": observations,
         "reports": reports,
         "observed_count": len(reports),
-        "close": close(snapshot, epoch=last, observed_count=len(reports), cursor=cursor),
+        "close": closed,
         "authority_effect": AUTHORITY_EFFECT,
     }

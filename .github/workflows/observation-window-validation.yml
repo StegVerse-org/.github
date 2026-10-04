@@ -144,13 +144,45 @@ jobs:
           quiet_chain = lineage.repository_chain()
           quiet = window.open_window(quiet_chain, countdown_hb=10, epoch=6000,
                                      observed_through="ci:runner-temp-ledger")
-          run = window.follow(quiet, lambda epoch: quiet_chain, [6005, 6010])
+          run = window.follow(quiet, lambda epoch: quiet_chain, [6005, 6010],
+                              record=False)
           assert run["observed_count"] == 0, run
           assert run["sampled_epochs"] == [6005, 6010], run
           assert run["sample_gaps_hb"] == [5], run
           assert run["first_sample_gap_from_open_hb"] == 5, run
           assert run["close"]["no_observed_transition_is_not_proof_none_occurred"] is True
+          assert run["observation_recorded"] is False, run
+          assert run["this_observation_left_no_receipt"] is True, run
           print("WINDOW_QUIET=PASS zero observed, zero not presented as proof")
+
+          # The plane receipts its own dispositions against the real ledger
+          # this job already writes to, and they reconstruct through the
+          # lineage projection like any other transition.
+          before = len(lineage.repository_chain())
+          recorded_snapshot = window.open_window(
+              lineage.repository_chain(), countdown_hb=300, epoch=7000,
+              observed_through="ci:runner-temp-ledger")
+          crossing(4)
+          recorded = window.follow(recorded_snapshot,
+                                   lambda epoch: lineage.repository_chain(),
+                                   [7100], record=True)
+          assert recorded["observation_recorded"] is True, recorded
+          projected = lineage.project(lineage.repository_chain())
+          assert len(projected) > before, "recording appended nothing"
+          classes = [r["transition_class"] for r in lineage.repository_chain()]
+          assert window.OPENED_CLASS in classes, classes
+          assert window.CLOSED_CLASS in classes, classes
+          by_class = {r["transition_class"]: r for r in lineage.repository_chain()}
+          assert by_class[window.OPENED_CLASS]["successor_state_sha256"] == \
+              recorded_snapshot["snapshot_id"]
+          assert by_class[window.CLOSED_CLASS]["predecessor_state_sha256"] == \
+              recorded_snapshot["snapshot_id"]
+          for name in (window.OPENED_CLASS, window.CLOSED_CLASS):
+              receipt = by_class[name]
+              assert receipt["authority_effect"] == "NONE", receipt
+              assert receipt["hb_reference"]["derived_from_clock"] is False, receipt
+          print("WINDOW_RECORDED=PASS", window.OPENED_CLASS, "and",
+                window.CLOSED_CLASS, "on the chain, reconstructing")
           PY
 
       - name: Declare what the window does not do
@@ -160,3 +192,5 @@ jobs:
           echo 'canonical_delivery_blocked_by=external_interlock_intr:DEFERRED_AFTER_TESTS_5_AND_6'
           echo 'ordering=OSCILLATOR_HEARTBEAT_EPOCH_ONLY; wall_clock_ordering=false'
           echo 'zero_observed_is_not_proof_none_occurred=true; resolution=sample_gaps_hb'
+          echo 'window_dispositions_receipted=OBSERVATION_WINDOW_OPENED,OBSERVATION_WINDOW_CLOSED'
+          echo 'recording_is_explicit=true; unrecorded_window_declares_it_left_no_receipt'
