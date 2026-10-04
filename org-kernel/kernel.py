@@ -546,12 +546,21 @@ def handle_control_message(root:Path, packet:dict[str,Any], registry:dict[str,An
         result["response_acknowledged"]=True
     return result
 
+#: The request classes this boundary answers, and the acknowledgement each is
+#: answered with. A crossing declaring anything else is consumed and receipted
+#: and never answered, so its closure is not pending -- it is unreachable. The
+#: mapping is named here because three surfaces read it: the responder that
+#: decides whether to answer, the response builder that labels the answer, and
+#: the egress boundary that refuses a crossing it can see will never close.
+RESPONDED_REQUEST_CLASSES = {
+    "ecosystem.monitor.request": "ecosystem.monitor.response",
+    "ecosystem.work.request": "ecosystem.work.ack",
+    "ecosystem.communication": "ecosystem.communication.ack",
+}
+
+
 def response_message_class(request_class:str|None)->str:
-    return {
-      "ecosystem.monitor.request":"ecosystem.monitor.response",
-      "ecosystem.work.request":"ecosystem.work.ack",
-      "ecosystem.communication":"ecosystem.communication.ack"
-    }.get(request_class or "","ecosystem.communication.ack")
+    return RESPONDED_REQUEST_CLASSES.get(request_class or "","ecosystem.communication.ack")
 
 def build_control_response(request_packet:dict[str,Any], execution_result:dict[str,Any])->dict[str,Any]:
     req_payload=request_packet.get("payload") or {}
@@ -618,8 +627,7 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, seen:set[st
         message_class=payload.get("message_class")
         result=ingest_frame(repo_root,item["frame"])
         response_publication=None
-        if result.get("status")=="CONSUMED" and message_class in {
-            "ecosystem.monitor.request","ecosystem.work.request","ecosystem.communication"}:
+        if result.get("status")=="CONSUMED" and message_class in RESPONDED_REQUEST_CLASSES:
             response=build_control_response(packet,result["execution_result"])
             response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns)
         elif result.get("status")=="CONSUMED" and not payload.get("response_to_packet_id"):

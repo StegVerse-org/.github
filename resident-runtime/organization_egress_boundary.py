@@ -267,6 +267,40 @@ def resolve_destination(organization: str, *, capability: str | None = None,
         "organization not in org-boundary/registry/federation.json: " + str(organization))
 
 
+def closability_refusal(payload: Mapping[str, Any]) -> tuple[str, str] | None:
+    """Why this payload's crossing could never close, or None if it can.
+
+    `close` requires a response whose `message_class` is an acknowledgement,
+    and the responder answers only the request classes named in the transport
+    profile's `RESPONDED_REQUEST_CLASSES`. A payload declaring anything else is
+    still published, consumed and receipted by the peer -- and never answered.
+    Its closure is not pending, which is a crossing still in flight; it is
+    unreachable, which is a different state that `PENDING` cannot express.
+
+    `close` also correlates a response by `communication_id`, read from this
+    payload and from nowhere else. Without one there is nothing to correlate,
+    so even an answered crossing could not be closed.
+
+    Both conditions are readable here, in this organization's own payload,
+    which is why they are refused rather than recorded. The peer's serving of a
+    capability is not readable here and is recorded instead -- the line between
+    the two is what is determinable locally, not how important it is.
+    """
+    declared = payload.get("message_class")
+    if declared not in kernel.RESPONDED_REQUEST_CLASSES:
+        return ("PAYLOAD_DECLARES_A_REQUEST_CLASS_THE_BOUNDARY_ANSWERS",
+                "message_class " + repr(declared) + " is answered by no "
+                "acknowledgement, so this crossing could be consumed and never "
+                "closed; the profile answers "
+                + ", ".join(sorted(kernel.RESPONDED_REQUEST_CLASSES)))
+    identifier = payload.get("communication_id")
+    if not isinstance(identifier, str) or not identifier.strip():
+        return ("PAYLOAD_CARRIES_THE_COMMUNICATION_ID_CLOSURE_CORRELATES_ON",
+                "closure collects a response by communication_id and this "
+                "payload declares " + repr(identifier))
+    return None
+
+
 def _attestation(attested: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """What this boundary can say about who sent the packet.
 
@@ -460,6 +494,9 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
     """
     origin = this_organization(root)
     try:
+        unclosable = closability_refusal(payload or {})
+        if unclosable is not None:
+            raise EgressRefused(*unclosable)
         resolved = resolve_destination(destination_organization, capability=capability,
                                        root=root)
         packet = kernel.build_packet(

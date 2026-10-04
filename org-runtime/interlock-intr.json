@@ -158,7 +158,25 @@
       "reconstruction_proves_the_far_side_persisted_its_chain": false,
       "closure_requires_this_organizations_own_emission_record": true
     },
-    "emitting_operation_rule": "OUTBOUND_ORGANIZATION_CROSSINGS_RESOLVE_ONE_EMITTING_OPERATION_OWNED_HERE"
+    "emitting_operation_rule": "OUTBOUND_ORGANIZATION_CROSSINGS_RESOLVE_ONE_EMITTING_OPERATION_OWNED_HERE",
+    "closable_crossing_precondition": {
+      "checked_at": "EMISSION",
+      "operation": "resident-runtime/organization_egress_boundary.py::closability_refusal",
+      "responded_request_classes_source": "org-kernel/kernel.py::RESPONDED_REQUEST_CLASSES",
+      "responded_request_classes": [
+        "ecosystem.communication",
+        "ecosystem.monitor.request",
+        "ecosystem.work.request"
+      ],
+      "payload_must_declare_a_responded_request_class": true,
+      "payload_must_declare_the_communication_id_closure_correlates_on": true,
+      "an_unclosable_crossing_is_refused_rather_than_emitted": true,
+      "an_unclosable_crossing_publishes_no_frame": true,
+      "unreachable_closure_is_not_the_same_state_as_pending_closure": true,
+      "responded_request_classes_are_this_organizations_responders": true,
+      "peer_responded_request_classes_are_readable_here": false,
+      "both_conditions_are_readable_in_this_organizations_own_payload": true
+    }
   },
   "heartbeat_derived_carrier": {
     "reference_frequency_hz": 100,

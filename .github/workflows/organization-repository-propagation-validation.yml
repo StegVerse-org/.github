@@ -10,6 +10,12 @@ on:
       - 'resident-runtime/ledger_store.py'
       - 'org-kernel/kernel.py'
       - 'org-kernel/node_store.py'
+      # The directory the cycle writes its own state into. Watched because a
+      # consumption marker committed here is what made the 'leaves nothing
+      # behind' assertion below fail on every branch, and this filter did not
+      # watch it, so the check that catches it never ran on the change that
+      # caused it.
+      - 'resident-runtime/federation/**'
       - 'org-boundary/registry/services.json'
       - '.stegverse/transition-ledger/org-contract.json'
       - 'tests/test_organization_repository_propagation.py'
@@ -24,6 +30,12 @@ on:
       - 'resident-runtime/ledger_store.py'
       - 'org-kernel/kernel.py'
       - 'org-kernel/node_store.py'
+      # The directory the cycle writes its own state into. Watched because a
+      # consumption marker committed here is what made the 'leaves nothing
+      # behind' assertion below fail on every branch, and this filter did not
+      # watch it, so the check that catches it never ran on the change that
+      # caused it.
+      - 'resident-runtime/federation/**'
       - 'org-boundary/registry/services.json'
       - '.stegverse/transition-ledger/org-contract.json'
       - 'tests/test_organization_repository_propagation.py'

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, hashlib, json
+import argparse, hashlib, importlib.util, json
 from pathlib import Path
 from typing import Any
 ROOT=Path(__file__).resolve().parents[1]; ACT=ROOT/"org-runtime/activation.json"; TR=ROOT/"org-runtime/interlock-intr.json"; ORG="StegVerse-org"
@@ -86,6 +86,42 @@ def egress_emitting_operation_bound(t:dict[str,Any])->bool:
     if operation.get("reconstruction_proves_the_far_side_persisted_its_chain") is not False: return False
     if operation.get("closure_requires_this_organizations_own_emission_record") is not True: return False
     return True
+def egress_refuses_an_unclosable_crossing(t:dict[str,Any])->bool:
+    """A crossing whose closure is unreachable is refused at emission.
+
+    `close` needs an acknowledgement, and the profile answers only the request
+    classes it names; it correlates that answer by `communication_id`, read from
+    the payload and nowhere else. A payload missing either was emitted as ALLOW,
+    consumed and receipted by the peer, and left PENDING forever -- a state that
+    reads as in-flight rather than unreachable. Both conditions are readable in
+    this organization's own payload, which is why they are refused here rather
+    than recorded like a peer's unserved capability. The declaration must also
+    say that the answering set is this organization's own: a peer's is not
+    readable from here.
+    """
+    pre=(t.get("egress") or {}).get("closable_crossing_precondition")
+    if not isinstance(pre,dict): return False
+    if pre.get("checked_at")!="EMISSION": return False
+    if pre.get("responded_request_classes_source")!="org-kernel/kernel.py::RESPONDED_REQUEST_CLASSES": return False
+    if sorted(pre.get("responded_request_classes") or [])!=sorted(kernel_responded_request_classes()): return False
+    for claim in ("payload_must_declare_a_responded_request_class",
+                  "payload_must_declare_the_communication_id_closure_correlates_on",
+                  "an_unclosable_crossing_is_refused_rather_than_emitted",
+                  "an_unclosable_crossing_publishes_no_frame",
+                  "unreachable_closure_is_not_the_same_state_as_pending_closure",
+                  "responded_request_classes_are_this_organizations_responders",
+                  "both_conditions_are_readable_in_this_organizations_own_payload"):
+        if pre.get(claim) is not True: return False
+    # The one thing it must deny: a peer's answering set is not readable here,
+    # so this refusal rests on the shared transport profile and not on knowledge
+    # of the peer.
+    if pre.get("peer_responded_request_classes_are_readable_here") is not False: return False
+    return True
+def kernel_responded_request_classes()->list[str]:
+    """Read from the kernel rather than restated, so the two cannot drift."""
+    spec=importlib.util.spec_from_file_location("kernel",ROOT/"org-kernel/kernel.py")
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return list(module.RESPONDED_REQUEST_CLASSES)
 def egress_destinations_resolve_from_the_directory(t:dict[str,Any])->bool:
     """Destinations come from the organization's own peer directory, not a caller."""
     resolution=(t.get("egress") or {}).get("peer_destination_resolution")
@@ -241,7 +277,7 @@ def sdk_manifest_ingress_bound(t:dict[str,Any])->bool:
     """The capability the SDK's manifest handoff resolves on is one of them."""
     return any((b.get("profile_id"),b.get("profile_name"),b.get("operation"))==("sdk-manifest-ingress","SDK:ManifestIngress","SUBMIT_MANIFEST") for b in capability_bindings(t))
 def validate()->dict[str,Any]:
-    a,t=load(ACT),load(TR); h=t["heartbeat_derived_carrier"]; checks={"activation_owner":a.get("organization")==ORG and a.get("owner_repository")==f"{ORG}/.github","activation_local":a.get("activation_source_scope")=="ORG_DOT_GITHUB_ONLY","runtime_sovereign":a.get("runtime_execution_surface")=="SOVEREIGN_RESIDENT_PROCESS","transport_owner":t.get("organization")==ORG and t.get("owner_repository")==f"{ORG}/.github","all_io_here":t.get("communication_policy")=="ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY","tvtvc":a.get("credential_authority")=="TV/TVC" and t.get("credential_authority")=="TV/TVC","github_none":a.get("github_token_runtime_authority")=="NONE" and t.get("github_token_runtime_authority")=="NONE","effects_transition_derived":a.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS" and t.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS","hb_non_authorizing":all(h.get(k) is False for k in ("carrier_grants_admission_authority","carrier_grants_execution_authority","carrier_grants_credential_authority","carrier_grants_routing_authority","carrier_grants_transition_authority","carrier_grants_receiving_authority")),"capability_bindings_resolve":capability_bindings_resolve(t),"sdk_manifest_ingress_bound":sdk_manifest_ingress_bound(t),"egress_emitting_operation_bound":egress_emitting_operation_bound(t),"egress_destinations_resolve_from_the_directory":egress_destinations_resolve_from_the_directory(t),"capability_addresses_resolve":capability_addresses_resolve(t),"peer_capability_addresses_derive":peer_capability_addresses_derive(t),"origin_attestation_is_bound":origin_attestation_is_bound(t)}; return {"schema":"stegverse.organization-boundary-validation/v1","organization":ORG,"checks":checks,"valid":all(checks.values()),"authority_effect":"NONE_VALIDATION_ONLY"}
+    a,t=load(ACT),load(TR); h=t["heartbeat_derived_carrier"]; checks={"activation_owner":a.get("organization")==ORG and a.get("owner_repository")==f"{ORG}/.github","activation_local":a.get("activation_source_scope")=="ORG_DOT_GITHUB_ONLY","runtime_sovereign":a.get("runtime_execution_surface")=="SOVEREIGN_RESIDENT_PROCESS","transport_owner":t.get("organization")==ORG and t.get("owner_repository")==f"{ORG}/.github","all_io_here":t.get("communication_policy")=="ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY","tvtvc":a.get("credential_authority")=="TV/TVC" and t.get("credential_authority")=="TV/TVC","github_none":a.get("github_token_runtime_authority")=="NONE" and t.get("github_token_runtime_authority")=="NONE","effects_transition_derived":a.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS" and t.get("authority_effect_resolution")=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS","hb_non_authorizing":all(h.get(k) is False for k in ("carrier_grants_admission_authority","carrier_grants_execution_authority","carrier_grants_credential_authority","carrier_grants_routing_authority","carrier_grants_transition_authority","carrier_grants_receiving_authority")),"capability_bindings_resolve":capability_bindings_resolve(t),"sdk_manifest_ingress_bound":sdk_manifest_ingress_bound(t),"egress_emitting_operation_bound":egress_emitting_operation_bound(t),"egress_destinations_resolve_from_the_directory":egress_destinations_resolve_from_the_directory(t),"egress_refuses_an_unclosable_crossing":egress_refuses_an_unclosable_crossing(t),"capability_addresses_resolve":capability_addresses_resolve(t),"peer_capability_addresses_derive":peer_capability_addresses_derive(t),"origin_attestation_is_bound":origin_attestation_is_bound(t)}; return {"schema":"stegverse.organization-boundary-validation/v1","organization":ORG,"checks":checks,"valid":all(checks.values()),"authority_effect":"NONE_VALIDATION_ONLY"}
 def activation_request(runtime_id:str)->dict[str,Any]:
     body={"schema":"stegverse.organization-resident-runtime-activation-request/v1","organization":ORG,"runtime_id":runtime_id,"owner_repository":f"{ORG}/.github","state":"REQUESTED","credential_authority":"TV/TVC","request_granted_authority":False,"github_token_runtime_authority":"NONE","authority_transfer_assumed":False,"authority_effect_resolution":"DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS"}; return {**body,"request_sha256":canonical(body)}
 def envelope(direction:str,peer_org:str,interlock_id:str,payload_sha256:str,transition_elements_ref:str,authority_ref:str|None)->dict[str,Any]:

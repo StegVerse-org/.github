@@ -1,9 +1,0 @@
-{
-  "authority_effect": "NONE_CARRIER_ONLY",
-  "destination_org": "StegVerse-org",
-  "frame_name": "db760f40cb3fd84262c6e906e2225358a371a28a9dce0d0c354eeefd56358bd2.json",
-  "frame_sha256": "sha256:ede5507b4a422cee468cfe364d75620818c8b86f1372dbdab3e171c2ccedb8ca",
-  "packet_id": "pkt-374ff23c57c23f7c945e44f7",
-  "schema_version": "stegverse.federation-frame-consumption.v1",
-  "status": "CONSUMED"
-}
