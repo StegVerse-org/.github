@@ -257,6 +257,32 @@ class LedgerContractTests(unittest.TestCase):
         self.assertEqual(contract["authority_effect"], "NONE_CONTRACT_ONLY")
         self.assertEqual(contract["declaration"], load_json(DECLARATION)["declaration_id"])
 
+    def test_organization_replay_does_not_require_ecosystem_replay(self):
+        """The one field of this organization's position nothing was holding.
+
+        `propagation_gates_organization_runtime_reality` is already asserted
+        above, and this is its replay-side twin: organization replay requires
+        verified repository and organization receipts, and explicitly not
+        ecosystem replay. Together they are what makes Master Records the
+        propagation target rather than a precondition.
+
+        It is held because an external surface currently contradicts it --
+        `docs/INTERLOCK_RETURN_PRECONDITION_FINDING_001.md` records that the
+        SDK's interlock-return builder refuses until a run reports Master
+        Records custody RECORDED. The fix is that surface's, not this one's,
+        and this case exists so the contradiction is never resolved by
+        weakening the position here.
+        """
+        contract = load_json(CONTRACT)
+        self.assertEqual(
+            contract["replay_rule"],
+            "ORGANIZATION_REPLAY_MUST_REQUIRE_ONLY_VERIFIED_REPO_RECEIPTS"
+            "_AND_ORG_RECEIPTS_NOT_ECOSYSTEM_REPLAY")
+        # The two halves the rule rests on, named rather than implied.
+        self.assertIn("stegverse.repo-transition-receipt/v1", contract["consumes"])
+        self.assertIn("stegverse.canonical-state-transition-receipt/v1", contract["consumes"])
+        self.assertEqual(contract["propagation_target"], "master-records/.github")
+
     def test_contract_consumes_a_canonical_state_transition_not_only_a_repo_receipt(self):
         """The organization scope rule needs a path for a governed transition."""
         contract = load_json(CONTRACT)
