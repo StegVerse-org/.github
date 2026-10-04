@@ -18,12 +18,21 @@ infer.
 
 Four things it deliberately does not do.
 
-* **It does not push.** There is no host, and the contract's own
-  `no_new_host_required` means there is not supposed to be one. Delivery is a
-  pull: the observer supplies the chain at each epoch it samples, and the
-  window orders and binds what it is given. Calling that real-time delivery
-  would be claiming a channel that does not exist, so every record says
-  `delivery_is_pull_not_push`.
+* **It does not claim to be the canonical return path.** The ecosystem
+  already has one, and the Task Registry's canonical communication lifecycle
+  names it: a manifest declaring the Publisher stage has its evidence
+  assembled there, bound to the original request and initiator by SDK return
+  assembly, and delivered through Interlock/InTr egress to a far-side InTr
+  transition, after which "initiating entity receives manifested result".
+  A manifest directs delivery; it does not have to know the transport.
+
+  That path is not available to an *external* evaluator today, for a reason
+  the node ingress contract states rather than one this module invents:
+  `external_interlock_intr` is `DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6`.
+  So this window is a local stand-in and says which it is -- the mode it
+  resolved to, the canonical path it substitutes for, and what that path is
+  waiting on. A reader is told the mechanism rather than told what to
+  conclude about it.
 
 * **It does not make an absence into a transition.** A window that closes
   having observed nothing in scope reports *the window*, not an event. The
@@ -63,6 +72,33 @@ REPORT_SCHEMA = "stegverse.observation-window-report.v1"
 CLOSE_SCHEMA = "stegverse.observation-window-close.v1"
 
 AUTHORITY_EFFECT = "NONE_OBSERVATION_ONLY"
+
+#: What this window actually resolved to, and the canonical path it stands in
+#: for. Both are stated because a manifest directs delivery without having to
+#: know the transport -- so the record owes the reader which transport it got,
+#: rather than an instruction about what to believe.
+DELIVERY_MODE = "LOCAL_PULL_SAMPLED"
+CANONICAL_DELIVERY_PATH = (
+    "PUBLISHER_EVIDENCE_ASSEMBLY -> SDK_RETURN_ASSEMBLY_BOUND_TO_REQUEST_AND_INITIATOR"
+    " -> STEGVERSE_SIDE_EGRESS_TRANSITION -> INTERLOCK_INTR_EGRESS"
+    " -> FAR_SIDE_INTERLOCK_INTR_TRANSITION -> INITIATING_ENTITY_RECEIVES_MANIFESTED_RESULT")
+CANONICAL_DELIVERY_BLOCKED_BY = "external_interlock_intr:DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6"
+
+
+def delivery() -> dict[str, Any]:
+    """How this record reached the observer, and what it stands in for.
+
+    The canonical lifecycle is the Task Registry's, owned by Publisher, the
+    SDK and Interlock/InTr. Naming it here is a citation, not a second
+    declaration of it.
+    """
+    return {
+        "delivery_mode": DELIVERY_MODE,
+        "canonical_delivery_path": CANONICAL_DELIVERY_PATH,
+        "canonical_delivery_available_to_external_observers": False,
+        "canonical_delivery_blocked_by": CANONICAL_DELIVERY_BLOCKED_BY,
+        "manifest_directs_delivery_without_declaring_transport": True,
+    }
 
 
 class WindowRefused(SystemExit):
@@ -165,7 +201,7 @@ def open_window(chain: Sequence[Mapping[str, Any]], *, countdown_hb: int,
         "epoch_derived_from_clock": bool(reference.get("derived_from_clock")),
         "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY",
         "wall_clock_ordering_permitted": False,
-        "delivery_is_pull_not_push": True,
+        **delivery(),
         "authority_effect": AUTHORITY_EFFECT,
     }
     snapshot["snapshot_id"] = kernel.sha({
@@ -215,7 +251,7 @@ def observe(snapshot: Mapping[str, Any], chain: Sequence[Mapping[str, Any]], *,
                 "remaining_hb": left,
                 "transition": dict(record),
                 "observed_through": snapshot["observed_through"],
-                "delivery_is_pull_not_push": True,
+                **delivery(),
                 "authority_effect": AUTHORITY_EFFECT,
             })
 
@@ -229,7 +265,7 @@ def observe(snapshot: Mapping[str, Any], chain: Sequence[Mapping[str, Any]], *,
         "observed_count": len(reports),
         "cursor": position,
         "observed_through": snapshot["observed_through"],
-        "delivery_is_pull_not_push": True,
+        **delivery(),
         "authority_effect": AUTHORITY_EFFECT,
     }
 
@@ -263,7 +299,7 @@ def close(snapshot: Mapping[str, Any], *, epoch: int, observed_count: int,
         "no_observed_transition_is_not_proof_none_occurred": True,
         "window_bounds_what_this_observer_could_reproduce": True,
         "close_is_a_disposition_not_an_observed_transition": True,
-        "delivery_is_pull_not_push": True,
+        **delivery(),
         "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY",
         "authority_effect": AUTHORITY_EFFECT,
     }
@@ -279,9 +315,11 @@ def follow(snapshot: Mapping[str, Any],
     that comes out says which epochs were sampled, so a reader can see the
     resolution of the observation rather than assuming it was continuous.
 
-    Sampling is not continuity. A window that sampled twice over a thousand
-    heartbeats says so, and the gaps it could not see are part of what it
-    reports.
+    Sampling is not continuity, so the record carries the epochs sampled and
+    the gaps between them. An evaluator shown the resolution does not need to
+    be told what to infer from it -- the misreading this guards against comes
+    from being told the observation was continuous, or from not being told how
+    it worked at all.
     """
     sampled = [int(value) for value in epochs]
     if sampled != sorted(sampled):
@@ -302,7 +340,15 @@ def follow(snapshot: Mapping[str, Any],
         "snapshot": dict(snapshot),
         "sampled_epochs": sampled,
         "sample_count": len(sampled),
-        "observation_is_sampled_not_continuous": True,
+        # The resolution of the observation, given as the gaps themselves.
+        # A reader shown where the samples fell can see what fell between
+        # them without being told what to conclude.
+        "sample_gaps_hb": [later - earlier for earlier, later in zip(sampled, sampled[1:])],
+        "widest_unsampled_gap_hb": (max((later - earlier) for earlier, later
+                                        in zip(sampled, sampled[1:]))
+                                    if len(sampled) > 1 else 0),
+        "first_sample_gap_from_open_hb": (sampled[0] - snapshot["opened_at_epoch"]
+                                          if sampled else 0),
         "observations": observations,
         "reports": reports,
         "observed_count": len(reports),

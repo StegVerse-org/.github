@@ -134,7 +134,7 @@ class ReportTests(unittest.TestCase):
         for report in observed["reports"]:
             self.assertEqual(report["snapshot_id"], snapshot["snapshot_id"])
             self.assertEqual(report["observed_through"], SOURCE)
-            self.assertTrue(report["delivery_is_pull_not_push"])
+            self.assertEqual(report["delivery_mode"], OW.DELIVERY_MODE)
             self.assertEqual(report["authority_effect"], "NONE_OBSERVATION_ONLY")
 
     def test_remaining_heartbeats_count_down(self):
@@ -204,13 +204,22 @@ class FollowTests(unittest.TestCase):
         self.assertEqual([report["transition"]["sequence"] for report in run["reports"]], [2, 3])
         self.assertEqual([report["observed_at_epoch"] for report in run["reports"]], [5100, 5200])
 
-    def test_sampling_is_recorded_as_sampling(self):
-        # Two samples over three hundred heartbeats is not continuous
-        # observation, and the record does not let it read as if it were.
+    def test_the_resolution_is_disclosed_as_the_gaps_themselves(self):
+        # A reader shown where the samples fell can see what fell between
+        # them. The record gives the fact rather than an instruction about
+        # what to conclude from it.
         run = OW.follow(opened(), lambda epoch: chain(1), [5100, 5200])
-        self.assertTrue(run["observation_is_sampled_not_continuous"])
         self.assertEqual(run["sampled_epochs"], [5100, 5200])
         self.assertEqual(run["sample_count"], 2)
+        self.assertEqual(run["sample_gaps_hb"], [100])
+        self.assertEqual(run["widest_unsampled_gap_hb"], 100)
+        self.assertEqual(run["first_sample_gap_from_open_hb"], 100)
+
+    def test_a_single_sample_has_no_gap_between_samples(self):
+        run = OW.follow(opened(), lambda epoch: chain(1), [5100])
+        self.assertEqual(run["sample_gaps_hb"], [])
+        self.assertEqual(run["widest_unsampled_gap_hb"], 0)
+        self.assertEqual(run["first_sample_gap_from_open_hb"], 100)
 
     def test_epochs_out_of_heartbeat_order_are_refused(self):
         # Ordering is the oscillator's. Accepting a reversed sample would be
@@ -226,12 +235,26 @@ class FollowTests(unittest.TestCase):
         for report in run["reports"]:
             self.assertEqual(report["authority_effect"], "NONE_OBSERVATION_ONLY")
 
-    def test_delivery_is_never_described_as_push(self):
+    def test_every_record_states_the_mode_it_resolved_to(self):
         run = OW.follow(opened(), lambda epoch: chain(2), [5100])
-        self.assertTrue(run["snapshot"]["delivery_is_pull_not_push"])
-        self.assertTrue(run["close"]["delivery_is_pull_not_push"])
-        for report in run["reports"]:
-            self.assertTrue(report["delivery_is_pull_not_push"])
+        for record in (run["snapshot"], run["close"], *run["reports"]):
+            self.assertEqual(record["delivery_mode"], OW.DELIVERY_MODE)
+
+    def test_the_canonical_return_path_is_cited_not_restated(self):
+        # The lifecycle belongs to the Task Registry, owned by Publisher, the
+        # SDK and Interlock/InTr. This window names it and names what it is
+        # waiting on; it does not declare a second one.
+        resolved = OW.delivery()
+        self.assertEqual(resolved["canonical_delivery_path"], OW.CANONICAL_DELIVERY_PATH)
+        self.assertIn("PUBLISHER_EVIDENCE_ASSEMBLY", resolved["canonical_delivery_path"])
+        self.assertIn("INITIATING_ENTITY_RECEIVES_MANIFESTED_RESULT",
+                      resolved["canonical_delivery_path"])
+        self.assertFalse(resolved["canonical_delivery_available_to_external_observers"])
+        self.assertIn("DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6",
+                      resolved["canonical_delivery_blocked_by"])
+
+    def test_a_manifest_directs_delivery_without_declaring_transport(self):
+        self.assertTrue(OW.delivery()["manifest_directs_delivery_without_declaring_transport"])
 
 
 if __name__ == "__main__":

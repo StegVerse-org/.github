@@ -95,7 +95,10 @@ jobs:
                                         observed_through="ci:runner-temp-ledger")
           assert snapshot["baseline_record_count"] == len(baseline), snapshot
           assert snapshot["epoch_derived_from_clock"] is False, snapshot
-          assert snapshot["delivery_is_pull_not_push"] is True, snapshot
+          assert snapshot["delivery_mode"] == window.DELIVERY_MODE, snapshot
+          assert snapshot["canonical_delivery_available_to_external_observers"] is False, snapshot
+          assert "DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6" in \
+              snapshot["canonical_delivery_blocked_by"], snapshot
           assert snapshot["authority_effect"] == "NONE_OBSERVATION_ONLY", snapshot
           print("WINDOW_SNAPSHOT=" + snapshot["snapshot_id"],
                 "baseline", snapshot["baseline_record_count"],
@@ -143,13 +146,17 @@ jobs:
                                      observed_through="ci:runner-temp-ledger")
           run = window.follow(quiet, lambda epoch: quiet_chain, [6005, 6010])
           assert run["observed_count"] == 0, run
-          assert run["observation_is_sampled_not_continuous"] is True, run
+          assert run["sampled_epochs"] == [6005, 6010], run
+          assert run["sample_gaps_hb"] == [5], run
+          assert run["first_sample_gap_from_open_hb"] == 5, run
           assert run["close"]["no_observed_transition_is_not_proof_none_occurred"] is True
           print("WINDOW_QUIET=PASS zero observed, zero not presented as proof")
           PY
 
       - name: Declare what the window does not do
         run: |
-          echo 'authority_effect=NONE_OBSERVATION_ONLY; delivery=PULL_NOT_PUSH'
+          echo 'authority_effect=NONE_OBSERVATION_ONLY; delivery_mode=LOCAL_PULL_SAMPLED'
+          echo 'canonical_delivery=PUBLISHER->SDK_RETURN->INTR_EGRESS->FAR_SIDE_INTR'
+          echo 'canonical_delivery_blocked_by=external_interlock_intr:DEFERRED_AFTER_TESTS_5_AND_6'
           echo 'ordering=OSCILLATOR_HEARTBEAT_EPOCH_ONLY; wall_clock_ordering=false'
-          echo 'zero_observed_is_not_proof_none_occurred=true; sampling_is_not_continuity=true'
+          echo 'zero_observed_is_not_proof_none_occurred=true; resolution=sample_gaps_hb'
