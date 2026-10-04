@@ -44,7 +44,8 @@ STATUSES = {"proposed", "accepted", "claimed", "in_progress", "validating",
 REQUIRED_TASK_FIELDS = {"task_id", "issue", "title", "status", "workstream",
                         "depends_on", "outputs"}
 ALLOWED_TASK_FIELDS = REQUIRED_TASK_FIELDS | {
-    "required_evidence", "tag_allowed", "activation_condition", "destinations"}
+    "required_evidence", "tag_allowed", "activation_condition", "destinations",
+    "issue_refs", "repository_artifact_history", "unresolved_obligations"}
 ENTITY_FIELDS = {"assignee", "assignees", "agent", "entity", "model", "llm",
                  "owner", "claimed_by", "session", "author"}
 
@@ -60,6 +61,13 @@ class SurfaceExistsTests(unittest.TestCase):
 
     def test_the_registry_declares_at_least_one_task(self):
         self.assertGreaterEqual(len(TASKS), 1)
+
+
+def records_cited_by(task):
+    """Every durable record a task names: its own, or the ones it aggregates."""
+    if isinstance(task.get("issue"), int) and not isinstance(task["issue"], bool):
+        return [task["issue"]]
+    return list(task.get("issue_refs") or [])
 
 
 class TaskShapeTests(unittest.TestCase):
@@ -78,17 +86,48 @@ class TaskShapeTests(unittest.TestCase):
                 self.assertIn(task["status"], STATUSES)
 
     def test_every_task_cites_a_durable_record(self):
-        """A task whose record is only a conversation cannot be reviewed."""
+        """A task whose record is only a conversation cannot be reviewed.
+
+        An aggregate task carries no record of its own and is cited by the
+        records of the tasks it aggregates, so it satisfies this through
+        `issue_refs` instead. Either way a reviewer has something to open --
+        what is refused is a task with neither.
+        """
         for task in TASKS:
             with self.subTest(task=task["task_id"]):
-                self.assertIsInstance(task["issue"], int)
-                self.assertNotIsInstance(task["issue"], bool)
-                self.assertGreaterEqual(task["issue"], 1)
+                self.assertTrue(records_cited_by(task),
+                                "neither issue nor issue_refs names a record")
+                for record in records_cited_by(task):
+                    self.assertIsInstance(record, int)
+                    self.assertNotIsInstance(record, bool)
+                    self.assertGreaterEqual(record, 1)
+
+    def test_an_aggregate_task_aggregates_tasks_this_registry_declares(self):
+        """Otherwise `issue_refs` is a loose list rather than an aggregation.
+
+        The records a task aggregates must be the records of other tasks here.
+        A reference to something outside the registry would make the aggregate's
+        own activation condition uncheckable from the registry alone.
+        """
+        own = {task["issue"] for task in TASKS if isinstance(task["issue"], int)}
+        for task in TASKS:
+            refs = task.get("issue_refs")
+            if refs is None:
+                continue
+            with self.subTest(task=task["task_id"]):
+                self.assertTrue(set(refs) <= own,
+                                "aggregates records no task here declares: "
+                                + str(sorted(set(refs) - own)))
+                self.assertNotIn(task["issue"], refs, "a task aggregating itself")
 
     def test_task_identifiers_and_records_are_unique(self):
         ids = [task["task_id"] for task in TASKS]
         self.assertEqual(len(ids), len(set(ids)), "two tasks share an identifier")
-        records = [task["issue"] for task in TASKS]
+        # Only a task's own record. Two aggregate tasks both carrying a null
+        # `issue` are not two tasks sharing a record, and `issue_refs` is
+        # expected to repeat the children's records rather than be unique
+        # against them.
+        records = [task["issue"] for task in TASKS if isinstance(task["issue"], int)]
         self.assertEqual(len(records), len(set(records)), "two tasks share a record")
 
 
