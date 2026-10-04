@@ -166,5 +166,95 @@ class EntityNeutralityTests(unittest.TestCase):
             self.assertNotIn(name, rendered, "registry names " + name)
 
 
+class ReferencesResolveHereTests(unittest.TestCase):
+    """A reference to work intent must resolve in the registry, or it is not authority.
+
+    The cases above hold the registry coherent with itself. That is necessary
+    and it is not sufficient: a registry internally consistent and referenced
+    by nothing is a document, not an authority. What makes it work-intent
+    authority is that work intent named anywhere in this organization resolves
+    *here* -- so a document naming a task the registry does not carry is a
+    declaration with no owner, and the authority split's first line is not
+    held.
+
+    `CANONICAL-NODE-INGRESS-CONTRACT-001` declares
+    `goal_task_id: SVORG-STEGOS-PORTABILITY-001`, and the registry's
+    `active_goal` is the same string. Until this case, nothing compared them.
+    They agreed by hand, which is the condition an unenforced invariant is in
+    right before it stops agreeing.
+
+    The references are discovered rather than listed, so a document added
+    later is covered without this file changing.
+    """
+
+    #: Keys that name a task in this registry, wherever they appear.
+    REFERENCE_KEYS = ("goal_task_id", "canonical_task_id")
+
+    #: Paths whose task identifiers belong to another organization's registry
+    #: and are therefore not this registry's to resolve. Named explicitly, so
+    #: an exemption is visible rather than implied by a silent skip.
+    FOREIGN_REGISTRY_PATHS = {
+        "resident-runtime/control/sv002-sdk-query.request.json",
+        "resident-runtime/activation-manifest.json",
+    }
+
+    def _references(self):
+        """Every (path, key, value) in tracked JSON naming a task."""
+        found = []
+
+        def walk(node, path, key_path):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key in self.REFERENCE_KEYS and isinstance(value, str):
+                        found.append((path, key, value))
+                    walk(value, path, key_path + [key])
+            elif isinstance(node, list):
+                for item in node:
+                    walk(item, path, key_path)
+
+        for candidate in sorted(ROOT.rglob("*.json")):
+            relative = candidate.relative_to(ROOT).as_posix()
+            if relative.startswith((".git/", "tests/fixtures/")) or "__pycache__" in relative:
+                continue
+            if relative in self.FOREIGN_REGISTRY_PATHS:
+                continue
+            try:
+                document = json.loads(candidate.read_text(encoding="utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                continue
+            walk(document, relative, [])
+        return found
+
+    def test_the_contracts_goal_task_id_is_a_task_in_this_registry(self):
+        """The named instance, held by name rather than by discovery alone."""
+        contract = json.loads(
+            (ROOT / "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json").read_text(encoding="utf-8"))
+        self.assertIn(contract["goal_task_id"], {task["task_id"] for task in TASKS})
+
+    def test_every_declared_task_reference_resolves(self):
+        ids = {task["task_id"] for task in TASKS}
+        references = self._references()
+        # A discovery that found nothing would pass vacuously and prove
+        # nothing, which is the failure mode this whole effort exists to
+        # catch. At least the contract's own reference must be here.
+        self.assertTrue(references, "no task reference discovered; the walk is not working")
+        for path, key, value in references:
+            with self.subTest(path=path, key=key, value=value):
+                self.assertIn(value, ids,
+                              path + " declares " + key + "=" + value
+                              + ", which this registry does not carry")
+
+    def test_a_reference_to_an_absent_task_would_be_caught(self):
+        """The check refuses, rather than passing on a registry it cannot match."""
+        ids = {task["task_id"] for task in TASKS}
+        self.assertNotIn("SVORG-NO-SUCH-TASK-999", ids)
+
+    def test_the_exemptions_are_real_paths_naming_foreign_registries(self):
+        """An exemption for a file that does not exist is a stale carve-out."""
+        for relative in self.FOREIGN_REGISTRY_PATHS:
+            with self.subTest(path=relative):
+                self.assertTrue((ROOT / relative).exists(), relative + " no longer exists")
+
+
 if __name__ == "__main__":
     unittest.main()
