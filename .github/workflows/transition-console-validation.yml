@@ -1,0 +1,130 @@
+name: Validate Transition Console
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/transition_console.py'
+      - 'resident-runtime/receipt_lineage_projection.py'
+      - 'org-kernel/node_store.py'
+      - 'org-kernel/kernel.py'
+      - 'orchestration/task-registry.json'
+      - 'tests/test_transition_console.py'
+      - '.github/workflows/transition-console-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/transition_console.py'
+      - 'resident-runtime/receipt_lineage_projection.py'
+      - 'org-kernel/node_store.py'
+      - 'org-kernel/kernel.py'
+      - 'orchestration/task-registry.json'
+      - 'tests/test_transition_console.py'
+      - '.github/workflows/transition-console-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-transition-console:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate the console
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/console-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/console-org-ledger
+        run: python -m unittest tests.test_transition_console -v
+
+      - name: The console reports a real run and refuses to claim a networked one
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/real-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/real-org-ledger
+        run: |
+          python - <<'PY'
+          import importlib.util, json, shutil, tempfile
+          from pathlib import Path
+
+          def load(name, relative):
+              spec = importlib.util.spec_from_file_location(name, relative)
+              module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+              return module
+
+          egress = load("egress", "resident-runtime/organization_egress_boundary.py")
+          lineage = load("lineage", "resident-runtime/receipt_lineage_projection.py")
+          console = load("console", "resident-runtime/transition_console.py")
+          K = egress.kernel
+
+          PEER, PEER_CONTROL = "StegVerse-Labs", "stegverse-labs.org-control"
+          CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+          mesh = Path(tempfile.mkdtemp()); peer = Path(tempfile.mkdtemp())
+          (peer / "org-boundary/registry").mkdir(parents=True)
+          (peer / "org-boundary/registry/services.json").write_text(json.dumps({
+              "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
+              "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
+              "services": [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
+                            "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
+          (peer / "org-boundary/runtime").mkdir(parents=True)
+          for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
+              shutil.copy2("org-boundary/runtime/" + name, peer / "org-boundary/runtime" / name)
+          (peer / "docs").mkdir(parents=True, exist_ok=True)
+          shutil.copy2(CONTRACT, peer / CONTRACT)
+
+          standing = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci-console", "predecessor": None}
+          emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
+              "communication_id": "ci-console-001", "body": {"ci": True}},
+              standing=standing, mesh_root=mesh, hb_epoch=32)
+          K.consume_and_respond(peer, mesh_root=mesh)
+          egress.close(PEER, emitted["packet_id"], "ci-console-001",
+                       mesh_root=mesh, hb_epoch=32)
+
+          # A real chain, rendered.
+          rendered = console.view(lineage.repository_chain(), root=mesh, env={})
+          assert rendered["transition_count"] > 0, "no transitions rendered"
+          assert len(rendered["lines"]) == rendered["transition_count"], rendered
+          for row in rendered["transitions"]:
+              assert row["transition_class"] != "UNDECLARED", row
+              assert row["hb_epoch"] is not None, row
+          print("CONSOLE_RENDERED=" + str(rendered["transition_count"]), "transitions")
+          for line in rendered["lines"]:
+              print("  " + line)
+
+          # The run declares which reality it observed.
+          run = rendered["run"]
+          assert run["run_mode"] == console.LOCAL_ISOLATED, run
+          assert run["mesh_portable"] is True, run
+          assert run["store_kind"] == "POSIX_FILESYSTEM", run
+          print("CONSOLE_RUN_MODE=" + run["run_mode"], "| portable", run["mesh_portable"])
+
+          # And no mode claims a networked production reach.
+          for root, env in ((mesh, {}), (None, {"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/m"}),
+                            (None, {})):
+              mode = console.run_mode(root=root, env=env)
+              assert mode["reaches_a_production_ecosystem_over_a_network"] is False, mode
+              assert mode["network_transport_implemented"] is False, mode
+              print("CONSOLE_MODE=" + mode["run_mode"],
+                    "reaches_production_over_network=False")
+
+          # What would change it is a task this registry carries, not prose.
+          registry = json.loads(Path("orchestration/task-registry.json").read_text())
+          named = console.run_mode(root=None, env={})["changing_this_is_recorded_as"]
+          assert named in {t["task_id"] for t in registry["tasks"]}, named
+          blocked = [t for t in registry["tasks"] if t["task_id"] == named][0]
+          print("CONSOLE_BLOCKER=" + named, "status", blocked["status"])
+
+          assert rendered["ledger_unchanged_by_this_view"] is True
+          assert rendered["authority_effect"] == "NONE_CONSOLE_ONLY"
+          print("CONSOLE=PASS")
+          PY
+
+      - name: Declare what the console does not do
+        run: |
+          echo 'authority_effect=NONE_CONSOLE_ONLY; ledger_unchanged=true'
+          echo 'live=AT_THE_EPOCH_THE_READER_SAMPLES; is_a_pushed_stream=false'
+          echo 'run_modes=LOCAL_ISOLATED,SHARED_MEDIUM_DECLARED,LOCAL_HOST_DERIVED'
+          echo 'network_transport_implemented=false; store_kind=POSIX_FILESYSTEM'
