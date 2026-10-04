@@ -137,3 +137,8 @@ External instructions terminate at `SUBMIT_CANONICAL_MANIFEST` and `RETAIN_SUBMI
 `SDK_MACHINE_CONTRACT` derives from existing SDK builder signatures, processor/route declarations, return projections and console commands. The adapter consumes that SDK projection instead of maintaining a second instruction recipe. The console wrapper already dispatched manifest/external-run; its top-level help omitted them. Shared dispatch/help declarations repair that discovery mismatch.
 
 The external-framework helper currently reports `SDK_LOCAL_MANIFEST_HANDOFF`; it does not prove receiver observation. Adapter predecessor checks establish structural validity only, not authenticated standing. Production endpoint binding, authentic standing, runtime execution, deployment and custody remain NOT_PROVEN. No endpoint, runtime, credential path or authority was created.
+
+
+### ICV v1 Site propagation verification
+
+`ICV-V1-SITE-PROPAGATION-VERIFICATION-001` (issue #64) verifies the published ICV `v1.0.0` release at `9b691cfaac076b565153c5a1c0f6c4072b8b044e` against the existing `StegVerse-Labs/Site` public commercial mirror. Site is the only demonstrated destination; no propagation work is inferred for Publisher, admissibility-wiki, or stegguardian-wiki without an explicit contract. See `docs/ICV_V1_SITE_PROPAGATION_VERIFICATION_MIRROR_HANDOFF.md`.
