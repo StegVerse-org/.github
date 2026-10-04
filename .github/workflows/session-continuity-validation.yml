@@ -1,0 +1,121 @@
+name: Validate Node Session Continuity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/session_continuity.py'
+      - 'org-boundary/runtime/node_standing.py'
+      - 'org-kernel/kernel.py'
+      - 'docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json'
+      - 'tests/test_session_continuity.py'
+      - '.github/workflows/session-continuity-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/session_continuity.py'
+      - 'org-boundary/runtime/node_standing.py'
+      - 'org-kernel/kernel.py'
+      - 'docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json'
+      - 'tests/test_session_continuity.py'
+      - '.github/workflows/session-continuity-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-session-continuity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate session continuity
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/session-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/session-org-ledger
+        run: python -m unittest tests.test_session_continuity -v
+
+      - name: A console series declared through the real gate is one session
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/real-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/real-org-ledger
+        run: |
+          python - <<'PY'
+          import hashlib, importlib.util, json
+          from pathlib import Path
+
+          def load(name, relative):
+              spec = importlib.util.spec_from_file_location(name, relative)
+              module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+              return module
+
+          standing = load("node_standing", "org-boundary/runtime/node_standing.py")
+          sessions = load("session_continuity", "resident-runtime/session_continuity.py")
+          contract = standing.load_contract(Path("."))
+
+          def digest(value):
+              return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+          # Every generation crosses the real standing gate; nothing is fabricated.
+          DELTA, NODE = 500, "ci-console"
+          series = [standing.require(contract, {"standing": {
+              "mode": "ESTABLISH_GENESIS", "node_ref": NODE, "predecessor": None}})]
+          epoch = 32
+          for generation in (2, 3, 4):
+              binding = {"generation": generation - 1,
+                         "manifest_sha256": digest({NODE: generation - 1}),
+                         "result_sha256": digest({NODE: "r%d" % (generation - 1)}),
+                         "heartbeat_epoch": epoch}
+              series.append(standing.require(contract, {"standing": {
+                  "mode": "VERIFY_EXISTING", "node_ref": NODE,
+                  "generation": generation, "predecessor": binding}}))
+              epoch += DELTA
+
+          resolved = sessions.continuity(series, declared_label="ci-review-console")
+          assert resolved["continuous"] is True, resolved
+          assert resolved["session_count"] == 1, resolved
+          assert resolved["breaks"] == [], resolved
+          session = resolved["sessions"][0]
+          assert session["generations"] == [1, 2, 3, 4], session
+          assert session["heartbeat_epochs_carried"] == [32, 532, 1032], session
+          assert session["span_hb"] == 1000, session
+          print("SESSION_CONTINUOUS=PASS generations", session["generations"],
+                "span_hb", session["span_hb"], "root", session["session_root"][:22])
+
+          # The label names a session; it does not select one.
+          alpha = sessions.continuity(series, declared_label="alpha")["sessions"][0]["session_root"]
+          beta = sessions.continuity(series, declared_label="beta")["sessions"][0]["session_root"]
+          assert alpha != beta, "a label must distinguish two consoles sharing a node_ref"
+          assert resolved["declared_label_establishes_nothing"] is True
+          print("SESSION_LABEL=PASS distinguishes without establishing")
+
+          # A second genesis opens a second session rather than failing one.
+          reopened = series + [standing.require(contract, {"standing": {
+              "mode": "ESTABLISH_GENESIS", "node_ref": NODE, "predecessor": None}})]
+          split = sessions.continuity(reopened)
+          assert split["session_count"] == 2, split
+          assert split["breaks"][0]["reason"] == sessions.SECOND_GENESIS, split
+          assert split["a_break_is_reported_not_refused"] is True
+          assert sum(s["generation_count"] for s in split["sessions"]) == len(reopened)
+          print("SESSION_BREAK=PASS", split["breaks"][0]["reason"],
+                "-> sessions", split["session_count"], "nothing discarded")
+
+          # And the limit, stated on every record.
+          assert resolved["predecessor_digests_recomputed_against_the_prior_disposition"] is False
+          assert resolved["continuity_is_declared_by_each_successor_not_proven_against_its_predecessor"] is True
+          assert resolved["newest_generation_epoch_is_not_carried_by_its_own_disposition"] is True
+          assert "manifest_sha256" not in series[0], "a disposition now carries digests; revisit"
+          assert resolved["authority_effect"] == "NONE_CONTINUITY_ONLY"
+          print("SESSION_LIMIT=PASS continuity declared by the successor, recomputed against nothing")
+          PY
+
+      - name: Declare what session continuity does not do
+        run: |
+          echo 'authority_effect=NONE_CONTINUITY_ONLY; a_break_is_reported_not_refused=true'
+          echo 'session_identity_is_derived_from_the_chain_not_declared=true'
+          echo 'declared_label_establishes_nothing=true'
+          echo 'predecessor_digests_recomputed_against_the_prior_disposition=false'

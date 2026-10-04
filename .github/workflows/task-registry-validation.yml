@@ -17,6 +17,13 @@ on:
     branches: [main]
     paths:
       - 'orchestration/**'
+      # Work-intent references are declared in documents outside
+      # orchestration/, and the resolution check walks every tracked JSON to
+      # find them. Filtering to orchestration/** would mean a document could
+      # introduce a reference to a task this registry does not carry without
+      # the check that catches it ever running -- the same unenforced-invariant
+      # shape the check exists to close.
+      - '**/*.json'
       - 'tests/test_task_registry.py'
       - 'tests/test_task_registry_schema_conformance.py'
       - '.github/workflows/task-registry-validation.yml'
@@ -24,6 +31,13 @@ on:
     branches: [main]
     paths:
       - 'orchestration/**'
+      # Work-intent references are declared in documents outside
+      # orchestration/, and the resolution check walks every tracked JSON to
+      # find them. Filtering to orchestration/** would mean a document could
+      # introduce a reference to a task this registry does not carry without
+      # the check that catches it ever running -- the same unenforced-invariant
+      # shape the check exists to close.
+      - '**/*.json'
       - 'tests/test_task_registry.py'
       - 'tests/test_task_registry_schema_conformance.py'
       - '.github/workflows/task-registry-validation.yml'

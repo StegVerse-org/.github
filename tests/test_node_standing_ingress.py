@@ -384,5 +384,125 @@ class EverySeparatelyInvocableIngressSurfaceIsGatedTests(unittest.TestCase):
         self.assertEqual(successor["predecessor"], binding())
 
 
+class ContinuationIsPublishedTests(unittest.TestCase):
+    """The contract requires discovery to publish both profiles. It now does.
+
+    `machine_readable_instructions.requirement` is a requirement on the running
+    surface, and until these cases it was held by nothing: standing resolved
+    and the admitted node was told nothing about what to do next. That made the
+    continuation something we had to send someone out of band, which is the
+    resolution path this contract exists to replace.
+    """
+
+    def profiles(self):
+        return CONTRACT_DOC["machine_readable_instructions"]
+
+    def test_both_declared_profiles_are_published(self):
+        declared = {name for name, value in self.profiles().items()
+                    if isinstance(value, dict) and "consumer" in value and "steps" in value}
+        self.assertEqual(set(NS.instruction_profiles(CONTRACT_DOC)), declared)
+        # Two, by the contract's own declaration -- not a number kept here.
+        self.assertEqual(len(declared), 2)
+
+    def test_node_classes_come_from_the_declared_consumers(self):
+        expected = {value["consumer"]: name
+                    for name, value in NS.instruction_profiles(CONTRACT_DOC).items()}
+        self.assertEqual(NS.node_classes(CONTRACT_DOC), expected)
+
+    def test_allow_carries_the_profile_the_declared_class_selects(self):
+        for consumer, profile in NS.node_classes(CONTRACT_DOC).items():
+            with self.subTest(consumer=consumer):
+                resolved = NS.require(CONTRACT_DOC, packet(genesis(node_class=consumer)))
+                self.assertTrue(resolved["node_class_resolved"])
+                self.assertEqual(resolved["selected_continuation_profile"], profile)
+                self.assertEqual(resolved["machine_readable_instructions"][profile],
+                                 self.profiles()[profile])
+
+    def test_both_profiles_are_disclosed_whatever_the_class_selects(self):
+        # The class says which one is yours. It does not narrow what is shown,
+        # because the requirement is to publish both.
+        resolved = NS.require(CONTRACT_DOC, packet(genesis(
+            node_class="LLM_OR_MACHINE_ALREADY_CAPABLE_OF_EMITTING_A_CANONICAL_MANIFEST")))
+        self.assertEqual(set(resolved["machine_readable_instructions"]),
+                         set(NS.instruction_profiles(CONTRACT_DOC)))
+
+    def test_readiness_publishes_both_before_standing_is_held(self):
+        ready = NS.readiness(CONTRACT_DOC)
+        self.assertEqual(set(ready["machine_readable_instructions"]),
+                         set(NS.instruction_profiles(CONTRACT_DOC)))
+        # Readiness is discovery, not selection: it names no class as yours.
+        self.assertNotIn("selected_continuation_profile", ready)
+        self.assertTrue(ready["readiness_is_not_standing"])
+
+    def test_the_contract_requires_no_host_and_no_endpoint(self):
+        # Carried from the contract rather than asserted here, because this is
+        # the claim the external reviewer prompt's HTTP framing contradicts.
+        section = self.profiles()
+        resolved = NS.require(CONTRACT_DOC, packet(genesis()))
+        self.assertIs(resolved["no_new_host_required"], section["no_new_host_required"])
+        self.assertIs(resolved["no_new_endpoint_required"], section["no_new_endpoint_required"])
+        self.assertTrue(resolved["no_new_host_required"])
+
+    def test_instructions_grant_nothing(self):
+        resolved = NS.require(CONTRACT_DOC, packet(genesis()))
+        self.assertEqual(resolved["instructions_authority_effect"],
+                         self.profiles()["authority_effect"])
+        self.assertEqual(resolved["instructions_authority_effect"], "NONE_INSTRUCTIONS_ONLY")
+        self.assertTrue(resolved["instructions_are_contract_data_not_authority"])
+        # Publishing the steps is not performing them, and naming an owner is
+        # not reaching it. Both said rather than left to be read as more.
+        self.assertFalse(resolved["continuation_executed_here"])
+        self.assertFalse(resolved["named_owner_surfaces_reached_here"])
+        # Standing's own effect is untouched by carrying instructions.
+        self.assertEqual(resolved["standing_authority_effect"], "NONE_STANDING_ONLY")
+
+    def test_a_node_class_does_not_open_the_standing_gate(self):
+        # The class is instructions-only, so it cannot substitute for any part
+        # of the standing declaration the contract requires.
+        declared = genesis(
+            node_class="LLM_OR_MACHINE_ALREADY_CAPABLE_OF_EMITTING_A_CANONICAL_MANIFEST")
+        declared.pop("predecessor")
+        with self.assertRaises(SystemExit):
+            NS.require(CONTRACT_DOC, packet(declared))
+
+    def test_an_unresolved_class_is_recorded_not_refused(self):
+        # Instructions carry no authority, so a class naming no declared
+        # consumer is a selection that did not happen -- not a standing
+        # failure. Refusing here would gate ingress on a field the contract
+        # gives no authority, which is the inverse of the defect under review.
+        resolved = NS.require(CONTRACT_DOC, packet(genesis(node_class="NOT_A_DECLARED_CLASS")))
+        self.assertEqual(resolved["node_standing_disposition"], "ALLOW")
+        self.assertTrue(resolved["node_class_declared"])
+        self.assertFalse(resolved["node_class_resolved"])
+        self.assertIsNone(resolved["selected_continuation_profile"])
+        self.assertEqual(set(resolved["machine_readable_instructions"]),
+                         set(NS.instruction_profiles(CONTRACT_DOC)))
+
+    def test_an_absent_class_still_publishes_both(self):
+        resolved = NS.require(CONTRACT_DOC, packet(genesis()))
+        self.assertFalse(resolved["node_class_declared"])
+        self.assertFalse(resolved["node_class_resolved"])
+        self.assertEqual(set(resolved["machine_readable_instructions"]),
+                         set(NS.instruction_profiles(CONTRACT_DOC)))
+
+    def test_a_profile_added_to_the_contract_is_published_without_code_change(self):
+        extended = json.loads(json.dumps(CONTRACT_DOC))
+        extended["machine_readable_instructions"]["INVENTED_CONTINUATION"] = {
+            "consumer": "INVENTED_CONSUMER_CLASS", "steps": ["DO_NOTHING"]}
+        self.assertIn("INVENTED_CONTINUATION", NS.instruction_profiles(extended))
+        resolved = NS.require(extended, packet(genesis(node_class="INVENTED_CONSUMER_CLASS")))
+        self.assertEqual(resolved["selected_continuation_profile"], "INVENTED_CONTINUATION")
+
+    def test_external_interlock_intr_is_deferred_in_both_profiles(self):
+        # The question of whether external InTr must be wired before a node can
+        # observe this invariant is answered by the contract, not by us: the
+        # crossing is internal and post-submission in both profiles.
+        for name, profile in NS.instruction_profiles(CONTRACT_DOC).items():
+            with self.subTest(profile=name):
+                self.assertEqual(profile["interlock_intr"], "INTERNAL_POST_SUBMISSION")
+                self.assertEqual(profile["external_interlock_intr"],
+                                 "DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6")
+
+
 if __name__ == "__main__":
     unittest.main()

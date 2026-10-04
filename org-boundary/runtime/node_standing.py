@@ -274,8 +274,13 @@ def require(contract: Mapping[str, Any], packet: Mapping[str, Any]) -> dict[str,
         predecessor=resolved_predecessor, fail_closed=fail_closed)
 
     lineage = _section(contract, "lineage_contract")
+    # The continuation the admitted node is to follow, carried on the ALLOW
+    # itself. This is what makes the handshake self-describing: the node reads
+    # its next step off the disposition rather than from anything we send.
+    carried = continuation(contract, declared.get("node_class"))
     return {
         **agreement,
+        **carried,
         "schema": DISPOSITION_SCHEMA,
         "contract_id": str(contract.get("document_id") or "CANONICAL-NODE-INGRESS-CONTRACT-001"),
         "node_standing_disposition": allow,
@@ -296,6 +301,92 @@ def require(contract: Mapping[str, Any], packet: Mapping[str, Any]) -> dict[str,
         "silent_reenrollment_occurred": False,
         "ordering": str(lineage.get("ordering") or "OSCILLATOR_HEARTBEAT_EPOCH_ONLY"),
         "standing_authority_effect": "NONE_STANDING_ONLY",
+    }
+
+
+# --- machine-readable continuation -------------------------------------------
+#
+# The contract does not stop at standing. It requires the continuation to be
+# published too:
+#
+#     machine_readable_instructions.requirement -> "Discovery MUST publish both
+#     instruction profiles. Instructions are contract data, not authority, and
+#     MUST use existing canonical owners/surfaces."
+#
+# Nothing published them. An ALLOW resolved standing and then said nothing
+# about what the admitted node should do next, so the caller had to be told out
+# of band -- by a document we send someone, which is the exact resolution path
+# `CANONICAL-NODE-INGRESS-CONTRACT-001` exists to replace. A requirement stated
+# in the contract and not held by the running surface is the defect class under
+# review, and it was sitting inside the invariant under review.
+#
+# These read the profiles off the contract for the same reason the rules above
+# are read rather than restated: a second copy here would be a second authority
+# on the continuation.
+
+
+def instruction_profiles(contract: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+    """The declared continuation profiles, keyed by profile name.
+
+    A profile is identified structurally -- a mapping declaring both a
+    `consumer` and `steps` -- rather than by a list of names kept here, so a
+    profile added to the contract is published without this module changing.
+    """
+    section = _section(contract, "machine_readable_instructions")
+    return {
+        str(name): value
+        for name, value in section.items()
+        if isinstance(value, Mapping) and "consumer" in value and "steps" in value
+    }
+
+
+def node_classes(contract: Mapping[str, Any]) -> dict[str, str]:
+    """Declared consumer class -> the profile that serves it.
+
+    The contract already enumerates the classes, as each profile's `consumer`.
+    No class vocabulary is invented here.
+    """
+    return {
+        str(profile["consumer"]): name
+        for name, profile in instruction_profiles(contract).items()
+    }
+
+
+def continuation(contract: Mapping[str, Any], node_class: Any) -> dict[str, Any]:
+    """Resolve the continuation for a declared node class.
+
+    Both profiles are published whatever the class resolves to, because the
+    contract requires discovery to publish both. The class selects which one
+    the caller is told is theirs; it does not restrict what is disclosed.
+
+    An unresolved class is recorded, not refused. Instructions carry
+    `NONE_INSTRUCTIONS_ONLY`, so a class that names no declared consumer is a
+    selection that did not happen -- it is not a standing failure, and turning
+    it into one would gate ingress on a field the contract gives no authority.
+    """
+    section = _section(contract, "machine_readable_instructions")
+    profiles = instruction_profiles(contract)
+    classes = node_classes(contract)
+    declared = _text(node_class)
+    selected = classes.get(declared) if declared is not None else None
+    return {
+        "machine_readable_instructions": dict(profiles),
+        "instruction_profiles_published": sorted(profiles),
+        "declared_node_classes": sorted(classes),
+        "node_class": declared,
+        "node_class_declared": declared is not None,
+        "node_class_resolved": selected is not None,
+        "selected_continuation_profile": selected,
+        "continuation_common_precondition": section.get("common_precondition"),
+        "no_new_endpoint_required": section.get("no_new_endpoint_required"),
+        "no_new_host_required": section.get("no_new_host_required"),
+        "instructions_authority_effect": str(
+            section.get("authority_effect") or "NONE_INSTRUCTIONS_ONLY"),
+        # Said plainly for the same reason standing says it: publishing the
+        # steps is not performing them, and naming an owner is not reaching it.
+        "instructions_are_contract_data_not_authority": True,
+        "continuation_executed_here": False,
+        "named_owner_surfaces_reached_here": False,
     }
 
 
@@ -328,4 +419,74 @@ def readiness(contract: Mapping[str, Any]) -> dict[str, Any]:
         "attestation_owner_state": "NOT_PROVEN",
         "readiness_is_not_standing": True,
         "authority_effect": "NONE_READINESS_ONLY",
+        # Discovery MUST publish both instruction profiles. Readiness is the
+        # discovery surface, so it publishes them before standing is held --
+        # a caller reads what the continuation will require while deciding
+        # whether to declare at all.
+        **{k: v for k, v in continuation(contract, None).items()
+           if k not in {"node_class", "node_class_declared", "node_class_resolved",
+                        "selected_continuation_profile"}},
     }
+
+
+def _main(argv: list[str] | None = None) -> int:
+    """Local entry point: the registration surface, with no host in it.
+
+    The contract says `no_new_host_required` and `no_new_endpoint_required`,
+    and means it. A node registers by running the contract where the contract
+    lives, so the carrier is a repository checkout rather than a service. That
+    is the same rule the ledger follows -- addressed, not located.
+
+    Nothing here is an authority. `readiness` publishes a requirement and
+    `establish` resolves a declaration; neither executes a continuation, and
+    both say so in their own output.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="node_standing.py",
+        description="Canonical node standing, resolved from the contract in this checkout.")
+    parser.add_argument("--root", default=".", help="repository root holding the contract")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("readiness", help="publish what standing requires, and grant nothing")
+    establish = sub.add_parser("establish", help="declare standing and receive the continuation")
+    establish.add_argument("--node-ref", required=True, help="a name for the declaring side")
+    establish.add_argument("--node-class", default=None,
+                           help="a declared consumer class; omit to receive both profiles")
+    establish.add_argument("--predecessor", default=None,
+                           help="JSON predecessor binding; omit for explicit genesis")
+    establish.add_argument("--generation", type=int, default=None)
+
+    args = parser.parse_args(argv)
+    contract = load_contract(Path(args.root))
+
+    if args.cmd == "readiness":
+        print(json.dumps(readiness(contract), indent=2, sort_keys=True))
+        return 0
+
+    # An omitted --predecessor is genesis declared explicitly, not a default
+    # applied silently: the key is always present in what is resolved.
+    predecessor = json.loads(args.predecessor) if args.predecessor else None
+    mode = standing_modes(contract)[0 if predecessor is None else 1]
+    declared: dict[str, Any] = {"mode": mode, "node_ref": args.node_ref,
+                                "predecessor": predecessor}
+    if args.node_class is not None:
+        declared["node_class"] = args.node_class
+    if args.generation is not None:
+        declared["generation"] = args.generation
+
+    try:
+        resolved = require(contract, {"standing": declared})
+    except SystemExit as refused:
+        # A refusal is an outcome, and it is reported as data rather than as a
+        # traceback: the caller is told which disposition and why.
+        print(json.dumps({"schema": DISPOSITION_SCHEMA,
+                          "node_standing_disposition": "REFUSED",
+                          "reason": str(refused)}, indent=2, sort_keys=True))
+        return 1
+    print(json.dumps(resolved, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())
