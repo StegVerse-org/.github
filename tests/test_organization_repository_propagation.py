@@ -15,6 +15,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -197,3 +198,75 @@ class RepositoryPropagationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+#: The directory the resident cycle writes its own consumption state into. It
+#: is not repository content: the node state root is told to the node, so a run
+#: leaves nothing behind in the checkout, and the propagation workflow asserts
+#: exactly that.
+#:
+#: Scoped to what that assertion covers and no wider. `resident-runtime/control`
+#: looks similar and is not the same thing -- it carries a declared one-shot
+#: request that `resident_executor.py` and the SV-002 roundtrip both read, so it
+#: is content, and a guard sweeping it in would refuse the repository's own
+#: input.
+RUNTIME_STATE_PATHS = ("resident-runtime/federation",)
+
+
+class NoRuntimeStateIsTrackedTests(unittest.TestCase):
+    """A run's own state is not repository content, and must not be committed.
+
+    The propagation workflow already asserts that a cycle leaves nothing behind
+    in the checkout. What it could not see is an artifact committed *before* it
+    runs: a `seen.d` consumption marker reached `main` in f2ee1df, which made
+    that assertion fail on every branch from then on, and the workflow's own
+    path filter did not watch the directory the artifact landed in -- so the
+    check that catches it never ran on the change that caused it.
+
+    This case closes that: it reads the git index rather than the filesystem,
+    so a committed artifact fails here, locally, on any path that runs this
+    module.
+    """
+
+    def tracked_under(self, prefix):
+        listed = subprocess.run(["git", "ls-files", "--", prefix],
+                                cwd=ROOT, capture_output=True, text=True)
+        if listed.returncode != 0:
+            self.skipTest("not a git checkout, so the index cannot be read")
+        return [line for line in listed.stdout.splitlines() if line.strip()]
+
+    def test_no_resident_runtime_state_is_tracked(self):
+        for prefix in RUNTIME_STATE_PATHS:
+            with self.subTest(prefix=prefix):
+                self.assertEqual(
+                    self.tracked_under(prefix), [],
+                    prefix + " holds a run's own state; committing it makes the "
+                    "cycle's 'leaves nothing behind' assertion fail on every branch")
+
+    def test_the_declared_one_shot_request_is_still_content(self):
+        """The guard is narrow on purpose, and this is what it must not sweep in."""
+        self.assertEqual(
+            self.tracked_under("resident-runtime/control/sv002-sdk-query.request.json"),
+            ["resident-runtime/control/sv002-sdk-query.request.json"])
+
+    def test_the_check_reads_the_index_rather_than_the_filesystem(self):
+        """An uncommitted local run is not a committed artifact.
+
+        Demonstrated without writing into the checkout. This module runs in CI
+        *before* the step asserting the cycle left nothing behind, so a case
+        that created `resident-runtime/federation` to prove a point would break
+        the assertion it exists to protect -- and a cleanup that failed would
+        break it silently.
+        """
+        self.assertEqual(self.tracked_under("resident-runtime/federation/seen.d"), [])
+        self.assertEqual(self.tracked_under("resident-runtime/no-such-path"), [])
+
+    def test_this_module_leaves_the_runtime_state_directory_absent(self):
+        """Whatever else these cases do, the next CI step depends on this."""
+        for prefix in RUNTIME_STATE_PATHS:
+            with self.subTest(prefix=prefix):
+                self.assertFalse(
+                    (ROOT / prefix).exists(),
+                    prefix + " exists in the checkout after this module ran; the "
+                    "propagation workflow's next step asserts it does not")
+
