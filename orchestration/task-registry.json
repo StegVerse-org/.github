@@ -168,6 +168,27 @@
       ],
       "tag_allowed": false,
       "activation_condition": "a surface in this organization declares an admitted capability/route binding, which none yet does; until then detection is proven and enforcement on paths this organization does not own belongs to their owners"
+    },
+    {
+      "task_id": "SVORG-WORKERCOORDINATOR-CLAIM-SURFACE-001",
+      "issue": null,
+      "title": "Reconcile the WorkerCoordinator claim/fence authority surface",
+      "status": "proposed",
+      "workstream": "workercoordinator-claim-authority",
+      "depends_on": [],
+      "required_evidence": [
+        "canonical WorkerCoordinator claim/fence owner identified without duplicating the SDK semantic contract",
+        "machine-readable claim surface binds only to an existing entity-neutral Task Registry task_id",
+        "claim generation and fencing freshness fail closed against stale or competing claims",
+        "claim lifecycle evidence distinguishes current, superseded, returned/released, and stale claims",
+        "SDK WORKERCOORDINATOR_CLAIM_FENCE_BOUND references authentic owner evidence rather than manufacturing claim authority",
+        "adversarial claim-surface tests and repository-required validation succeed"
+      ],
+      "outputs": [
+        "docs/WORKERCOORDINATOR_CLAIM_SURFACE_MIRROR_HANDOFF.md"
+      ],
+      "tag_allowed": false,
+      "activation_condition": "the canonical WorkerCoordinator claim/fence owner is identified and the existing SDK Test 2 claim/fence semantics are reconciled without duplicating authority"
     }
   ]
 }
