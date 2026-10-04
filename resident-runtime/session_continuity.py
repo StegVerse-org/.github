@@ -23,21 +23,28 @@ that rule exists to prevent. What binds generation 4 to generation 1 is that
 each one names its predecessor's exact digests, which a forger would have to
 already hold.
 
-**And here is what this projection cannot do, which is the point of writing it.**
-A standing disposition carries `standing_generation` and `standing_predecessor`,
-and it does *not* carry the `manifest_sha256` or `result_sha256` that its own
-successor's predecessor binding will name. So when generation 2 states what
-generation 1 was, there is nothing in generation 1's disposition to check that
-statement against. Continuity across a series is therefore *declared by each
-successor* and recomputed against nothing -- the same narrowness
-`declared_predecessor_lineage_recomputed: false` already admits for a single
-crossing, now visible across a series where it matters more, because a session
-is exactly the claim that a later generation belongs with an earlier one.
+**How strongly continuity is held depends on what the crossings carried, and
+the record says which.** An earlier revision of this module reported that a
+successor's statement about its predecessor was checkable against nothing. That
+was true of the only series it had been shown -- one whose envelopes carried no
+generation manifest -- and false in general, which made it an overclaim in the
+direction of pessimism rather than the usual direction.
 
-This module reports that limit on every record rather than presenting a
-well-formed series as a proven one. Closing it means a disposition carrying the
-digests its successor will name, which is a change to what standing emits and
-is not taken here.
+Where a crossing carries a generation manifest, the boundary already refuses an
+envelope whose chain position contradicts it, and now records the digest it
+agreed with rather than only the verdict that it agreed. So a successor's
+predecessor binding is compared to the generation it names, and a series whose
+every generation did that is `PROVEN_AGAINST_CARRIED_MANIFESTS`. A series whose
+crossings carried nothing is `DECLARED_ONLY` and says what that means. Reporting
+both as simply continuous, as the first revision did, let a declared chain read
+exactly like a checked one.
+
+Two narrownesses survive at both strengths and are stated rather than closed.
+The digest is *carried* from the manifest, not recomputed here: recomputing
+would be a second authority on a digest the lineage owner already computes and
+refuses on mismatch. And only the manifest digest has a counterpart on the
+prior disposition -- the `result_sha256` a successor also names does not, so
+that half stays uncheckable and is not claimed otherwise.
 """
 from __future__ import annotations
 
@@ -57,9 +64,20 @@ SECOND_GENESIS = "SECOND_GENESIS"
 GENERATION_NOT_SUCCESSOR = "GENERATION_NOT_SUCCESSOR"
 PREDECESSOR_NAMES_A_DIFFERENT_GENERATION = "PREDECESSOR_NAMES_A_DIFFERENT_GENERATION"
 HEARTBEAT_EPOCH_WENT_BACKWARDS = "HEARTBEAT_EPOCH_WENT_BACKWARDS"
+PREDECESSOR_NAMES_A_DIFFERENT_MANIFEST = "PREDECESSOR_NAMES_A_DIFFERENT_MANIFEST"
 
 BREAK_REASONS = (NODE_REF_CHANGED, SECOND_GENESIS, GENERATION_NOT_SUCCESSOR,
-                 PREDECESSOR_NAMES_A_DIFFERENT_GENERATION, HEARTBEAT_EPOCH_WENT_BACKWARDS)
+                 PREDECESSOR_NAMES_A_DIFFERENT_GENERATION, HEARTBEAT_EPOCH_WENT_BACKWARDS,
+                 PREDECESSOR_NAMES_A_DIFFERENT_MANIFEST)
+
+#: How strongly a session's continuity is held. The distinction exists because
+#: the first revision of this module reported a series whose dispositions
+#: carried no manifest with the same `continuous: true` as one whose every
+#: generation agreed with a carried manifest -- which made a declared chain
+#: read exactly like a checked one.
+PROVEN_AGAINST_CARRIED_MANIFESTS = "PROVEN_AGAINST_CARRIED_MANIFESTS"
+DECLARED_ONLY = "DECLARED_ONLY"
+MIXED = "MIXED"
 
 
 def _module(name: str, relative: str):
@@ -109,6 +127,16 @@ def _break_between(earlier: Mapping[str, Any], later: Mapping[str, Any]) -> dict
     if named != earlier.get("standing_generation"):
         return {"reason": PREDECESSOR_NAMES_A_DIFFERENT_GENERATION,
                 "detail": {"names": named, "previous": earlier.get("standing_generation")}}
+
+    # The check the first revision could not make. When the prior generation
+    # agreed with a manifest, its digest is on the disposition, so the
+    # successor's predecessor binding is compared to the generation it names
+    # rather than to the successor's own restatement of it.
+    agreed = earlier.get("standing_agreed_manifest_sha256")
+    named = later["standing_predecessor"].get("manifest_sha256")
+    if agreed is not None and named is not None and named != agreed:
+        return {"reason": PREDECESSOR_NAMES_A_DIFFERENT_MANIFEST,
+                "detail": {"prior_generation_agreed_with": agreed, "successor_names": named}}
 
     earlier_epoch, later_epoch = _predecessor_epoch(earlier), _predecessor_epoch(later)
     if earlier_epoch is not None and later_epoch is not None and later_epoch < earlier_epoch:
@@ -164,7 +192,27 @@ def continuity(dispositions: Sequence[Mapping[str, Any]], *,
         members = [series[index] for index in group]
         epochs = [epoch for epoch in (_predecessor_epoch(item) for item in members)
                   if epoch is not None]
+        backed = [bool(item.get("carried_generation_manifest")) for item in members]
+        # A pair is checkable when the earlier generation agreed with a
+        # manifest and the later one names a digest: both halves must be
+        # present or there is nothing to compare.
+        checkable = sum(
+            1 for earlier, later in zip(members, members[1:])
+            if earlier.get("standing_agreed_manifest_sha256") is not None
+            and isinstance(later.get("standing_predecessor"), Mapping)
+            and later["standing_predecessor"].get("manifest_sha256") is not None)
+        pairs = max(0, len(members) - 1)
+        if all(backed) and checkable == pairs:
+            strength = PROVEN_AGAINST_CARRIED_MANIFESTS
+        elif not any(backed):
+            strength = DECLARED_ONLY
+        else:
+            strength = MIXED
         sessions.append({
+            "continuity_strength": strength,
+            "generations_carrying_a_manifest": sum(backed),
+            "checkable_pairs": checkable,
+            "pairs": pairs,
             "session_root": session_root(members[0], declared_label),
             "node_ref": members[0].get("standing_node_ref"),
             "positions": list(group),
@@ -190,13 +238,32 @@ def continuity(dispositions: Sequence[Mapping[str, Any]], *,
         "series_is_empty": not series,
         "breaks": breaks,
         "break_reason_vocabulary": list(BREAK_REASONS),
-        # The limit, on every record. A well-formed series is not a proven one.
-        "predecessor_digests_recomputed_against_the_prior_disposition": False,
-        "why_not": ("a standing disposition carries neither the manifest nor the "
-                    "result digest that its successor's predecessor binding names, "
-                    "so the successor's statement about its predecessor is checkable "
-                    "against nothing here"),
-        "continuity_is_declared_by_each_successor_not_proven_against_its_predecessor": True,
+        # The limit, stated per series rather than blanket-asserted. An earlier
+        # revision said continuity was recomputed against nothing, which was
+        # true only of a series whose dispositions carried no manifest -- and
+        # was the only series this module had been shown. Where a manifest is
+        # carried, the boundary refuses an envelope disagreeing with it and now
+        # records the digest it agreed with, so successive generations are
+        # compared to the chain rather than to a restatement.
+        "continuity_strength": (
+            sessions[0]["continuity_strength"] if len(sessions) == 1
+            else (DECLARED_ONLY if all(s["continuity_strength"] == DECLARED_ONLY
+                                       for s in sessions) else MIXED)
+            if sessions else DECLARED_ONLY),
+        "strength_vocabulary": [PROVEN_AGAINST_CARRIED_MANIFESTS, DECLARED_ONLY, MIXED],
+        "declared_only_means": ("no generation carried a manifest, so each successor's "
+                                "statement about its predecessor is checkable against "
+                                "nothing here"),
+        "proven_means": ("every generation agreed with a carried manifest and every "
+                         "successor's predecessor digest matched the digest the prior "
+                         "generation agreed with"),
+        # Still true at both strengths, and still said: the digest is carried
+        # from the manifest, not recomputed here. The lineage owner recomputes
+        # it and refuses on mismatch.
+        "agreed_manifest_digests_recomputed_here": False,
+        "agreed_manifest_digest_owner": (
+            "StegVerse-org/StegVerse-SDK:stegverse/external_interlock_bootstrap.py"
+            "::validate_external_interaction_generation_manifest"),
         "newest_generation_epoch_is_not_carried_by_its_own_disposition": True,
         "a_break_is_reported_not_refused": True,
         "authority_effect": AUTHORITY_EFFECT,

@@ -104,13 +104,70 @@ jobs:
           print("SESSION_BREAK=PASS", split["breaks"][0]["reason"],
                 "-> sessions", split["session_count"], "nothing discarded")
 
-          # And the limit, stated on every record.
-          assert resolved["predecessor_digests_recomputed_against_the_prior_disposition"] is False
-          assert resolved["continuity_is_declared_by_each_successor_not_proven_against_its_predecessor"] is True
+          # This series carried no manifest, so it is declared, not proven --
+          # and the record must say so rather than reporting bare continuity.
+          assert resolved["continuity_strength"] == sessions.DECLARED_ONLY, resolved
+          assert resolved["sessions"][0]["generations_carrying_a_manifest"] == 0
           assert resolved["newest_generation_epoch_is_not_carried_by_its_own_disposition"] is True
-          assert "manifest_sha256" not in series[0], "a disposition now carries digests; revisit"
           assert resolved["authority_effect"] == "NONE_CONTINUITY_ONLY"
-          print("SESSION_LIMIT=PASS continuity declared by the successor, recomputed against nothing")
+          print("SESSION_STRENGTH=PASS", resolved["continuity_strength"])
+
+          # The same gate, crossed carrying a generation manifest, is proven
+          # against what each generation agreed with.
+          import hashlib, json as _json
+
+          def _sha(value):
+              return hashlib.sha256(_json.dumps(
+                  value, sort_keys=True, separators=(",", ":"),
+                  ensure_ascii=False).encode("utf-8")).hexdigest()
+
+          def _manifest(generation, predecessor):
+              body = {"schema": "stegverse.external_organization.interaction_manifest.v2",
+                      "manifest_id": "CI-%03d" % generation, "generation": generation,
+                      "predecessor": predecessor, "operation": "REVIEW"}
+              return {**body, "manifest_sha256": _sha(body)}
+
+          first = _manifest(1, None)
+          backed = [standing.require(contract, {
+              "standing": {"mode": "ESTABLISH_GENESIS", "node_ref": NODE,
+                           "predecessor": None},
+              "payload": {"manifest": first}})]
+          carried, epoch = first, 32
+          for generation in (2, 3, 4):
+              binding = {"generation": generation - 1,
+                         "manifest_sha256": carried["manifest_sha256"],
+                         "result_sha256": _sha({NODE: generation - 1}),
+                         "heartbeat_epoch": epoch}
+              carried = _manifest(generation, binding)
+              backed.append(standing.require(contract, {
+                  "standing": {"mode": "VERIFY_EXISTING", "node_ref": NODE,
+                               "generation": generation, "predecessor": binding},
+                  "payload": {"manifest": carried}}))
+              epoch += DELTA
+
+          proven = sessions.continuity(backed)
+          assert proven["continuity_strength"] == sessions.PROVEN_AGAINST_CARRIED_MANIFESTS, proven
+          assert proven["sessions"][0]["checkable_pairs"] == proven["sessions"][0]["pairs"]
+          for disposition in backed:
+              assert disposition["standing_agrees_with_carried_manifest"] is True
+              assert len(disposition["standing_agreed_manifest_sha256"]) == 64
+          print("SESSION_STRENGTH=PASS", proven["continuity_strength"],
+                proven["sessions"][0]["checkable_pairs"], "pairs checked")
+
+          # And a successor naming a manifest the prior generation never agreed
+          # with is caught -- the check the earlier revision could not make.
+          forged = dict(backed[2])
+          forged["standing_predecessor"] = {**backed[2]["standing_predecessor"],
+                                            "manifest_sha256": "f" * 64}
+          caught = sessions.continuity([backed[0], backed[1], forged])
+          assert caught["continuous"] is False, caught
+          assert caught["breaks"][0]["reason"] == sessions.PREDECESSOR_NAMES_A_DIFFERENT_MANIFEST
+          print("SESSION_FORGERY=PASS", caught["breaks"][0]["reason"])
+
+          # Both narrownesses survive and are still stated.
+          assert proven["agreed_manifest_digests_recomputed_here"] is False
+          assert "external_interlock_bootstrap.py" in proven["agreed_manifest_digest_owner"]
+          print("SESSION_LIMIT=PASS digest carried not recomputed; owner named")
           PY
 
       - name: Declare what session continuity does not do

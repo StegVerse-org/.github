@@ -66,6 +66,42 @@ def chain(node_ref="mir-console", start=32, delta=500, generations=4):
     return series
 
 
+def _canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False).encode("utf-8")
+
+
+def manifest(generation, predecessor, node_ref="mir-console"):
+    """A generation manifest shaped as the lineage owner builds one."""
+    body = {"schema": "stegverse.external_organization.interaction_manifest.v2",
+            "manifest_id": node_ref.upper() + "-%03d" % generation,
+            "generation": generation, "predecessor": predecessor,
+            "operation": "REVIEW"}
+    return {**body, "manifest_sha256": hashlib.sha256(_canonical(body)).hexdigest()}
+
+
+def backed_chain(node_ref="mir-console", start=32, delta=500, generations=4):
+    """A series whose every generation crosses the gate carrying its manifest."""
+    first = manifest(1, None, node_ref)
+    series = [NS.require(CONTRACT, {
+        "standing": {"mode": "ESTABLISH_GENESIS", "node_ref": node_ref,
+                     "predecessor": None},
+        "payload": {"manifest": first}})]
+    carried, epoch = first, start
+    for generation in range(2, generations + 1):
+        binding = {"generation": generation - 1,
+                   "manifest_sha256": carried["manifest_sha256"],
+                   "result_sha256": _digest({node_ref: "r%d" % (generation - 1)}),
+                   "heartbeat_epoch": epoch}
+        carried = manifest(generation, binding, node_ref)
+        series.append(NS.require(CONTRACT, {
+            "standing": {"mode": "VERIFY_EXISTING", "node_ref": node_ref,
+                         "generation": generation, "predecessor": binding},
+            "payload": {"manifest": carried}}))
+        epoch += delta
+    return series
+
+
 class OneSessionTests(unittest.TestCase):
 
     def test_a_well_formed_series_is_one_session(self):
@@ -183,42 +219,85 @@ class BreakTests(unittest.TestCase):
                 self.assertEqual(len(item["between_positions"]), 2)
 
 
-class WhatItCannotEstablishTests(unittest.TestCase):
-    """The limit is the point. A well-formed series is not a proven one."""
+class StrengthTests(unittest.TestCase):
+    """A declared chain must not read the same as a checked one.
 
-    def test_predecessor_digests_are_not_recomputed_against_the_prior_disposition(self):
+    The first revision of this module reported a series whose dispositions
+    carried no manifest with the same `continuous: true` as one whose every
+    generation agreed with a carried manifest. Both were continuous; only one
+    was checkable, and the record did not say which.
+    """
+
+    def test_a_manifest_less_series_is_declared_only(self):
         resolved = SC.continuity(chain())
-        self.assertFalse(resolved["predecessor_digests_recomputed_against_the_prior_disposition"])
-        self.assertIn("checkable against nothing", resolved["why_not"])
+        self.assertTrue(resolved["continuous"])
+        self.assertEqual(resolved["continuity_strength"], SC.DECLARED_ONLY)
+        self.assertEqual(resolved["sessions"][0]["generations_carrying_a_manifest"], 0)
+        self.assertIn("checkable against nothing", resolved["declared_only_means"])
 
-    def test_the_prior_disposition_genuinely_lacks_those_digests(self):
-        # Held against the standing surface itself, so if a disposition ever
-        # starts carrying them this case stops being true and must be revisited.
+    def test_a_manifest_backed_series_is_proven_against_what_it_agreed_with(self):
+        resolved = SC.continuity(backed_chain())
+        self.assertTrue(resolved["continuous"])
+        self.assertEqual(resolved["continuity_strength"],
+                         SC.PROVEN_AGAINST_CARRIED_MANIFESTS)
+        session = resolved["sessions"][0]
+        self.assertEqual(session["generations_carrying_a_manifest"], 4)
+        self.assertEqual(session["checkable_pairs"], session["pairs"])
+
+    def test_the_boundary_records_what_it_agreed_with_not_only_that_it_agreed(self):
+        for disposition in backed_chain():
+            with self.subTest(generation=disposition["standing_generation"]):
+                self.assertTrue(disposition["carried_generation_manifest"])
+                self.assertTrue(disposition["standing_agrees_with_carried_manifest"])
+                self.assertEqual(len(disposition["standing_agreed_manifest_sha256"]), 64)
+
+    def test_a_manifest_less_disposition_carries_no_digest_to_check(self):
         opened = genesis()
-        self.assertNotIn("manifest_sha256", opened)
+        self.assertFalse(opened["carried_generation_manifest"])
+        self.assertIsNone(opened["standing_agreed_manifest_sha256"])
+
+    def test_a_successor_naming_a_different_manifest_breaks_the_series(self):
+        """The check the first revision could not make."""
+        series = backed_chain(generations=3)
+        forged = dict(series[2])
+        forged["standing_predecessor"] = {
+            **series[2]["standing_predecessor"], "manifest_sha256": "f" * 64}
+        resolved = SC.continuity([series[0], series[1], forged])
+        self.assertFalse(resolved["continuous"])
+        self.assertEqual(resolved["breaks"][0]["reason"],
+                         SC.PREDECESSOR_NAMES_A_DIFFERENT_MANIFEST)
+        self.assertEqual(resolved["breaks"][0]["detail"]["successor_names"], "f" * 64)
+
+    def test_a_mixed_series_is_neither_proven_nor_declared_only(self):
+        resolved = SC.continuity(backed_chain(generations=2) + chain("other", generations=2))
+        self.assertEqual(resolved["continuity_strength"], SC.MIXED)
+
+    def test_the_digest_is_carried_not_recomputed_and_the_owner_is_named(self):
+        # Recomputing would be a second authority on a digest the lineage
+        # owner already computes and refuses on mismatch.
+        resolved = SC.continuity(backed_chain())
+        self.assertFalse(resolved["agreed_manifest_digests_recomputed_here"])
+        self.assertIn("external_interlock_bootstrap.py",
+                      resolved["agreed_manifest_digest_owner"])
+
+    def test_the_prior_disposition_still_lacks_the_result_digest(self):
+        # Only the manifest digest is carried. The result digest a successor
+        # also names has no counterpart on the prior disposition, so that half
+        # stays uncheckable and is not claimed otherwise.
+        opened = backed_chain()[0]
         self.assertNotIn("result_sha256", opened)
+        self.assertNotIn("standing_agreed_result_sha256", opened)
 
-    def test_continuity_is_declared_by_the_successor(self):
-        resolved = SC.continuity(chain())
-        self.assertTrue(
-            resolved["continuity_is_declared_by_each_successor_not_proven_against_its_predecessor"])
-
-    def test_the_narrowness_matches_what_standing_already_admits(self):
-        # `declared_predecessor_lineage_recomputed` is false per crossing; this
-        # projection carries the same narrowness across a series.
-        self.assertFalse(genesis()["declared_predecessor_lineage_recomputed"])
-        self.assertFalse(
-            SC.continuity(chain())["predecessor_digests_recomputed_against_the_prior_disposition"])
-
-    def test_an_empty_series_is_not_continuous(self):
-        # A vacuous pass would be the shape of claim this effort refuses.
+    def test_an_empty_series_is_declared_only_rather_than_proven(self):
         resolved = SC.continuity([])
         self.assertFalse(resolved["continuous"])
-        self.assertEqual(resolved["session_count"], 0)
+        self.assertEqual(resolved["continuity_strength"], SC.DECLARED_ONLY)
         self.assertTrue(resolved["series_is_empty"])
 
     def test_the_projection_grants_nothing(self):
-        self.assertEqual(SC.continuity(chain())["authority_effect"], "NONE_CONTINUITY_ONLY")
+        self.assertEqual(SC.continuity(backed_chain())["authority_effect"],
+                         "NONE_CONTINUITY_ONLY")
+
 
 
 if __name__ == "__main__":

@@ -206,15 +206,36 @@ def _agree_with_carried_manifest(payload: Any, *, generation: int, predecessor: 
     manifest = carried_manifest(payload)
     if manifest is None:
         return {"carried_generation_manifest": False,
-                "standing_agrees_with_carried_manifest": None}
+                "standing_agrees_with_carried_manifest": None,
+                "standing_agreed_manifest_sha256": None,
+                "agreed_manifest_digest_recomputed_here": False}
     if manifest.get("generation") != generation:
         _refuse(fail_closed,
                 "claimed-standing-not-provable:carried-manifest-generation-disagrees")
     if manifest.get("predecessor") != predecessor:
         _refuse(fail_closed,
                 "claimed-standing-not-provable:carried-manifest-predecessor-disagrees")
+    # What it agreed with, not merely that it agreed. The disposition recorded
+    # the verdict and dropped the subject, so a later reader holding a series
+    # of dispositions could see that each one agreed with something and never
+    # see whether successive generations agreed with the *same* chain. Carrying
+    # the digest is what lets a successor's predecessor binding be checked
+    # against the generation it names rather than against a restatement of it.
+    #
+    # It is carried, not recomputed. Recomputing would mean implementing the
+    # lineage owner's canonicalisation here, which is a second authority on a
+    # digest the owner already computes and refuses on mismatch --
+    # `validate_external_interaction_generation_manifest` in
+    # `StegVerse-org/StegVerse-SDK:stegverse/external_interlock_bootstrap.py`.
+    # So the narrowness is stated rather than quietly closed, exactly as
+    # `declared_predecessor_lineage_recomputed` states its own.
     return {"carried_generation_manifest": True,
-            "standing_agrees_with_carried_manifest": True}
+            "standing_agrees_with_carried_manifest": True,
+            "standing_agreed_manifest_sha256": _text(manifest.get("manifest_sha256")),
+            "agreed_manifest_digest_recomputed_here": False,
+            "agreed_manifest_digest_owner": (
+                "StegVerse-org/StegVerse-SDK:stegverse/external_interlock_bootstrap.py"
+                "::validate_external_interaction_generation_manifest")}
 
 
 def require(contract: Mapping[str, Any], packet: Mapping[str, Any]) -> dict[str, Any]:
