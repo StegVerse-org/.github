@@ -145,18 +145,34 @@ class PromptClaimTests(unittest.TestCase):
             with self.subTest(field=named):
                 self.assertNotIn(named, item["properties"])
 
-    def test_the_no_claim_surface_statement_is_still_true(self):
-        """The prompt tells a reviewer they will find no claim surface."""
+    #: This file is excluded from the claim-surface search below, by name.
+    #: A case asserting that a string appears nowhere necessarily contains the
+    #: string, so it matches itself the moment it is tracked -- which is how
+    #: this passed locally while untracked and failed in CI on the first run.
+    #: The exemption is named rather than pattern-matched so it stays visible,
+    #: and a separate case fails if it ever stops being needed.
+    SELF = "tests/test_reviewer_prompt_conformance.py"
+
+    def claim_surface_hits(self):
         hits = subprocess.run(
             ["git", "grep", "-l", "-E", r"worker_claim|WorkerCoordinator",
              "--", "*.py", "*.json"],
             cwd=ROOT, capture_output=True, text=True)
-        found = {line for line in hits.stdout.split("\n") if line}
+        return {line for line in hits.stdout.split("\n") if line}
+
+    def test_the_no_claim_surface_statement_is_still_true(self):
+        """The prompt tells a reviewer they will find no claim surface."""
+        found = self.claim_surface_hits() - {self.SELF}
         self.assertEqual(found, {
             "data/organization-role-runtime-reality-deployment.json",
             "tests/test_organization_role_runtime_reality_deployment.py",
             "tests/test_task_registry.py",
         }, "a claim surface appeared or a declaration moved; the prompt now misleads")
+
+    def test_the_self_exemption_is_still_needed(self):
+        """A carve-out that stopped being necessary would sit here unnoticed."""
+        self.assertIn(self.SELF, self.claim_surface_hits(),
+                      self.SELF + " no longer matches; drop the exemption")
 
     def test_both_prompts_say_which_invariant_they_are(self):
         # The collision that sent a reviewer to the wrong surface is recorded
