@@ -82,3 +82,7 @@ The external-framework helper currently reports `SDK_LOCAL_MANIFEST_HANDOFF`; it
 Source checkpoint: SDK PR #424 at `1b24ab0fe4ca1690994a7bacb4ac2286a35f2603`; 35 local source tests and 4 subtests passed. Organization PR #31 merged as `96541b2f0dcb33c3fc23a30869d9bcb4258f1f5a` during this session; this Test 5/6 amendment is a follow-up, not part of that merge. SDK and adapter integration still require exact-head CI and merge; no deployment or runtime claim.
 
 Counter reconciliation: session has 4 user prompts; goal recovery count was already 20/20, now 24 qualifying prompts. Do not reset the parent counter. The external Interlock/InTr successor may be registered only after this boundary is retained on canonical main; its concrete scope is reciprocal external-node transport contracts and tests, with an explicit dependency on Tests 5/6 and no change to their caller instructions. No successor ID has yet been invented or registered.
+
+## Registry reference reconciliation — 2026-10-04
+
+The prior Task Registry `issue: 22` field was misleading: GitHub #22 is the merged predecessor source-repair pull request, not an open issue owning the remaining portability obligation. The canonical task remains `in_progress`. Its current issue references are #23, #24, #25, #26 and #27; merged PR #22 is retained only as repository-artifact history. The unresolved obligations explicitly retain SDK machine discovery/canonical-manifest submission and the remaining host-bound portability surfaces. This reference repair does not create a successor task or imply completion.
