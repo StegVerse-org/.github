@@ -137,3 +137,8 @@ External instructions terminate at `SUBMIT_CANONICAL_MANIFEST` and `RETAIN_SUBMI
 `SDK_MACHINE_CONTRACT` derives from existing SDK builder signatures, processor/route declarations, return projections and console commands. The adapter consumes that SDK projection instead of maintaining a second instruction recipe. The console wrapper already dispatched manifest/external-run; its top-level help omitted them. Shared dispatch/help declarations repair that discovery mismatch.
 
 The external-framework helper currently reports `SDK_LOCAL_MANIFEST_HANDOFF`; it does not prove receiver observation. Adapter predecessor checks establish structural validity only, not authenticated standing. Production endpoint binding, authentic standing, runtime execution, deployment and custody remain NOT_PROVEN. No endpoint, runtime, credential path or authority was created.
+
+
+## WorkerCoordinator claim-authority reconciliation — draft plan
+
+The Task Registry remains the entity-neutral work-intent authority; worker claims do not belong in its task records. The successor plan in [`docs/WORKERCOORDINATOR_CLAIM_SURFACE_MIRROR_HANDOFF.md`](docs/WORKERCOORDINATOR_CLAIM_SURFACE_MIRROR_HANDOFF.md) reconciles the separately declared WorkerCoordinator claim/fence authority with the existing SDK atomic task/worker semantic contract. The SDK already defines claim identity, generation, fencing and lifecycle semantics but explicitly does not claim authentic WorkerCoordinator execution. Until an authoritative owner surface is identified and validated, work-intent authority is `ENFORCED` while the reviewable WorkerCoordinator claim surface remains `NOT_STARTED`; no new broker, runtime, ingress, credential route or authority plane is created by the plan.
