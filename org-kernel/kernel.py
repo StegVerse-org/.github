@@ -213,9 +213,9 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
         processor=root/"org-boundary/runtime/process_boundary.py"
         if not processor.is_file(): raise ValueError("org_boundary_processor_missing")
         with tempfile.TemporaryDirectory() as td:
-            td=Path(td); envelope=td/"packet.json"; out=td/"execution.json"
+            td=Path(td); envelope=td/"packet.json"; out=td/"execution.json"; registry_path=td/"registry.json"
             envelope.write_text(json.dumps(packet,indent=2,sort_keys=True)+"\n")
-            completed=subprocess.run(["python3",str(processor),"--envelope",str(envelope),"--out",str(out)],cwd=root,capture_output=True,text=True,check=False)
+            completed=subprocess.run(["python3",str(processor),"--envelope",str(envelope),"--registry",str(registry_path),"--out",str(out)],cwd=root,capture_output=True,text=True,check=False)
             if completed.returncode!=0 or not out.is_file():
                 raise ValueError("endpoint_adapter_execution_failed:"+completed.stderr[-512:])
             result=json.loads(out.read_text())
