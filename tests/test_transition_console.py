@@ -155,7 +155,7 @@ class RenderingTests(unittest.TestCase):
 
     def test_the_view_carries_both_the_run_and_what_live_means(self):
         rendered = TC.view(chain(), root=Path("/tmp/m"))
-        self.assertEqual(rendered["run"]["run_mode"], TC.LOCAL_ISOLATED)
+        self.assertEqual(rendered["run"]["run_mode"], TC.MATERIALIZER_SUPPLIED)
         self.assertFalse(rendered["live"]["is_a_pushed_stream"])
         self.assertEqual(rendered["transition_count"], 2)
 
