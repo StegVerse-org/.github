@@ -245,7 +245,7 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
         # defective for having no capability resolver, and failing its control
         # dispatch over one would be a limit that is not real.
         try:
-            application_result=capability_ingress(root).receive(root,service,packet)
+            application_result=capability_ingress(root).receive(root,service,packet,registry=registry)
         except SystemExit as refused:
             raise ValueError("capability_ingress_refused:"+str(refused)) from None
     else:
