@@ -191,6 +191,37 @@
         "StegVerse-Labs/Site"
       ],
       "unresolved_obligations": []
+    },
+    {
+      "task_id": "SV011-TT-CAPABILITY-MAP-OBSERVATION-001",
+      "issue": 68,
+      "title": "Observe SV-011 construction from exact initial state through TT-derived next capability",
+      "status": "in_progress",
+      "workstream": "sv011-open-ended-capability-observation",
+      "depends_on": [],
+      "required_evidence": [
+        "OBSERVATION_STARTED binds exact SV-011/entity baseline commit/tree, authority state, experiment identity, and mathematical candidate-set identity",
+        "AE -> RTG -> GTG -> TT candidate consumer retains every considered candidate and disposition",
+        "TT next-required-capability derivation is invoked only if an existing canonical TT primitive actually exposes that operation",
+        "first authentic non-ALLOW or missing primitive terminalizes the current observation step without inventing a target capability",
+        "SDK observation projection reconstructs initial state -> trigger -> every derived construction/exercise cycle -> terminal state without transport or authority creation"
+      ],
+      "outputs": [
+        "SV-011/entity/docs/SV011_TT_CAPABILITY_MAP_OBSERVATION_MIRROR_HANDOFF.md",
+        "SV-011/entity/construction/observation/observation-start.json",
+        "SV-011/entity/construction/observation/sdk-observation-projection.json"
+      ],
+      "tag_allowed": false,
+      "activation_condition": "exact baseline and candidate set are source-validated; progression beyond OBSERVATION_STARTED requires an actually exposed TT next-capability derivation primitive",
+      "destinations": [
+        "SV-011/entity",
+        "StegVerse-org/StegVerse-SDK"
+      ],
+      "unresolved_obligations": [
+        "EXPOSE_OR_IDENTIFY_CANONICAL_TT_NEXT_REQUIRED_CAPABILITY_DERIVATION_PRIMITIVE",
+        "AUTHENTICALLY_OBSERVE_DERIVED_CONSTRUCTION_EXERCISE_CYCLES",
+        "SDK_SINGLE_ARTIFACT_OBSERVATION_PROJECTION"
+      ]
     }
   ]
 }
