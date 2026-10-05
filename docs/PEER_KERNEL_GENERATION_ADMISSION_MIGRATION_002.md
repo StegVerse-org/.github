@@ -24,8 +24,17 @@ is recorded here is an applicable artifact, not a crossing that has changed.
     docs/migrations/stegverse-labs.node-standing-gate.patch
     docs/migrations/admissible-existence.node-standing-gate.patch
 
-Each touches two files, `org-kernel/kernel.py` and
-`org-kernel/tests/test_kernel.py`, and no others.
+Each touches three files, `org-kernel/kernel.py`,
+`org-kernel/tests/test_kernel.py` and `org-kernel/kernel-manifest.json`, and no
+others.
+
+The manifest hunk is why this revision exists. Before it, a peer that applied
+the gate and a peer that had not both reported `kernel_version: 1.3.1`, so
+`kernel_required` could not tell the two generations apart -- a declared limit
+that was not real. The gated generation is **1.3.2**: 1.3.1 plus the standing
+gate. It is not 1.4.0, because this migration installs the gate and not parity
+with this organization's 46-function kernel, and a number claiming parity would
+be the same defect one layer up.
 
 Each depends on two files copied verbatim from this repository, which is their
 canonical source. They are copied rather than vendored into the patch so the
@@ -37,11 +46,19 @@ peer carries the canonical module instead of a fork of it:
     docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json
       sha256 398c794b3d1c617787a5cf1edd59d3420584800aec01f718b9e9611f5f9b7bab
 
+One further dependency is assumed already present in the peer rather than
+carried, and is named here so the assumption is not implicit:
+
+    org-boundary/registry/services.json
+      present in StegVerse-Labs/.github and Admissible-Existence/.github at the
+      heads below; the patch reads the peer's own service registry and must not
+      replace it
+
 Verified against:
 
-    StegVerse-Labs/.github        550491d32b82f2260b3ca84c72e016a79c3542d9
-    Admissible-Existence/.github  3e9da6c5e0bada17c7480c6afcc11247a441e7d5
-    StegVerse-org/.github         c7314b98af02bc4c84f6a4095afd9f2dfb18aa65
+    StegVerse-Labs/.github        78f902c387aad1a1a332e3134623815d9996e21f
+    Admissible-Existence/.github  b57204ab0e7ee8f285dd9ea944fc37ec7cc7abc9
+    StegVerse-org/.github         d3270af50e0e7c8fd9b974d8bc515a597538df7f
 
 ## What each patch does
 
@@ -147,6 +164,13 @@ steps, from that session's checkout root:
     mkdir -p docs && cp <this repo>/docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json docs/
     python3 org-kernel/tests/test_kernel.py
 
+Measured on a fresh clone of each head below, following exactly those four
+steps: `NODE_STANDING_GATE_PASS`, exit 0, and a standing-less dispatch refused
+`node_standing_refused:node-standing-fail_closed:claimed-standing-not-provable:
+no-standing-declared`. Skipping either copy step produces a kernel that cannot
+run, which is what the applier must not do and what
+`tests/test_peer_migration_artifacts.py` now holds the record to.
+
 ## Boundary
 
     This document does not change any peer kernel.
@@ -155,3 +179,9 @@ steps, from that session's checkout root:
     Standing admitted is not origin authenticated.
     kernel_required remains a declaration until the owning organization runs
       the gate on its own default branch.
+    1.3.2 is the gate, not generation parity. Twelve kernel functions present
+      in StegVerse-org remain absent from a migrated peer: addressed_node_state_store,
+      build_endpoint_response, capability_ingress, federation_cycles,
+      manifest_selection, mesh_store, node_state_provenance, node_state_store,
+      record_federation_cycle, resolve_federation_root, resolve_node_state_root
+      and validate_hb_reference. Closing those is a separate migration.
