@@ -31,7 +31,6 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REGISTRY = ROOT / "org-boundary/registry/services.json"
 PROCESSOR = ROOT / "org-boundary/runtime/process_boundary.py"
 
 _spec = importlib.util.spec_from_file_location(
@@ -149,9 +148,10 @@ def crossing_packet(manifest, destination, service, registry, origin, packet_id,
     return {**envelope, "standing": standing}
 
 
-def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing", standing=None):
-    """Drive the manifest's declared crossing and return what it produced."""
-    registry = load(REGISTRY)
+def cross(manifest, *, registry, origin=None, packet_id="sdk-manifest-crossing", standing=None):
+    """Drive the manifest through the materialized capability map supplied by the caller."""
+    if not isinstance(registry, dict):
+        raise SystemExit("CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP")
     destination = declared_destination(manifest)
     service = resolve_surface(destination["surface"], registry)
     origin = origin or {"org": "StegVerse-org", "service": "stegverse-org.stegverse-sdk"}
@@ -169,8 +169,11 @@ def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing", standing=
         envelope = Path(work) / "ingress.json"
         execution = Path(work) / "execution.json"
         envelope.write_text(json.dumps(ingress, indent=2, sort_keys=True) + "\n")
+        registry_path = Path(work) / "registry.json"
+        registry_path.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n")
         completed = subprocess.run(
-            [sys.executable, str(PROCESSOR), "--envelope", str(envelope), "--out", str(execution)],
+            [sys.executable, str(PROCESSOR), "--envelope", str(envelope),
+             "--registry", str(registry_path), "--out", str(execution)],
             cwd=str(ROOT), capture_output=True, text=True, check=False)
         if completed.returncode != 0 or not execution.is_file():
             # The far side refused or could not be reached. Say which, and say
@@ -218,6 +221,8 @@ def main():
     parser.add_argument("--manifest", type=Path, required=True,
                         help="an SDK manifest declaring completion.egress")
     parser.add_argument("--packet-id", default="sdk-manifest-crossing")
+    parser.add_argument("--registry", type=Path, required=True,
+                        help="materialized capability map supplied to this crossing")
     parser.add_argument("--origin-org", default="StegVerse-org")
     parser.add_argument("--origin-service", default="stegverse-org.stegverse-sdk")
     parser.add_argument("--out", type=Path, default=None)
@@ -225,7 +230,7 @@ def main():
                         help="JSON file declaring mode, node_ref and the predecessor key; "
                              "required unless the manifest declares its own generation and predecessor")
     args = parser.parse_args()
-    result = cross(load(args.manifest),
+    result = cross(load(args.manifest), registry=load(args.registry),
                    origin={"org": args.origin_org, "service": args.origin_service},
                    packet_id=args.packet_id,
                    standing=load(args.standing) if args.standing else None)
