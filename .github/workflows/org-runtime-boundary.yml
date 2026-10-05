@@ -11,6 +11,8 @@ on:
       - 'tests/test_receipt_time_base.py'
       - 'tests/test_repo_ledger_serialized_append.py'
       - 'tests/test_ledger_store_contract.py'
+      - 'tests/test_ledger_substrate_transaction.py'
+      - 'tests/test_ledger_substrate_transaction.py'
       - 'org-boundary/runtime/intr_transport.py'
       - 'org-boundary/runtime/process_boundary.py'
       - 'org-boundary/registry/services.json'
@@ -97,6 +99,7 @@ jobs:
       - name: Carry a declared SDK manifest across the boundary end-to-end
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
+            --registry org-boundary/registry/services.json \
             --manifest tests/fixtures/sdk-manifests/hold-to-boundary-diagnostic.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-sdk-manifest-crossing --out /tmp/sdk-crossing.json
@@ -104,6 +107,7 @@ jobs:
       - name: An installed far side still refuses a pair it does not admit
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
+            --registry org-boundary/registry/services.json \
             --manifest tests/fixtures/sdk-manifests/hold-to-llm-adapter.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-sdk-manifest-crossing-gap --out /tmp/sdk-crossing-gap.json || true
@@ -112,12 +116,15 @@ jobs:
       - name: The declared capability is served at the far side
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
+            --registry org-boundary/registry/services.json \
             --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-task-registry-disclosure --out /tmp/task-registry-disclosure.json
           python -c 'import json; x=json.load(open("/tmp/task-registry-disclosure.json")); assert x["declared_capability_processed"] is True; assert x["processing_selection"]=="MANIFEST_DECLARED"; assert x["reconstruction"]=="RECONSTRUCTED"; assert len(x["receipts"])==5'
       - name: Test repository ledger append is serialized and atomically published
         run: python -m unittest tests.test_repo_ledger_serialized_append -v
+      - name: Test portable transactional ledger substrate
+        run: python -m unittest tests.test_ledger_substrate_transaction -v
       - name: Test canonical receipts are timed by the heartbeat, not a clock
         run: python -m unittest tests.test_receipt_time_base -v
       - name: Test heartbeat reference is an oscillator count, not a clock read
@@ -138,9 +145,11 @@ jobs:
           assert supplied["mesh_provenance"] == "SUPPLIED"
           assert supplied["mesh_portable"] is True
           assert supplied["authority_effect"] == "NONE_REPORT_ONLY"
-          derived = kernel.node_state_provenance(env={})
-          assert derived["mesh_provenance"] == "DERIVED_FROM_HOME_DIRECTORY"
-          assert derived["mesh_portable"] is False
+          try:
+              kernel.node_state_provenance()
+              raise AssertionError("host-derived mesh unexpectedly admitted")
+          except ValueError as exc:
+              assert "mesh_location_required_from_materializer" in str(exc)
           print(json.dumps(supplied, sort_keys=True))
           print("STEGOS_NODE_STATE_PROVENANCE_REPORTED=PASS")
           PY
