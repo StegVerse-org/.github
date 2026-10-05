@@ -10,7 +10,7 @@ within the organization emits an organization receipt, so a canonical governed
 state transition manifested through Interlock/InTr is admitted on its own
 terms and bound by its own canonical digest.
 """
-import argparse
+from contextlib import nullcontext\nimport argparse
 import base64
 import hashlib
 import importlib.util
@@ -210,9 +210,11 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     # The storage substrate owns serialization. A lost comparison writes
     # nothing, so a retry cannot strand an orphan receipt.
     for _attempt in range(128):
-        expected_head = target.get(HEAD_KEY)
-        previous = (expected_head or {}).get("receipt_sha256")
-        _validate_existing_head(target)
+        guard = target.exclusive() if hasattr(target, "exclusive") else nullcontext()
+        with guard:
+            expected_head = target.get(HEAD_KEY)
+            previous = (expected_head or {}).get("receipt_sha256")
+            _validate_existing_head(target)
         body = {
             "schema": "stegverse.organization-transition-receipt/v1",
             "organization": C["organization"],
