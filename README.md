@@ -142,3 +142,17 @@ The external-framework helper currently reports `SDK_LOCAL_MANIFEST_HANDOFF`; it
 ### ICV v1 Site propagation verification
 
 `ICV-V1-SITE-PROPAGATION-VERIFICATION-001` (issue #64) completed with `NO_PROPAGATION_REQUIRED`: it verified the published ICV `v1.0.0` release at `9b691cfaac076b565153c5a1c0f6c4072b8b044e` against the existing `StegVerse-Labs/Site` public commercial mirror. Site is the only demonstrated destination; no propagation work is inferred for Publisher, admissibility-wiki, or stegguardian-wiki without an explicit contract. See `docs/ICV_V1_SITE_PROPAGATION_VERIFICATION_MIRROR_HANDOFF.md`.
+
+
+### Test 5/6 machine submission reconciliation
+
+Existing goal: `SVORG-STEGOS-PORTABILITY-001` (parent counter 28/20).
+COSV source projection candidate: `20011100100000`, retained with exact metrics
+in StegVerse-org/.github `control/task-vector-index.json`; canonical admission
+requires review/merge. SDK `machine-contract` projects current declarations and
+peer execution profiles. The framework helper uses existing run-manifest routing;
+adapter discovery preserves its own receiving operation. External instructions
+end at canonical manifest submission and evidence retention. Local handoff is not
+receiver observation; external reciprocal Interlock/InTr remains deferred.
+See the repository's portability/canonical-standing/machine-contract mirror handoff
+for source validation and remaining evidence.

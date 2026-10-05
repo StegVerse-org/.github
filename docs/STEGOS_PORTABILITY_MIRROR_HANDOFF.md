@@ -7,7 +7,7 @@ Goal Task ID: `SVORG-STEGOS-PORTABILITY-001`
 Task Registry status: `in_progress`
 Task Registry source: `orchestration/task-registry.json`
 Task Registry baseline: `2901c6a9eb87266545e66e70e1dafba5016c9a56`
-COSV ID: `ABSENT_FROM_CURRENT_TASK_REGISTRY_SCHEMA`
+COSV ID: `20011100100000` (source projection candidate; canonical admission pending)
 Status: `ACTIVE / CANONICAL NODE STANDING CONTRACT UNDER REVIEW`
 
 ## Current truth
@@ -49,7 +49,7 @@ Manifest processing remains selected only by the manifest-declared capability an
 
 ## COSV reconciliation
 
-The current Task Registry schema forbids unspecified task properties and defines no COSV field. COSV is therefore recorded as `ABSENT_FROM_CURRENT_TASK_REGISTRY_SCHEMA`, not merely unresolved. No COSV is invented.
+The current Task Registry schema defines no inline COSV field. That does not exempt this task from COSV: the existing canonical profile permits a separate task-vector index. The prior ABSENT_FROM_CURRENT_TASK_REGISTRY_SCHEMA disposition explained the omission but did not satisfy registration. See the 2026-10-05 reconciliation and proposed control/task-vector-index.json projection; no canonical-main admission is claimed before review/merge.
 
 ## Review resolution incorporated
 
@@ -86,3 +86,37 @@ Counter reconciliation: session has 4 user prompts; goal recovery count was alre
 ## Registry reference reconciliation — 2026-10-04
 
 The prior Task Registry `issue: 22` field was misleading: GitHub #22 is the merged predecessor source-repair pull request, not an open issue owning the remaining portability obligation. The canonical task remains `in_progress`. Its current issue references are #23, #24, #25, #26 and #27; merged PR #22 is retained only as repository-artifact history. The unresolved obligations explicitly retain SDK machine discovery/canonical-manifest submission and the remaining host-bound portability surfaces. This reference repair does not create a successor task or imply completion.
+
+
+## Current-source reconciliation — 2026-10-05
+
+Goal `SVORG-STEGOS-PORTABILITY-001` remains ACTIVE/in_progress. Session prompt 8;
+parent goal prompt 28/20, retained without reset. SDK #424 is closed unmerged;
+this is a newly reconciled bounded delta, not restoration of its stale branch.
+
+COSV omission was a coordination defect, not an exemption. The orchestration
+registry's closed schema does not prevent a separate canonical-profile task.v1
+projection. `control/task-vector-index.json` and its referenced source metrics in
+StegVerse-org/.github propose `20011100100000`, generated with the existing
+StegVerse-Labs/.github `scripts/cosv.py` encoder. This is source coordination only,
+not a WorkerCoordinator claim/fence or execution authority. Until reviewed/merged,
+the projection remains a candidate and must not be described as canonical main.
+
+Current SDK declarations already own manifest construction, validation, route
+selection, peer governance execution profiles and local handoff evidence. The
+bounded repair projects those declarations, adds missing manifest-command help,
+and makes the external-framework helper reuse public run-manifest's canonical
+source-bound dispatcher. Completion egress does not select the outbound route.
+Adapter discovery preserves its existing adapter receiving operation; native SDK
+discovery does not acquire an adapter prerequisite. No standing evaluator changes.
+
+Both instruction profiles terminate at SUBMIT_CANONICAL_MANIFEST and
+RETAIN_SUBMISSION_RESULT_AND_EVIDENCE. Interlock/InTr remains INTERNAL_POST_SUBMISSION;
+EXTERNAL_INTERLOCK_INTR remains deferred until after Tests 5/6. SDK_LOCAL_MANIFEST_HANDOFF
+is not receiver observation. Source tests with injected canonical source/receiver
+fixtures do not establish authentic submission, transport, custody or Test 5/6 PASS.
+
+Local validation: 50 SDK tests + 4 subtests; 52 adapter tests + 2 subtests passed
+against the repaired SDK source. SDK bundled test runner also passed 18 affected tests.
+Exact-head CI, review and merge remain required. No release or runtime attempt.
+Remaining portability obligations retain their existing registry ownership.
