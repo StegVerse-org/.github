@@ -31,7 +31,12 @@ CANONICAL = (
     "org-boundary/runtime/node_standing.py",
     "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
 )
-TOUCHED = {"org-kernel/kernel.py", "org-kernel/tests/test_kernel.py"}
+TOUCHED = {"org-kernel/kernel.py", "org-kernel/tests/test_kernel.py",
+           "org-kernel/kernel-manifest.json"}
+#: The generation the gate produces. Not 1.4.0: this migration installs the
+#: gate, not parity with this organization's 46-function kernel, and a number
+#: claiming parity would be the same defect one layer up.
+GATE_VERSION = "1.3.2"
 
 
 def digest(path: Path) -> str:
@@ -98,6 +103,61 @@ class RecordedPatchesTests(unittest.TestCase):
                 self.assertTrue(path.is_file(), f"{relative} is missing")
                 self.assertIn(digest(path), record,
                               f"{relative} changed; Migration 002 names a stale digest")
+
+    def test_each_patch_bumps_the_kernel_version(self):
+        """Without this, a gated peer and an ungated one both report 1.3.1.
+
+        Both generations shipped under the same number, so `kernel_required`
+        could not tell them apart -- a declared limit that was not real.
+        """
+        for org, path in PATCHES.items():
+            with self.subTest(org=org):
+                self.assertIn(f'+  "kernel_version": "{GATE_VERSION}",', path.read_text(),
+                              f"{org}: patch does not bump kernel_version to {GATE_VERSION}")
+
+    def test_the_record_names_the_version_the_patches_produce(self):
+        self.assertIn(GATE_VERSION, RECORD.read_text(),
+                      f"the record does not name {GATE_VERSION}")
+
+    def test_the_records_copy_steps_cover_every_tree_path_the_patch_depends_on(self):
+        """The gap that actually bit: a dependency the record knew but nothing enforced.
+
+        The patched kernel loads modules and contracts *from the dispatch root*,
+        so a peer that applies the diff alone gets code that cannot run. Those
+        paths are readable in the patch's own added lines, and the record's
+        steps are readable here, so the two are checked against each other
+        rather than trusted to agree. A future patch that adds a dependency
+        without adding its copy step fails here.
+        """
+        record = RECORD.read_text()
+        pattern = re.compile(r'"((?:org-boundary|org-kernel|docs)/[A-Za-z0-9_./-]+\.(?:py|json))"')
+        for org, path in PATCHES.items():
+            added = "\n".join(line[1:] for line in path.read_text().splitlines()
+                               if line.startswith("+") and not line.startswith("+++"))
+            depends = {m for m in pattern.findall(added)}
+            # Paths the diff itself writes need no copy step; the rest must be
+            # carried into the peer by an instruction the record states.
+            depends -= TOUCHED
+            self.assertTrue(depends, f"{org}: found no tree dependencies to check")
+            for relative in sorted(depends):
+                with self.subTest(org=org, path=relative):
+                    # `in record` rather than assertIn: a failure should name
+                    # the path, not print the whole record.
+                    self.assertTrue(
+                        relative in record,
+                        f"{org}: the patch depends on {relative} and the record neither "
+                        "carries it into the peer nor declares it already present there")
+
+    def test_every_path_the_record_tells_the_applier_to_copy_exists_here(self):
+        record = RECORD.read_text()
+        pattern = re.compile(r'(?:org-boundary|docs)/[A-Za-z0-9_./-]+\.(?:py|json)')
+        named = {m for m in pattern.findall(record)} - TOUCHED
+        self.assertTrue(named, "the record names no file to copy")
+        for relative in sorted(named):
+            with self.subTest(path=relative):
+                self.assertTrue((ROOT / relative).is_file(),
+                                f"the record tells the applier to copy {relative}, "
+                                "which does not exist here")
 
     def test_the_record_does_not_claim_the_migration_was_applied(self):
         record = RECORD.read_text()
