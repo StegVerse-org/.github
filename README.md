@@ -139,6 +139,11 @@ External instructions terminate at `SUBMIT_CANONICAL_MANIFEST` and `RETAIN_SUBMI
 The external-framework helper currently reports `SDK_LOCAL_MANIFEST_HANDOFF`; it does not prove receiver observation. Adapter predecessor checks establish structural validity only, not authenticated standing. Production endpoint binding, authentic standing, runtime execution, deployment and custody remain NOT_PROVEN. No endpoint, runtime, credential path or authority was created.
 
 
+### ICV v1 Site propagation verification
+
+`ICV-V1-SITE-PROPAGATION-VERIFICATION-001` (issue #64) completed with `NO_PROPAGATION_REQUIRED`: it verified the published ICV `v1.0.0` release at `9b691cfaac076b565153c5a1c0f6c4072b8b044e` against the existing `StegVerse-Labs/Site` public commercial mirror. Site is the only demonstrated destination; no propagation work is inferred for Publisher, admissibility-wiki, or stegguardian-wiki without an explicit contract. See `docs/ICV_V1_SITE_PROPAGATION_VERIFICATION_MIRROR_HANDOFF.md`.
+
+
 ## WorkerCoordinator claim-authority reconciliation — draft plan
 
 The Task Registry remains the entity-neutral work-intent authority; worker claims do not belong in its task records. The successor plan in [`docs/WORKERCOORDINATOR_CLAIM_SURFACE_MIRROR_HANDOFF.md`](docs/WORKERCOORDINATOR_CLAIM_SURFACE_MIRROR_HANDOFF.md) reconciles the separately declared WorkerCoordinator claim/fence authority with the existing SDK atomic task/worker semantic contract. The SDK already defines claim identity, generation, fencing and lifecycle semantics but explicitly does not claim authentic WorkerCoordinator execution. Until an authoritative owner surface is identified and validated, work-intent authority is `ENFORCED` while the reviewable WorkerCoordinator claim surface remains `NOT_STARTED`; no new broker, runtime, ingress, credential route or authority plane is created by the plan.
