@@ -70,6 +70,23 @@ class CrossingContractTests(unittest.TestCase):
     def test_a_wellformed_packet_validates(self):
         self.assertTrue(transport.validate_org_crossing(ingress_packet(), "INGRESS"))
 
+    def test_carrier_uses_heartbeat_reference_only_and_is_reproducible(self):
+        first = ingress_packet(packet_id="intr-clockless-001")
+        second = ingress_packet(packet_id="intr-clockless-001")
+        self.assertNotIn("observed_at", first["carrier"])
+        self.assertEqual(first["carrier"], second["carrier"])
+        self.assertEqual(first, second)
+        execution = {
+            "receipts": [
+                {"receipt_id": "r0"}, {"receipt_id": "r1"}, {"receipt_id": "r2"},
+                {"receipt_id": "r3"}, {"receipt_id": "r4"}],
+            "reconstruction": {"terminal_receipt_id": "r4"},
+        }
+        egress_one = transport.build_egress(first, execution)
+        egress_two = transport.build_egress(second, execution)
+        self.assertNotIn("observed_at", egress_one["carrier"])
+        self.assertEqual(egress_one, egress_two)
+
     def test_wrong_direction_and_profile_are_rejected(self):
         self.assertRaises(ValueError, transport.validate_org_crossing, ingress_packet(), "EGRESS")
         packet = ingress_packet()
