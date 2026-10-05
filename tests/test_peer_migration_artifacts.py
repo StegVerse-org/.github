@@ -251,13 +251,26 @@ class RecordedPatchesTests(unittest.TestCase):
         record = RECORD.read_text()
         mine = re.findall(r"StegVerse-org/\.github\s+([0-9a-f]{40})", record)
         self.assertTrue(mine, "the record names no StegVerse-org commit to verify")
+        shallow = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
+                                 cwd=ROOT, capture_output=True, text=True
+                                 ).stdout.strip() == "true"
         for sha in mine:
             with self.subTest(sha=sha):
                 found = subprocess.run(["git", "cat-file", "-e", f"{sha}^{{commit}}"],
                                        cwd=ROOT, capture_output=True)
-                self.assertEqual(found.returncode, 0,
-                                 f"the record names {sha} as a commit of this "
-                                 "repository, which does not exist here")
+                if found.returncode == 0:
+                    continue
+                # Absent for one of two reasons, and they are not the same
+                # finding. Saying which keeps the check from being read as a
+                # false accusation, and keeps a truncated checkout from being
+                # read as a clean pass.
+                self.assertFalse(
+                    shallow,
+                    f"{sha} is not in this checkout, which is shallow, so whether "
+                    "the record is honest cannot be determined here. Give the "
+                    "workflow fetch-depth: 0 rather than leaving this unchecked")
+                self.fail(f"the record names {sha} as a commit of this repository. "
+                          "History here is complete and it is not in it")
 
     def test_no_sha_in_the_record_is_padded(self):
         record = RECORD.read_text()

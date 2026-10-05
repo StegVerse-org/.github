@@ -32,6 +32,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          # The record names commits of this repository, and
+          # test_every_sha_the_record_attributes_to_this_repository_is_real
+          # resolves them. A depth-1 checkout does not carry them, so the
+          # guard would fail on the clone rather than on the record. Full
+          # history is what makes that check mean what it says.
+          fetch-depth: 0
 
       - name: Validate the recorded patches
         run: python -m unittest tests.test_peer_migration_artifacts -v
