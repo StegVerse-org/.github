@@ -25,7 +25,7 @@ from stegverse.manifest_state_transition_runtime import derive_execution_request
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
-GENESIS = ROOT / "tests/fixtures/crossing-standing-genesis.json"
+REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())\nGENESIS = ROOT / "tests/fixtures/crossing-standing-genesis.json"
 OWNER = "StegVerse-org/.github"
 
 _spec = importlib.util.spec_from_file_location(
