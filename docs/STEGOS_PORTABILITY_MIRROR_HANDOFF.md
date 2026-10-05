@@ -120,3 +120,13 @@ Local validation: 50 SDK tests + 4 subtests; 52 adapter tests + 2 subtests passe
 against the repaired SDK source. SDK bundled test runner also passed 18 affected tests.
 Exact-head CI, review and merge remain required. No release or runtime attempt.
 Remaining portability obligations retain their existing registry ownership.
+
+
+### Review artifacts retained — 2026-10-05
+
+- COSV admission: https://github.com/StegVerse-org/.github/pull/71; candidate `20011100100000` is not yet canonical main.
+- SDK source repair: https://github.com/StegVerse-org/StegVerse-SDK/pull/429 at `9dff3c742f291265a74b42dc69c3c560cbe5942a`.
+- Adapter dependency/projection: https://github.com/StegVerse-org/LLM-adapter/pull/364 at `1871b79e219e07a274a0fc72db7ce907ec137533`.
+- Final local validation: 54 SDK tests (including four public neutral-framework CLI source tests) + 4 subtests, 53 adapter tests + 2 subtests; 107 tests + 6 subtests total. SDK bundled runner independently passed 18 affected tests.
+- Exact-head GitHub CI started; most jobs were queued at readback. No failing CI disposition observed at that checkpoint; no blanket CI pass, merge, release, or runtime proof claimed.
+- Integrate COSV admission, then SDK, then adapter after required validation/review. Repository CLAUDE.md requires these PRs to remain open for review. Existing task identity, subordinate ownership, and parent count 28/20 remain unchanged.
