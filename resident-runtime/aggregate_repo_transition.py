@@ -195,7 +195,7 @@ def _validate_existing_head(store):
 
 
 def append(source_receipt, org_transition_class, predecessor_state, successor_state,
-           boundary_evidence, authority_effect, hb_epoch=None):
+           boundary_evidence, authority_effect, hb_epoch=None, store=None):
     # Admission is decided before the append lock is taken; an inadmissible
     # source receipt never contends for the organization ledger.
     source = verify_source(source_receipt)
@@ -205,12 +205,14 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     # the receipt reproducible; deriving one from the host clock is permitted
     # but marks itself so the two can be told apart.
     heartbeat = kernel.hb_reference(epoch=hb_epoch) if hb_epoch is not None else kernel.hb_reference()
-    store = PosixLedgerStore(ledger_root())
-    store.initialize()
-    # All writers using this emitter serialize the HEAD read, receipt creation,
-    # and HEAD publication. No second resident process is required.
-    with store.exclusive():
-        previous = _validate_existing_head(store)
+    target = store or PosixLedgerStore(ledger_root())
+    target.initialize()
+    # The storage substrate owns serialization. A lost comparison writes
+    # nothing, so a retry cannot strand an orphan receipt.
+    for _attempt in range(128):
+        expected_head = target.get(HEAD_KEY)
+        previous = (expected_head or {}).get("receipt_sha256")
+        _validate_existing_head(target)
         body = {
             "schema": "stegverse.organization-transition-receipt/v1",
             "organization": C["organization"],
@@ -226,18 +228,14 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
         digest = sha(body)
         receipt = {**body, "receipt_sha256": digest}
         key = receipt_key(digest)
-        existing = store.get(key)
-        if existing is not None:
-            if existing != receipt:
-                raise SystemExit("org receipt collision")
-            raise SystemExit("ORG_LEDGER_DUPLICATE_RECEIPT_RECOVERY_REQUIRED")
-        store.put(key, receipt)
-        store.put(HEAD_KEY, {
+        new_head = {
             "organization": C["organization"],
             "receipt_sha256": digest,
-            "receipt_path": store.locator(key),
-        })
-        return receipt
+            "receipt_path": target.locator(key),
+        }
+        if target.append_transaction(key, receipt, expected_head, new_head):
+            return receipt
+    raise SystemExit("ORG_LEDGER_APPEND_CONTENTION_EXHAUSTED")
 
 
 def main():
