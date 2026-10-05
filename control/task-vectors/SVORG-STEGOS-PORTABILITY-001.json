@@ -1,0 +1,37 @@
+{
+  "identity": "StegVerse-org/.github:task:SVORG-STEGOS-PORTABILITY-001",
+  "profile": "task.v1",
+  "level": "task",
+  "vector": "20011100100000",
+  "evidence_refs": [
+    "orchestration/task-registry.json",
+    "control/task-vectors/SVORG-STEGOS-PORTABILITY-001.metrics.json",
+    "docs/STEGOS_PORTABILITY_MIRROR_HANDOFF.md"
+  ],
+  "observed_at": "2026-10-05T19:48:30Z",
+  "exact_metrics": {
+    "lifecycle": "CLAIMED_IMPLEMENTATION",
+    "archive_ready": false,
+    "unassigned_work": 0,
+    "chat_owned_implementation": 1,
+    "chat_owned_validation": 1,
+    "chat_owned_integration": 1,
+    "chat_owned_observation": 0,
+    "chat_owned_credentials": 0,
+    "canonical_owner_installed": true,
+    "thread_required": false,
+    "blocker_count": 0,
+    "evidence_complete": false,
+    "activated": false,
+    "propagated": false
+  },
+  "authority_effect": "NONE_SOURCE_COORDINATION_ONLY",
+  "canonical_encoder_ref": "StegVerse-Labs/.github@5f14de9ac686b0b6b4f77ece31087a0e980b537b:scripts/cosv.py",
+  "metric_basis": {
+    "lifecycle": "Owner-authorized source implementation in this session; not a WorkerCoordinator claim or fence.",
+    "chat_owned_work": "One bounded source implementation, its validation, and review/integration obligation; no runtime invocation or credential operation assigned.",
+    "unassigned_work": "Remaining portability work retains its existing task and subordinate owners; no new unassigned task identified.",
+    "thread_required": "README, handoff, metrics and source branches retain continuation outside chat.",
+    "terminal_flags": "Parent remains in_progress; this repair is not complete, activated, or propagated."
+  }
+}
