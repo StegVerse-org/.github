@@ -1,14 +1,13 @@
 {
   "attestation": null,
   "candidate": {
-    "action": "evaluate_bounded_hold_operation",
+    "action": "evaluate_governance_crossing_fixture",
     "actor_class": "sdk_evaluator",
     "parameters": {
-      "external_side_effect": false,
-      "relative_time": "T1"
+      "external_side_effect": false
     },
-    "scope": "isolated_experiment",
-    "target": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+    "scope": "isolated_fixture",
+    "target": "GOVERNANCE-CROSSING-FIXTURE-001"
   },
   "canonicalization_profile": "steggate.jcs.v1",
   "completion": {
@@ -20,7 +19,7 @@
     },
     "initiator": {
       "class": "external_framework",
-      "ref": "StegVerse-independent-evaluator"
+      "ref": "StegVerse-org-boundary-fixture"
     },
     "publisher": {
       "package_profile": "stegverse.publisher.evidence-report-package/v1",
@@ -30,7 +29,7 @@
   },
   "context_refs": [],
   "created_at": "2026-09-26T00:00:00Z",
-  "declared_intent": "Independently qualify a proposed governed HOLD transition",
+  "declared_intent": "Carry a governance manifest across the organization boundary",
   "extensions": {
     "capability_resolution": {
       "authority_effect": "NONE_CLASSIFICATION_ONLY",
@@ -52,20 +51,19 @@
       "route_id": "stegverse.route.canonical-governed.v1",
       "source_semantic_custody": "EXTERNAL"
     },
-    "source_data_class": "sv.hold.independent.source-only.v1",
+    "source_data_class": "sv.governance.crossing-fixture.v1",
     "stegverse_governance_request": {
       "approval": {
         "required": true
       },
       "candidate": {
-        "action": "evaluate_bounded_hold_operation",
+        "action": "evaluate_governance_crossing_fixture",
         "actor_class": "sdk_evaluator",
         "parameters": {
-          "external_side_effect": false,
-          "relative_time": "T1"
+          "external_side_effect": false
         },
-        "scope": "isolated_experiment",
-        "target": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+        "scope": "isolated_fixture",
+        "target": "GOVERNANCE-CROSSING-FIXTURE-001"
       },
       "capability": {
         "allowed": true
@@ -75,10 +73,8 @@
       },
       "declared_context": {
         "authority_evidence_status": "NOT_AUTHENTICATED",
-        "condition_id": "HOLD_ENTERED",
         "no_external_effect": true,
         "other_framework_evidence_used": false,
-        "relative_time": "T1",
         "semantic_status": "UNRESOLVED",
         "source_only": true
       },
@@ -86,19 +82,19 @@
         "actor_authority_current": false,
         "affected_entity_conditions_represented": true,
         "delegation_current": false,
-        "delegation_ref": "sv-hold:proposed-test-delegation:not-runtime-authenticated",
+        "delegation_ref": "fixture:delegation:not-runtime-authenticated",
         "evidence_current": false,
         "evidence_refs": [
-          "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+          "fixture:governance-crossing:1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3"
         ],
         "policy_current": true,
-        "policy_ref": "sv-hold:proposed-test-policy:not-runtime-authenticated",
+        "policy_ref": "fixture:policy:not-runtime-authenticated",
         "recoverability_profile": "recoverable",
         "validity_window_open": true
       },
       "judgment": {
         "evidence_refs": [
-          "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+          "fixture:governance-crossing:1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3"
         ],
         "isolation_state": "supported",
         "operator_recoverability": "available",
@@ -109,16 +105,16 @@
       "permission_present": false,
       "signal": {
         "admitted_signal_refs": [
-          "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+          "fixture:governance-crossing:1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3"
         ],
         "excluded_signal_refs": [],
-        "expected_reference_state_hash": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110",
+        "expected_reference_state_hash": "1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3",
         "missing_inputs": [
           "authenticated_current_grant",
           "authentic_runtime_evidence"
         ],
         "reconstruction_available": false,
-        "reference_state_hash": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110",
+        "reference_state_hash": "1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3",
         "transformation_provenance_complete": true,
         "transformations": [],
         "uncertainty_state": "unknown"
@@ -135,8 +131,8 @@
   },
   "freshness": {},
   "hashes": {
-    "candidate_sha256": "2f83659ec56b7c20295a91262c7f7b551daab0d9197ca9ee0020674cda51ca2f",
-    "payload_sha256": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+    "candidate_sha256": "315ddd71dba54e94dd8ef8772af2c77c0033b9665efe5400235d2e18ef531770",
+    "payload_sha256": "1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3"
   },
   "manifest_labels": {
     "mode": "NONE"
@@ -151,31 +147,20 @@
       "permission_present": false,
       "validity_window_open": true
     },
-    "condition_id": "HOLD_ENTERED",
-    "evidence_class": "INDEPENDENT_SV_EXPERIMENT_DESIGN_NOT_NATIVE_RUNTIME",
-    "expected_evidence": [
-      "actual_intr_admissibility_snapshot",
-      "original_protected_operation_effect_or_prevention",
-      "predecessor_linked_organization_receipts",
-      "applicable_master_records_reconstruction"
-    ],
-    "experiment_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926",
-    "native_stev_inference": null,
-    "other_framework_output_consumed": false,
-    "protected_operation": "bounded_no_external_side_effect_test",
-    "relative_time": "T1",
-    "temporal_sampling": "EXPERIMENT_RELATIVE_ONLY_NOT_MEASURED"
+    "external_side_effect": false,
+    "fixture_id": "GOVERNANCE-CROSSING-FIXTURE-001",
+    "purpose": "boundary crossing of a governance manifest that carries no authenticated grant"
   },
   "processing": {
     "capability": "governance",
     "route_id": "stegverse.route.canonical-governed.v1"
   },
-  "requested_consequence": "Observe actual disposition and protected effect only if genuinely admitted",
+  "requested_consequence": "Observe the governance disposition only if genuinely admitted",
   "return_projection": {
     "mode": "ALL",
     "transition_classes": []
   },
-  "source_framework": "StegVerse-independent-evaluator",
+  "source_framework": "StegVerse-org-boundary-fixture",
   "source_instance": null,
-  "source_output_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+  "source_output_id": "GOVERNANCE-CROSSING-FIXTURE-001"
 }

@@ -97,14 +97,14 @@ jobs:
       - name: Carry a declared SDK manifest across the boundary end-to-end
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
-            --manifest tests/fixtures/sdk-manifests/hold-to-boundary-diagnostic.json \
+            --manifest tests/fixtures/sdk-manifests/governance-to-boundary-diagnostic.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-sdk-manifest-crossing --out /tmp/sdk-crossing.json
           python -c 'import json; x=json.load(open("/tmp/sdk-crossing.json")); assert x["crossing_completed"] is True; assert x["consumed"] is True; assert x["reconstruction"]=="RECONSTRUCTED"; assert x["authority_effect"]=="NONE"; assert len(x["receipts"])==5'
       - name: An installed far side still refuses a pair it does not admit
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
-            --manifest tests/fixtures/sdk-manifests/hold-to-llm-adapter.json \
+            --manifest tests/fixtures/sdk-manifests/governance-to-llm-adapter.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-sdk-manifest-crossing-gap --out /tmp/sdk-crossing-gap.json || true
           python -c 'import json; x=json.load(open("/tmp/sdk-crossing-gap.json")); assert x["crossing_completed"] is False; assert x["resolved_service_id"]=="stegverse-org.llm-adapter"; assert x["endpoint_adapter_installed"] is True; assert isinstance(x["far_side_disposition"],str) and x["far_side_disposition"].strip(), "a refused crossing must name its disposition"'

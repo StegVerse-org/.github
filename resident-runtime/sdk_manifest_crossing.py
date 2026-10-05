@@ -149,11 +149,28 @@ def crossing_packet(manifest, destination, service, registry, origin, packet_id,
     return {**envelope, "standing": standing}
 
 
+def processing_service(manifest, registry):
+    """The one service admitting the manifest's declared capability and route, or None.
+
+    Processing is selected by what the manifest declares, never by the surface
+    its result returns to: `completion.egress` names the return path, and
+    addressing that service for processing hands a governance manifest to the
+    transport that will carry its answer back.
+    """
+    processing = manifest.get("processing") or {}
+    declared = {"capability": processing.get("capability"), "route_id": processing.get("route_id")}
+    matches = [service for service in registry.get("services", [])
+               if declared in (service.get("admits_processing") or [])]
+    if len(matches) > 1:
+        raise SystemExit("PROCESSING_AMBIGUOUS_IN_REGISTRY:" + str(declared["capability"]))
+    return matches[0] if matches else None
+
+
 def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing", standing=None):
     """Drive the manifest's declared crossing and return what it produced."""
     registry = load(REGISTRY)
     destination = declared_destination(manifest)
-    service = resolve_surface(destination["surface"], registry)
+    service = processing_service(manifest, registry) or resolve_surface(destination["surface"], registry)
     origin = origin or {"org": "StegVerse-org", "service": "stegverse-org.stegverse-sdk"}
     resolved_standing = manifest_standing(manifest, standing)
     ingress = crossing_packet(manifest, destination, service, registry, origin, packet_id,
@@ -208,6 +225,7 @@ def cross(manifest, *, origin=None, packet_id="sdk-manifest-crossing", standing=
         "egress_packet_id": egress["packet_id"],
         "egress": egress,
         "authority_effect": result.get("authority_effect", "NONE"),
+        "application_result": result.get("application_result"),
         **{field: result[field] for field in SELECTION_FIELDS if field in result},
     }
 
