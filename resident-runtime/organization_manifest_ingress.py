@@ -357,7 +357,7 @@ def runtime_result(request: Mapping[str, Any], closures: list[dict[str, Any]],
     }
 
 
-def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None = None,
+def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standing: Mapping[str, Any] | None = None,
             packet_id: str = "organization-sdk-manifest-ingress",
             hb_epoch: int | None = None) -> dict[str, Any]:
     """Receive a submitted manifest on this organization's ingress operation."""
@@ -373,7 +373,7 @@ def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None =
                        request_sha256=request.get("request_sha256"))
 
     try:
-        crossing = crossing_module.cross(manifest, standing=standing, packet_id=packet_id)
+        crossing = crossing_module.cross(manifest, registry=dict(registry), standing=standing, packet_id=packet_id)
     except SystemExit as exc:
         # The crossing refuses a manifest it cannot drive as declared -- no
         # egress, a non-InTr transport, an unresolvable surface, no declared
@@ -490,6 +490,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Receive a submitted SDK manifest on this organization's ingress operation.")
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--registry", type=Path, required=True,
+                        help="materialized capability map supplied by the organization boundary")
     parser.add_argument("--standing", type=Path, default=None,
                         help="JSON declaring mode, node_ref and the predecessor key; "
                              "required unless the manifest declares its own chain position")
@@ -502,6 +504,7 @@ def main() -> int:
 
     result = receive(
         json.loads(args.manifest.read_text(encoding="utf-8")),
+        registry=json.loads(args.registry.read_text(encoding="utf-8")),
         standing=(json.loads(args.standing.read_text(encoding="utf-8"))
                   if args.standing else None),
         packet_id=args.packet_id, hb_epoch=args.hb_epoch)
