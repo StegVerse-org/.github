@@ -157,7 +157,7 @@ class AdapterFailureReportingTests(unittest.TestCase):
             envelope.write_text(json.dumps(packet))
             completed = subprocess.run(
                 [sys.executable, str(ROOT / "org-boundary/runtime/process_boundary.py"),
-                 "--envelope", str(envelope), "--out", str(Path(work) / "execution.json")],
+                 "--envelope", str(envelope), "--registry", str(ROOT / "org-boundary/registry/services.json"), "--out", str(Path(work) / "execution.json")],
                 cwd=str(ROOT), capture_output=True, text=True,
             )
             self.assertNotEqual(completed.returncode, 0)
