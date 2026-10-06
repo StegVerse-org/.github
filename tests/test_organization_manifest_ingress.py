@@ -76,7 +76,7 @@ class ReceivingOperationTests(unittest.TestCase):
                 if json.loads(path.read_text(encoding="utf-8")).get("schema") == schema]
 
     def receive(self, **overrides):
-        payload = {"standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}
+        payload = {"registry": REGISTRY, "standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}
         payload.update(overrides)
         value = payload.pop("manifest", manifest())
         return ingress.receive(value, **payload)
