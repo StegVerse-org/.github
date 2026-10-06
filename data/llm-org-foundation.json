@@ -1,0 +1,82 @@
+{
+  "schema": "stegverse.llm-org-foundation/v0.1",
+  "task_id": "SVORG-LLM-ORG-FOUNDATION-001",
+  "issue": 74,
+  "authority_effect": "NONE_SOURCE_COORDINATION_ONLY",
+  "purpose": "Resolve canonical ecosystem work context and coordinate attributable multi-entity candidate work without granting participating entities governance authority.",
+  "authorities": {
+    "work_intent": "Task Registry",
+    "worker_claim_fence": "WorkerCoordinator",
+    "transition": "Interlock/InTr",
+    "manifest_and_sdk_loop": "StegVerse SDK",
+    "llm_provider_routing_and_transport": "StegVerse-org/LLM-adapter",
+    "credential_and_provider_operation": "TV/TVC",
+    "custody_reconstruction": "Master Records",
+    "governed_output": "Publisher where applicable"
+  },
+  "work_context": {
+    "transport": "Interlock/InTr",
+    "relevance_bounded": true,
+    "canonical_evidence_classes": [
+      "repository_documentation",
+      "schemas",
+      "tests",
+      "task_registry",
+      "mirror_handoffs",
+      "manifests",
+      "receipts",
+      "master_records_references",
+      "cross_repository_contracts"
+    ],
+    "rule": "CROSS_ECOSYSTEM_COMPONENT_REPAIR_REQUIRES_PURPOSE_AND_APPLICABLE_CONTRACT_RECONSTRUCTION"
+  },
+  "sandbox": {
+    "provider_neutral": true,
+    "required_fields": [
+      "work_id",
+      "manifested_request",
+      "canonical_context_refs",
+      "permitted_capabilities",
+      "participating_entities",
+      "candidate_outputs",
+      "disagreements_refusals_uncertainty",
+      "tests_and_derived_artifacts",
+      "evidence_refs",
+      "governance_handoff_state"
+    ],
+    "candidate_output_authority_effect": "NONE"
+  },
+  "ecosystem_ai": {
+    "role": "GOVERNANCE_EVIDENCE_MATCHING",
+    "is_llm": false,
+    "prohibited_decision_bases": [
+      "appearance",
+      "majority_vote",
+      "model_consensus",
+      "reputation",
+      "model_confidence"
+    ],
+    "basis": [
+      "manifested_claim_or_transition",
+      "admissible_evidence",
+      "reconstructable_receipted_history"
+    ]
+  },
+  "inference_window": {
+    "temporal_role": "FORWARD_LOOKING",
+    "disposition_complete": true,
+    "question": "If this disposition is applied, what states or consequences might or might not become reachable?",
+    "dispositions_source": "applicable Admissibility Matrix",
+    "projection_is_historical_evidence": false,
+    "occurrence_requires": "subsequent admissible observation and receipted history"
+  },
+  "reuse": {
+    "distributed_llm_workload": "StegVerse-org/LLM-adapter/docs/DISTRIBUTED_LLM_WORKLOAD_MIRROR_HANDOFF.md",
+    "external_llm_connection": "StegVerse-org/LLM-adapter/docs/EXTERNAL_LLM_CONNECTION_CONVERGENCE_MIRROR_HANDOFF.md",
+    "duplicate_provider_broker_forbidden": true,
+    "duplicate_governance_engine_forbidden": true
+  },
+  "deferred": [
+    "ECOSYSTEM_CHAT_MANIFEST_LLM_ORG_GOVERNANCE_PUBLISHER_SDK_RETURN_LOOP"
+  ]
+}
