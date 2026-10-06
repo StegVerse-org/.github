@@ -31,6 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
 REGISTRY = ROOT / "orchestration/task-registry.json"
+CAPABILITY_REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 RECEIPT_CHAIN = ["INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED", "RESULT_BOUND", "EGRESS_EMITTED"]
 
 # Ingress requires canonical node standing, so this crossing declares its chain
@@ -71,7 +72,7 @@ class CrossingServesTheRegistryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.manifest = json.loads(MANIFEST.read_text())
-        cls.result = bridge.cross(cls.manifest, registry=REGISTRY, standing=GENESIS,
+        cls.result = bridge.cross(cls.manifest, registry=CAPABILITY_REGISTRY, standing=GENESIS,
                                   packet_id="task-registry-disclosure-test")
         cls.served = (cls.result["egress"]["payload"]["execution_result"]["application_result"])
 
