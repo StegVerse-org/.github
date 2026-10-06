@@ -1,0 +1,32 @@
+{
+  "schema": "stegverse.cosv-task-vector/v0.1",
+  "identity": "SVORG-LLM-ORG-FOUNDATION-001",
+  "profile": "task.v1",
+  "level": "task",
+  "vector": "20011100110000",
+  "evidence_refs": [
+    "StegVerse-org/.github#74",
+    "orchestration/task-registry.json",
+    "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md",
+    "data/llm-org-foundation.json"
+  ],
+  "observed_at": "2026-10-06",
+  "exact_metrics": {
+    "lifecycle": "CLAIMED_IMPLEMENTATION",
+    "archive_ready": false,
+    "unassigned_work": 0,
+    "chat_owned_implementation": 1,
+    "chat_owned_validation": 1,
+    "chat_owned_integration": 1,
+    "chat_owned_observation": 0,
+    "chat_owned_credentials": 0,
+    "canonical_owner_installed": true,
+    "thread_required": true,
+    "blocker_count": 0,
+    "evidence_complete": false,
+    "activated": false,
+    "propagated": false
+  },
+  "authority_effect": "NONE_SOURCE_COORDINATION_ONLY",
+  "canonical_encoder_ref": "StegVerse-Labs/.github:scripts/cosv.py"
+}
