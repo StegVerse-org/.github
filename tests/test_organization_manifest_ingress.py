@@ -383,3 +383,46 @@ class CrossingReconstructabilityTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GovernanceDecisionReturnTests(unittest.TestCase):
+    """The organization returns the governance decision to the SDK, in organization records only.
+
+    A rewrite of this module once dropped these fields while every other test
+    stayed green, so the SDK refused every governance result for having no
+    disposition. These pin the shape the SDK admits.
+    """
+
+    REQUEST = {"processing_capability": "governance", "request_sha256": "r" * 64,
+               "wire_manifest_sha256": "w" * 64}
+
+    def test_a_governance_decision_is_returned_with_its_disposition(self):
+        fields = ingress.governance_fields(self.REQUEST, {"disposition": "DENY",
+                                                          "reason": "signal.inputs_incomplete"})
+        self.assertEqual(fields["disposition"], "DENY")
+        self.assertEqual(fields["state"], "DENY")
+        self.assertIs(fields["terminal"], True)
+        self.assertEqual(fields["failed_predicate"], "signal.inputs_incomplete")
+
+    def test_the_decision_is_recorded_in_organization_records_only(self):
+        fields = ingress.governance_fields(self.REQUEST, {"disposition": "ALLOW"})
+        self.assertEqual(fields["records_authority"], "ORGANIZATION_RECORDS_ONLY")
+        self.assertEqual((fields["state"], fields["terminal"]), ("COMPLETE", False))
+        self.assertNotIn("organization_master_records_closure_observed", fields)
+
+    def test_a_missing_decision_fails_closed(self):
+        fields = ingress.governance_fields(self.REQUEST, None)
+        self.assertEqual(fields["disposition"], "FAIL_CLOSED")
+        self.assertEqual(fields["failed_predicate"], "GOVERNANCE_DECISION_ABSENT")
+
+    def test_the_runtime_result_carries_the_decision(self):
+        result = ingress.runtime_result(
+            {**self.REQUEST, "canonical_manifest_sha256": "c" * 64, "graph_id": "g",
+             "canonical_task_id": None, "route_id": "stegverse.route.canonical-governed.v1"},
+            [], {"receipt_sha256": "sha256:" + "o" * 64}, {"disposition": "DENY"})
+        self.assertEqual(result["disposition"], "DENY")
+        self.assertEqual(result["records_authority"], "ORGANIZATION_RECORDS_ONLY")
+
+    def test_other_processing_carries_no_governance_fields(self):
+        self.assertEqual(ingress.governance_fields(
+            {**self.REQUEST, "processing_capability": "ecosystem_diagnostic"}, {"disposition": "DENY"}), {})
