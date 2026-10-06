@@ -4,7 +4,7 @@
   "canonical_profile_ref": "StegVerse-Labs/.github:management/COSV_PROFILE_V1.json",
   "notation": "L R U I V G O C M T B E A P",
   "width": 14,
-  "scope": "SVORG-STEGOS-PORTABILITY-001 only; no other task adoption or runtime claim",
+  "scope": "Registered source-coordination task vectors only; no runtime claim or WorkerCoordinator claim/fence.",
   "tasks": [
     {
       "task_id": "SVORG-STEGOS-PORTABILITY-001",
@@ -12,6 +12,15 @@
       "registry_ref": "orchestration/task-registry.json",
       "source_state_vector_ref": "control/task-vectors/SVORG-STEGOS-PORTABILITY-001.json",
       "vector": "20011100100000",
+      "vector_state": "EMITTED",
+      "authority_effect": "NONE"
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001",
+      "repository": "StegVerse-org/.github",
+      "registry_ref": "orchestration/task-registry.json",
+      "source_state_vector_ref": "control/task-vectors/SVORG-LLM-ORG-FOUNDATION-001.json",
+      "vector": "20011100110000",
       "vector_state": "EMITTED",
       "authority_effect": "NONE"
     }
