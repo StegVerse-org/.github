@@ -71,7 +71,7 @@ class CrossingServesTheRegistryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.manifest = json.loads(MANIFEST.read_text())
-        cls.result = bridge.cross(cls.manifest, standing=GENESIS,
+        cls.result = bridge.cross(cls.manifest, registry=REGISTRY, standing=GENESIS,
                                   packet_id="task-registry-disclosure-test")
         cls.served = (cls.result["egress"]["payload"]["execution_result"]["application_result"])
 
