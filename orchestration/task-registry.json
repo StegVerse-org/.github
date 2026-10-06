@@ -222,6 +222,37 @@
         "AUTHENTICALLY_OBSERVE_DERIVED_CONSTRUCTION_EXERCISE_CYCLES",
         "SDK_SINGLE_ARTIFACT_OBSERVATION_PROJECTION"
       ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001",
+      "issue": 74,
+      "title": "Establish InTr-resolved LLM Org ecosystem work context and multi-entity Sandbox",
+      "status": "accepted",
+      "workstream": "llm-org-foundation",
+      "depends_on": [],
+      "required_evidence": [
+        "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md defines non-duplicative ownership and completion predicates",
+        "data/llm-org-foundation.json defines work-context, Sandbox, Ecosystem AI evidence-matching, and disposition-complete Inference Window contracts",
+        "tests prove participating LLM/AI entities acquire no governance authority",
+        "tests prove provider routing/transport reuses LLM-adapter rather than duplicating it",
+        "README reconciles the organization-level coordination responsibility"
+      ],
+      "outputs": [
+        "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md",
+        "data/llm-org-foundation.json"
+      ],
+      "tag_allowed": false,
+      "activation_condition": "canonical foundation contracts validate and merge without changing the existing active_goal until separately checked out",
+      "destinations": [
+        "StegVerse-org/LLM-adapter",
+        "StegVerse-org/StegVerse-SDK"
+      ],
+      "unresolved_obligations": [
+        "IMPLEMENT_WORK_CONTEXT_RESOLUTION_CONTRACT",
+        "IMPLEMENT_SANDBOX_COLLABORATION_VALIDATION",
+        "ADD_NON_AUTHORITY_AND_INFERENCE_WINDOW_TESTS",
+        "README_RECONCILIATION"
+      ]
     }
   ]
 }
