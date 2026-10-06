@@ -29,6 +29,7 @@ class InternalEndpointDispatchTests(unittest.TestCase):
         service={"service_id":service_id,"boundary_role":"INTERNAL_ENDPOINT"}
         if adapter is not None:
             service["endpoint_adapter"]=adapter
+            service["endpoint_adapter_disposition"]="ALLOW_DECLARED_ADAPTER"
         registry={"organization":"Target-Org","services":[service]}
         (root/"org-boundary/registry/services.json").write_text(json.dumps(registry))
         # The boundary runtime is two files: the dispatcher and the module that
