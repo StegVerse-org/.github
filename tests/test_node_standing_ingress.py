@@ -279,6 +279,7 @@ class BothDispatchPathsAreGatedTests(unittest.TestCase):
     def test_the_internal_endpoint_path_carries_it_too(self):
         root = self.root({"service_id": "target.diag", "boundary_role": "INTERNAL_ENDPOINT",
                           "endpoint_adapter": "adapter.py",
+                          "endpoint_adapter_disposition": "ALLOW_DECLARED_ADAPTER",
                           "admits_processing": [{"capability": "ecosystem_diagnostic",
                                                  "route_id": "stegverse.route.ecosystem-diagnostic.v1"}]})
         (root / "adapter.py").write_text(self.ADAPTER)
