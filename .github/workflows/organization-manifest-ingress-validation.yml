@@ -15,6 +15,7 @@ on:
       - 'org-boundary/registry/services.json'
       - 'tests/test_organization_manifest_ingress.py'
       - 'tests/fixtures/sdk-manifests/**'
+      - 'tests/fixtures/sdk-manifest-build-spec.json'
       - 'docs/ORGANIZATION_MANIFEST_INGRESS_MIRROR_HANDOFF.md'
       - '.github/workflows/organization-manifest-ingress-validation.yml'
   push:
@@ -31,6 +32,7 @@ on:
       - 'org-boundary/registry/services.json'
       - 'tests/test_organization_manifest_ingress.py'
       - 'tests/fixtures/sdk-manifests/**'
+      - 'tests/fixtures/sdk-manifest-build-spec.json'
       - 'docs/ORGANIZATION_MANIFEST_INGRESS_MIRROR_HANDOFF.md'
       - '.github/workflows/organization-manifest-ingress-validation.yml'
   workflow_dispatch:
@@ -160,14 +162,16 @@ jobs:
               return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
                       if json.loads(p.read_text()).get("schema") == schema]
 
+          # A capability no organization service admits. Governance is admitted
+          # now, so a governance manifest no longer exercises the refusal.
+          unadmitted = json.loads(Path("tests/fixtures/sdk-manifest-build-spec.json")
+                                  .read_text())["manifests"]["unadmitted-capability-to-llm-adapter"]
+
           def governed(output_id):
               return build_manifest(
-                  data={"ci": True}, source_framework="organization-boundary-ci",
-                  source_output_id=output_id,
-                  processor_request={"candidate": {"action": "inspect"}, "judgment": {},
-                                     "signal": {}, "execution": {}, "capability": {},
-                                     "continuity": {}, "approval": {},
-                                     "permission_present": False},
+                  data=unadmitted["data"], source_framework="organization-boundary-ci",
+                  source_output_id=output_id, process=unadmitted["process"],
+                  processor_request=unadmitted["processor_request"],
                   created_at="2026-10-03T00:00:00Z")
 
           genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci", "predecessor": None}

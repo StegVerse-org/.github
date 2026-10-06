@@ -56,6 +56,46 @@
       },
       "requested_consequence": "Return the committed registry and its digest; admit nothing",
       "source_output_id": "TASK-REGISTRY-DISCLOSURE-001:CURRENT"
+    },
+    "unadmitted-capability-to-llm-adapter": {
+      "data": {
+        "fixture_id": "UNADMITTED-CAPABILITY-001",
+        "text": "fixture: never executed"
+      },
+      "declared_intent": "Declare a capability no organization service admits",
+      "egress_surface": "LLM_ADAPTER",
+      "process": "purpose_bound_worker",
+      "processor_request": {
+        "schema": "stegverse.sdk.purpose-bound-worker-test.v1",
+        "test_id": "UNADMITTED-CAPABILITY-001",
+        "purpose": "A capability no organization service admits; the crossing must refuse it",
+        "required_capability": "purpose_bound_worker",
+        "expected_evidence_fields": [
+          "disposition"
+        ],
+        "lifetime_policy": {
+          "mode": "DERIVED_COST_TASK_DELAY_BUDGET",
+          "production_recompute_required": true,
+          "decomposition_target": "RECORDS_ENABLED_PACKET",
+          "retirement_condition": "PURPOSE_COMPLETED_OR_FAILED_OR_BUDGET_EXHAUSTED",
+          "cost_analysis": {
+            "expected_compute_units": 0,
+            "external_cost_usd_ceiling": 0,
+            "task_cost_basis": "fixture: never executed"
+          },
+          "time_budget_seconds": {
+            "expected_task_execution": 0,
+            "known_delay": 0,
+            "inferred_unknown_delay_reserve": 0,
+            "records_decomposition": 0,
+            "safety_reserve": 0
+          },
+          "derived_max_lifetime_seconds": 0,
+          "unknown_delay_inference_basis": "fixture: never executed"
+        }
+      },
+      "requested_consequence": "Be refused by the installed far side the surface names",
+      "source_output_id": "UNADMITTED-CAPABILITY-001"
     }
   },
   "processor_request": {

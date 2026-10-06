@@ -163,7 +163,10 @@ class PromptClaimTests(unittest.TestCase):
     def test_the_no_claim_surface_statement_is_still_true(self):
         """The prompt tells a reviewer they will find no claim surface."""
         found = self.claim_surface_hits() - {self.SELF}
+        # The task vector names WorkerCoordinator only to disclaim it ("not a
+        # WorkerCoordinator claim or fence"); it carries no claim.
         self.assertEqual(found, {
+            "control/task-vectors/SVORG-STEGOS-PORTABILITY-001.json",
             "data/organization-role-runtime-reality-deployment.json",
             "tests/test_organization_role_runtime_reality_deployment.py",
             "tests/test_task_registry.py",
