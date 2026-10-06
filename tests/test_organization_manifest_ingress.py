@@ -24,9 +24,10 @@ from stegverse.manifest_builder import build_manifest
 from stegverse.manifest_state_transition_runtime import derive_execution_request
 
 ROOT = Path(__file__).resolve().parents[1]
+CAPABILITY_REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 FIXTURE = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
-REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 GENESIS = ROOT / "tests/fixtures/crossing-standing-genesis.json"
+BUILD_SPEC = ROOT / "tests/fixtures/sdk-manifest-build-spec.json"
 OWNER = "StegVerse-org/.github"
 
 _spec = importlib.util.spec_from_file_location(
@@ -76,7 +77,7 @@ class ReceivingOperationTests(unittest.TestCase):
                 if json.loads(path.read_text(encoding="utf-8")).get("schema") == schema]
 
     def receive(self, **overrides):
-        payload = {"registry": REGISTRY, "standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}
+        payload = {"registry": CAPABILITY_REGISTRY, "standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}
         payload.update(overrides)
         value = payload.pop("manifest", manifest())
         return ingress.receive(value, **payload)
@@ -177,13 +178,18 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertEqual(receipt["authority_effect"], "NONE")
 
     def unadmitted(self, source_output_id="refused-submission"):
-        """A manifest the internal endpoint does not admit, so the crossing refuses."""
+        """A manifest the internal endpoint does not admit, so the crossing refuses.
+
+        Its capability is one no organization service admits, so processing
+        falls back to the declared surface, whose adapter refuses it. The
+        request is the committed fixture's, so the two cannot drift apart.
+        """
+        spec = json.loads(BUILD_SPEC.read_text(encoding="utf-8"))
+        declared = spec["manifests"]["unadmitted-capability-to-llm-adapter"]
         return build_manifest(
-            data={"probe": True}, source_framework="organization-boundary-test",
-            source_output_id=source_output_id,
-            processor_request={"candidate": {"action": "inspect"}, "judgment": {}, "signal": {},
-                              "execution": {}, "capability": {}, "continuity": {},
-                              "approval": {}, "permission_present": False},
+            data=declared["data"], source_framework="organization-boundary-test",
+            source_output_id=source_output_id, process=declared["process"],
+            processor_request=declared["processor_request"],
             created_at="2026-10-03T00:00:00Z")
 
     def refuse(self, **overrides):
@@ -352,7 +358,7 @@ class ReceivingOperationTests(unittest.TestCase):
         """The crossing itself refuses; `receive` records that rather than raising."""
         with self.assertRaises(SystemExit) as refused:
             ingress.crossing_module.cross(
-                manifest(), standing=None, packet_id="org-ingress-test")
+                manifest(), registry=CAPABILITY_REGISTRY, standing=None, packet_id="org-ingress-test")
         self.assertIn("CROSSING_REQUIRES_DECLARED_STANDING", str(refused.exception))
 
 
