@@ -127,7 +127,7 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
         cls.manifest = builder.rebuild()["governance-to-boundary-diagnostic"]
 
     def test_a_freshly_built_sdk_manifest_crosses_the_boundary(self):
-        result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
+        result = bridge.cross(self.manifest, registry=REGISTRY, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
         self.assertIs(result["crossing_completed"], True)
         self.assertIs(result["consumed"], True)
         self.assertEqual(result["reconstruction"], "RECONSTRUCTED")
@@ -135,7 +135,7 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
         self.assertEqual(result["authority_effect"], "NONE")
 
     def test_the_manifest_the_sdk_built_is_the_manifest_that_arrived(self):
-        result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
+        result = bridge.cross(self.manifest, registry=REGISTRY, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
         decision = (result["egress"]["payload"]["execution_result"]
                     ["application_result"])
         self.assertEqual(decision["governance_request_sha256"],
@@ -145,7 +145,7 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
     def test_the_sdk_declared_far_side_is_the_surface_that_was_crossed_to(self):
         canonical = validate_ingress_manifest(self.manifest)
         sdk = manifest_declared_destination(canonical)
-        result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
+        result = bridge.cross(self.manifest, registry=REGISTRY, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
         self.assertEqual(result["declared_transition_surface"],
                          sdk["final_stegverse_transition_surface"])
         # The return surface is kept as declared; governance is processed where it is admitted.
