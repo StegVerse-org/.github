@@ -86,7 +86,8 @@ jobs:
           # given one. There is no default: a crossing with no standing fails
           # closed at the boundary.
           standing = json.loads(Path("tests/fixtures/crossing-standing-genesis.json").read_text())
-          result = bridge.cross(manifest, standing=standing,
+          registry = json.loads(Path("org-boundary/registry/services.json").read_text())
+          result = bridge.cross(manifest, registry=registry, standing=standing,
                                 packet_id="ci-sdk-built-manifest-crossing")
           assert result["crossing_completed"] is True, result
           assert result["consumed"] is True
@@ -112,6 +113,7 @@ jobs:
       - name: An installed far side still refuses a pair it does not admit
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
+            --registry org-boundary/registry/services.json \
             --manifest tests/fixtures/sdk-manifests/unadmitted-capability-to-llm-adapter.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-sdk-manifest-crossing-gap --out /tmp/gap.json || true
@@ -120,6 +122,7 @@ jobs:
       - name: The declared capability is served, with a reconstructable chain
         run: |
           python resident-runtime/sdk_manifest_crossing.py \
+            --registry org-boundary/registry/services.json \
             --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-task-registry-disclosure --out /tmp/disclosure.json
