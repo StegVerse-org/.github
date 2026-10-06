@@ -1,0 +1,78 @@
+name: Validate Governance Inter-Organization Route
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'resident-runtime/governance_endpoint.py'
+      - 'resident-runtime/governance_decision_return.py'
+      - 'resident-runtime/organization_manifest_ingress.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - '.stegverse/transition-ledger/emit.py'
+      - 'org-kernel/kernel.py'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - 'org-boundary/registry/federation.json'
+      - 'tests/test_governance_inter_org_route.py'
+      - 'tests/fixtures/sdk-manifests/**'
+      - 'docs/GOVERNANCE_INTER_ORG_ROUTE_MIRROR_HANDOFF.md'
+      - 'docs/peer-patches/stegverse-labs.governance-endpoint.patch'
+      - '.github/workflows/governance-inter-org-route-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'resident-runtime/governance_endpoint.py'
+      - 'resident-runtime/governance_decision_return.py'
+      - 'resident-runtime/organization_manifest_ingress.py'
+      - 'resident-runtime/organization_egress_boundary.py'
+      - 'resident-runtime/sdk_manifest_crossing.py'
+      - 'resident-runtime/aggregate_repo_transition.py'
+      - '.stegverse/transition-ledger/emit.py'
+      - 'org-kernel/kernel.py'
+      - 'org-runtime/interlock-intr.json'
+      - 'org-boundary/runtime/process_boundary.py'
+      - 'org-boundary/registry/services.json'
+      - 'org-boundary/registry/federation.json'
+      - 'tests/test_governance_inter_org_route.py'
+      - 'tests/fixtures/sdk-manifests/**'
+      - 'docs/GOVERNANCE_INTER_ORG_ROUTE_MIRROR_HANDOFF.md'
+      - 'docs/peer-patches/stegverse-labs.governance-endpoint.patch'
+      - '.github/workflows/governance-inter-org-route-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-governance-route:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The SDK derives the request and admits the returned decision. Pinned to
+      # the commit that admits a governance result recorded in organization
+      # records only (StegVerse-org/StegVerse-SDK#431).
+      - name: Checkout exact merged SDK manifest state-transition runtime
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: 657576e6085c0db553390416451f02f824211283
+          path: sdk
+          persist-credentials: false
+
+      - name: Install SDK test dependency surface
+        run: python -m pip install -e ./sdk
+
+      # Both ledgers and the mesh are redirected by the tests themselves, so no
+      # step appends into an operator's runtime reality.
+      - name: Governance is decided by StegVerse-Labs over InTr and returned on organization records
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: python -m unittest tests.test_governance_inter_org_route -v

@@ -95,7 +95,7 @@ jobs:
           assert result["receipts"] == ["INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED",
                                         "RESULT_BOUND", "EGRESS_EMITTED"]
           assert result["authority_effect"] == "NONE"
-          # The governance processor decides the request the manifest carries,
+          # The governance processor binds the request the manifest carries,
           # so the far side is bound to the manifest by that request's digest.
           assert result["resolved_service_id"] == "stegverse-org.governance", result
           far = result["egress"]["payload"]["execution_result"]["application_result"]
@@ -103,7 +103,10 @@ jobs:
           canon = json.dumps(request, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
           assert far["governance_request_sha256"] == hashlib.sha256(canon).hexdigest(), \
               "a different governance request arrived"
-          assert far["disposition"] in {"ALLOW", "DENY", "FAIL_CLOSED"}, far
+          # StegCore is a StegVerse-Labs repository: the request is bound for
+          # StegVerse-Labs to decide, never decided here.
+          assert far["decision_state"] == "REQUESTED_OF_DECIDING_ORGANIZATION", far
+          assert far["deciding_organization"] == "StegVerse-Labs", far
           print("SDK_MANIFEST_CROSSES_ORGANIZATION_BOUNDARY=PASS")
           print(result["terminal_receipt_id"])
           PY

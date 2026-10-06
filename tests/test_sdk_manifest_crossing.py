@@ -165,12 +165,13 @@ class CompleteCrossingTests(unittest.TestCase):
             self.assertTrue(evidence[key], key)
 
     def test_the_manifest_that_arrived_is_the_manifest_that_was_declared(self):
-        """The far side decided the governance request this manifest carries."""
+        """The far side bound the governance request this manifest carries for its decider."""
         decision = (self.result["egress"]["payload"]["execution_result"]
                     ["application_result"])
         request = self.source["extensions"]["stegverse_governance_request"]
         self.assertEqual(decision["governance_request_sha256"], bridge.sha(request))
-        self.assertIn(decision["disposition"], {"ALLOW", "DENY", "FAIL_CLOSED"})
+        self.assertEqual(decision["decision_state"], "REQUESTED_OF_DECIDING_ORGANIZATION")
+        self.assertEqual(decision["deciding_organization"], "StegVerse-Labs")
         self.assertEqual(self.result["manifest_sha256"], "sha256:" + bridge.sha(self.source))
 
     def test_the_crossing_claims_no_authority_the_manifest_did_not_declare(self):
@@ -207,7 +208,7 @@ class CompleteCrossingTests(unittest.TestCase):
 
 
 class GovernanceReturningOverTheTransportTests(unittest.TestCase):
-    """A governance manifest whose result returns over LLM-adapter is decided, not refused.
+    """A governance manifest whose result returns over LLM-adapter is processed, not refused.
 
     `completion.egress` names the return path. LLM-adapter is the transport
     between an LLM and the SDK, so addressing it for processing handed a
@@ -228,11 +229,16 @@ class GovernanceReturningOverTheTransportTests(unittest.TestCase):
         self.assertIs(self.result["crossing_completed"], True)
         self.assertEqual(self.result["processing_selection"], "MANIFEST_DECLARED")
 
-    def test_the_decision_is_a_governance_disposition(self):
-        decision = self.result["application_result"]
-        self.assertEqual(decision["decision_authority"], "stegcore.steggate.evaluate_admissibility")
-        self.assertIn(decision["disposition"], {"ALLOW", "DENY", "FAIL_CLOSED"})
-        self.assertEqual(decision["authority_effect"], "NONE_DECISION_ONLY")
+    def test_the_request_is_bound_for_the_organization_that_owns_stegcore(self):
+        """StegCore is a StegVerse-Labs repository, so StegVerse-Labs decides; this organization does not."""
+        request = self.result["application_result"]
+        self.assertEqual(request["decision_authority"], "stegcore.steggate.evaluate_admissibility")
+        self.assertEqual(request["decision_authority_repository"], "StegVerse-Labs/StegCore")
+        self.assertEqual(request["deciding_organization"], "StegVerse-Labs")
+        self.assertEqual(request["deciding_repository"], "StegVerse-Labs/.github")
+        self.assertIs(request["evaluator_imported_in_this_organization"], False)
+        self.assertNotIn("disposition", request)
+        self.assertEqual(request["authority_effect"], "NONE_DECISION_REQUEST_ONLY")
 
     def test_the_registry_admits_one_pair_and_this_fixture_is_not_it(self):
         llm = service("stegverse-org.llm-adapter")

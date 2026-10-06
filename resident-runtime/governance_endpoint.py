@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""`stegverse-org.governance` -- decide a governance manifest that crossed InTr.
+"""`stegverse-org.governance` -- bind a governance manifest's request for the organization that decides it.
 
-The organization registry admitted no service for `governance`, so a governance
-manifest had nowhere to be processed: it was either handed to the transport its
-return surface names (`LLM_ADAPTER`, refused) or echoed by a boundary-local
-diagnostic (crossed, never decided). This is the processor.
+A governance manifest submitted to this organization is processed here, and the
+governance request it carries is decided by StegCore's StegGate. StegCore is a
+StegVerse-Labs repository, so the decision belongs to StegVerse-Labs, reached
+the way every organization reaches another: out through this organization's
+`.github` egress, across Interlock/InTr, in through StegVerse-Labs/.github.
+This organization does not import StegCore and decide for itself.
 
-It evaluates the governance request the manifest carries with StegCore's
-StegGate and returns the disposition. It records nothing itself: the receiving
-operation writes the decision to this organization's own ledgers.
+So this processor makes no decision. It binds the request to the manifest that
+carried it -- the request, its digest, and the organization the overlay binds
+`governance` to -- and the receiving operation emits it outbound. The decision
+returns on the crossing's closure, through
+`resident-runtime/governance_decision_return.py`, and is recorded in this
+organization's records before the SDK is handed it.
 """
 from __future__ import annotations
 
@@ -17,12 +22,24 @@ import hashlib
 import json
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
 SERVICE_ID = "stegverse-org.governance"
 REQUEST_EXTENSION = "stegverse_governance_request"
+REQUEST_SCHEMA = "stegverse.org-governance-decision-request/v1"
+BOUNDARY = ROOT / "org-runtime/interlock-intr.json"
 
 
 def canon(v):
     return json.dumps(v, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def governance_binding() -> dict:
+    """The organization the overlay binds `governance` to, read from the overlay."""
+    egress = json.loads(BOUNDARY.read_text()).get("egress") or {}
+    for entry in egress.get("capability_destination_bindings") or []:
+        if isinstance(entry, dict) and entry.get("profile_id") == "governance":
+            return entry
+    raise SystemExit("governance-destination-binding-not-declared")
 
 
 def main() -> int:
@@ -43,26 +60,22 @@ def main() -> int:
     if not isinstance(request, dict):
         raise SystemExit("governance-request-missing")
 
+    binding = governance_binding()
     result = {
-        "schema": "stegverse.org-governance-decision/v1",
+        "schema": REQUEST_SCHEMA,
         "service_id": SERVICE_ID,
-        "decision_authority": "stegcore.steggate.evaluate_admissibility",
+        "governance_request": request,
         "governance_request_sha256": hashlib.sha256(canon(request)).hexdigest(),
+        "decision_state": "REQUESTED_OF_DECIDING_ORGANIZATION",
+        "deciding_organization": binding["destination_organization"],
+        "deciding_repository": binding["destination_repository"],
+        "deciding_service": binding["destination_service"],
+        "decision_authority": binding["decision_authority"],
+        "decision_authority_repository": binding["decision_authority_repository"],
+        "evaluator_imported_in_this_organization": False,
         "external_side_effect": False,
-        "authority_effect": "NONE_DECISION_ONLY",
+        "authority_effect": "NONE_DECISION_REQUEST_ONLY",
     }
-    try:
-        from stegcore.steggate import AdmissibilityRequest, evaluate_admissibility
-    except ImportError:
-        # No decision can be made without the canonical evaluator, and none is
-        # substituted. The run is decided FAIL_CLOSED and says why.
-        result.update({"disposition": "FAIL_CLOSED", "reason": "GOVERNANCE_RUNTIME_STEGCORE_UNAVAILABLE",
-                       "evaluation": None})
-    else:
-        body = evaluate_admissibility(AdmissibilityRequest(**request)).model_dump(mode="json")
-        result.update({"disposition": body.get("disposition"),
-                       "reason": body.get("canonical_three_layer_reason"),
-                       "evaluation": body})
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     return 0
