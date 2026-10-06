@@ -156,3 +156,12 @@ end at canonical manifest submission and evidence retention. Local handoff is no
 receiver observation; external reciprocal Interlock/InTr remains deferred.
 See the repository's portability/canonical-standing/machine-contract mirror handoff
 for source validation and remaining evidence.
+
+
+## LLM Org foundation — canonical ecosystem work context
+
+Task `SVORG-LLM-ORG-FOUNDATION-001` / issue #74 defines an organization-level coordination foundation for ecosystem construction and repair. It does not create a second provider broker or governance engine. Canonical work context is resolved through Interlock/InTr from relevant ecosystem evidence; participating LLM/AI entities produce attributable candidate work in a provider-neutral Sandbox and acquire no governance authority.
+
+Existing `StegVerse-org/LLM-adapter` provider-neutral routing, distributed workload, contributor provenance and governed-reconciliation packaging remain the provider execution layer. Ecosystem AI is defined here as governance by matching manifested claims/proposed transitions against admissible evidence and reconstructable receipted history, not as an LLM or interpretive/consensus judge. The forward-looking Inference Window evaluates, for every disposition available in the applicable Admissibility Matrix, what states or consequences might or might not become reachable; projections do not become historical evidence without subsequent admissible observation and receipts.
+
+The later Ecosystem Chat consumer loop through SDK Manifest Builder -> LLM Org -> governance -> Publisher -> SDK return is explicitly deferred from this foundation task.

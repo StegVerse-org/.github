@@ -167,6 +167,10 @@ class PromptClaimTests(unittest.TestCase):
         # WorkerCoordinator claim or fence"); it carries no claim.
         self.assertEqual(found, {
             "control/task-vectors/SVORG-STEGOS-PORTABILITY-001.json",
+            # LLM-org artifacts mention WorkerCoordinator only to preserve the
+            # same separation: participating LLMs receive no claim authority.
+            "control/task-vector-index.json",
+            "data/llm-org-foundation.json",
             "data/organization-role-runtime-reality-deployment.json",
             "tests/test_organization_role_runtime_reality_deployment.py",
             "tests/test_task_registry.py",
