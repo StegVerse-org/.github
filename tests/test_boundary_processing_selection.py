@@ -341,18 +341,22 @@ class LiveRegistryTests(unittest.TestCase):
     def test_no_live_internal_endpoint_silently_admits_everything(self):
         """An INTERNAL_ENDPOINT must refuse a pair it did not declare.
 
-        This holds for a row with no admission list, which admits nothing, and
-        equally for the one row that now admits a pair: `governance` on the
-        canonical-governed route is not that pair, so every internal endpoint
-        in this registry refuses it.
+        `governance` on the canonical-governed route is admitted by exactly one
+        row, the organization's governance processor. Every other internal
+        endpoint refuses it.
         """
         endpoints = [s for s in self.registry["services"]
                      if s.get("boundary_role") == "INTERNAL_ENDPOINT"]
         self.assertTrue(endpoints, "registry exposes no internal endpoint")
+        declared = manifest("governance", GOVERNANCE_ROUTE)
         for row in endpoints:
             with self.subTest(service=row["service_id"]):
+                if row["service_id"] == "stegverse-org.governance":
+                    self.assertIs(selection.select_processing(row, declared)
+                                  ["declared_capability_processed"], True)
+                    continue
                 with self.assertRaises(SystemExit):
-                    selection.select_processing(row, manifest("governance", GOVERNANCE_ROUTE))
+                    selection.select_processing(row, declared)
 
     def test_the_boundary_local_surfaces_declare_no_admission_they_never_consult(self):
         """A boundary-local row is the processor; an admission list there is inert."""
