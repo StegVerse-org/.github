@@ -370,7 +370,7 @@ class CrossingReconstructabilityTests(unittest.TestCase):
             "sdk_manifest_crossing", ROOT / "resident-runtime/sdk_manifest_crossing.py")
         crossing_module = importlib.util.module_from_spec(_spec_cross)
         _spec_cross.loader.exec_module(crossing_module)
-        crossing = crossing_module.cross(manifest(), standing=standing(),
+        crossing = crossing_module.cross(manifest(), registry=CAPABILITY_REGISTRY, standing=standing(),
                                          packet_id="reconstructability-test")
         self.assertIs(crossing["crossing_completed"], True)
         self.assertEqual(len(crossing["payload_hash"]), 64)
