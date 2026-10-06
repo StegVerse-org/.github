@@ -10,7 +10,8 @@ within the organization emits an organization receipt, so a canonical governed
 state transition manifested through Interlock/InTr is admitted on its own
 terms and bound by its own canonical digest.
 """
-from contextlib import nullcontext\nimport argparse
+from contextlib import nullcontext
+import argparse
 import base64
 import hashlib
 import importlib.util
