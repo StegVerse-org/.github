@@ -176,6 +176,7 @@ jobs:
                   created_at="2026-10-03T00:00:00Z")
 
           genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci", "predecessor": None}
+          registry = json.loads(Path("org-boundary/registry/services.json").read_text())
           out = ingress.receive(governed("unadmitted-capability-ci"),
                                 packet_id="ci-unadmitted", hb_epoch=32, standing=genesis)
           assert out["disposition"] == "FAIL_CLOSED"
