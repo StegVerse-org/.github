@@ -38,7 +38,7 @@ The binding is declared in `org-runtime/interlock-intr.json` under `egress.capab
 
 ## The other half
 
-The StegVerse-Labs side — `stegverse-labs.governance`, the kernel's admitted-adapter dispatch, and the StegCore endpoint — lives in `StegVerse-Labs/.github`. It is carried here as `docs/migrations/stegverse-labs.governance-endpoint.patch` (apply with `git am`), with its own tests and workflow.
+The StegVerse-Labs side — `stegverse-labs.governance`, the kernel's admitted-adapter dispatch, and the StegCore endpoint — lives in `StegVerse-Labs/.github`. It is carried here as `docs/peer-patches/stegverse-labs.governance-endpoint.patch` (apply with `git am`), with its own tests and workflow.
 
 ## Validation
 

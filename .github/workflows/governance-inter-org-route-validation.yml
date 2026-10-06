@@ -19,7 +19,7 @@ on:
       - 'tests/test_governance_inter_org_route.py'
       - 'tests/fixtures/sdk-manifests/**'
       - 'docs/GOVERNANCE_INTER_ORG_ROUTE_MIRROR_HANDOFF.md'
-      - 'docs/migrations/stegverse-labs.governance-endpoint.patch'
+      - 'docs/peer-patches/stegverse-labs.governance-endpoint.patch'
       - '.github/workflows/governance-inter-org-route-validation.yml'
   push:
     branches: [main]
@@ -39,7 +39,7 @@ on:
       - 'tests/test_governance_inter_org_route.py'
       - 'tests/fixtures/sdk-manifests/**'
       - 'docs/GOVERNANCE_INTER_ORG_ROUTE_MIRROR_HANDOFF.md'
-      - 'docs/migrations/stegverse-labs.governance-endpoint.patch'
+      - 'docs/peer-patches/stegverse-labs.governance-endpoint.patch'
       - '.github/workflows/governance-inter-org-route-validation.yml'
   workflow_dispatch:
 
