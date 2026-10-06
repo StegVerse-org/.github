@@ -193,7 +193,7 @@ def declared_manifest(payload: Any) -> dict[str, Any]:
     return dict(manifest)
 
 
-def receive(root: Path, service: Mapping[str, Any], packet: Mapping[str, Any]) -> dict[str, Any]:
+def receive(root: Path, service: Mapping[str, Any], packet: Mapping[str, Any], *, registry: Mapping[str, Any]) -> dict[str, Any]:
     """Hand an addressed submission to the receiving operation the overlay binds.
 
     The operation records its own dispositions at both ledger levels; this
@@ -203,7 +203,7 @@ def receive(root: Path, service: Mapping[str, Any], packet: Mapping[str, Any]) -
     resolved = resolve(root, service)
     module = load_operation(resolved)
     manifest = declared_manifest(packet.get("payload"))
-    result = module.receive(manifest, standing=packet.get("standing"),
+    result = module.receive(manifest, registry=registry, standing=packet.get("standing"),
                             packet_id=str(packet.get("packet_id") or resolved["receiving_operation_id"]))
     return {
         "capability_received": True,

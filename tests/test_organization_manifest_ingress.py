@@ -24,6 +24,7 @@ from stegverse.manifest_builder import build_manifest
 from stegverse.manifest_state_transition_runtime import derive_execution_request
 
 ROOT = Path(__file__).resolve().parents[1]
+CAPABILITY_REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 FIXTURE = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
 GENESIS = ROOT / "tests/fixtures/crossing-standing-genesis.json"
 BUILD_SPEC = ROOT / "tests/fixtures/sdk-manifest-build-spec.json"
@@ -76,7 +77,7 @@ class ReceivingOperationTests(unittest.TestCase):
                 if json.loads(path.read_text(encoding="utf-8")).get("schema") == schema]
 
     def receive(self, **overrides):
-        payload = {"standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}
+        payload = {"registry": CAPABILITY_REGISTRY, "standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}
         payload.update(overrides)
         value = payload.pop("manifest", manifest())
         return ingress.receive(value, **payload)
@@ -357,7 +358,7 @@ class ReceivingOperationTests(unittest.TestCase):
         """The crossing itself refuses; `receive` records that rather than raising."""
         with self.assertRaises(SystemExit) as refused:
             ingress.crossing_module.cross(
-                manifest(), standing=None, packet_id="org-ingress-test")
+                manifest(), registry=CAPABILITY_REGISTRY, standing=None, packet_id="org-ingress-test")
         self.assertIn("CROSSING_REQUIRES_DECLARED_STANDING", str(refused.exception))
 
 
@@ -369,7 +370,7 @@ class CrossingReconstructabilityTests(unittest.TestCase):
             "sdk_manifest_crossing", ROOT / "resident-runtime/sdk_manifest_crossing.py")
         crossing_module = importlib.util.module_from_spec(_spec_cross)
         _spec_cross.loader.exec_module(crossing_module)
-        crossing = crossing_module.cross(manifest(), standing=standing(),
+        crossing = crossing_module.cross(manifest(), registry=CAPABILITY_REGISTRY, standing=standing(),
                                          packet_id="reconstructability-test")
         self.assertIs(crossing["crossing_completed"], True)
         self.assertEqual(len(crossing["payload_hash"]), 64)

@@ -79,6 +79,7 @@ jobs:
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: |
           python resident-runtime/organization_manifest_ingress.py \
+            --registry org-boundary/registry/services.json \
             --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
             --standing tests/fixtures/crossing-standing-genesis.json \
             --packet-id ci-organization-manifest-ingress --hb-epoch 32 \
@@ -175,7 +176,8 @@ jobs:
                   created_at="2026-10-03T00:00:00Z")
 
           genesis = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci", "predecessor": None}
-          out = ingress.receive(governed("unadmitted-capability-ci"),
+          registry = json.loads(Path("org-boundary/registry/services.json").read_text())
+          out = ingress.receive(governed("unadmitted-capability-ci"), registry=registry,
                                 packet_id="ci-unadmitted", hb_epoch=32, standing=genesis)
           assert out["disposition"] == "FAIL_CLOSED"
           assert out["received"] is False
@@ -189,7 +191,7 @@ jobs:
           assert "organization_receipt_sha256" not in out
 
           # A manifest the crossing cannot drive at all used to leave by exception.
-          raised = ingress.receive(governed("no-declared-standing-ci"),
+          raised = ingress.receive(governed("no-declared-standing-ci"), registry=registry,
                                    packet_id="ci-no-standing", hb_epoch=32, standing=None)
           assert raised["failed_predicate"] == "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED"
           assert raised["refusal_recorded"] is True

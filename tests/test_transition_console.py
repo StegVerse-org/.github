@@ -57,103 +57,62 @@ def chain():
 
 
 class RunModeTests(unittest.TestCase):
-    """The mode is read off the mesh that resolved, not configured."""
+    """The mode is supplied by the materializer, never inferred from a host."""
 
-    def test_a_supplied_root_is_the_isolated_local_mode(self):
-        resolved = TC.run_mode(root=Path("/tmp/a-mesh"), env={})
-        self.assertEqual(resolved["run_mode"], TC.LOCAL_ISOLATED)
+    def test_a_supplied_root_is_materializer_supplied(self):
+        resolved = TC.run_mode(root=Path("/tmp/a-mesh"))
+        self.assertEqual(resolved["run_mode"], TC.MATERIALIZER_SUPPLIED)
         self.assertEqual(resolved["mesh_provenance"], NS.SUPPLIED)
         self.assertTrue(resolved["mesh_portable"])
 
-    def test_an_environment_root_is_a_declared_shared_medium(self):
-        resolved = TC.run_mode(
-            root=None, env={"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/shared/mesh"})
-        self.assertEqual(resolved["run_mode"], TC.SHARED_MEDIUM_DECLARED)
-        self.assertEqual(resolved["mesh_provenance"], NS.FROM_ENVIRONMENT)
-        # Pointing at a medium is a declaration, not a connection, and the
-        # provenance vocabulary already refuses to call it portable.
-        self.assertFalse(resolved["mesh_portable"])
+    def test_host_environment_is_not_a_mesh_binding(self):
+        with self.assertRaisesRegex(ValueError, "host_environment_mesh_binding_forbidden"):
+            TC.run_mode(root=Path("/tmp/a-mesh"),
+                        env={"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/shared/mesh"})
 
-    def test_no_root_at_all_falls_back_and_says_so(self):
-        resolved = TC.run_mode(root=None, env={})
-        self.assertEqual(resolved["run_mode"], TC.LOCAL_HOST_DERIVED)
-        self.assertEqual(resolved["mesh_provenance"], NS.FROM_HOME_DIRECTORY)
-        self.assertFalse(resolved["mesh_portable"])
-        self.assertIn("pretending to be a host", resolved["run_mode_means"])
+    def test_missing_materializer_root_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "mesh_location_required_from_materializer"):
+            TC.run_mode(root=None)
 
-    def test_only_a_supplied_root_is_portable(self):
-        """Held against node_store's own set rather than restated here."""
+    def test_only_supplied_provenance_is_portable(self):
         self.assertEqual(set(NS.PORTABLE_PROVENANCE), {NS.SUPPLIED})
-
-    def test_the_mode_vocabulary_covers_every_declared_provenance(self):
-        covered = {NS.SUPPLIED, NS.FROM_ENVIRONMENT, NS.FROM_HOME_DIRECTORY}
-        self.assertEqual(set(TC._MODE_BY_PROVENANCE), covered)
-        for mode in TC._MODE_BY_PROVENANCE.values():
-            with self.subTest(mode=mode):
-                self.assertIn(mode, TC._MODE_MEANS)
 
 
 class MeshAxisTests(unittest.TestCase):
-    """This console reports the mesh axis and must not answer for the route axis.
+    """The console reports only the supplied mesh axis, not route authority."""
 
-    An earlier revision reported `reaches_a_production_ecosystem_over_a_network:
-    false` with the mesh store kind as the reason, which generalised a fact
-    about this organization's frame medium into a claim about the ecosystem.
-    The SDK publishes a `CANONICAL_PRODUCTION` routing surface whose runtime
-    binding is installed; what is unproven there is an authenticated crossing,
-    which is not the same as a path that does not exist.
-    """
+    def mode(self):
+        return TC.run_mode(root=Path("/tmp/m"))
 
-    def modes(self):
-        return [TC.run_mode(root=Path("/tmp/m"), env={}),
-                TC.run_mode(root=None, env={"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/m"}),
-                TC.run_mode(root=None, env={})]
+    def test_mode_declares_which_axis_it_reports(self):
+        resolved = self.mode()
+        self.assertEqual(resolved["axis"], "MESH_MEDIUM")
+        self.assertTrue(resolved["route_axis_is_not_resolved_here"])
 
-    def test_every_mode_declares_which_axis_it_reports(self):
-        for resolved in self.modes():
-            with self.subTest(mode=resolved["run_mode"]):
-                self.assertEqual(resolved["axis"], "MESH_MEDIUM")
-                self.assertTrue(resolved["route_axis_is_not_resolved_here"])
-
-    def test_no_mode_makes_a_claim_about_the_ecosystem_at_large(self):
-        # The retired overreach must not come back under its old name.
-        for resolved in self.modes():
-            with self.subTest(mode=resolved["run_mode"]):
-                self.assertNotIn("reaches_a_production_ecosystem_over_a_network", resolved)
-                self.assertNotIn("network_transport_implemented", resolved)
+    def test_mode_makes_no_claim_about_the_ecosystem_at_large(self):
+        resolved = self.mode()
+        self.assertNotIn("reaches_a_production_ecosystem_over_a_network", resolved)
+        self.assertNotIn("network_transport_implemented", resolved)
 
     def test_the_mesh_claim_is_scoped_to_this_organizations_medium(self):
-        resolved = TC.run_mode(root=Path("/tmp/m"), env={})
+        resolved = self.mode()
         self.assertTrue(resolved["mesh_medium_is_a_shared_filesystem_or_nothing"])
         self.assertTrue(resolved["two_parties_sharing_no_filesystem_cannot_share_this_mesh"])
         self.assertIn("this organization's mesh store kind", resolved["why"])
 
     def test_the_route_axis_is_cited_to_the_surface_that_owns_it(self):
-        resolved = TC.run_mode(root=Path("/tmp/m"), env={})
+        resolved = self.mode()
         self.assertEqual(resolved["route_axis_field"], "routing_surface")
         self.assertIn("route_resolution.py", resolved["route_axis_owner"])
         self.assertIn("StegVerse-SDK", resolved["route_axis_owner"])
 
     def test_the_reason_is_the_store_kind_rather_than_an_opinion(self):
-        resolved = TC.run_mode(root=Path("/tmp/m"), env={})
+        resolved = self.mode()
         self.assertEqual(resolved["store_kind"], "POSIX_FILESYSTEM")
         self.assertIn(resolved["store_kind"], resolved["why"])
 
-    def test_the_only_store_kind_in_the_ecosystem_is_a_filesystem(self):
-        """If a non-filesystem store is ever added, this case must be revisited."""
+    def test_the_only_materialized_state_store_here_is_filesystem_backed(self):
         self.assertEqual(NS.PosixStateStore.kind, "POSIX_FILESYSTEM")
-
-    def test_what_would_change_it_names_a_real_registry_task(self):
-        # The console points at the work rather than describing it, so the
-        # claim cannot drift from the registry that owns the work intent.
-        resolved = TC.run_mode(root=None, env={})
-        self.assertIn(resolved["changing_this_is_recorded_as"],
-                      {task["task_id"] for task in REGISTRY["tasks"]})
-
-    def test_that_task_is_recorded_as_blocked(self):
-        named = TC.run_mode(root=None, env={})["changing_this_is_recorded_as"]
-        task = [t for t in REGISTRY["tasks"] if t["task_id"] == named][0]
-        self.assertEqual(task["status"], "blocked")
 
 
 class LiveMeansTests(unittest.TestCase):
@@ -189,25 +148,25 @@ class RenderingTests(unittest.TestCase):
         self.assertEqual(TC.transitions(bare)[0]["transition_class"], "UNDECLARED")
 
     def test_one_line_per_transition_in_chain_order(self):
-        rendered = TC.view(chain(), root=Path("/tmp/m"), env={})
+        rendered = TC.view(chain(), root=Path("/tmp/m"))
         self.assertEqual(len(rendered["lines"]), 2)
         self.assertIn("ORGANIZATION_EGRESS_EMITTED", rendered["lines"][0])
         self.assertIn("HB 32", rendered["lines"][0])
 
     def test_the_view_carries_both_the_run_and_what_live_means(self):
-        rendered = TC.view(chain(), root=Path("/tmp/m"), env={})
-        self.assertEqual(rendered["run"]["run_mode"], TC.LOCAL_ISOLATED)
+        rendered = TC.view(chain(), root=Path("/tmp/m"))
+        self.assertEqual(rendered["run"]["run_mode"], TC.MATERIALIZER_SUPPLIED)
         self.assertFalse(rendered["live"]["is_a_pushed_stream"])
         self.assertEqual(rendered["transition_count"], 2)
 
     def test_the_console_grants_nothing_and_changes_nothing(self):
-        rendered = TC.view(chain(), root=Path("/tmp/m"), env={})
+        rendered = TC.view(chain(), root=Path("/tmp/m"))
         self.assertEqual(rendered["authority_effect"], "NONE_CONSOLE_ONLY")
         self.assertTrue(rendered["ledger_unchanged_by_this_view"])
         self.assertEqual(rendered["run"]["authority_effect"], "NONE_CONSOLE_ONLY")
 
     def test_an_empty_chain_renders_nothing_rather_than_a_claim(self):
-        rendered = TC.view([], root=Path("/tmp/m"), env={})
+        rendered = TC.view([], root=Path("/tmp/m"))
         self.assertEqual(rendered["lines"], [])
         self.assertEqual(rendered["transition_count"], 0)
 

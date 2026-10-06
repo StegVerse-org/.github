@@ -279,6 +279,7 @@ class BothDispatchPathsAreGatedTests(unittest.TestCase):
     def test_the_internal_endpoint_path_carries_it_too(self):
         root = self.root({"service_id": "target.diag", "boundary_role": "INTERNAL_ENDPOINT",
                           "endpoint_adapter": "adapter.py",
+                          "endpoint_adapter_disposition": "ALLOW_DECLARED_ADAPTER",
                           "admits_processing": [{"capability": "ecosystem_diagnostic",
                                                  "route_id": "stegverse.route.ecosystem-diagnostic.v1"}]})
         (root / "adapter.py").write_text(self.ADAPTER)
@@ -345,7 +346,7 @@ class EverySeparatelyInvocableIngressSurfaceIsGatedTests(unittest.TestCase):
             "payload": {"probe": "ping"}, "evidence": {}}))
         completed = subprocess.run(
             [sys.executable, str(ROOT / "org-boundary/runtime/process_boundary.py"),
-             "--envelope", str(envelope), "--out", str(root / "out.json")],
+             "--envelope", str(envelope), "--registry", str(ROOT / "org-boundary/registry/services.json"), "--out", str(root / "out.json")],
             cwd=str(ROOT), capture_output=True, text=True)
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("no-standing-declared", completed.stdout + completed.stderr)

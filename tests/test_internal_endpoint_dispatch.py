@@ -29,6 +29,7 @@ class InternalEndpointDispatchTests(unittest.TestCase):
         service={"service_id":service_id,"boundary_role":"INTERNAL_ENDPOINT"}
         if adapter is not None:
             service["endpoint_adapter"]=adapter
+            service["endpoint_adapter_disposition"]="ALLOW_DECLARED_ADAPTER"
         registry={"organization":"Target-Org","services":[service]}
         (root/"org-boundary/registry/services.json").write_text(json.dumps(registry))
         # The boundary runtime is two files: the dispatcher and the module that
@@ -81,12 +82,13 @@ class InternalEndpointDispatchTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"endpoint_adapter_not_installed"):
                 K.dispatch(root,self.packet())
 
-    def test_adapter_outside_organization_root_is_rejected(self):
+    def test_declared_adapter_is_admitted_by_registry_not_filesystem_containment(self):
         with tempfile.TemporaryDirectory() as td, tempfile.TemporaryDirectory() as outside:
             external=Path(outside)/"adapter.py"; external.write_text(ADAPTER)
             root=self.fixture_root(td,adapter=str(external))
-            with self.assertRaisesRegex(ValueError,"endpoint_adapter_execution_failed"):
-                K.dispatch(root,self.packet())
+            result=K.dispatch(root,self.packet())
+            self.assertTrue(result["consumed"])
+            self.assertEqual(result["application_result"]["adapter_service"],"target.endpoint")
 
     def test_adapter_execution_failure_is_fail_closed(self):
         with tempfile.TemporaryDirectory() as td:

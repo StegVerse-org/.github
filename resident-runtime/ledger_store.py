@@ -135,6 +135,26 @@ class PosixLedgerStore:
             self.put(key, value)
             return True
 
+
+    def append_transaction(self, receipt_key_name, receipt, expected_head, new_head):
+        """Atomically publish a receipt and HEAD if HEAD still equals expected_head.
+
+        This is the substrate portability contract. A lost comparison writes
+        nothing, so a competing writer cannot leave an orphan receipt. A
+        network/KV sibling implements this with its native transaction/CAS;
+        POSIX uses its local lock only inside the storage primitive.
+        """
+        with self.exclusive():
+            if self.get(HEAD_KEY) != expected_head:
+                return False
+            existing = self.get(receipt_key_name)
+            if existing is not None and existing != receipt:
+                raise ValueError("ledger_receipt_collision")
+            if existing is None:
+                self.put(receipt_key_name, receipt)
+            self.put(HEAD_KEY, new_head)
+            return True
+
     @staticmethod
     def _sync_directory(directory):
         fd = os.open(str(directory), os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))

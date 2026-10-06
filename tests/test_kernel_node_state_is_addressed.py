@@ -243,7 +243,7 @@ class LayoutCompatibilityTests(unittest.TestCase):
 
 
 class MeshProvenanceTests(unittest.TestCase):
-    """A node that was told where the mesh is can be moved. One that guessed cannot."""
+    """Mesh identity comes only from the node materializer."""
 
     def test_a_supplied_mesh_is_portable(self):
         node = fixture(self)
@@ -252,22 +252,22 @@ class MeshProvenanceTests(unittest.TestCase):
         self.assertIs(report["mesh_portable"], True)
         self.assertEqual(report["authority_effect"], "NONE_REPORT_ONLY")
 
-    def test_a_mesh_derived_from_the_home_directory_says_so(self):
-        report = kernel.node_state_provenance(env={})
-        self.assertEqual(report["mesh_provenance"], node_store.FROM_HOME_DIRECTORY)
-        self.assertIs(report["mesh_portable"], False)
+    def test_missing_mesh_location_fails_closed_instead_of_reading_host_state(self):
+        with self.assertRaisesRegex(ValueError, "mesh_location_required_from_materializer"):
+            kernel.node_state_provenance()
+        with self.assertRaisesRegex(ValueError, "mesh_location_required_from_materializer"):
+            kernel.resolve_federation_root(None)
 
-    def test_a_mesh_bound_from_the_environment_says_so(self):
-        report = kernel.node_state_provenance(
-            env={kernel.FEDERATION_ROOT_ENV: "/tmp/stegverse-mesh"})
-        self.assertEqual(report["mesh_provenance"], node_store.FROM_ENVIRONMENT)
-        self.assertIs(report["mesh_portable"], False)
+    def test_host_environment_cannot_bind_the_mesh(self):
+        with self.assertRaisesRegex(ValueError, "host_environment_mesh_binding_forbidden"):
+            kernel.mesh_store(self.mesh_root if hasattr(self, "mesh_root") else Path("/tmp/unused"),
+                              env={"STEGVERSE_ORG_FEDERATION_ROOT": "/tmp/forbidden"})
 
-    def test_resolving_the_root_returns_the_provenance_with_it(self):
-        """Discarding the provenance is what made the dependency invisible."""
-        path, provenance = kernel.resolve_federation_root({})
-        self.assertEqual(provenance, node_store.FROM_HOME_DIRECTORY)
-        self.assertEqual(kernel.federation_root({}), path)
+    def test_resolving_a_supplied_root_reports_supplied(self):
+        with tempfile.TemporaryDirectory() as root:
+            path, provenance = kernel.resolve_federation_root(root)
+            self.assertEqual(provenance, node_store.SUPPLIED)
+            self.assertEqual(kernel.federation_root(root), path)
 
 
 class ResidentCycleRecordTests(unittest.TestCase):
@@ -314,15 +314,13 @@ class ResidentCycleRecordTests(unittest.TestCase):
         self.assertFalse((ROOT / "resident-runtime/federation/latest-cycle.json").exists())
 
     def test_a_node_state_root_it_was_told_is_portable(self):
-        resolved, provenance = kernel.resolve_node_state_root(
-            {kernel.NODE_STATE_ROOT_ENV: str(self.root)})
+        resolved, provenance = kernel.resolve_node_state_root(self.root)
         self.assertEqual(resolved, self.root.resolve())
-        self.assertEqual(provenance, node_store.FROM_ENVIRONMENT)
+        self.assertEqual(provenance, node_store.SUPPLIED)
 
-    def test_a_node_state_root_derived_from_the_host_says_so(self):
-        resolved, provenance = kernel.resolve_node_state_root({})
-        self.assertEqual(provenance, node_store.FROM_HOME_DIRECTORY)
-        self.assertTrue(resolved.as_posix().endswith("stegverse/node-state"))
+    def test_missing_node_state_root_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "node_state_location_required_from_materializer"):
+            kernel.resolve_node_state_root(None)
 
     def test_the_markers_that_already_live_in_the_checkout_do_not_migrate(self):
         """Keys keep the names the filesystem gave them; nothing is moved."""

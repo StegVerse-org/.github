@@ -67,7 +67,8 @@ ADAPTER = textwrap.dedent("""
 def service(**overrides):
     row = {"service_id": "target.endpoint",
            "boundary_role": "INTERNAL_ENDPOINT",
-           "endpoint_adapter": "adapter.py"}
+           "endpoint_adapter": "adapter.py",
+           "endpoint_adapter_disposition": "ALLOW_DECLARED_ADAPTER"}
     row.update(overrides)
     return row
 
