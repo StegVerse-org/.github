@@ -176,7 +176,34 @@
       "responded_request_classes_are_this_organizations_responders": true,
       "peer_responded_request_classes_are_readable_here": false,
       "both_conditions_are_readable_in_this_organizations_own_payload": true
-    }
+    },
+    "capability_destination_bindings": [
+      {
+        "profile_id": "governance",
+        "capability": "governance",
+        "route_id": "stegverse.route.canonical-governed.v1",
+        "destination_organization": "StegVerse-Labs",
+        "destination_repository": "StegVerse-Labs/.github",
+        "destination_service": "stegverse-labs.governance",
+        "decision_authority": "stegcore.steggate.evaluate_admissibility",
+        "decision_authority_repository": "StegVerse-Labs/StegCore",
+        "evaluator_imported_in_this_organization": false,
+        "request_message_class": "ecosystem.work.request",
+        "request_schema": "stegverse.org-governance-decision-request/v1",
+        "emitting_operation": "resident-runtime/organization_manifest_ingress.py::receive",
+        "emission": "resident-runtime/organization_egress_boundary.py::emit",
+        "decision_return_operation": "resident-runtime/governance_decision_return.py::return_decision",
+        "closure": "resident-runtime/organization_egress_boundary.py::close",
+        "sdk_admission": "stegverse.manifest_state_transition_runtime.admit_runtime_result",
+        "transport": "INTERLOCK_INTR",
+        "records_authority": "ORGANIZATION_RECORDS_ONLY",
+        "master_records_in_path": false,
+        "receiver_unavailable_disposition": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION",
+        "always_on_receiver_required": false,
+        "awaits_the_decision": false,
+        "authority_effect": "NONE_BINDING_ONLY"
+      }
+    ]
   },
   "heartbeat_derived_carrier": {
     "reference_frequency_hz": 100,

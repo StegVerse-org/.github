@@ -91,6 +91,9 @@ CAPABILITY_ADDRESS_FORM = "ORGANIZATION_SLUG_DOT_CAPABILITY_PROFILE_ID"
 #: an organization control service.
 ADDRESSED_SERVICE_FIELD = "addressed_service"
 CREDENTIAL_AUTHORITY = "TV/TVC"
+#: Where the overlay binds a capability this organization sends out to the
+#: organization that owns it, e.g. governance to StegVerse-Labs, which owns StegCore.
+DESTINATION_BINDINGS_FIELD = "capability_destination_bindings"
 
 #: The intended action each half of an outbound crossing carries.
 INTENDED_ACTION_EMIT = "CROSS_AN_ORGANIZATION_BOUNDARY_OUTBOUND"
@@ -165,6 +168,19 @@ def declared_capabilities(root: Path | None = None) -> dict[str, dict[str, Any]]
             if isinstance(entry, dict) and entry.get("profile_id")}
 
 
+def destination_bindings(root: Path | None = None) -> dict[str, dict[str, Any]]:
+    """Capabilities this organization sends out, each bound to the organization that owns it.
+
+    Declared on the egress side of the overlay, because they are not received
+    here: governance is decided by StegVerse-Labs, which owns StegCore, and this
+    organization only emits the request to it.
+    """
+    boundary = json.loads((Path(root or ROOT) / BOUNDARY_RELATIVE).read_text())
+    declared = (boundary.get("egress") or {}).get(DESTINATION_BINDINGS_FIELD) or []
+    return {entry["profile_id"]: entry for entry in declared
+            if isinstance(entry, dict) and entry.get("profile_id")}
+
+
 def peer_capability_service(organization: str, capability: str) -> str:
     """The address a peer answers this capability at.
 
@@ -205,10 +221,20 @@ def resolve_destination(organization: str, *, capability: str | None = None,
     closes and `close` records the refusal.
     """
     directory = kernel.load_federation_directory(root or ROOT)
-    if capability is not None and capability not in declared_capabilities(root):
+    outbound = destination_bindings(root) if capability is not None else {}
+    if (capability is not None and capability not in outbound
+            and capability not in declared_capabilities(root)):
         raise EgressRefused(
             "CAPABILITY_IS_DECLARED_IN_THIS_ORGANIZATIONS_OVERLAY",
             "no capability_endpoint_binding declares profile_id " + str(capability))
+    bound_to = (outbound.get(capability) or {}).get("destination_organization")
+    if bound_to is not None and bound_to != organization:
+        # The overlay names the organization that owns this capability. Sending
+        # it anywhere else would have another organization answer for it.
+        raise EgressRefused(
+            "CAPABILITY_IS_SENT_TO_THE_ORGANIZATION_THAT_OWNS_IT",
+            "capability " + str(capability) + " is bound to " + str(bound_to)
+            + ", not " + str(organization))
     for row in directory.get("organizations", []):
         if row.get("organization") != organization:
             continue
@@ -444,6 +470,9 @@ def closure_record(resolved: Mapping[str, Any], origin: str, packet_id: str,
         "reconstruction_proves_the_far_side_persisted_its_chain": False,
         "bilateral_match_requires_the_far_side_chain_to_be_readable": True,
         "closure_findings": findings,
+        # What the far side answered, bound by digest so the result a caller
+        # acts on is the one this closure recorded.
+        "far_side_application_result_sha256": sha(response.get("application_result")),
         "crossed_an_organization_boundary": True,
         "interlock_intr_involved": True,
         **_attestation(attested),
@@ -760,6 +789,7 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
         "far_side_terminal_receipt": response.get("receipt_terminal"),
         "far_side_receipt_reconstructed_here": True,
         "far_side_terminal_receipt_recomputed": recomputed[-1] if recomputed else None,
+        "far_side_application_result": response.get("application_result"),
         "closure_record": record,
         "closure_transition_class": transition_class,
         "closure_repository_receipt_sha256": appended["repository_receipt"]["receipt_sha256"],

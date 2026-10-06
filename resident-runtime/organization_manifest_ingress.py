@@ -91,6 +91,7 @@ PROFILE_NAME = "SDK:ManifestIngress"
 OPERATION = "SUBMIT_MANIFEST"
 RESULT_SCHEMA_ORG = "stegverse.organization-manifest-ingress-result/v1"
 REFUSAL_SCHEMA = "stegverse.organization-manifest-ingress-refusal-record/v1"
+GOVERNANCE_REQUEST_SCHEMA = "stegverse.org-governance-decision-request/v1"
 
 #: The intended action every submission carries, whatever its disposition.
 #:
@@ -386,10 +387,136 @@ def governance_fields(request: Mapping[str, Any], decision: Mapping[str, Any] | 
     }
 
 
+def request_digest(value: Any) -> str:
+    """A governance request's digest, in the encoding both organizations bind it with."""
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
+                                     ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def governance_request_payload(request: Mapping[str, Any], decision_request: Mapping[str, Any],
+                               transition_id: str) -> dict[str, Any]:
+    """The work request that carries a governance request to the organization that decides it.
+
+    `ecosystem.work.request` is answered with an acknowledgement, and the
+    communication id is what the closure correlates on, so the crossing is
+    closable by construction.
+    """
+    return {
+        "communication_id": "governance:" + request["request_sha256"],
+        "message_class": "ecosystem.work.request",
+        "subject": "governance.decision",
+        "requested_action": "DECIDE_GOVERNANCE_ADMISSIBILITY",
+        "audience": "TARGET",
+        "target_organization": decision_request["deciding_organization"],
+        "target_count": 1,
+        "body": {
+            "schema": GOVERNANCE_REQUEST_SCHEMA,
+            "origin_organization": "StegVerse-org",
+            "sdk_request_sha256": request["request_sha256"],
+            "canonical_manifest_sha256": request["canonical_manifest_sha256"],
+            "ingress_transition_id": transition_id,
+            "governance_request": decision_request["governance_request"],
+            "governance_request_sha256": decision_request["governance_request_sha256"],
+        },
+    }
+
+
+def request_governance_decision(request: Mapping[str, Any], crossing: Mapping[str, Any],
+                                receiving: Mapping[str, Any], *, transition_id: str,
+                                repository_receipt: Mapping[str, Any],
+                                organization_receipt: Mapping[str, Any],
+                                standing: Mapping[str, Any], mesh_root: Path | None,
+                                hb_epoch: int | None) -> dict[str, Any]:
+    """Emit the governance request to the organization that decides it, and record the emission.
+
+    Nothing waits. The emission is a transition here, recorded at both levels by
+    the egress boundary; the decision is a transition there; its return is a
+    third, recorded here when it arrives. A receiver that is not running leaves
+    the frame in the mesh, which is the durable queue.
+    """
+    decision_request = crossing.get("application_result") or {}
+    base = {
+        "schema": RESULT_SCHEMA_ORG,
+        "organization": "StegVerse-org",
+        "receiving_operation": OPERATION_ID,
+        "received": True,
+        "owner_repository": OWNER_REPOSITORY,
+        "resolved_service_id": crossing["resolved_service_id"],
+        "destination_resolution_source": request["destination_resolution_source"],
+        "destination_resolution_environment_inputs": [],
+        "receiving_operation_declared": dict(receiving),
+        "request_sha256": request["request_sha256"],
+        "canonical_manifest_sha256": request["canonical_manifest_sha256"],
+        "processing_capability": request["processing_capability"],
+        "route_id": request["route_id"],
+        "intr_admission_observed": True,
+        "far_side_transition_observed": True,
+        "boundary_receipt_chain_reconstructed_independently": True,
+        "organization_receipt_observed": True,
+        "organization_receipt_sha256": organization_receipt["receipt_sha256"],
+        "organization_transition_id": transition_id,
+        "repository_receipt_observed": True,
+        "repository_receipt_sha256": repository_receipt["receipt_sha256"],
+        "records_authority": "ORGANIZATION_RECORDS_ONLY",
+        "master_records_closure_observed": False,
+    }
+    if (decision_request.get("schema") != GOVERNANCE_REQUEST_SCHEMA
+            or decision_request.get("governance_request_sha256") != request_digest(decision_request.get("governance_request"))):
+        return {**base, "disposition": "FAIL_CLOSED",
+                "failed_predicate": "GOVERNANCE_REQUEST_IS_BOUND_TO_THE_SUBMITTED_MANIFEST",
+                "detail": "the governance processor returned no request bound to this manifest",
+                "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
+                "authority_effect": "NONE_REFUSAL_ONLY"}
+
+    egress = _module("organization_egress_boundary", "resident-runtime/organization_egress_boundary.py")
+    emitted = egress.emit(decision_request["deciding_organization"],
+                          governance_request_payload(request, decision_request, transition_id),
+                          standing=dict(standing), capability="governance",
+                          transition_reference="ecosystem.transition.governance.v1",
+                          mesh_root=mesh_root, hb_epoch=hb_epoch)
+    emission = {key: emitted.get(key) for key in (
+        "emission_transition_class", "emission_repository_receipt_sha256",
+        "emission_organization_receipt_sha256")}
+    if emitted["disposition"] != "ALLOW":
+        # Recorded by the egress boundary as a refused emission. The ingress
+        # transition stands; the request did not leave, and says why.
+        return {**base, **emission, "disposition": "FAIL_CLOSED",
+                "failed_predicate": emitted.get("failed_predicate"),
+                "detail": emitted.get("detail"),
+                "governance_decision_state": "REQUEST_NOT_EMITTED",
+                "required_evidence_or_repair": (
+                    "materialize this node with its federation mesh location"
+                    if "mesh_location_required" in str(emitted.get("detail"))
+                    else "satisfy the egress boundary's failed predicate: "
+                         + str(emitted.get("failed_predicate"))),
+                "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
+                "authority_effect": "NONE_REFUSAL_ONLY"}
+    return {**base, **emission,
+            "disposition": "ALLOW",
+            "governance_decision_state": "REQUESTED_OF_DECIDING_ORGANIZATION",
+            "deciding_organization": emitted["destination_organization"],
+            "deciding_service": emitted["destination_service"],
+            "decision_authority": decision_request["decision_authority"],
+            "decision_authority_repository": decision_request["decision_authority_repository"],
+            "evaluator_imported_in_this_organization": False,
+            "governance_request_packet_id": emitted["packet_id"],
+            "governance_communication_id": emitted["communication_id"],
+            "governance_request_sha256": decision_request["governance_request_sha256"],
+            "awaits_the_decision": False,
+            "receiver_unavailable_disposition": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION",
+            "sdk_admission": "AT_DECISION_RETURN",
+            "decision_return_entrypoint": "resident-runtime/governance_decision_return.py::return_decision",
+            "authority_effect": "NONE_RECEIVING_OPERATION_ONLY"}
+
+
 def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standing: Mapping[str, Any] | None = None,
             packet_id: str = "organization-sdk-manifest-ingress",
-            hb_epoch: int | None = None) -> dict[str, Any]:
-    """Receive a submitted manifest on this organization's ingress operation."""
+            hb_epoch: int | None = None, mesh_root: Path | None = None) -> dict[str, Any]:
+    """Receive a submitted manifest on this organization's ingress operation.
+
+    `mesh_root` is the federation mesh the node was materialized with. Only a
+    capability another organization decides needs it: the request leaves on it.
+    """
     refused = functools.partial(_refused, manifest=manifest, hb_epoch=hb_epoch)
     try:
         request = derive_execution_request(manifest, boundary())
@@ -449,6 +576,17 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
          "ingress_packet_id": crossing["ingress_packet_id"],
          "egress_packet_id": crossing["egress_packet_id"]},
         "NONE", hb_epoch=hb_epoch)
+
+    # Governance is decided by the organization that owns StegCore. The ingress
+    # transition above occurred here and is recorded; the request now leaves
+    # through this organization's egress, and the SDK is handed the decision
+    # when it returns, not before.
+    if request.get("processing_capability") == "governance":
+        return request_governance_decision(
+            request, crossing, receiving, transition_id=transition_id,
+            repository_receipt=repository_receipt, organization_receipt=organization_receipt,
+            standing=crossing_module.manifest_standing(manifest, standing),
+            mesh_root=mesh_root, hb_epoch=hb_epoch)
 
     # The SDK decides whether this closes the transition. Its refusal is the
     # answer, returned as it was given.
@@ -529,6 +667,9 @@ def main() -> int:
     parser.add_argument("--hb-epoch", type=int, default=None,
                         help="heartbeat epoch; derived from the host clock, and marked as "
                              "derived, when absent")
+    parser.add_argument("--mesh-root", type=Path, default=None,
+                        help="federation mesh this node was materialized with; a governance "
+                             "request leaves on it")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
 
@@ -537,7 +678,7 @@ def main() -> int:
         registry=json.loads(args.registry.read_text(encoding="utf-8")),
         standing=(json.loads(args.standing.read_text(encoding="utf-8"))
                   if args.standing else None),
-        packet_id=args.packet_id, hb_epoch=args.hb_epoch)
+        packet_id=args.packet_id, hb_epoch=args.hb_epoch, mesh_root=args.mesh_root)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

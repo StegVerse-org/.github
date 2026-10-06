@@ -1,0 +1,632 @@
+From e27b36dba1733a20112e1725004939970e07fd21 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 6 Oct 2026 09:17:10 +0000
+Subject: [PATCH] Decide governance requests that cross into StegVerse-Labs
+ over InTr
+
+StegCore is a StegVerse-Labs repository, so a governance decision belongs
+here. Another organization emits the request through its own .github egress;
+it crosses Interlock/InTr on the federation mesh and is received here.
+
+- services.json declares stegverse-labs.governance, an INTERNAL_ENDPOINT with
+  an admitted adapter, admitting governance on the canonical governed route.
+- The kernel dispatches an INTERNAL_ENDPOINT that declares an admitted
+  adapter. The adapter is resolved before any receipt is minted, receipts use
+  the same receipt rule as every role so the origin recomputes the chain, and
+  the adapter runs under the kernel's own interpreter. Boundary-local roles
+  are unchanged.
+- governance_endpoint.py decides the request with StegCore's StegGate and
+  records the decision at both ledger levels in this organization. A request
+  that does not recompute, cannot be evaluated, or arrives where StegCore is
+  not materialized is decided FAIL_CLOSED, naming why.
+
+Tested by tests/test_governance_endpoint.py (8 tests, stub StegCore) and
+end to end against StegVerse-org/.github with StegCore ef38410: DENY,
+signal.inputs_incomplete, admitted by the SDK as ORGANIZATION_RECORDS_ONLY.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015gfVx9oFKfGitABDmyWPhm
+---
+ .../governance-endpoint-validation.yml        |  43 ++++
+ GOVERNANCE_ENDPOINT_MIRROR_HANDOFF.md         |  30 +++
+ org-boundary/registry/services.json           |  19 ++
+ org-kernel/kernel.py                          |  46 +++-
+ resident-runtime/governance_endpoint.py       | 167 ++++++++++++++
+ tests/test_governance_endpoint.py             | 218 ++++++++++++++++++
+ 6 files changed, 520 insertions(+), 3 deletions(-)
+ create mode 100644 .github/workflows/governance-endpoint-validation.yml
+ create mode 100644 GOVERNANCE_ENDPOINT_MIRROR_HANDOFF.md
+ create mode 100644 resident-runtime/governance_endpoint.py
+ create mode 100644 tests/test_governance_endpoint.py
+
+diff --git a/.github/workflows/governance-endpoint-validation.yml b/.github/workflows/governance-endpoint-validation.yml
+new file mode 100644
+index 0000000..d34f30f
+--- /dev/null
++++ b/.github/workflows/governance-endpoint-validation.yml
+@@ -0,0 +1,43 @@
++name: Validate Governance Endpoint
++
++on:
++  pull_request:
++    paths:
++      - 'resident-runtime/governance_endpoint.py'
++      - 'resident-runtime/aggregate_repo_transition.py'
++      - '.stegverse/transition-ledger/**'
++      - 'org-kernel/kernel.py'
++      - 'org-boundary/registry/services.json'
++      - 'org-boundary/runtime/node_standing.py'
++      - 'tests/test_governance_endpoint.py'
++      - 'GOVERNANCE_ENDPOINT_MIRROR_HANDOFF.md'
++      - '.github/workflows/governance-endpoint-validation.yml'
++  push:
++    branches: [main]
++    paths:
++      - 'resident-runtime/governance_endpoint.py'
++      - 'resident-runtime/aggregate_repo_transition.py'
++      - '.stegverse/transition-ledger/**'
++      - 'org-kernel/kernel.py'
++      - 'org-boundary/registry/services.json'
++      - 'org-boundary/runtime/node_standing.py'
++      - 'tests/test_governance_endpoint.py'
++      - 'GOVERNANCE_ENDPOINT_MIRROR_HANDOFF.md'
++      - '.github/workflows/governance-endpoint-validation.yml'
++  workflow_dispatch:
++
++permissions:
++  contents: read
++
++jobs:
++  validate:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++        with:
++          persist-credentials: false
++      # The tests redirect both ledger roots and the mesh themselves, and stand
++      # a stub StegCore on the adapter's path, so nothing here needs StegCore
++      # installed or appends into an operator's runtime reality.
++      - name: StegVerse-Labs decides a governance request that crossed InTr
++        run: python -m unittest tests.test_governance_endpoint -v
+diff --git a/GOVERNANCE_ENDPOINT_MIRROR_HANDOFF.md b/GOVERNANCE_ENDPOINT_MIRROR_HANDOFF.md
+new file mode 100644
+index 0000000..60d9b6a
+--- /dev/null
++++ b/GOVERNANCE_ENDPOINT_MIRROR_HANDOFF.md
+@@ -0,0 +1,30 @@
++# Governance endpoint — mirror handoff
++
++Organization: `StegVerse-Labs`
++Service: `stegverse-labs.governance`
++Evidence class: `SOURCE_IMPLEMENTED`. No production runtime observation is claimed.
++
++## What this is
++
++StegCore is a StegVerse-Labs repository, so a governance decision is made here, in the organization that owns the evaluator. Another organization does not import StegCore and decide for itself. It emits the request out through its own `.github` egress; the request crosses Interlock/InTr on the federation mesh; this organization's `.github` receives it, decides it, and answers the same way.
++
++```text
++StegVerse-org/.github  egress  --InTr / federation mesh-->  StegVerse-Labs/.github  ingress
++                                                            stegverse-labs.governance
++                                                            StegCore StegGate decides
++StegVerse-org/.github  <--InTr / federation mesh--  ecosystem.work.ack with the decision
++```
++
++## What changed here
++
++- `org-boundary/registry/services.json` declares `stegverse-labs.governance`: an `INTERNAL_ENDPOINT` whose adapter is admitted (`ALLOW_DECLARED_ADAPTER`), admitting `governance` on `stegverse.route.canonical-governed.v1`.
++- `org-kernel/kernel.py` dispatches an `INTERNAL_ENDPOINT` that declares an admitted adapter. The adapter is resolved before any receipt is minted, so an adapter the registry does not admit leaves no chain. Receipts are minted by the same `receipt` rule as every other role, so the origin recomputes the chain from what it already holds. The adapter runs under the kernel's own interpreter, not a bare `python3` from the host path. Boundary-local roles are unchanged.
++- `resident-runtime/governance_endpoint.py` decides the request with `stegcore.steggate.evaluate_admissibility`. A request whose digest does not recompute, or that cannot be evaluated, or that arrives where StegCore is not materialized, is decided `FAIL_CLOSED` naming why — never guessed.
++
++## Records
++
++The decision is a transition that occurs in this organization, so it is recorded here at both levels: a `stegverse.repo-transition-receipt/v1` of class `ORGANIZATION_GOVERNANCE_DECISION`, then the organization receipt consuming it. Organization records are the custody of the decision. Nothing here submits it elsewhere or waits on anything.
++
++## Validation
++
++`tests/test_governance_endpoint.py`, run by `.github/workflows/governance-endpoint-validation.yml`.
+diff --git a/org-boundary/registry/services.json b/org-boundary/registry/services.json
+index 1acea31..7cf291e 100644
+--- a/org-boundary/registry/services.json
++++ b/org-boundary/registry/services.json
+@@ -20,6 +20,25 @@
+       "boundary_role": "BOUNDARY_LOCAL_DIAGNOSTIC",
+       "profile_status": "ACTIVE",
+       "runtime_required_for_consumption": false
++    },
++    {
++      "service_id": "stegverse-labs.governance",
++      "repository": "StegVerse-Labs/.github",
++      "boundary_role": "INTERNAL_ENDPOINT",
++      "profile_status": "ACTIVE",
++      "accepts": [
++        "ecosystem.work.request"
++      ],
++      "runtime_required_for_consumption": true,
++      "endpoint_adapter": "resident-runtime/governance_endpoint.py",
++      "endpoint_adapter_disposition": "ALLOW_DECLARED_ADAPTER",
++      "admits_processing": [
++        {
++          "capability": "governance",
++          "route_id": "stegverse.route.canonical-governed.v1"
++        }
++      ],
++      "decision_authority": "StegVerse-Labs/StegCore:stegcore.steggate.evaluate_admissibility"
+     }
+   ],
+   "boundary_rule": "All organization-crossing communication is generated and consumed through StegVerse-Labs/.github using Interlock/InTr; endpoint authority remains transition-governed."
+diff --git a/org-kernel/kernel.py b/org-kernel/kernel.py
+index 3fab6e0..8504673 100644
+--- a/org-kernel/kernel.py
++++ b/org-kernel/kernel.py
+@@ -5,7 +5,7 @@ Organization-neutral runtime behavior extracted from StegVerse-Labs/.github.
+ No GitHub, hosted scheduler, provider, or carrier grants authority.
+ """
+ from __future__ import annotations
+-import base64, hashlib, importlib.util, json, os
++import base64, hashlib, importlib.util, json, os, subprocess, sys, tempfile
+ from datetime import datetime, timezone
+ from pathlib import Path
+ from typing import Any
+@@ -96,6 +96,40 @@ def carried_standing(request_packet:dict[str,Any])->dict[str,Any]:
+     if not isinstance(declared,dict): raise ValueError("response_requires_request_standing")
+     return {**declared,"standing_carried_forward_from_request":True}
+ 
++def resolve_endpoint_adapter(root:Path, service:dict[str,Any])->Path:
++    """Resolve only an adapter the capability map explicitly admits.
++
++    An INTERNAL_ENDPOINT is consumed here, inside this organization, when its
++    row declares an adapter and admits it. Filesystem presence is not
++    admissibility: the registry's disposition is the policy, and the path is
++    only where the admitted adapter is materialized.
++    """
++    if service.get("endpoint_adapter_disposition")!="ALLOW_DECLARED_ADAPTER":
++        raise ValueError(str(service.get("endpoint_adapter_disposition") or "FAIL_CLOSED_ENDPOINT_ADAPTER_UNDECLARED"))
++    candidate=Path(str(service["endpoint_adapter"]))
++    candidate=(candidate if candidate.is_absolute() else root/candidate).resolve()
++    if not candidate.is_file(): raise ValueError("FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_MATERIALIZED")
++    return candidate
++
++def run_endpoint_adapter(root:Path, adapter:Path, packet:dict[str,Any])->dict[str,Any]:
++    """Run an admitted adapter on the packet that crossed, and return its result.
++
++    The adapter runs under this interpreter, so what it can import is what this
++    boundary was materialized with rather than whatever a bare `python3` on the
++    host path resolves to.
++    """
++    with tempfile.TemporaryDirectory() as td:
++        envelope=Path(td)/"packet.json"; out=Path(td)/"endpoint-response.json"
++        envelope.write_text(json.dumps(packet,indent=2,sort_keys=True)+"\n")
++        completed=subprocess.run([sys.executable,str(adapter),"--packet",str(envelope),"--out",str(out)],
++                                 cwd=root,capture_output=True,text=True,check=False)
++        if completed.returncode!=0 or not out.is_file():
++            detail=(completed.stderr or completed.stdout or "").strip().splitlines()
++            raise ValueError("endpoint_adapter_execution_failed"+(":"+detail[-1] if detail else ""))
++        result=json.loads(out.read_text())
++    if not isinstance(result,dict): raise ValueError("endpoint_adapter_result_invalid")
++    return result
++
+ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
+     registry=load_registry(root)
+     if packet["destination"]["org"]!=registry["organization"]: raise ValueError("wrong_destination_org")
+@@ -111,13 +145,19 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
+     except SystemExit as refused:
+         raise ValueError("node_standing_refused:"+str(refused)) from None
+     role=service.get("boundary_role")
+-    if role not in {"BOUNDARY_LOCAL_DIAGNOSTIC","BOUNDARY_LOCAL_CONTROL"}:
++    endpoint=role=="INTERNAL_ENDPOINT" and bool(service.get("endpoint_adapter"))
++    if not endpoint and role not in {"BOUNDARY_LOCAL_DIAGNOSTIC","BOUNDARY_LOCAL_CONTROL"}:
+         raise ValueError("endpoint_adapter_not_installed")
++    # Resolved before any receipt is minted: an adapter the registry does not
++    # admit must not leave a chain implying the crossing was consumed.
++    adapter=resolve_endpoint_adapter(root,service) if endpoint else None
+     prev=None; receipts=[]
+     for kind in ("INGRESS_ACCEPTED","DISPATCHED","CONSUMED","RESULT_BOUND","EGRESS_EMITTED"):
+         r=receipt(kind,packet["packet_id"],service["service_id"],prev,{"payload_hash":sha(packet["payload"])})
+         receipts.append(r); prev=r["receipt_id"]
+-    if role=="BOUNDARY_LOCAL_CONTROL":
++    if endpoint:
++        application_result=run_endpoint_adapter(root,adapter,packet)
++    elif role=="BOUNDARY_LOCAL_CONTROL":
+         application_result=handle_control_message(root,packet,registry)
+     else:
+         application_result={"echo":packet["payload"]}
+diff --git a/resident-runtime/governance_endpoint.py b/resident-runtime/governance_endpoint.py
+new file mode 100644
+index 0000000..f0a6857
+--- /dev/null
++++ b/resident-runtime/governance_endpoint.py
+@@ -0,0 +1,167 @@
++#!/usr/bin/env python3
++"""`stegverse-labs.governance` -- decide a governance request that crossed into this organization.
++
++StegCore is a StegVerse-Labs repository, so a governance decision is made here,
++inside the organization that owns the evaluator, and nowhere else. Another
++organization does not import StegCore and decide for itself: it emits the
++request through its own `.github` egress, the request crosses Interlock/InTr on
++the federation mesh, and this organization's `.github` receives it. The answer
++returns the same way.
++
++The kernel runs this adapter for a packet addressed to `stegverse-labs.governance`
++and carries its result back to the origin on the acknowledgement. The decision
++is the transition that occurred here, so it is recorded here, at both ledger
++levels -- the repository receipt first and the organization receipt consuming
++it -- under `organization_scope_rule`. Organization records are the custody of
++that decision; nothing here submits it anywhere else or waits on anything.
++
++A request this adapter cannot evaluate is still decided: FAIL_CLOSED, naming
++why, and recorded. A refusal is a disposition, not an absence.
++"""
++from __future__ import annotations
++
++import argparse
++import hashlib
++import importlib.util
++import json
++import subprocess
++import sys
++from pathlib import Path
++from typing import Any, Mapping
++
++ROOT = Path(__file__).resolve().parents[1]
++ORGANIZATION = "StegVerse-Labs"
++SERVICE_ID = "stegverse-labs.governance"
++REQUEST_SCHEMA = "stegverse.org-governance-decision-request/v1"
++DECISION_SCHEMA = "stegverse.org-governance-decision/v1"
++DECISION_AUTHORITY = "stegcore.steggate.evaluate_admissibility"
++DECISION_AUTHORITY_REPOSITORY = "StegVerse-Labs/StegCore"
++TRANSITION_CLASS = "ORGANIZATION_GOVERNANCE_DECISION"
++
++
++def canon(value: Any) -> bytes:
++    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
++
++
++def sha(value: Any) -> str:
++    return "sha256:" + hashlib.sha256(canon(value)).hexdigest()
++
++
++def _module(name: str, relative: str):
++    spec = importlib.util.spec_from_file_location(name, ROOT / relative)
++    module = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(module)
++    return module
++
++
++def evaluate(request: Mapping[str, Any]) -> dict[str, Any]:
++    """StegGate's disposition for the request, or FAIL_CLOSED naming why there is none.
++
++    No evaluator is substituted. Without StegCore there is no decision to make,
++    and the request is decided FAIL_CLOSED rather than guessed.
++    """
++    try:
++        from stegcore.steggate import AdmissibilityRequest, evaluate_admissibility
++    except ImportError:
++        return {"disposition": "FAIL_CLOSED", "reason": "GOVERNANCE_RUNTIME_STEGCORE_UNAVAILABLE",
++                "evaluation": None}
++    try:
++        admissibility = AdmissibilityRequest(**dict(request))
++    except Exception as exc:  # the request's shape is the requester's, not ours to repair
++        return {"disposition": "FAIL_CLOSED",
++                "reason": "GOVERNANCE_REQUEST_NOT_EVALUABLE:" + type(exc).__name__,
++                "evaluation": None}
++    body = evaluate_admissibility(admissibility).model_dump(mode="json")
++    disposition = body.get("disposition")
++    if disposition not in {"ALLOW", "DENY", "FAIL_CLOSED"}:
++        return {"disposition": "FAIL_CLOSED",
++                "reason": "GOVERNANCE_EVALUATOR_RETURNED_NO_DISPOSITION", "evaluation": body}
++    return {"disposition": disposition, "reason": body.get("canonical_three_layer_reason"),
++            "evaluation": body}
++
++
++def decide(packet: Mapping[str, Any]) -> dict[str, Any]:
++    """Decide the governance request a packet carries."""
++    if (packet.get("destination") or {}).get("service") != SERVICE_ID:
++        raise SystemExit("wrong-governance-destination")
++    payload = packet.get("payload") or {}
++    body = payload.get("body") or {}
++    request = body.get("governance_request")
++    declared = body.get("governance_request_sha256")
++    decision: dict[str, Any] = {
++        "schema": DECISION_SCHEMA,
++        "service_id": SERVICE_ID,
++        "deciding_organization": ORGANIZATION,
++        "decision_authority": DECISION_AUTHORITY,
++        "decision_authority_repository": DECISION_AUTHORITY_REPOSITORY,
++        "request_packet_id": packet.get("packet_id"),
++        "origin_organization": (packet.get("origin") or {}).get("org"),
++        "sdk_request_sha256": body.get("sdk_request_sha256"),
++        "governance_request_sha256": declared,
++        "external_side_effect": False,
++        "authority_effect": "NONE_DECISION_ONLY",
++    }
++    if body.get("schema") != REQUEST_SCHEMA:
++        decision.update(disposition="FAIL_CLOSED", evaluation=None,
++                        reason="GOVERNANCE_REQUEST_SCHEMA_NOT_RECEIVED:" + str(body.get("schema")))
++    elif not isinstance(request, dict):
++        decision.update(disposition="FAIL_CLOSED", evaluation=None,
++                        reason="GOVERNANCE_REQUEST_ABSENT")
++    elif hashlib.sha256(canon(request)).hexdigest() != declared:
++        # The digest binds the request the origin recorded emitting to the one
++        # decided here. A request that does not recompute is not that request.
++        decision.update(disposition="FAIL_CLOSED", evaluation=None,
++                        reason="GOVERNANCE_REQUEST_DIGEST_MISMATCH")
++    else:
++        decision.update(evaluate(request))
++    return decision
++
++
++def record(packet: Mapping[str, Any], decision: Mapping[str, Any]) -> dict[str, str]:
++    """Append the decision at both ledger levels: repository first, organization consuming it."""
++    transition_id = TRANSITION_CLASS + ":" + hashlib.sha256(
++        str(packet.get("packet_id")).encode()).hexdigest()[:24]
++    predecessor = "sha256:" + str(decision.get("governance_request_sha256"))
++    successor = sha(dict(decision))
++    evidence = {"request_packet_id": packet.get("packet_id"),
++                "origin_organization": decision.get("origin_organization"),
++                "decision": dict(decision)}
++    completed = subprocess.run(
++        [sys.executable, str(ROOT / ".stegverse/transition-ledger/emit.py"),
++         "--transition-id", transition_id, "--transition-class", TRANSITION_CLASS,
++         "--predecessor-state-sha256", predecessor, "--successor-state-sha256", successor,
++         "--evidence-json", json.dumps(evidence, sort_keys=True), "--authority-effect", "NONE"],
++        cwd=ROOT, capture_output=True, text=True, check=False)
++    if completed.returncode != 0:
++        raise SystemExit("governance-decision-repository-receipt-failed:"
++                         + (completed.stderr or completed.stdout).strip()[-300:])
++    repository_receipt = json.loads(completed.stdout.strip().splitlines()[-1])
++    organization_ledger = _module("aggregate_repo_transition",
++                                  "resident-runtime/aggregate_repo_transition.py")
++    organization_receipt = organization_ledger.aggregate_transition(
++        repository_receipt, org_transition_class="REPO_STATE_PROPAGATION",
++        predecessor_org_state_sha256=predecessor, successor_org_state_sha256=successor,
++        boundary_evidence={"service_id": SERVICE_ID, "transition_class": TRANSITION_CLASS,
++                           "disposition": decision.get("disposition"),
++                           "request_packet_id": packet.get("packet_id")},
++        authority_effect="NONE")
++    return {"repository_receipt_sha256": repository_receipt["receipt_sha256"],
++            "organization_receipt_sha256": organization_receipt["receipt_sha256"]}
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    parser.add_argument("--packet", type=Path, required=True)
++    parser.add_argument("--out", type=Path, required=True)
++    args = parser.parse_args()
++    packet = json.loads(args.packet.read_text(encoding="utf-8"))
++    decision = decide(packet)
++    receipts = record(packet, decision)
++    result = {**decision, **receipts, "records_authority": "ORGANIZATION_RECORDS_ONLY"}
++    args.out.parent.mkdir(parents=True, exist_ok=True)
++    args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/tests/test_governance_endpoint.py b/tests/test_governance_endpoint.py
+new file mode 100644
+index 0000000..25e3b3c
+--- /dev/null
++++ b/tests/test_governance_endpoint.py
+@@ -0,0 +1,218 @@
++"""StegVerse-Labs decides a governance request that crossed into it over InTr.
++
++StegCore is a StegVerse-Labs repository, so StegVerse-Labs/.github is where a
++governance request from another organization is received and decided. These
++tests drive the kernel's dispatch of `stegverse-labs.governance` -- an
++INTERNAL_ENDPOINT whose adapter the registry admits -- and the response the
++resident cycle publishes back to the origin.
++
++StegCore is replaced by a stub on the adapter's import path, so the decision is
++deterministic and the test does not depend on which StegCore is installed. The
++real evaluator is exercised wherever StegCore is materialized; without it the
++adapter decides FAIL_CLOSED and says so, which is also tested.
++
++Both ledger roots and the mesh are redirected per test.
++"""
++from __future__ import annotations
++
++import hashlib
++import importlib.util
++import json
++import os
++import tempfile
++import unittest
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++SERVICE = "stegverse-labs.governance"
++STANDING = {"mode": "ESTABLISH_GENESIS", "node_ref": "StegVerse-org-test-node", "predecessor": None}
++STUB = '''
++class AdmissibilityRequest:
++    def __init__(self, **fields):
++        if "signal" not in fields:
++            raise TypeError("signal required")
++        self.fields = fields
++class _Result:
++    def __init__(self, fields):
++        self.fields = fields
++    def model_dump(self, mode="json"):
++        return {"disposition": "DENY", "canonical_three_layer_reason": "signal.inputs_incomplete",
++                "request": self.fields}
++def evaluate_admissibility(request):
++    return _Result(request.fields)
++'''
++
++
++def _kernel():
++    spec = importlib.util.spec_from_file_location("labs_kernel", ROOT / "org-kernel/kernel.py")
++    module = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(module)
++    return module
++
++
++K = _kernel()
++
++
++def canon(value):
++    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
++
++
++def work_request(request, *, digest=None):
++    return {
++        "communication_id": "governance:" + "a" * 64,
++        "message_class": "ecosystem.work.request",
++        "subject": "governance.decision",
++        "requested_action": "DECIDE_GOVERNANCE_ADMISSIBILITY",
++        "audience": "TARGET", "target_organization": "StegVerse-Labs", "target_count": 1,
++        "body": {"schema": "stegverse.org-governance-decision-request/v1",
++                 "origin_organization": "StegVerse-org",
++                 "sdk_request_sha256": "a" * 64,
++                 "governance_request": request,
++                 "governance_request_sha256": digest or hashlib.sha256(canon(request)).hexdigest()},
++    }
++
++
++def packet(payload):
++    return K.build_packet(origin_org="StegVerse-org", origin_service="stegverse-org.governance",
++                          destination_org="StegVerse-Labs", destination_service=SERVICE,
++                          payload=payload, standing=dict(STANDING),
++                          transition_reference="ecosystem.transition.governance.v1")
++
++
++class GovernanceEndpointTests(unittest.TestCase):
++    VARIABLES = ("STEGVERSE_REPO_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_ROOT", "PYTHONPATH")
++
++    def setUp(self):
++        self._work = tempfile.TemporaryDirectory()
++        self.addCleanup(self._work.cleanup)
++        self.work = Path(self._work.name)
++        previous = {name: os.environ.get(name) for name in self.VARIABLES}
++
++        def restore():
++            for name, value in previous.items():
++                if value is None:
++                    os.environ.pop(name, None)
++                else:
++                    os.environ[name] = value
++        self.addCleanup(restore)
++        os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = str(self.work / "repo-ledger")
++        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = str(self.work / "org-ledger")
++        stub = self.work / "stub" / "stegcore"
++        stub.mkdir(parents=True)
++        (stub / "__init__.py").write_text("")
++        (stub / "steggate.py").write_text(STUB)
++        self.stub_path = str(self.work / "stub")
++
++    def with_stegcore(self):
++        os.environ["PYTHONPATH"] = self.stub_path
++
++    def without_stegcore(self):
++        empty = self.work / "no-stegcore"
++        empty.mkdir(exist_ok=True)
++        os.environ["PYTHONPATH"] = str(empty)
++
++    def ledger(self, variable):
++        return [json.loads(path.read_text())
++                for path in (Path(os.environ[variable]) / "receipts").glob("*.json")]
++
++    def test_the_governance_service_is_an_admitted_internal_endpoint(self):
++        registry = K.load_registry(ROOT)
++        row = next(s for s in registry["services"] if s["service_id"] == SERVICE)
++        self.assertEqual(row["boundary_role"], "INTERNAL_ENDPOINT")
++        self.assertEqual(row["endpoint_adapter_disposition"], "ALLOW_DECLARED_ADAPTER")
++        self.assertEqual(row["decision_authority"],
++                         "StegVerse-Labs/StegCore:stegcore.steggate.evaluate_admissibility")
++
++    def test_a_crossed_request_is_decided_here_with_stegcore(self):
++        self.with_stegcore()
++        result = K.dispatch(ROOT, packet(work_request({"signal": {}})))
++        decision = result["application_result"]
++        self.assertIs(result["consumed"], True)
++        self.assertEqual(result["reconstruction"]["status"], "RECONSTRUCTED")
++        self.assertEqual(decision["deciding_organization"], "StegVerse-Labs")
++        self.assertEqual(decision["decision_authority"], "stegcore.steggate.evaluate_admissibility")
++        self.assertEqual(decision["disposition"], "DENY")
++        self.assertEqual(decision["reason"], "signal.inputs_incomplete")
++        self.assertEqual(decision["records_authority"], "ORGANIZATION_RECORDS_ONLY")
++
++    def test_the_decision_is_recorded_at_both_ledger_levels_here(self):
++        self.with_stegcore()
++        decision = K.dispatch(ROOT, packet(work_request({"signal": {}})))["application_result"]
++        repository = self.ledger("STEGVERSE_REPO_LEDGER_ROOT")
++        organization = self.ledger("STEGVERSE_ORG_LEDGER_ROOT")
++        self.assertEqual([r["transition_class"] for r in repository], ["ORGANIZATION_GOVERNANCE_DECISION"])
++        self.assertEqual(repository[0]["repository"], "StegVerse-Labs/.github")
++        self.assertEqual(repository[0]["receipt_sha256"], decision["repository_receipt_sha256"])
++        self.assertEqual(len(organization), 1)
++        self.assertEqual(organization[0]["repo_receipt_sha256"], decision["repository_receipt_sha256"])
++        self.assertEqual(organization[0]["receipt_sha256"], decision["organization_receipt_sha256"])
++
++    def test_without_stegcore_the_request_is_decided_fail_closed_not_guessed(self):
++        self.without_stegcore()
++        decision = K.dispatch(ROOT, packet(work_request({"signal": {}})))["application_result"]
++        self.assertEqual(decision["disposition"], "FAIL_CLOSED")
++        self.assertEqual(decision["reason"], "GOVERNANCE_RUNTIME_STEGCORE_UNAVAILABLE")
++        self.assertEqual(len(self.ledger("STEGVERSE_REPO_LEDGER_ROOT")), 1)
++
++    def test_a_request_that_does_not_recompute_is_decided_fail_closed(self):
++        self.with_stegcore()
++        decision = K.dispatch(ROOT, packet(work_request({"signal": {}}, digest="0" * 64)))["application_result"]
++        self.assertEqual(decision["disposition"], "FAIL_CLOSED")
++        self.assertEqual(decision["reason"], "GOVERNANCE_REQUEST_DIGEST_MISMATCH")
++
++    def copied_root(self):
++        """A dispatch root of its own, so the resident cycle's seen-markers land outside the checkout."""
++        root = self.work / "root"
++        for relative in ("org-boundary/registry/services.json", "org-boundary/runtime/node_standing.py",
++                         "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
++                         "resident-runtime/governance_endpoint.py",
++                         "resident-runtime/aggregate_repo_transition.py",
++                         ".stegverse/transition-ledger/emit.py",
++                         ".stegverse/transition-ledger/contract.json",
++                         ".stegverse/transition-ledger/org-contract.json"):
++            (root / relative).parent.mkdir(parents=True, exist_ok=True)
++            (root / relative).write_text((ROOT / relative).read_text())
++        return root
++
++    def test_the_answer_returns_to_the_origin_with_a_recomputable_chain(self):
++        self.with_stegcore()
++        mesh = self.work / "mesh"
++        sent = packet(work_request({"signal": {}}))
++        K.publish_packet(sent, root=mesh)
++        consumed = K.consume_and_respond(self.copied_root(), mesh_root=mesh, seen=set())
++        self.assertEqual([item["result"]["status"] for item in consumed], ["CONSUMED"])
++        response = K.recover_packet(consumed[0]["response_publication"]["frame"])
++        self.assertEqual(response["destination"]["org"], "StegVerse-org")
++        self.assertEqual(response["payload"]["message_class"], "ecosystem.work.ack")
++        body = response["payload"]["body"]
++        self.assertEqual(body["request_packet_id"], sent["packet_id"])
++        self.assertEqual(body["application_result"]["disposition"], "DENY")
++        chain, previous = [], None
++        for kind in ("INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED", "RESULT_BOUND", "EGRESS_EMITTED"):
++            receipt = K.receipt(kind, sent["packet_id"], SERVICE, previous,
++                                {"payload_hash": K.sha(sent["payload"])})
++            chain.append(receipt["receipt_id"])
++            previous = receipt["receipt_id"]
++        self.assertEqual(body["receipt_terminal"], chain[-1])
++
++    def test_an_adapter_the_registry_does_not_admit_mints_no_chain(self):
++        root = self.copied_root()
++        registry = json.loads((root / "org-boundary/registry/services.json").read_text())
++        for row in registry["services"]:
++            if row["service_id"] == SERVICE:
++                row["endpoint_adapter_disposition"] = "FAIL_CLOSED_ENDPOINT_ADAPTER_UNDECLARED"
++        (root / "org-boundary/registry/services.json").write_text(json.dumps(registry))
++        with self.assertRaises(ValueError) as raised:
++            K.dispatch(root, packet(work_request({"signal": {}})))
++        self.assertIn("FAIL_CLOSED_ENDPOINT_ADAPTER_UNDECLARED", str(raised.exception))
++
++    def test_boundary_local_roles_are_unchanged(self):
++        result = K.dispatch(ROOT, K.build_packet(
++            origin_org="StegVerse-org", origin_service="stegverse-org.org-control",
++            destination_org="StegVerse-Labs", destination_service="stegverse-labs.boundary-diagnostic",
++            payload={"probe": 1}, standing=dict(STANDING)))
++        self.assertEqual(result["application_result"], {"echo": {"probe": 1}})
++
++
++if __name__ == "__main__":
++    unittest.main()
+-- 
+2.43.0
+
