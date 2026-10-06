@@ -124,7 +124,7 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.manifest = builder.rebuild()["hold-to-boundary-diagnostic"]
+        cls.manifest = builder.rebuild()["governance-to-boundary-diagnostic"]
 
     def test_a_freshly_built_sdk_manifest_crosses_the_boundary(self):
         result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
@@ -136,10 +136,11 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
 
     def test_the_manifest_the_sdk_built_is_the_manifest_that_arrived(self):
         result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
-        far_side = (result["egress"]["payload"]["execution_result"]
-                    ["application_result"]["echo"])
-        self.assertEqual(far_side["manifest"], self.manifest)
-        self.assertEqual(far_side["manifest_sha256"], result["manifest_sha256"])
+        decision = (result["egress"]["payload"]["execution_result"]
+                    ["application_result"])
+        self.assertEqual(decision["governance_request_sha256"],
+                         bridge.sha(self.manifest["extensions"]["stegverse_governance_request"]))
+        self.assertEqual(result["manifest_sha256"], "sha256:" + bridge.sha(self.manifest))
 
     def test_the_sdk_declared_far_side_is_the_surface_that_was_crossed_to(self):
         canonical = validate_ingress_manifest(self.manifest)
@@ -147,7 +148,8 @@ class LiveSdkManifestCrossingTests(unittest.TestCase):
         result = bridge.cross(self.manifest, standing=GENESIS, packet_id="live-sdk-manifest-crossing")
         self.assertEqual(result["declared_transition_surface"],
                          sdk["final_stegverse_transition_surface"])
-        self.assertEqual(result["resolved_service_id"], "stegverse-org.boundary-diagnostic")
+        # The return surface is kept as declared; governance is processed where it is admitted.
+        self.assertEqual(result["resolved_service_id"], "stegverse-org.governance")
 
 
 if __name__ == "__main__":

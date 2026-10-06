@@ -2,14 +2,14 @@
   "_comment": "The exact build_manifest arguments these fixtures were produced from. Committing the inputs, not just the output, is what lets a workflow with the SDK installed rebuild the fixtures and prove they are still what the SDK actually produces.",
   "common": {
     "created_at": "2026-09-26T00:00:00Z",
-    "data_class": "sv.hold.independent.source-only.v1",
-    "declared_intent": "Independently qualify a proposed governed HOLD transition",
+    "data_class": "sv.governance.crossing-fixture.v1",
+    "declared_intent": "Carry a governance manifest across the organization boundary",
     "process": "governance",
     "publisher_required": false,
-    "requested_consequence": "Observe actual disposition and protected effect only if genuinely admitted",
+    "requested_consequence": "Observe the governance disposition only if genuinely admitted",
     "return_depth": "full-trace",
-    "source_framework": "StegVerse-independent-evaluator",
-    "source_output_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+    "source_framework": "StegVerse-org-boundary-fixture",
+    "source_output_id": "GOVERNANCE-CROSSING-FIXTURE-001"
   },
   "data": {
     "authority_declaration": {
@@ -19,26 +19,15 @@
       "permission_present": false,
       "validity_window_open": true
     },
-    "condition_id": "HOLD_ENTERED",
-    "evidence_class": "INDEPENDENT_SV_EXPERIMENT_DESIGN_NOT_NATIVE_RUNTIME",
-    "expected_evidence": [
-      "actual_intr_admissibility_snapshot",
-      "original_protected_operation_effect_or_prevention",
-      "predecessor_linked_organization_receipts",
-      "applicable_master_records_reconstruction"
-    ],
-    "experiment_id": "SV-HOLD-INDEPENDENT-BASELINE-20260926",
-    "native_stev_inference": null,
-    "other_framework_output_consumed": false,
-    "protected_operation": "bounded_no_external_side_effect_test",
-    "relative_time": "T1",
-    "temporal_sampling": "EXPERIMENT_RELATIVE_ONLY_NOT_MEASURED"
+    "external_side_effect": false,
+    "fixture_id": "GOVERNANCE-CROSSING-FIXTURE-001",
+    "purpose": "boundary crossing of a governance manifest that carries no authenticated grant"
   },
   "manifests": {
-    "hold-to-boundary-diagnostic": {
+    "governance-to-boundary-diagnostic": {
       "egress_surface": "BOUNDARY_DIAGNOSTIC"
     },
-    "hold-to-llm-adapter": {
+    "governance-to-llm-adapter": {
       "egress_surface": "LLM_ADAPTER"
     },
     "task-registry-disclosure-to-llm-adapter": {
@@ -67,6 +56,46 @@
       },
       "requested_consequence": "Return the committed registry and its digest; admit nothing",
       "source_output_id": "TASK-REGISTRY-DISCLOSURE-001:CURRENT"
+    },
+    "unadmitted-capability-to-llm-adapter": {
+      "data": {
+        "fixture_id": "UNADMITTED-CAPABILITY-001",
+        "text": "fixture: never executed"
+      },
+      "declared_intent": "Declare a capability no organization service admits",
+      "egress_surface": "LLM_ADAPTER",
+      "process": "purpose_bound_worker",
+      "processor_request": {
+        "schema": "stegverse.sdk.purpose-bound-worker-test.v1",
+        "test_id": "UNADMITTED-CAPABILITY-001",
+        "purpose": "A capability no organization service admits; the crossing must refuse it",
+        "required_capability": "purpose_bound_worker",
+        "expected_evidence_fields": [
+          "disposition"
+        ],
+        "lifetime_policy": {
+          "mode": "DERIVED_COST_TASK_DELAY_BUDGET",
+          "production_recompute_required": true,
+          "decomposition_target": "RECORDS_ENABLED_PACKET",
+          "retirement_condition": "PURPOSE_COMPLETED_OR_FAILED_OR_BUDGET_EXHAUSTED",
+          "cost_analysis": {
+            "expected_compute_units": 0,
+            "external_cost_usd_ceiling": 0,
+            "task_cost_basis": "fixture: never executed"
+          },
+          "time_budget_seconds": {
+            "expected_task_execution": 0,
+            "known_delay": 0,
+            "inferred_unknown_delay_reserve": 0,
+            "records_decomposition": 0,
+            "safety_reserve": 0
+          },
+          "derived_max_lifetime_seconds": 0,
+          "unknown_delay_inference_basis": "fixture: never executed"
+        }
+      },
+      "requested_consequence": "Be refused by the installed far side the surface names",
+      "source_output_id": "UNADMITTED-CAPABILITY-001"
     }
   },
   "processor_request": {
@@ -74,14 +103,13 @@
       "required": true
     },
     "candidate": {
-      "action": "evaluate_bounded_hold_operation",
+      "action": "evaluate_governance_crossing_fixture",
       "actor_class": "sdk_evaluator",
       "parameters": {
-        "external_side_effect": false,
-        "relative_time": "T1"
+        "external_side_effect": false
       },
-      "scope": "isolated_experiment",
-      "target": "SV-HOLD-INDEPENDENT-BASELINE-20260926:HOLD_ENTERED"
+      "scope": "isolated_fixture",
+      "target": "GOVERNANCE-CROSSING-FIXTURE-001"
     },
     "capability": {
       "allowed": true
@@ -91,10 +119,8 @@
     },
     "declared_context": {
       "authority_evidence_status": "NOT_AUTHENTICATED",
-      "condition_id": "HOLD_ENTERED",
       "no_external_effect": true,
       "other_framework_evidence_used": false,
-      "relative_time": "T1",
       "semantic_status": "UNRESOLVED",
       "source_only": true
     },
@@ -102,19 +128,19 @@
       "actor_authority_current": false,
       "affected_entity_conditions_represented": true,
       "delegation_current": false,
-      "delegation_ref": "sv-hold:proposed-test-delegation:not-runtime-authenticated",
+      "delegation_ref": "fixture:delegation:not-runtime-authenticated",
       "evidence_current": false,
       "evidence_refs": [
-        "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+        "fixture:governance-crossing:1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3"
       ],
       "policy_current": true,
-      "policy_ref": "sv-hold:proposed-test-policy:not-runtime-authenticated",
+      "policy_ref": "fixture:policy:not-runtime-authenticated",
       "recoverability_profile": "recoverable",
       "validity_window_open": true
     },
     "judgment": {
       "evidence_refs": [
-        "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+        "fixture:governance-crossing:1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3"
       ],
       "isolation_state": "supported",
       "operator_recoverability": "available",
@@ -125,20 +151,20 @@
     "permission_present": false,
     "signal": {
       "admitted_signal_refs": [
-        "sv-hold:source-design:2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110"
+        "fixture:governance-crossing:1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3"
       ],
       "excluded_signal_refs": [],
-      "expected_reference_state_hash": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110",
+      "expected_reference_state_hash": "1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3",
       "missing_inputs": [
         "authenticated_current_grant",
         "authentic_runtime_evidence"
       ],
       "reconstruction_available": false,
-      "reference_state_hash": "2445208e7ac2c96b1f009c1c6315e569674c6593063c8d8e6e8b635688ccc110",
+      "reference_state_hash": "1421ae378864abfc759f97db2f1c463716d720c7c5ba0a5fad98c1d4418f6bd3",
       "transformation_provenance_complete": true,
       "transformations": [],
       "uncertainty_state": "unknown"
     }
   },
-  "source": "StegVerse-org/StegVerse-SDK scripts/experiment_sv_hold_independent.py, condition HOLD_ENTERED"
+  "source": "StegVerse-org/.github governance crossing fixture"
 }

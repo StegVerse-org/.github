@@ -6,7 +6,7 @@ over `INTERLOCK_INTR` with `far_side_transition_required` -- and then stops,
 because it holds no transport client and a test asserts the transport names
 stay gone. This organization's boundary can complete a full InTr crossing, with
 the five-receipt chain and a reconstructable terminal receipt, but nothing ever
-handed it an SDK manifest. So every HOLD and Test-5 run ended at a prepared
+handed it an SDK manifest. So every SDK manifest run ended at a prepared
 handoff and the declared far side was never reached by anything.
 
 `resident-runtime/sdk_manifest_crossing.py` is the join. These cases drive it
@@ -65,13 +65,13 @@ class FixtureTests(unittest.TestCase):
 
     def test_the_llm_adapter_fixture_carries_the_sdk_default_surface(self):
         """If the SDK's default stops being LLM_ADAPTER, the gap case is stale."""
-        egress = manifest("hold-to-llm-adapter")["completion"]["egress"]
+        egress = manifest("governance-to-llm-adapter")["completion"]["egress"]
         self.assertEqual(egress["final_stegverse_transition_surface"], "LLM_ADAPTER")
 
 
 class DeclaredDestinationTests(unittest.TestCase):
     def test_the_destination_is_read_from_the_manifest(self):
-        destination = bridge.declared_destination(manifest("hold-to-boundary-diagnostic"))
+        destination = bridge.declared_destination(manifest("governance-to-boundary-diagnostic"))
         self.assertEqual(destination["surface"], "BOUNDARY_DIAGNOSTIC")
         self.assertEqual(destination["transport"], "INTERLOCK_INTR")
         self.assertIs(destination["far_side_transition_required"], True)
@@ -137,7 +137,7 @@ class CompleteCrossingTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.source = manifest("hold-to-boundary-diagnostic")
+        cls.source = manifest("governance-to-boundary-diagnostic")
         cls.result = bridge.cross(cls.source, standing=GENESIS, packet_id="sdk-manifest-crossing-test")
 
     def test_the_crossing_completes_and_is_reconstructable(self):
@@ -155,7 +155,7 @@ class CompleteCrossingTests(unittest.TestCase):
     def test_the_egress_returns_to_the_declaring_origin(self):
         egress = self.result["egress"]
         self.assertEqual(egress["destination"]["service"], "stegverse-org.stegverse-sdk")
-        self.assertEqual(egress["origin"]["service"], "stegverse-org.boundary-diagnostic")
+        self.assertEqual(egress["origin"]["service"], "stegverse-org.governance")
 
     def test_the_egress_names_every_receipt_as_evidence(self):
         evidence = self.result["egress"]["evidence"]
@@ -164,11 +164,12 @@ class CompleteCrossingTests(unittest.TestCase):
             self.assertTrue(evidence[key], key)
 
     def test_the_manifest_that_arrived_is_the_manifest_that_was_declared(self):
-        """A crossing that delivered a different manifest is not this crossing."""
-        far_side = (self.result["egress"]["payload"]["execution_result"]
-                    ["application_result"]["echo"])
-        self.assertEqual(far_side["manifest"], self.source)
-        self.assertEqual(far_side["manifest_sha256"], self.result["manifest_sha256"])
+        """The far side decided the governance request this manifest carries."""
+        decision = (self.result["egress"]["payload"]["execution_result"]
+                    ["application_result"])
+        request = self.source["extensions"]["stegverse_governance_request"]
+        self.assertEqual(decision["governance_request_sha256"], bridge.sha(request))
+        self.assertIn(decision["disposition"], {"ALLOW", "DENY", "FAIL_CLOSED"})
         self.assertEqual(self.result["manifest_sha256"], "sha256:" + bridge.sha(self.source))
 
     def test_the_crossing_claims_no_authority_the_manifest_did_not_declare(self):
@@ -190,9 +191,8 @@ class CompleteCrossingTests(unittest.TestCase):
         processing = self.source["processing"]
         self.assertEqual(self.result["declared_capability"], processing["capability"])
         self.assertEqual(self.result["declared_route_id"], processing["route_id"])
-        self.assertEqual(self.result["processing_selection"],
-                         "BOUNDARY_LOCAL_NO_PROCESSOR_SELECTED")
-        self.assertIs(self.result["declared_capability_processed"], False)
+        self.assertEqual(self.result["processing_selection"], "MANIFEST_DECLARED")
+        self.assertIs(self.result["declared_capability_processed"], True)
 
     def test_the_result_never_claims_the_boundary_resolved_the_route(self):
         """Route installation belongs to the SDK; the boundary holds no route table."""
@@ -205,46 +205,33 @@ class CompleteCrossingTests(unittest.TestCase):
         self.assertEqual(again["manifest_sha256"], self.result["manifest_sha256"])
 
 
-class UnadmittedPairAtAnInstalledFarSideTests(unittest.TestCase):
-    """The refusal is now semantic, not structural, and must stay a refusal.
+class GovernanceReturningOverTheTransportTests(unittest.TestCase):
+    """A governance manifest whose result returns over LLM-adapter is decided, not refused.
 
-    This case used to assert a gap: `stegverse-org.llm-adapter` carried no
-    endpoint adapter, so the crossing stopped before one was sought. That gap
-    has closed -- the surface now serves `ecosystem_diagnostic` bound to
-    the diagnostic route, covered in `tests/test_task_registry_disclosure_endpoint.py`.
-
-    What this fixture declares is `governance` on the canonical-governed route,
-    which the service does *not* admit. So the interesting assertion changed
-    rather than disappeared: an installed far side with a working adapter still
-    refuses a pair it never declared, and refuses it before the adapter runs.
-    An installed adapter must not become a reason to serve anything addressed
-    to it.
+    `completion.egress` names the return path. LLM-adapter is the transport
+    between an LLM and the SDK, so addressing it for processing handed a
+    governance manifest to a service that admits only `ecosystem_diagnostic`, and
+    every such run was refused. Processing is selected by the declared
+    capability and route, so the governance processor decides it and the return
+    surface stays what the manifest declared.
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.result = bridge.cross(manifest("hold-to-llm-adapter"), standing=GENESIS,
+        cls.result = bridge.cross(manifest("governance-to-llm-adapter"), standing=GENESIS,
                                   packet_id="sdk-manifest-crossing-gap")
 
-    def test_the_surface_resolves_but_the_crossing_does_not_complete(self):
+    def test_the_return_surface_is_kept_and_the_governance_processor_decides(self):
         self.assertEqual(self.result["declared_transition_surface"], "LLM_ADAPTER")
-        self.assertEqual(self.result["resolved_service_id"], "stegverse-org.llm-adapter")
-        self.assertIs(self.result["crossing_completed"], False)
+        self.assertEqual(self.result["resolved_service_id"], "stegverse-org.governance")
+        self.assertIs(self.result["crossing_completed"], True)
+        self.assertEqual(self.result["processing_selection"], "MANIFEST_DECLARED")
 
-    def test_the_result_names_the_unadmitted_capability(self):
-        self.assertEqual(self.result["far_side_disposition"],
-                         "declared-capability-not-admitted-by-service:governance")
-
-    def test_an_installed_adapter_does_not_make_the_surface_serve_anything(self):
-        """The adapter is present and was still never reached."""
-        self.assertIs(self.result["endpoint_adapter_installed"], True)
-        self.assertEqual(self.result["profile_status"],
-                         "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION")
-
-    def test_an_attempt_reports_no_consumption_and_no_receipts(self):
-        for key in ("consumed", "reconstruction", "receipts", "terminal_receipt_id", "egress"):
-            self.assertNotIn(key, self.result)
-        self.assertEqual(self.result["authority_effect"], "NONE_CROSSING_ATTEMPT_ONLY")
+    def test_the_decision_is_a_governance_disposition(self):
+        decision = self.result["application_result"]
+        self.assertEqual(decision["decision_authority"], "stegcore.steggate.evaluate_admissibility")
+        self.assertIn(decision["disposition"], {"ALLOW", "DENY", "FAIL_CLOSED"})
+        self.assertEqual(decision["authority_effect"], "NONE_DECISION_ONLY")
 
     def test_the_registry_admits_one_pair_and_this_fixture_is_not_it(self):
         llm = service("stegverse-org.llm-adapter")
@@ -252,7 +239,7 @@ class UnadmittedPairAtAnInstalledFarSideTests(unittest.TestCase):
         self.assertEqual(llm["admits_processing"],
                          [{"capability": "ecosystem_diagnostic",
                            "route_id": "stegverse.route.ecosystem-diagnostic.v1"}])
-        declared = manifest("hold-to-llm-adapter")["processing"]
+        declared = manifest("governance-to-llm-adapter")["processing"]
         self.assertNotIn({"capability": declared["capability"],
                           "route_id": declared["route_id"]},
                          llm["admits_processing"])
