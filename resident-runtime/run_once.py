@@ -9,7 +9,7 @@ def main():
  ap=argparse.ArgumentParser(); ap.add_argument("--ingress",required=True); ap.add_argument("--egress",required=True); a=ap.parse_args()
  ingress=json.loads(Path(a.ingress).read_text()); validate_org_crossing(ingress,"INGRESS")
  with tempfile.TemporaryDirectory() as td:
-  p=Path(td)/"execution.json"; subprocess.run(["python3",str(ROOT/"org-boundary/runtime/process_boundary.py"),"--envelope",str(Path(a.ingress).resolve()),"--out",str(p)],cwd=str(ROOT),check=True); result=json.loads(p.read_text())
+  p=Path(td)/"execution.json"; subprocess.run(["python3",str(ROOT/"org-boundary/runtime/process_boundary.py"),"--envelope",str(Path(a.ingress).resolve()),"--registry",str(ROOT/"org-boundary/registry/services.json"),"--out",str(p)],cwd=str(ROOT),check=True); result=json.loads(p.read_text())
  egress=build_egress(ingress,result); validate_org_crossing(egress,"EGRESS"); Path(a.egress).parent.mkdir(parents=True,exist_ok=True); Path(a.egress).write_text(json.dumps(egress,indent=2,sort_keys=True)+"\n")
  print(json.dumps({"status":"PASS","packet_id":ingress["packet_id"],"egress_packet_id":egress["packet_id"],"consumed":result["consumed"],"reconstruction":result["reconstruction"]["status"]}))
 if __name__=="__main__": main()

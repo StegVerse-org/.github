@@ -333,8 +333,7 @@ def transition_evidence(request: Mapping[str, Any], crossing: Mapping[str, Any],
 
 
 def runtime_result(request: Mapping[str, Any], closures: list[dict[str, Any]],
-                   organization_receipt: Mapping[str, Any],
-                   decision: Mapping[str, Any] | None = None) -> dict[str, Any]:
+                   organization_receipt: Mapping[str, Any]) -> dict[str, Any]:
     """What this organization observed, in the shape the SDK validates.
 
     `manifest_receipt_id` is the organization receipt's own digest. The receipt
@@ -355,38 +354,10 @@ def runtime_result(request: Mapping[str, Any], closures: list[dict[str, Any]],
         "reconstruction_status": "PASS",
         "terminal_state": {"records_only": True, "continued_authority": False},
         "manifest_receipt_id": organization_receipt["receipt_sha256"],
-        **governance_fields(request, decision),
     }
 
 
-def governance_fields(request: Mapping[str, Any], decision: Mapping[str, Any] | None) -> dict[str, Any]:
-    """The governance decision, in the shape the SDK admits, recorded in org records only.
-
-    Only a governance request carries a decision. The disposition is the one the
-    organization's governance endpoint returned; nothing here grades it.
-    """
-    if request.get("processing_capability") != "governance":
-        return {}
-    disposition = (decision or {}).get("disposition")
-    if disposition not in {"ALLOW", "DENY", "FAIL_CLOSED"}:
-        disposition = "FAIL_CLOSED"
-    return {
-        "disposition": disposition,
-        "state": "COMPLETE" if disposition == "ALLOW" else disposition,
-        "terminal": disposition != "ALLOW",
-        "communication_terminal": False,
-        "failed_predicate": None if disposition == "ALLOW" else (
-            (decision or {}).get("reason") or "GOVERNANCE_DECISION_ABSENT"),
-        "governance_decision": dict(decision) if decision else None,
-        "request_sha256": request["request_sha256"],
-        "wire_manifest_sha256": request["wire_manifest_sha256"],
-        "records_authority": "ORGANIZATION_RECORDS_ONLY",
-        "publisher_executed": False,
-        "site_propagation_executed": False,
-    }
-
-
-def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None = None,
+def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standing: Mapping[str, Any] | None = None,
             packet_id: str = "organization-sdk-manifest-ingress",
             hb_epoch: int | None = None) -> dict[str, Any]:
     """Receive a submitted manifest on this organization's ingress operation."""
@@ -402,7 +373,7 @@ def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None =
                        request_sha256=request.get("request_sha256"))
 
     try:
-        crossing = crossing_module.cross(manifest, standing=standing, packet_id=packet_id)
+        crossing = crossing_module.cross(manifest, registry=dict(registry), standing=standing, packet_id=packet_id)
     except SystemExit as exc:
         # The crossing refuses a manifest it cannot drive as declared -- no
         # egress, a non-InTr transport, an unresolvable surface, no declared
@@ -454,8 +425,7 @@ def receive(manifest: Mapping[str, Any], *, standing: Mapping[str, Any] | None =
     # answer, returned as it was given.
     try:
         admitted = admit_runtime_result(
-            manifest, request, runtime_result(request, closures, organization_receipt,
-                           crossing.get("application_result")))
+            manifest, request, runtime_result(request, closures, organization_receipt))
     except ValueError as exc:
         return {
             "schema": RESULT_SCHEMA_ORG,
@@ -520,6 +490,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Receive a submitted SDK manifest on this organization's ingress operation.")
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--registry", type=Path, required=True,
+                        help="materialized capability map supplied by the organization boundary")
     parser.add_argument("--standing", type=Path, default=None,
                         help="JSON declaring mode, node_ref and the predecessor key; "
                              "required unless the manifest declares its own chain position")
@@ -532,6 +504,7 @@ def main() -> int:
 
     result = receive(
         json.loads(args.manifest.read_text(encoding="utf-8")),
+        registry=json.loads(args.registry.read_text(encoding="utf-8")),
         standing=(json.loads(args.standing.read_text(encoding="utf-8"))
                   if args.standing else None),
         packet_id=args.packet_id, hb_epoch=args.hb_epoch)

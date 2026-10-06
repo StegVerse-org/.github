@@ -80,30 +80,14 @@ node_store = _module("node_store", "org-kernel/node_store.py")
 lineage = _module("receipt_lineage_projection",
                   "resident-runtime/receipt_lineage_projection.py")
 
-#: Run modes, one per way a mesh can come to know where it is. The provenance
-#: vocabulary is `node_store`'s; this maps it rather than restating it.
-LOCAL_ISOLATED = "LOCAL_ISOLATED"
-LOCAL_HOST_DERIVED = "LOCAL_HOST_DERIVED"
-SHARED_MEDIUM_DECLARED = "SHARED_MEDIUM_DECLARED"
-
-_MODE_BY_PROVENANCE = {
-    node_store.SUPPLIED: LOCAL_ISOLATED,
-    node_store.FROM_ENVIRONMENT: SHARED_MEDIUM_DECLARED,
-    node_store.FROM_HOME_DIRECTORY: LOCAL_HOST_DERIVED,
-}
+#: StegOS no longer derives a mesh location from host state. The only valid
+#: mode is a mesh location explicitly supplied by the node materializer.
+MATERIALIZER_SUPPLIED = "MATERIALIZER_SUPPLIED"
 
 _MODE_MEANS = {
-    LOCAL_ISOLATED:
-        "This run was told where its mesh is. Nothing outside whoever supplied "
-        "that root observes these transitions.",
-    SHARED_MEDIUM_DECLARED:
-        "This run took its mesh root from the environment. Other nodes reach it "
-        "only if they reach that same filesystem medium; pointing at it is a "
-        "declaration, not a connection.",
-    LOCAL_HOST_DERIVED:
-        "No root was supplied or declared, so the mesh fell back under a home "
-        "directory. The kernel's own words for this are a node pretending to be "
-        "a host.",
+    MATERIALIZER_SUPPLIED:
+        "This run was explicitly supplied its mesh location by the materializer; "
+        "no environment variable, home directory, checkout, or host clock selected it.",
 }
 
 
@@ -122,14 +106,11 @@ def live_means() -> dict[str, Any]:
 
 
 def run_mode(root: Path | None = None, env: Mapping[str, str] | None = None) -> dict[str, Any]:
-    """Which reality this run observes, derived from the mesh it resolved.
-
-    Nothing here is configured. The mode is read off the store that the mesh
-    actually resolved to, so a run cannot describe itself as reaching further
-    than it does.
-    """
-    provenance = kernel.node_state_provenance(root, dict(env) if env is not None else None)
-    mode = _MODE_BY_PROVENANCE.get(provenance["mesh_provenance"], LOCAL_HOST_DERIVED)
+    """Which reality this run observes from a materializer-supplied mesh."""
+    if env is not None:
+        raise ValueError("host_environment_mesh_binding_forbidden")
+    provenance = kernel.node_state_provenance(root)
+    mode = MATERIALIZER_SUPPLIED
     return {
         "run_mode": mode,
         "run_mode_means": _MODE_MEANS[mode],
@@ -215,12 +196,12 @@ def _main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="transition_console.py",
         description="State transitions in heartbeat order, and the reality this run observes.")
-    parser.add_argument("--mesh-root", default=None,
-                        help="supply the mesh root; omitted, the run reports what it fell back to")
+    parser.add_argument("--mesh-root", required=True,
+                        help="mesh location supplied by the node materializer")
     parser.add_argument("--json", action="store_true", help="emit the whole view as JSON")
     args = parser.parse_args(argv)
 
-    rendered = view(root=Path(args.mesh_root) if args.mesh_root else None)
+    rendered = view(root=Path(args.mesh_root))
     if args.json:
         print(json.dumps(rendered, indent=2, sort_keys=True))
         return 0

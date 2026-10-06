@@ -23,20 +23,23 @@ def hid(prefix,v): return prefix+"-"+hashlib.sha256(canon(v)).hexdigest()[:24]
 def load(path): return json.loads(Path(path).read_text())
 
 def resolve_adapter(svc):
+    """Resolve only an adapter the capability map explicitly admits.
+
+    Filesystem containment is not admissibility. The registry's disposition is
+    the policy; a path is only the materialized module locator after admission.
+    """
+    disposition=svc.get("endpoint_adapter_disposition")
+    if disposition!="ALLOW_DECLARED_ADAPTER":
+        raise SystemExit(str(disposition or "FAIL_CLOSED_ENDPOINT_ADAPTER_UNDECLARED"))
     adapter=svc.get("endpoint_adapter")
     if not adapter:
-        raise SystemExit("endpoint-adapter-not-installed")
+        raise SystemExit("FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_INSTALLED")
     candidate=Path(str(adapter))
     if not candidate.is_absolute():
         candidate=ROOT/candidate
     candidate=candidate.resolve()
-    root=ROOT.resolve()
-    try:
-        candidate.relative_to(root)
-    except ValueError:
-        raise SystemExit("endpoint-adapter-outside-organization-root")
     if not candidate.is_file():
-        raise SystemExit("endpoint-adapter-not-found")
+        raise SystemExit("FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_MATERIALIZED")
     return candidate
 
 def endpoint_result(env,svc,envelope_path):
@@ -66,7 +69,7 @@ def endpoint_result(env,svc,envelope_path):
         return {"echo":env["payload"]}
     raise SystemExit("endpoint-adapter-not-installed")
 def main():
- ap=argparse.ArgumentParser(); ap.add_argument("--envelope",required=True); ap.add_argument("--registry",default="org-boundary/registry/services.json"); ap.add_argument("--out",required=True); a=ap.parse_args()
+ ap=argparse.ArgumentParser(); ap.add_argument("--envelope",required=True); ap.add_argument("--registry",required=True); ap.add_argument("--out",required=True); a=ap.parse_args()
  env=load(a.envelope); reg=load(a.registry)
  req=["schema_version","packet_id","direction","origin","destination","carrier","intr_profile","transition","payload","evidence"]; miss=[k for k in req if k not in env]
  if miss: raise SystemExit("missing:"+",".join(miss))

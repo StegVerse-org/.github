@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import importlib.util, json, os
+import argparse, importlib.util, json, os
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -16,13 +16,17 @@ GW=importlib.util.module_from_spec(GWSPEC); GWSPEC.loader.exec_module(GW)
 PRSPEC=importlib.util.spec_from_file_location("propagate_repository_receipts",ROOT/"resident-runtime"/"propagate_repository_receipts.py")
 PR=importlib.util.module_from_spec(PRSPEC); PRSPEC.loader.exec_module(PR)
 
-def main():
+def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
+    if node_state_root is None:
+        raise SystemExit("NODE_STATE_LOCATION_REQUIRED_FROM_MATERIALIZER")
     if os.getenv("STEGVERSE_ORG_FEDERATION_GATEWAY_URL","").strip():
         receipt=GW.resident_gateway_cycle(ROOT)
         receipt["heartbeat_reference"]=K.hb_reference()
         receipt["transport"]="SHARED_SERVICE_GATEWAY"
     else:
-        results=K.consume_and_respond(ROOT)
+        if mesh_root is None:
+            raise SystemExit("MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
+        results=K.consume_and_respond(ROOT, mesh_root=mesh_root)
         consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
         responses=sum(1 for x in results if x.get("response_publication"))
         receipt={
@@ -51,9 +55,13 @@ def main():
     # made a run mutate committed space and kept only the most recent pass.
     # The cycle is addressed by what it reported, so the locator is returned to
     # the caller rather than written back into the document it addresses.
-    recorded=K.record_federation_cycle(receipt)
+    recorded=K.record_federation_cycle(receipt, root=node_state_root)
     print(json.dumps({**receipt,"recorded_at":str(recorded)},sort_keys=True))
     return receipt
 
 if __name__=="__main__":
-    main()
+    ap=argparse.ArgumentParser()
+    ap.add_argument("--mesh-root", type=Path, default=None)
+    ap.add_argument("--node-state-root", type=Path, required=True)
+    args=ap.parse_args()
+    main(mesh_root=args.mesh_root,node_state_root=args.node_state_root)

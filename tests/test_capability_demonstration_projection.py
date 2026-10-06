@@ -135,8 +135,8 @@ class CapabilityMapTests(unittest.TestCase):
                      "manifest_sha256": kernel.sha(manifest), "manifest": manifest},
             standing=standing, transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
-        kernel.publish_packet(packet)
-        return kernel.consume_addressed_frames(ROOT)
+        kernel.publish_packet(packet, root=self.mesh)
+        return kernel.consume_addressed_frames(ROOT, mesh_root=self.mesh)
 
     def append(self, transition_class, evidence, transition_id="SYNTHETIC"):
         return repository_ledger.append(

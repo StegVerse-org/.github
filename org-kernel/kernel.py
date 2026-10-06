@@ -174,8 +174,22 @@ def capability_ingress(root:Path):
     module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
 
-def load_registry(root:Path)->dict[str,Any]:
-    return json.loads((root/"org-boundary/registry/services.json").read_text())
+def load_registry(source:Path|dict[str,Any])->dict[str,Any]:
+    """Resolve the capability map from materialized data or an explicit checkout.
+
+    A node that holds no repository receives the map as a document. Path-backed
+    loading remains an explicit compatibility adapter for a materializer that
+    chose a checkout; no host path is discovered here.
+    """
+    if isinstance(source,dict):
+        value=source
+    else:
+        value=json.loads((Path(source)/"org-boundary/registry/services.json").read_text())
+    if not isinstance(value,dict) or not isinstance(value.get("organization"),str):
+        raise ValueError("capability_registry_invalid")
+    if not isinstance(value.get("services"),list):
+        raise ValueError("capability_registry_services_invalid")
+    return value
 
 def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
     registry=load_registry(root)
@@ -199,9 +213,9 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
         processor=root/"org-boundary/runtime/process_boundary.py"
         if not processor.is_file(): raise ValueError("org_boundary_processor_missing")
         with tempfile.TemporaryDirectory() as td:
-            td=Path(td); envelope=td/"packet.json"; out=td/"execution.json"
+            td=Path(td); envelope=td/"packet.json"; out=td/"execution.json"; registry_path=td/"registry.json"
             envelope.write_text(json.dumps(packet,indent=2,sort_keys=True)+"\n")
-            completed=subprocess.run(["python3",str(processor),"--envelope",str(envelope),"--out",str(out)],cwd=root,capture_output=True,text=True,check=False)
+            completed=subprocess.run(["python3",str(processor),"--envelope",str(envelope),"--registry",str(registry_path),"--out",str(out)],cwd=root,capture_output=True,text=True,check=False)
             if completed.returncode!=0 or not out.is_file():
                 raise ValueError("endpoint_adapter_execution_failed:"+completed.stderr[-512:])
             result=json.loads(out.read_text())
@@ -231,7 +245,7 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
         # defective for having no capability resolver, and failing its control
         # dispatch over one would be a limit that is not real.
         try:
-            application_result=capability_ingress(root).receive(root,service,packet)
+            application_result=capability_ingress(root).receive(root,service,packet,registry=registry)
         except SystemExit as refused:
             raise ValueError("capability_ingress_refused:"+str(refused)) from None
     else:
@@ -272,33 +286,25 @@ __all__=["hb_reference","derive_channel","carrier_frame","recover_packet","dispa
 
 
 # --- Federation mesh v1.1 additions ---
-FEDERATION_ROOT_ENV="STEGVERSE_ORG_FEDERATION_ROOT"
+def federation_root(root:Path|str)->Path:
+    return resolve_federation_root(root)[0]
 
-def federation_root(env:dict[str,str]|None=None)->Path:
-    return resolve_federation_root(env)[0]
+def resolve_federation_root(root:Path|str|None)->tuple[Path,str]:
+    """Return the mesh location supplied by the node materializer.
 
-def resolve_federation_root(env:dict[str,str]|None=None)->tuple[Path,str]:
-    """Where the mesh is, and how this node came to believe that.
-
-    A node that was told where the mesh is can be moved. One that read it from
-    the environment, or derived it from the home directory of whatever host it
-    happens to be running on, cannot -- so the provenance is returned with the
-    path rather than discarded. StegOS lives on the network; a mesh under
-    `$HOME` is a node pretending to be a host, and the provenance is what makes
-    that measurable instead of invisible.
+    StegOS does not derive mesh identity from environment variables, a home
+    directory, a checkout, or any other host property. A materializer either
+    supplies the mesh location or the node fails closed.
     """
-    values=os.environ if env is None else env
-    override=values.get(FEDERATION_ROOT_ENV)
-    if override:
-        return Path(override).expanduser().resolve(), node_store_module.FROM_ENVIRONMENT
-    base=Path(values.get("XDG_STATE_HOME",str(Path.home()/".local"/"state")))
-    return (base/"stegverse"/"org-federation").resolve(), node_store_module.FROM_HOME_DIRECTORY
+    if root is None:
+        raise ValueError("mesh_location_required_from_materializer")
+    return Path(root).expanduser().resolve(), node_store_module.SUPPLIED
 
-def mesh_store(root:Path|None=None, env:dict[str,str]|None=None)->Any:
-    """The shared frame medium between nodes. Outlives any node reading it."""
-    if root is not None:
-        return PosixStateStore(Path(root).resolve(), provenance=node_store_module.SUPPLIED)
-    resolved,provenance=resolve_federation_root(env)
+def mesh_store(root:Path|str|None=None, env:dict[str,str]|None=None)->Any:
+    """The shared frame medium between nodes, explicitly supplied."""
+    if env is not None:
+        raise ValueError("host_environment_mesh_binding_forbidden")
+    resolved,provenance=resolve_federation_root(root)
     return PosixStateStore(resolved, provenance=provenance)
 
 def node_state_store(root:Path)->Any:
@@ -306,8 +312,8 @@ def node_state_store(root:Path)->Any:
     return PosixStateStore(Path(root)/"resident-runtime",
                            provenance=node_store_module.SUPPLIED)
 
-def node_state_provenance(root:Path|None=None, env:dict[str,str]|None=None)->dict[str,Any]:
-    """What this node's state depends on, and whether that would survive a move."""
+def node_state_provenance(root:Path|str|None=None, env:dict[str,str]|None=None)->dict[str,Any]:
+    """What this node's supplied mesh state depends on."""
     store=mesh_store(root,env)
     return {"schema_version":"stegverse.stegos-node-state-provenance/v1",
             "mesh_locator":str(store.root),"mesh_provenance":store.provenance,
@@ -732,31 +738,17 @@ def mark_federation_frame_seen(repo_root:Path, frame_path:str, frame:dict[str,An
     return Path(target.locator(key))
 
 # --- Resident cycle records, addressed rather than located ---
-NODE_STATE_ROOT_ENV="STEGVERSE_NODE_STATE_ROOT"
+def resolve_node_state_root(root:Path|str|None)->tuple[Path,str]:
+    """Return the node-state location supplied by the materializer."""
+    if root is None:
+        raise ValueError("node_state_location_required_from_materializer")
+    return Path(root).expanduser().resolve(), node_store_module.SUPPLIED
 
-def resolve_node_state_root(env:dict[str,str]|None=None)->tuple[Path,str]:
-    """Where this node's own state is, and how it came to believe that.
-
-    The mesh resolves this way already. Node state did not: `node_state_store`
-    takes a root, and every resident caller passed the repository checkout, so
-    a node's markers and reports landed in committed space and a run mutated
-    the tree it was running from. That resolution is kept for the documents
-    that already live there -- nothing migrates -- and anything newly recorded
-    resolves here instead: told where its state is, or derived from the host it
-    happens to be on and saying so rather than appearing equivalent.
-    """
-    values=os.environ if env is None else env
-    override=values.get(NODE_STATE_ROOT_ENV)
-    if override:
-        return Path(override).expanduser().resolve(), node_store_module.FROM_ENVIRONMENT
-    base=Path(values.get("XDG_STATE_HOME",str(Path.home()/".local"/"state")))
-    return (base/"stegverse"/"node-state").resolve(), node_store_module.FROM_HOME_DIRECTORY
-
-def addressed_node_state_store(root:Path|None=None, env:dict[str,str]|None=None)->Any:
-    """This node's state, at the root it was told or the one it resolved to."""
-    if root is not None:
-        return PosixStateStore(Path(root).resolve(), provenance=node_store_module.SUPPLIED)
-    resolved,provenance=resolve_node_state_root(env)
+def addressed_node_state_store(root:Path|str|None=None, env:dict[str,str]|None=None)->Any:
+    """This node's state at the location supplied by its materializer."""
+    if env is not None:
+        raise ValueError("host_environment_node_state_binding_forbidden")
+    resolved,provenance=resolve_node_state_root(root)
     return PosixStateStore(resolved, provenance=provenance)
 
 def record_federation_cycle(receipt:dict[str,Any], *, root:Path|None=None,

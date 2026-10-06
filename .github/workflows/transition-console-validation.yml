@@ -84,7 +84,7 @@ jobs:
                        mesh_root=mesh, hb_epoch=32)
 
           # A real chain, rendered.
-          rendered = console.view(lineage.repository_chain(), root=mesh, env={})
+          rendered = console.view(lineage.repository_chain(), root=mesh)
           assert rendered["transition_count"] > 0, "no transitions rendered"
           assert len(rendered["lines"]) == rendered["transition_count"], rendered
           for row in rendered["transitions"]:
@@ -96,29 +96,28 @@ jobs:
 
           # The run declares which reality it observed.
           run = rendered["run"]
-          assert run["run_mode"] == console.LOCAL_ISOLATED, run
+          assert run["run_mode"] == console.MATERIALIZER_SUPPLIED, run
           assert run["mesh_portable"] is True, run
           assert run["store_kind"] == "POSIX_FILESYSTEM", run
           print("CONSOLE_RUN_MODE=" + run["run_mode"], "| portable", run["mesh_portable"])
 
-          # Every mode declares which axis it reports, and none answers for
-          # the route axis that decides local-versus-production for a caller.
-          for root, env in ((mesh, {}), (None, {"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/m"}),
-                            (None, {})):
-              mode = console.run_mode(root=root, env=env)
-              assert mode["axis"] == "MESH_MEDIUM", mode
-              assert mode["route_axis_is_not_resolved_here"] is True, mode
-              assert mode["route_axis_field"] == "routing_surface", mode
-              assert "reaches_a_production_ecosystem_over_a_network" not in mode, mode
-              print("CONSOLE_MODE=" + mode["run_mode"], "axis=" + mode["axis"],
-                    "route_axis_owner=" + mode["route_axis_owner"])
-
-          # What would change it is a task this registry carries, not prose.
-          registry = json.loads(Path("orchestration/task-registry.json").read_text())
-          named = console.run_mode(root=None, env={})["changing_this_is_recorded_as"]
-          assert named in {t["task_id"] for t in registry["tasks"]}, named
-          blocked = [t for t in registry["tasks"] if t["task_id"] == named][0]
-          print("CONSOLE_BLOCKER=" + named, "status", blocked["status"])
+          # The materializer-supplied mode declares the mesh axis and cannot
+          # be substituted by environment or host fallback.
+          mode = console.run_mode(root=mesh)
+          assert mode["axis"] == "MESH_MEDIUM", mode
+          assert mode["route_axis_is_not_resolved_here"] is True, mode
+          assert mode["route_axis_field"] == "routing_surface", mode
+          assert "reaches_a_production_ecosystem_over_a_network" not in mode, mode
+          try:
+              console.run_mode(root=mesh, env={"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/m"})
+              raise AssertionError("host environment unexpectedly selected mesh")
+          except ValueError as exc:
+              assert "host_environment_mesh_binding_forbidden" in str(exc)
+          try:
+              console.run_mode(root=None)
+              raise AssertionError("missing materializer mesh unexpectedly admitted")
+          except ValueError as exc:
+              assert "mesh_location_required_from_materializer" in str(exc)
 
           assert rendered["ledger_unchanged_by_this_view"] is True
           assert rendered["authority_effect"] == "NONE_CONSOLE_ONLY"
@@ -129,6 +128,6 @@ jobs:
         run: |
           echo 'authority_effect=NONE_CONSOLE_ONLY; ledger_unchanged=true'
           echo 'live=AT_THE_EPOCH_THE_READER_SAMPLES; is_a_pushed_stream=false'
-          echo 'run_modes=LOCAL_ISOLATED,SHARED_MEDIUM_DECLARED,LOCAL_HOST_DERIVED'
+          echo 'run_modes=MATERIALIZER_SUPPLIED; host-derived modes prohibited'
           echo 'axis=MESH_MEDIUM; store_kind=POSIX_FILESYSTEM'
           echo 'route_axis=routing_surface owned by StegVerse-SDK/stegverse/route_resolution.py'

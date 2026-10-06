@@ -68,9 +68,9 @@ def consume_sv002_once():
     atomic_json(SV002_RECEIPT,receipt)
     return receipt
 
-def cycle():
+def cycle(mesh_root, node_state_root):
     script=ROOT/"resident-runtime"/"federation_cycle.py"
-    p,result=run_json([sys.executable,str(script)],120)
+    p,result=run_json([sys.executable,str(script),"--mesh-root",str(mesh_root),"--node-state-root",str(node_state_root)],120)
     if p.returncode!=0:
         raise RuntimeError("federation cycle failed: "+p.stderr[-1024:])
     return result
@@ -79,7 +79,7 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--once",action="store_true")
     ap.add_argument("--poll-seconds",type=float,default=1.0)
-    a=ap.parse_args()
+    ap.add_argument("--mesh-root",type=Path,required=True)\n    ap.add_argument("--node-state-root",type=Path,required=True)\n    a=ap.parse_args()
     bad=[k for k in HOSTED if truthy(os.getenv(k))]
     if bad:
         raise SystemExit("hosted runtime prohibited: "+",".join(bad))
@@ -90,7 +90,7 @@ def main():
         error=None
         try:
             sv002=consume_sv002_once()
-            fed=cycle()
+            fed=cycle(a.mesh_root,a.node_state_root)
         except Exception as exc:
             fed=None
             error=str(exc)
