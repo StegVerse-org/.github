@@ -242,7 +242,10 @@
         "docs/WORKERCOORDINATOR_CLAIM_SURFACE_MIRROR_HANDOFF.md"
       ],
       "tag_allowed": false,
-      "activation_condition": "the canonical WorkerCoordinator claim/fence owner is identified and the existing SDK Test 2 claim/fence semantics are reconciled without duplicating authority"
+      "activation_condition": "the canonical WorkerCoordinator claim/fence owner is identified and the existing SDK Test 2 claim/fence semantics are reconciled without duplicating authority",
+      "issue_refs": [
+        "https://github.com/StegVerse-org/.github/pull/63"
+      ]
     }
   ]
 }
