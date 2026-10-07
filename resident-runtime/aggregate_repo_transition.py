@@ -9,6 +9,17 @@ contract, not by a single hard-coded schema. Every state transition occurring
 within the organization emits an organization receipt, so a canonical governed
 state transition manifested through Interlock/InTr is admitted on its own
 terms and bound by its own canonical digest.
+
+The exact source transition receipt is retained under `source-receipts/` in
+the same store transaction as the organization receipt and HEAD, so the
+organization ledger can replay a source transition without the ledger that
+emitted it (contract: preserves_source_transition_receipt).
+
+The predecessor organization state is an explicit sha256 digest, FROM_HEAD or
+GENESIS. FROM_HEAD binds the current HEAD receipt digest and is resolved inside
+each compare-and-swap attempt, so a contended append cannot bind a stale
+predecessor. GENESIS opens an empty chain and is accepted only while HEAD is
+absent; a chain is never opened by default.
 """
 from contextlib import nullcontext
 import argparse
@@ -22,7 +33,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ledger_store import HEAD_KEY, RECEIPT_PREFIX, PosixLedgerStore, receipt_key  # noqa: E402
+from ledger_store import HEAD_KEY, RECEIPT_PREFIX, SOURCE_PREFIX, PosixLedgerStore, receipt_key, source_key  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 C = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_text())
@@ -34,6 +45,25 @@ _spec.loader.exec_module(kernel)  # noqa: E402
 
 
 SHA256_REF = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+FROM_HEAD = "FROM_HEAD"
+GENESIS = "GENESIS"
+
+
+class OrgLedgerAppendRefused(SystemExit):
+    """A refused append, carrying its disposition and failed predicate.
+
+    A SystemExit, so command-line use and existing callers behave as before,
+    while a caller that records dispositions reads them from the exception.
+    Nothing is written when this is raised.
+    """
+
+    retry_entrypoint = "resident-runtime/aggregate_repo_transition.py::append"
+
+    def __init__(self, disposition, failed_predicate):
+        super().__init__(failed_predicate)
+        self.disposition = disposition
+        self.failed_predicate = failed_predicate
 
 
 def require_state_digest(field, value):
@@ -192,6 +222,13 @@ def _validate_existing_head(store):
         cursor = record.get("previous_receipt_sha256")
     if store.list_prefix(RECEIPT_PREFIX) != {receipt_key(digest) for digest in reachable}:
         raise SystemExit("ORG_LEDGER_UNPUBLISHED_OR_ORPHAN_RECEIPTS_RECOVERY_REQUIRED")
+    # A retained source copy is published only through the receipt that names
+    # it. Ledgers written before retention existed simply have none.
+    sources = {source_key(store.get(receipt_key(digest))["source_transition_sha256"])
+               for digest in reachable
+               if isinstance(store.get(receipt_key(digest)).get("source_transition_sha256"), str)}
+    if not store.list_prefix(SOURCE_PREFIX) <= sources:
+        raise SystemExit("ORG_LEDGER_ORPHAN_SOURCE_RECEIPTS_RECOVERY_REQUIRED")
     return previous
 
 
@@ -200,8 +237,10 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     # Admission is decided before the append lock is taken; an inadmissible
     # source receipt never contends for the organization ledger.
     source = verify_source(source_receipt)
-    require_state_digest("predecessor_org_state_sha256", predecessor_state)
+    if predecessor_state not in (FROM_HEAD, GENESIS):
+        require_state_digest("predecessor_org_state_sha256", predecessor_state)
     require_state_digest("successor_org_state_sha256", successor_state)
+    retained = {source_key(source["source_transition_sha256"]): source_receipt}
     # Ordering is a heartbeat count, not a clock reading. A supplied tick keeps
     # the receipt reproducible; deriving one from the host clock is permitted
     # but marks itself so the two can be told apart.
@@ -216,18 +255,32 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
             expected_head = target.get(HEAD_KEY)
             previous = (expected_head or {}).get("receipt_sha256")
             _validate_existing_head(target)
+            # Resolved against the HEAD this attempt will compare against, so a
+            # retry after a lost comparison re-resolves rather than reusing it.
+            if predecessor_state == FROM_HEAD:
+                if expected_head is None:
+                    raise OrgLedgerAppendRefused("FAIL_CLOSED", "ORG_LEDGER_GENESIS_NOT_DECLARED")
+                predecessor = previous
+            elif predecessor_state == GENESIS:
+                if expected_head is not None:
+                    raise OrgLedgerAppendRefused("DENY", "ORG_LEDGER_GENESIS_ON_NON_EMPTY_LEDGER")
+                predecessor = None
+            else:
+                predecessor = predecessor_state
         body = {
             "schema": "stegverse.organization-transition-receipt/v1",
             "organization": C["organization"],
             **source,
             "org_transition_class": org_transition_class,
-            "predecessor_org_state_sha256": predecessor_state,
+            "predecessor_org_state_sha256": predecessor,
             "successor_org_state_sha256": successor_state,
             "boundary_evidence": boundary_evidence,
             "authority_effect": authority_effect,
             "hb_reference": heartbeat,
             "previous_receipt_sha256": previous,
         }
+        if predecessor_state == GENESIS:
+            body["chain_genesis"] = True
         digest = sha(body)
         receipt = {**body, "receipt_sha256": digest}
         key = receipt_key(digest)
@@ -236,7 +289,7 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
             "receipt_sha256": digest,
             "receipt_path": target.locator(key),
         }
-        if target.append_transaction(key, receipt, expected_head, new_head):
+        if target.append_transaction(key, receipt, expected_head, new_head, immutable=retained):
             return receipt
     raise SystemExit("ORG_LEDGER_APPEND_CONTENTION_EXHAUSTED")
 
@@ -246,7 +299,8 @@ def main():
     parser.add_argument("--repo-receipt")
     parser.add_argument("--transition-receipt")
     parser.add_argument("--org-transition-class", default=None)
-    parser.add_argument("--predecessor-org-state-sha256", required=True)
+    parser.add_argument("--predecessor-org-state-sha256", required=True,
+                        help="sha256 digest, FROM_HEAD (bind the current HEAD), or GENESIS (open an empty chain)")
     parser.add_argument("--successor-org-state-sha256", required=True)
     parser.add_argument("--boundary-evidence-json", default="{}")
     parser.add_argument("--authority-effect", default="NONE")

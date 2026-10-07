@@ -14,7 +14,8 @@ keys onto whatever substrate it has. `PosixLedgerStore` keeps today's exact
 behaviour, so the filesystem remains a first-class implementation rather than
 a legacy path, and a key-value store is a sibling rather than a rewrite.
 
-Keys are `HEAD` and `receipts/<hex>`. Nothing here grants authority.
+Keys are `HEAD`, `receipts/<hex>` and `source-receipts/<hex>`. Nothing here
+grants authority.
 """
 from __future__ import annotations
 
@@ -27,6 +28,7 @@ from pathlib import Path
 
 HEAD_KEY = "HEAD.json"
 RECEIPT_PREFIX = "receipts/"
+SOURCE_PREFIX = "source-receipts/"
 
 
 def receipt_key(digest):
@@ -37,6 +39,11 @@ def receipt_key(digest):
     existing ledger root stays readable.
     """
     return RECEIPT_PREFIX + digest.split(":", 1)[1] + ".json"
+
+
+def source_key(digest):
+    """Address an exact retained source transition receipt by its source digest."""
+    return SOURCE_PREFIX + digest.split(":", 1)[1] + ".json"
 
 
 class PosixLedgerStore:
@@ -136,22 +143,35 @@ class PosixLedgerStore:
             return True
 
 
-    def append_transaction(self, receipt_key_name, receipt, expected_head, new_head):
+    def append_transaction(self, receipt_key_name, receipt, expected_head, new_head, immutable=None):
         """Atomically publish a receipt and HEAD if HEAD still equals expected_head.
 
         This is the substrate portability contract. A lost comparison writes
         nothing, so a competing writer cannot leave an orphan receipt. A
         network/KV sibling implements this with its native transaction/CAS;
         POSIX uses its local lock only inside the storage primitive.
+
+        `immutable` maps further content-addressed keys (the exact source
+        transition receipt under `source-receipts/`) to their documents. They
+        are inside the same boundary: every collision is checked before any
+        write, so a refused or lost append writes none of them, and HEAD is
+        written last, so a document is published only once HEAD names its
+        receipt.
         """
+        documents = dict(immutable or {})
+        documents[receipt_key_name] = receipt
         with self.exclusive():
             if self.get(HEAD_KEY) != expected_head:
                 return False
-            existing = self.get(receipt_key_name)
-            if existing is not None and existing != receipt:
-                raise ValueError("ledger_receipt_collision")
-            if existing is None:
-                self.put(receipt_key_name, receipt)
+            missing = []
+            for key, value in documents.items():
+                existing = self.get(key)
+                if existing is not None and existing != value:
+                    raise ValueError("ledger_receipt_collision")
+                if existing is None:
+                    missing.append(key)
+            for key in missing:
+                self.put(key, documents[key])
             self.put(HEAD_KEY, new_head)
             return True
 

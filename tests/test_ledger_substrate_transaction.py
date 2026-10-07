@@ -48,15 +48,19 @@ class TransactionalMemoryStore:
     def list_prefix(self, prefix):
         return {key for key in self.docs if key.startswith(prefix)}
 
-    def append_transaction(self, receipt_key_name, receipt, expected_head, new_head):
+    def append_transaction(self, receipt_key_name, receipt, expected_head, new_head, immutable=None):
+        documents = dict(immutable or {})
+        documents[receipt_key_name] = receipt
         with self._transaction:
             current = self.docs.get(ledger.HEAD_KEY)
             if current != expected_head:
                 return False
-            existing = self.docs.get(receipt_key_name)
-            if existing is not None and existing != receipt:
-                raise ValueError("ledger_receipt_collision")
-            self.docs[receipt_key_name] = dict(receipt)
+            for key, value in documents.items():
+                existing = self.docs.get(key)
+                if existing is not None and existing != value:
+                    raise ValueError("ledger_receipt_collision")
+            for key, value in documents.items():
+                self.docs.setdefault(key, dict(value))
             self.docs[ledger.HEAD_KEY] = dict(new_head)
             return True
 
