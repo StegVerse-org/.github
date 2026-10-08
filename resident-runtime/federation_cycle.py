@@ -41,15 +41,31 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
         }
     # Propagated after the frames are handled, so a cycle that failed to consume
     # does not report having carried receipts it never reached.
-    propagation=PR.propagate_all()
-    receipt["repository_propagation"]={
-      "repositories_declared":propagation["repositories_declared"],
-      "repositories_present":propagation["repositories_present"],
-      "receipts_propagated":propagation["receipts_propagated"],
-      "receipts_already_carried":propagation["receipts_already_carried"],
-      "crossed_an_organization_boundary":False,
-      "interlock_intr_involved":False,
-    }
+    # Propagation is its own attempted transition. Without a supplied
+    # repository ledger location it fails closed here and says so; the frames
+    # above were already handled and are not undone or withheld by it.
+    try:
+        propagation=PR.propagate_all()
+    except PR.organization_ledger.LedgerLocationRequired as exc:
+        receipt["repository_propagation"]={
+          "disposition":"FAIL_CLOSED",
+          "failed_predicate":exc.failed_predicate,
+          "required_evidence_or_repair":"supply "+exc.variable,
+          "retry_entrypoint":"resident-runtime/propagate_repository_receipts.py::propagate_all",
+          "consequence_committed":False,
+          "crossed_an_organization_boundary":False,
+          "interlock_intr_involved":False,
+        }
+    else:
+        receipt["repository_propagation"]={
+          "disposition":"ALLOW",
+          "repositories_declared":propagation["repositories_declared"],
+          "repositories_present":propagation["repositories_present"],
+          "receipts_propagated":propagation["receipts_propagated"],
+          "receipts_already_carried":propagation["receipts_already_carried"],
+          "crossed_an_organization_boundary":False,
+          "interlock_intr_involved":False,
+        }
     # Recorded in this node's own state, through the seam that already owns
     # where node state lives. It was written into the repository checkout, which
     # made a run mutate committed space and kept only the most recent pass.
