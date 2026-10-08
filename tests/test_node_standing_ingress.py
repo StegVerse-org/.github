@@ -505,5 +505,19 @@ class ContinuationIsPublishedTests(unittest.TestCase):
                                  "DEFERRED_TO_SUCCESSOR_AFTER_TESTS_5_AND_6")
 
 
+class OrganizationTransitionDestinationTests(unittest.TestCase):
+    """MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002: the sender names the organization ledger service."""
+
+    def test_sender_emits_the_organization_ledger_service_only(self):
+        spec = importlib.util.spec_from_file_location(
+            "submit_org_transition", ROOT / "resident-runtime/submit_org_transition_to_master_records.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.DESTINATION_SERVICE, "organization.ecosystem-transition-ledger")
+        source = (ROOT / "resident-runtime/submit_org_transition_to_master_records.py").read_text(encoding="utf-8")
+        self.assertNotIn('destination_service="master-records.ecosystem-transition-ledger"', source)
+        self.assertIn("destination_service=DESTINATION_SERVICE", source)
+
+
 if __name__ == "__main__":
     unittest.main()
