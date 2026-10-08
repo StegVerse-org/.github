@@ -35,6 +35,13 @@ OPERATION_ID = "ORGANIZATION_GOVERNANCE_DECISION_RETURN"
 RESULT_SCHEMA = "stegverse.organization-governance-decision-return-result/v1"
 DECISION_SCHEMA = "stegverse.org-governance-decision/v1"
 RETRY_ENTRYPOINT = "resident-runtime/governance_decision_return.py::return_decision"
+# A shell caller sees the same three outcomes the result carries. PENDING is an
+# observation that nothing has arrived, not a transition, so it is neither the
+# success status nor the refusal status.
+EXIT_RETURNED = 0
+EXIT_NOT_ALLOWED = 1
+EXIT_PENDING_OBSERVATION = 3
+EXIT_STATUS = {"ALLOW": EXIT_RETURNED, "PENDING": EXIT_PENDING_OBSERVATION}
 
 
 def _module(name: str, relative: str):
@@ -119,7 +126,8 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
                           mesh_root=mesh_root, hb_epoch=hb_epoch)
     if closed["disposition"] == egress.PENDING:
         return {**base, "disposition": "PENDING", "decision_returned": False,
-                "absence_is_not_a_transition": True, "awaits_the_decision": False,
+                "absence_is_not_a_transition": True, "observation_only": True,
+                "awaits_the_decision": False,
                 "retry_entrypoint": RETRY_ENTRYPOINT,
                 "authority_effect": "NONE_OBSERVATION_ONLY"}
     closure = {key: closed.get(key) for key in (
@@ -183,7 +191,7 @@ def main() -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(rendered)
     print(json.dumps({k: v for k, v in result.items() if k != "sdk_admitted_result"}, sort_keys=True))
-    return 0 if result["disposition"] in {"ALLOW", "PENDING"} else 1
+    return EXIT_STATUS.get(result["disposition"], EXIT_NOT_ALLOWED)
 
 
 if __name__ == "__main__":
