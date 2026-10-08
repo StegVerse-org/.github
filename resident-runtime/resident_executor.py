@@ -79,7 +79,9 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--once",action="store_true")
     ap.add_argument("--poll-seconds",type=float,default=1.0)
-    ap.add_argument("--mesh-root",type=Path,required=True)\n    ap.add_argument("--node-state-root",type=Path,required=True)\n    a=ap.parse_args()
+    ap.add_argument("--mesh-root",type=Path,required=True)
+    ap.add_argument("--node-state-root",type=Path,required=True)
+    a=ap.parse_args()
     bad=[k for k in HOSTED if truthy(os.getenv(k))]
     if bad:
         raise SystemExit("hosted runtime prohibited: "+",".join(bad))
