@@ -42,7 +42,7 @@ accepts: stegverse.workspace-resource-request.v1
 runtime_required_for_consumption: true
 ```
 
-The adapter is intentionally thin. It validates destination/request shape and delegates projection semantics to `stegverse.workspace_resource_consumer.consume_workspace_resource` from the installed canonical SDK. It does not duplicate consumer logic, mint InTr receipts, confer governance authority, or claim MIR/Master Records custody.
+The adapter is intentionally thin. It validates destination/request shape and delegates projection semantics to `stegverse.workspace_resource_consumer.consume_workspace_resource` from the installed canonical SDK. It does not duplicate consumer logic, mint InTr receipts, confer governance authority, or claim MIR custody. It also claims no Master Records organization record.
 
 Validation evidence:
 
@@ -76,7 +76,7 @@ provider-neutral active probe execution: IMPLEMENTED / VALIDATED / MERGED
 authentic provider probe: NOT PROVEN
 Shared Docs live transport/projection proof: NOT PROVEN
 MIR transition reporting: NOT PROVEN
-Master Records authentic custody/reconstruction: NOT PROVEN
+Master Records authentic organization records/reconstruction: NOT PROVEN
 one-device authentic end-to-end execution: NOT PROVEN
 ```
 

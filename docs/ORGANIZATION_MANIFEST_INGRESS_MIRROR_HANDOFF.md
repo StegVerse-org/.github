@@ -81,9 +81,9 @@ org_transition_class   REPO_STATE_PROPAGATION
 
 The operation reports what it observed and hands that to the SDK's own `admit_runtime_result`, which is the authority on whether a runtime result closes a transition. A refusal is returned verbatim, naming its own predicate, and is never retried into a success. `manifest_receipt_id` is the organization receipt's own digest, so the result is bound to the receipt that exists rather than to an identifier minted for the occasion.
 
-## Custody is published, never awaited
+## Organization records are published, never awaited
 
-`propagation_gates_organization_runtime_reality` is false and Master Records `may_be_awaited_by_a_transition` is false, so this operation reports `master_records_closure_observed: false` and names `resident-runtime/submit_org_transition_to_master_records.py` as where custody is published. The organization receipt is the organization's runtime reality; a refusal upstream does not unmake a transition that occurred here, which is why the receipt is appended before the SDK is asked and the result says so even on a refusal.
+`propagation_gates_organization_runtime_reality` is false and Master Records `may_be_awaited_by_a_transition` is false, so this operation reports `master_records_organization_record_observed: false` and names `resident-runtime/submit_org_transition_to_master_records.py` as where its organization records are published to Master Records. The organization receipt is the organization's runtime reality; a refusal upstream does not unmake a transition that occurred here, which is why the receipt is appended before the SDK is asked and the result says so even on a refusal.
 
 ## Validation
 
@@ -102,7 +102,7 @@ organization_receipt_preserves_repository_receipt      true
 boundary_receipt_chain_reconstructed_independently     true
 sdk_admitted_result.state                              COMPLETE
 sdk_admitted_result.manifest_receipt_id                == organization_receipt_sha256
-master_records_closure_observed                        false
+master_records_organization_record_observed            false
 authority_effect                                       NONE_RECEIVING_OPERATION_ONLY
 ```
 
@@ -116,4 +116,4 @@ What the refusal record does *not* claim is anything the organization did not pr
 
 The capability this organization's internal endpoint currently serves is `ecosystem_diagnostic`. `governance` is refused at the far side as a capability that service does not admit.
 
-One latent conflict is recorded rather than worked around. The SDK's governance result validator requires `organization_master_records_closure_observed: true` before it will admit any governance result, while this organization's own `ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001` states that Master Records `may_be_awaited_by_a_transition: false` and `may_gate_organization_runtime_reality: false`. The organization publishes for custody and observes no closure, so it cannot honestly satisfy that predicate. It is unreachable today because no internal endpoint admits `governance`; it is owned by `StegVerse-org/StegVerse-SDK` and is not resolved here.
+One latent conflict is recorded rather than worked around. The SDK's governance result validator requires `organization_master_records_closure_observed: true` before it will admit any governance result, while this organization's own `ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001` states that Master Records `may_be_awaited_by_a_transition: false` and `may_gate_organization_runtime_reality: false`. The organization publishes its organization records and observes no Master Records organization record for the result, so it cannot honestly satisfy that predicate. It is unreachable today because no internal endpoint admits `governance`; it is owned by `StegVerse-org/StegVerse-SDK` and is not resolved here.

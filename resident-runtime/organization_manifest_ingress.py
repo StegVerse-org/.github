@@ -61,8 +61,9 @@ reading one as the other would treat a refused submission as a completed
 transition. The refusal's own digests are returned under their own names.
 
 Nothing here grants authority. The organization appends its own receipt, which
-is its own runtime reality; it publishes for custody separately and does not
-claim an observed Master Records closure it has not seen.
+is its own runtime reality; it publishes its organization records to Master
+Records separately and does not claim a Master Records organization record it
+has not seen.
 """
 from __future__ import annotations
 
@@ -458,7 +459,7 @@ def request_governance_decision(request: Mapping[str, Any], crossing: Mapping[st
         "repository_receipt_observed": True,
         "repository_receipt_sha256": repository_receipt["receipt_sha256"],
         "records_authority": "ORGANIZATION_RECORDS_ONLY",
-        "master_records_closure_observed": False,
+        "master_records_organization_record_observed": False,
     }
     if (decision_request.get("schema") != GOVERNANCE_REQUEST_SCHEMA
             or decision_request.get("governance_request_sha256") != request_digest(decision_request.get("governance_request"))):
@@ -644,10 +645,11 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
             organization_receipt["repo_receipt_sha256"] == repository_receipt["receipt_sha256"],
         "replay_requires_only_verified_repo_and_organization_receipts": True,
         "sdk_admitted_result": admitted,
-        # Custody is published separately and is not awaited here:
+        # Organization records are published to Master Records separately and
+        # are not awaited here:
         # `propagation_gates_organization_runtime_reality` is false and Master
         # Records `may_be_awaited_by_a_transition` is false.
-        "master_records_closure_observed": False,
+        "master_records_organization_record_observed": False,
         "master_records_propagation_entrypoint":
             "resident-runtime/submit_org_transition_to_master_records.py",
         "authority_effect": "NONE_RECEIVING_OPERATION_ONLY",

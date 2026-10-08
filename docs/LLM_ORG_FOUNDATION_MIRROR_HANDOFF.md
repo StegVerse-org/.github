@@ -98,4 +98,4 @@ That is a successor integration after the foundation contracts are canonical.
 7. Repository-required validation succeeds at exact head.
 8. Merge uses expected-head protection.
 
-No runtime activation, external provider execution, Publisher delivery, Ecosystem Chat delivery, or Master Records custody is claimed by source completion alone.
+No runtime activation, external provider execution, Publisher delivery, Ecosystem Chat delivery, or Master Records organization record is claimed by source completion alone.

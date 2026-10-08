@@ -54,7 +54,7 @@ def instructions():
             "response_instruction": "Return your completed response through this bound Interlock using the manifest/receipt interaction contract.",
             "response_must_bind_request_manifest": True,
             "response_transport_receipts_required": True,
-            "master_records_custody_required": True}
+            "master_records_organization_record_required": True}
 
 
 def neutral_policy():

@@ -209,12 +209,12 @@ The match is available in two places and not in a third:
 
 That is sufficient while admission confers nothing — `authority_effect` is
 `NONE` on every surface and nothing executes on the strength of a frame. It
-stops being sufficient at the first irreversible consequence, which is **custody
-transfer to Master Records**: discovering afterwards that a frame was forged is
+stops being sufficient at the first irreversible consequence, which is **writing an
+organization record to Master Records**: discovering afterwards that a frame was forged is
 a far worse position than refusing it at the door.
 
 So TV/TVC attestation is **not** a prerequisite for inter-organization
-transport. It is a prerequisite for custody. TVC (`StegVerse-Labs/TVC`) is an
+transport. It is required before that organization record is written. TVC (`StegVerse-Labs/TVC`) is an
 authority and evidence provider for scoped execution tokens and receipt-bound
 admissibility evidence, and holds certificate root key custody; which of its
 surfaces issues an organization-level signing authority — as opposed to a
