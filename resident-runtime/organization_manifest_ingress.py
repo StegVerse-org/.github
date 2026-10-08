@@ -425,6 +425,11 @@ def governance_request_payload(request: Mapping[str, Any], decision_request: Map
         "audience": "TARGET",
         "target_organization": decision_request["deciding_organization"],
         "target_count": 1,
+        # The deciding organization selects processing only from an admitted
+        # capability bound to its route, never from the address it was sent to,
+        # so the request carries the manifest's own declaration.
+        "processing": {"capability": request["processing_capability"],
+                       "route_id": request["route_id"]},
         "body": {
             "schema": GOVERNANCE_REQUEST_SCHEMA,
             "origin_organization": "StegVerse-org",
