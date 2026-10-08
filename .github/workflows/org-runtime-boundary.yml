@@ -16,6 +16,9 @@ on:
       - 'org-boundary/runtime/intr_transport.py'
       - 'org-boundary/runtime/process_boundary.py'
       - 'org-boundary/registry/services.json'
+      - 'org-boundary/registry/federation.json'
+      - 'org-boundary/runtime/federation_projection.py'
+      - 'tests/test_federation_projection.py'
       - 'org-kernel/kernel.py'
       - 'org-kernel/node_store.py'
       - 'tests/test_node_store_contract.py'
@@ -53,6 +56,9 @@ on:
       - 'org-boundary/runtime/intr_transport.py'
       - 'org-boundary/runtime/process_boundary.py'
       - 'org-boundary/registry/services.json'
+      - 'org-boundary/registry/federation.json'
+      - 'org-boundary/runtime/federation_projection.py'
+      - 'tests/test_federation_projection.py'
       - 'org-kernel/kernel.py'
       - 'org-kernel/node_store.py'
       - 'tests/test_node_store_contract.py'
@@ -139,6 +145,10 @@ jobs:
         run: python -m unittest tests.test_kernel_node_state_is_addressed -v
       - name: Test organization kernel carrier frame and ingest
         run: python org-kernel/tests/test_kernel.py
+      - name: Validate federation directory projection
+        run: python org-boundary/runtime/federation_projection.py verify
+      - name: Test federation projection refuses drift from the canonical directory
+        run: python -m unittest tests.test_federation_projection -v
       - name: Report node-state provenance and refuse a silent host dependency
         run: |
           python - <<'PY'
