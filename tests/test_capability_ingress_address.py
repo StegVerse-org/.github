@@ -203,7 +203,9 @@ class PeerSubmissionReachesTheOperationTests(unittest.TestCase):
         return packet
 
     def consume(self):
-        results = kernel.consume_addressed_frames(ROOT, mesh_root=self.mesh)
+        results = kernel.consume_addressed_frames(
+            ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
+            org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
         self.assertEqual(len(results), 1)
         return results[0]["result"]
 
@@ -249,7 +251,9 @@ class PeerSubmissionReachesTheOperationTests(unittest.TestCase):
         """Refused at the boundary, not consumed with a refusal buried inside."""
         self.publish(submission())
         with self.assertRaises(ValueError) as refused:
-            kernel.consume_addressed_frames(ROOT, mesh_root=self.mesh)
+            kernel.consume_addressed_frames(
+            ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
+            org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
         self.assertIn("SUBMISSION_CARRIES_A_MANIFEST", str(refused.exception))
 
 

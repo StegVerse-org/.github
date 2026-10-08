@@ -35,6 +35,12 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# A peer is materialized as its own organization: its own kernel, emitters and
+# ledgers. See tests/peer_organization.py.
+_peer_spec = importlib.util.spec_from_file_location("peer_organization", ROOT / "tests/peer_organization.py")
+peers = importlib.util.module_from_spec(_peer_spec)
+_peer_spec.loader.exec_module(peers)
 CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
 MODULE = "org-boundary/runtime/origin_attestation.py"
 
@@ -284,22 +290,9 @@ class CrossingTests(unittest.TestCase):
         self._ledger.cleanup()
 
     def peer_node(self):
-        root = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, root, True)
-        (root / "org-boundary/registry").mkdir(parents=True)
-        (root / "org-boundary/registry/services.json").write_text(json.dumps({
-            "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
-            "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
-            "services": [{"service_id": "stegverse-labs.org-control",
+        return peers.materialize(self, PEER, [{"service_id": "stegverse-labs.org-control",
                           "repository": PEER + "/.github",
-                          "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}), encoding="utf-8")
-        (root / "org-boundary/runtime").mkdir(parents=True)
-        for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
-            shutil.copy2(ROOT / "org-boundary/runtime" / name,
-                         root / "org-boundary/runtime" / name)
-        (root / "docs").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
-        return root
+                          "boundary_role": "BOUNDARY_LOCAL_CONTROL"}])
 
     def emit(self, communication_id="attested", **overrides):
         body = {"payload": {"message_class": "ecosystem.communication",
@@ -351,7 +344,7 @@ class CrossingTests(unittest.TestCase):
 
     def test_the_closure_carries_the_attestation_its_own_emission_recorded(self):
         result = self.emit(communication_id="closed-attested")
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         closure = egress.close(PEER, result["packet_id"], "closed-attested",
                                mesh_root=self.mesh, hb_epoch=32)
@@ -363,7 +356,7 @@ class CrossingTests(unittest.TestCase):
 
     def test_a_closure_claims_no_attestation_its_emission_did_not_hold(self):
         result = self.emit(communication_id="closed-unattested", credential_authority=None)
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         closure = egress.close(PEER, result["packet_id"], "closed-unattested",
                                mesh_root=self.mesh, hb_epoch=32)
@@ -373,7 +366,7 @@ class CrossingTests(unittest.TestCase):
     def test_an_attested_crossing_measures_no_unresolved_actor_identity(self):
         """The dimension that was the whole disorder score."""
         result = self.emit(communication_id="measured")
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         egress.close(PEER, result["packet_id"], "measured",
                      mesh_root=self.mesh, hb_epoch=32)
@@ -385,7 +378,7 @@ class CrossingTests(unittest.TestCase):
     def test_an_unattested_crossing_still_measures_the_dimension_as_disorder(self):
         """The measurement is not being satisfied by the field changing name."""
         result = self.emit(communication_id="unmeasured", credential_authority=None)
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         egress.close(PEER, result["packet_id"], "unmeasured",
                      mesh_root=self.mesh, hb_epoch=32)

@@ -30,6 +30,12 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# A peer is materialized as its own organization: its own kernel, emitters and
+# ledgers. See tests/peer_organization.py.
+_peer_spec = importlib.util.spec_from_file_location("peer_organization", ROOT / "tests/peer_organization.py")
+peers = importlib.util.module_from_spec(_peer_spec)
+_peer_spec.loader.exec_module(peers)
 CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
 MANIFEST = "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
 STANDING = "tests/fixtures/crossing-standing-genesis.json"
@@ -87,32 +93,19 @@ class CapabilityMapTests(unittest.TestCase):
 
     def peer_node(self, serves_the_capability=True):
         """The peer's own node. Whether it serves the capability is the variable."""
-        root = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, root, True)
         services = [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
                      "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]
         if serves_the_capability:
             services.append({"service_id": PEER_CAPABILITY, "repository": PEER + "/.github",
                              "boundary_role": "BOUNDARY_LOCAL_CONTROL"})
-        (root / "org-boundary/registry").mkdir(parents=True)
-        (root / "org-boundary/registry/services.json").write_text(json.dumps({
-            "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
-            "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
-            "services": services}), encoding="utf-8")
-        (root / "org-boundary/runtime").mkdir(parents=True)
-        for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
-            shutil.copy2(ROOT / "org-boundary/runtime" / name,
-                         root / "org-boundary/runtime" / name)
-        (root / "docs").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
-        return root
+        return peers.materialize(self, PEER, services)
 
     def outbound_capability_crossing(self, communication_id="cap-1", serves=True):
         emitted = egress.emit(
             PEER, {"message_class": "ecosystem.communication",
                    "communication_id": communication_id, "body": {}},
             standing=GENESIS, capability=PROFILE_ID, mesh_root=self.mesh, hb_epoch=32)
-        kernel.consume_and_respond(self.peer_node(serves), mesh_root=self.mesh,
+        self.peer_node(serves).consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         return egress.close(PEER, emitted["packet_id"], communication_id,
                             mesh_root=self.mesh, hb_epoch=32)
@@ -122,7 +115,7 @@ class CapabilityMapTests(unittest.TestCase):
             PEER, {"message_class": "ecosystem.communication",
                    "communication_id": communication_id, "body": {}},
             standing=GENESIS, mesh_root=self.mesh, hb_epoch=32)
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         return egress.close(PEER, emitted["packet_id"], communication_id,
                             mesh_root=self.mesh, hb_epoch=32)
@@ -142,7 +135,9 @@ class CapabilityMapTests(unittest.TestCase):
             standing=standing, transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
         kernel.publish_packet(packet, root=self.mesh)
-        return kernel.consume_addressed_frames(ROOT, mesh_root=self.mesh)
+        return kernel.consume_addressed_frames(
+            ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
+            org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
 
     def append(self, transition_class, evidence, transition_id="SYNTHETIC"):
         return repository_ledger.append(

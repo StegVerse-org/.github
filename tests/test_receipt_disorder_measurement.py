@@ -21,6 +21,12 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# A peer is materialized as its own organization: its own kernel, emitters and
+# ledgers. See tests/peer_organization.py.
+_peer_spec = importlib.util.spec_from_file_location("peer_organization", ROOT / "tests/peer_organization.py")
+peers = importlib.util.module_from_spec(_peer_spec)
+_peer_spec.loader.exec_module(peers)
 CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
 PEER, PEER_CONTROL = "StegVerse-Labs", "stegverse-labs.org-control"
 GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "disorder-test", "predecessor": None}
@@ -69,21 +75,8 @@ class DisorderMeasurementTests(unittest.TestCase):
         self._ledger.cleanup()
 
     def peer_node(self):
-        root = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, root, True)
-        (root / "org-boundary/registry").mkdir(parents=True)
-        (root / "org-boundary/registry/services.json").write_text(json.dumps({
-            "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
-            "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
-            "services": [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
-                          "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}), encoding="utf-8")
-        (root / "org-boundary/runtime").mkdir(parents=True)
-        for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
-            shutil.copy2(ROOT / "org-boundary/runtime" / name,
-                         root / "org-boundary/runtime" / name)
-        (root / "docs").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
-        return root
+        return peers.materialize(self, PEER, [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
+                          "boundary_role": "BOUNDARY_LOCAL_CONTROL"}])
 
     def append_resolved(self, evidence, transition_id="INBOUND-SUBMISSION"):
         """Append one record that resolved a target, through the ledger's own writer."""
@@ -96,7 +89,7 @@ class DisorderMeasurementTests(unittest.TestCase):
         emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
             "communication_id": communication_id, "subject": "disorder",
             "body": {"probe": True}}, standing=GENESIS, mesh_root=self.mesh, hb_epoch=32)
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         egress.close(PEER, emitted["packet_id"], communication_id,
                      mesh_root=self.mesh, hb_epoch=32)

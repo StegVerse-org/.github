@@ -36,6 +36,8 @@ on:
       - 'tests/test_kernel_node_state_is_addressed.py'
       - 'tests/test_kernel_node_state_supplied.py'
       - 'tests/test_stable_epoch_and_adapter_effects.py'
+      - 'tests/test_kernel_crossing_organization_receipts.py'
+      - 'tests/peer_organization.py'
       - 'resident-runtime/sdk_self_characterization_response.py'
       - 'resident-runtime/submit_org_transition_to_master_records.py'
       - 'resident-runtime/run_once.py'
@@ -91,6 +93,8 @@ on:
       - 'tests/test_kernel_node_state_is_addressed.py'
       - 'tests/test_kernel_node_state_supplied.py'
       - 'tests/test_stable_epoch_and_adapter_effects.py'
+      - 'tests/test_kernel_crossing_organization_receipts.py'
+      - 'tests/peer_organization.py'
       - 'resident-runtime/sdk_self_characterization_response.py'
       - 'resident-runtime/submit_org_transition_to_master_records.py'
       - 'resident-runtime/run_once.py'
@@ -185,6 +189,8 @@ jobs:
         run: python -m unittest tests.test_kernel_node_state_supplied -v
       - name: Test replayed effects reproduce rather than repeat, and every adapter declares its effect
         run: python -m unittest tests.test_stable_epoch_and_adapter_effects -v
+      - name: Test every consumed crossing is recorded on both ledgers before it is answered
+        run: python -m unittest tests.test_kernel_crossing_organization_receipts -v
       - name: Test organization kernel carrier frame and ingest
         run: python org-kernel/tests/test_kernel.py
       - name: Validate federation directory projection
