@@ -6,6 +6,7 @@ on:
     paths:
       - 'resident-runtime/governance_endpoint.py'
       - 'resident-runtime/governance_decision_return.py'
+      - 'resident-runtime/federation_cycle.py'
       - 'resident-runtime/organization_manifest_ingress.py'
       - 'resident-runtime/organization_egress_boundary.py'
       - 'resident-runtime/sdk_manifest_crossing.py'
@@ -26,6 +27,7 @@ on:
     paths:
       - 'resident-runtime/governance_endpoint.py'
       - 'resident-runtime/governance_decision_return.py'
+      - 'resident-runtime/federation_cycle.py'
       - 'resident-runtime/organization_manifest_ingress.py'
       - 'resident-runtime/organization_egress_boundary.py'
       - 'resident-runtime/sdk_manifest_crossing.py'

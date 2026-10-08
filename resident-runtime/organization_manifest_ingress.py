@@ -310,14 +310,23 @@ def reconstruct_closures(crossing: Mapping[str, Any]) -> list[dict[str, Any]]:
     return closures
 
 
+def canonical_manifest_json(manifest: Mapping[str, Any]) -> str:
+    """The submitted manifest as canonical JSON, the form retained at ingress."""
+    return json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
 def transition_evidence(request: Mapping[str, Any], crossing: Mapping[str, Any],
-                        closures: list[dict[str, Any]]) -> dict[str, Any]:
+                        closures: list[dict[str, Any]],
+                        manifest: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """What this ingress transition is evidenced by, inline.
 
     Replay reads these bytes rather than following a reference, because a
-    reachability promise is not evidence.
+    reachability promise is not evidence. The canonical manifest itself is
+    retained too: a governance decision returns after this transition, and the
+    return is admitted against the exact manifest that was received, which the
+    digests alone cannot reproduce.
     """
-    return {
+    evidence = {
         "receiving_operation": OPERATION_ID,
         "profile_id": PROFILE_ID,
         "profile_name": PROFILE_NAME,
@@ -332,6 +341,9 @@ def transition_evidence(request: Mapping[str, Any], crossing: Mapping[str, Any],
         "crossing": {key: value for key, value in crossing.items() if key != "egress"},
         "transition_closures": closures,
     }
+    if manifest is not None:
+        evidence["canonical_manifest_json"] = canonical_manifest_json(manifest)
+    return evidence
 
 
 def runtime_result(request: Mapping[str, Any], closures: list[dict[str, Any]],
@@ -567,7 +579,7 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     repository_receipt = repository_ledger.append(
         transition_id, "ORGANIZATION_SDK_MANIFEST_INGRESS",
         predecessor_state, successor_state,
-        transition_evidence(request, crossing, closures),
+        transition_evidence(request, crossing, closures, manifest),
         "NONE", hb_epoch=hb_epoch)
     organization_receipt = organization_ledger.append(
         repository_receipt, "REPO_STATE_PROPAGATION",

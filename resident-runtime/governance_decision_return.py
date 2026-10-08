@@ -173,6 +173,75 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
             "authority_effect": "NONE_RETURN_ONLY"}
 
 
+GOVERNANCE_COMMUNICATION_PREFIX = "governance:"
+INGRESS_TRANSITION_PREFIX = "ORGANIZATION-SDK-MANIFEST-INGRESS-"
+
+
+def retained_manifest(request_sha256: str) -> tuple[dict[str, Any] | None, str | None, str | None]:
+    """The manifest this organization received for a request, from its own ingress record.
+
+    Returns (manifest, None, None) when the retained bytes reproduce the
+    recorded request, else (None, failed_predicate, detail).
+    """
+    transition_id = INGRESS_TRANSITION_PREFIX + request_sha256[:16]
+    evidence = recorded_ingress(transition_id)
+    if evidence is None:
+        return None, "INGRESS_TRANSITION_IS_IN_THIS_ORGANIZATIONS_RECORDS", transition_id
+    retained = evidence.get("canonical_manifest_json")
+    if not isinstance(retained, str):
+        return None, "CANONICAL_MANIFEST_RETAINED_AT_INGRESS", transition_id
+    try:
+        manifest = json.loads(retained)
+        derived = derive_execution_request(manifest, ingress.boundary())
+    except (ValueError, TypeError) as exc:
+        return None, "RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST", type(exc).__name__
+    if (derived.get("request_sha256") != request_sha256
+            or derived.get("request_sha256") != evidence.get("request_sha256")
+            or derived.get("canonical_manifest_sha256") != evidence.get("canonical_manifest_sha256")):
+        return None, "RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST", transition_id
+    return manifest, None, None
+
+
+def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path | None,
+                          hb_epoch: int | None = None) -> dict[str, Any] | None:
+    """Materialize the return when the deciding organization's answer is consumed.
+
+    Called for a frame this organization has just consumed. Answers to anything
+    other than a governance request are not this operation's and return None.
+    The manifest comes from this organization's own ingress record, verified
+    against the recorded digests; without it the attempted return fails closed
+    and names why. Nothing here waits or polls: the consumed frame is the event.
+    """
+    payload = response_packet.get("payload") or {}
+    communication_id = payload.get("communication_id")
+    if not (isinstance(communication_id, str)
+            and communication_id.startswith(GOVERNANCE_COMMUNICATION_PREFIX)):
+        return None
+    request_sha256 = communication_id[len(GOVERNANCE_COMMUNICATION_PREFIX):]
+    request_packet_id = (payload.get("body") or {}).get("request_packet_id")
+    base = {"schema": RESULT_SCHEMA, "operation": OPERATION_ID,
+            "trigger": "DECISION_FRAME_CONSUMED",
+            "response_packet_id": response_packet.get("packet_id"),
+            "governance_request_packet_id": request_packet_id,
+            "governance_communication_id": communication_id,
+            "request_sha256": request_sha256}
+    if not isinstance(request_packet_id, str) or not request_packet_id:
+        return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,
+                "failed_predicate": "ANSWER_NAMES_THE_REQUEST_IT_ANSWERS",
+                "retry_entrypoint": RETRY_ENTRYPOINT, "authority_effect": "NONE_REFUSAL_ONLY"}
+    manifest, failed, detail = retained_manifest(request_sha256)
+    if manifest is None:
+        return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,
+                "failed_predicate": failed, "detail": detail,
+                "required_evidence_or_repair": "the ingress transition for this request, recorded with its canonical manifest",
+                "retry_entrypoint": RETRY_ENTRYPOINT, "authority_effect": "NONE_REFUSAL_ONLY"}
+    returned = return_decision(manifest, packet_id=request_packet_id,
+                               communication_id=communication_id,
+                               mesh_root=mesh_root, hb_epoch=hb_epoch)
+    return {**returned, "trigger": "DECISION_FRAME_CONSUMED",
+            "response_packet_id": response_packet.get("packet_id")}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--manifest", type=Path, required=True)
