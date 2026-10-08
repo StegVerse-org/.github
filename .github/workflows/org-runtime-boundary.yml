@@ -9,6 +9,8 @@ on:
       - '.stegverse/transition-ledger/emit.py'
       - 'resident-runtime/propagate_repository_receipts.py'
       - 'tests/test_ledger_location_supplied.py'
+      - 'resident-runtime/federation_cycle.py'
+      - 'tests/test_federation_cycle_propagation_location.py'
       - '.stegverse/transition-ledger/contract.json'
       - 'tests/test_receipt_time_base.py'
       - 'tests/test_repo_ledger_serialized_append.py'
@@ -53,6 +55,8 @@ on:
       - '.stegverse/transition-ledger/emit.py'
       - 'resident-runtime/propagate_repository_receipts.py'
       - 'tests/test_ledger_location_supplied.py'
+      - 'resident-runtime/federation_cycle.py'
+      - 'tests/test_federation_cycle_propagation_location.py'
       - '.stegverse/transition-ledger/contract.json'
       - 'tests/test_receipt_time_base.py'
       - 'tests/test_repo_ledger_serialized_append.py'
@@ -137,6 +141,8 @@ jobs:
           python -c 'import json; x=json.load(open("/tmp/task-registry-disclosure.json")); assert x["declared_capability_processed"] is True; assert x["processing_selection"]=="MANIFEST_DECLARED"; assert x["reconstruction"]=="RECONSTRUCTED"; assert len(x["receipts"])==5'
       - name: Test the ledgers are written only where supplied, never under the host home
         run: python -m unittest tests.test_ledger_location_supplied -v
+      - name: Test a cycle without a repository ledger home fails propagation closed, not the cycle
+        run: python -m unittest tests.test_federation_cycle_propagation_location -v
       - name: Test repository ledger append is serialized and atomically published
         run: python -m unittest tests.test_repo_ledger_serialized_append -v
       - name: Test portable transactional ledger substrate
