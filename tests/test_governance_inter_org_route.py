@@ -23,6 +23,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -165,6 +166,80 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertEqual(pending["disposition"], "PENDING")
         self.assertIs(pending["decision_returned"], False)
         self.assertIs(pending["absence_is_not_a_transition"], True)
+
+    def consumed_answers(self):
+        """This organization's federation cycle consuming its mesh, and the returns it materializes."""
+        cycle = _load("federation_cycle_under_test", "resident-runtime/federation_cycle.py")
+        # consume_and_respond records consumption markers under the checkout's
+        # resident-runtime/federation; remove what this test created there.
+        markers = ROOT / "resident-runtime" / "federation"
+        if not markers.exists():
+            self.addCleanup(shutil.rmtree, markers, True)
+        results = cycle.K.consume_and_respond(ROOT, mesh_root=self.mesh)
+        return results, cycle.returns_for_consumed(results, mesh_root=self.mesh)
+
+    def test_ingress_retains_the_canonical_manifest_and_it_reproduces_the_recorded_request(self):
+        emitted = self.receive()
+        evidence = returning.recorded_ingress("ORGANIZATION-SDK-MANIFEST-INGRESS-" + emitted["request_sha256"][:16])
+        self.assertEqual(evidence["canonical_manifest_json"], ingress.canonical_manifest_json(manifest()))
+        retained, failed, _ = returning.retained_manifest(emitted["request_sha256"])
+        self.assertIsNone(failed)
+        self.assertEqual(retained, manifest())
+
+    def test_consuming_the_decision_materializes_the_return_without_a_separate_call(self):
+        emitted = self.receive()
+        self.answer(emitted)
+        results, returns = self.consumed_answers()
+        self.assertTrue(any((r.get("result") or {}).get("status") == "CONSUMED" for r in results))
+        self.assertEqual(len(returns), 1)
+        returned = returns[0]
+        self.assertEqual(returned["trigger"], "DECISION_FRAME_CONSUMED")
+        self.assertEqual(returned["disposition"], "ALLOW")
+        self.assertIs(returned["decision_returned"], True)
+        self.assertEqual(returned["governance_disposition"], "DENY")
+        self.assertEqual(returned["governance_request_packet_id"], emitted["governance_request_packet_id"])
+        self.assertEqual(returned["closure_transition_class"], "ORGANIZATION_EGRESS_CLOSED")
+
+    def test_a_cycle_that_consumes_no_decision_materializes_no_return(self):
+        self.receive()
+        _, returns = self.consumed_answers()
+        self.assertEqual(returns, [])
+
+    def test_an_answer_for_a_request_this_organization_never_received_fails_closed(self):
+        packet = {"packet_id": "stray", "payload": {"communication_id": "governance:" + "e" * 64,
+                                                    "body": {"request_packet_id": "never-emitted"}}}
+        returned = returning.return_on_consumption(packet, mesh_root=self.mesh)
+        self.assertEqual(returned["disposition"], "FAIL_CLOSED")
+        self.assertEqual(returned["failed_predicate"], "INGRESS_TRANSITION_IS_IN_THIS_ORGANIZATIONS_RECORDS")
+        self.assertTrue(returned["retry_entrypoint"])
+
+    def test_an_ingress_record_without_the_manifest_fails_closed_by_name(self):
+        emitted = self.receive()
+        recorded = returning.recorded_ingress
+        def without_manifest(transition_id):
+            evidence = recorded(transition_id)
+            evidence.pop("canonical_manifest_json", None)
+            return evidence
+        with mock.patch.object(returning, "recorded_ingress", without_manifest):
+            failed = returning.retained_manifest(emitted["request_sha256"])[1]
+        self.assertEqual(failed, "CANONICAL_MANIFEST_RETAINED_AT_INGRESS")
+
+    def test_a_retained_manifest_that_no_longer_reproduces_the_request_fails_closed(self):
+        emitted = self.receive()
+        recorded = returning.recorded_ingress
+        def altered(transition_id):
+            evidence = recorded(transition_id)
+            changed = json.loads(evidence["canonical_manifest_json"])
+            changed["declared_intent"] = "altered after ingress"
+            evidence["canonical_manifest_json"] = json.dumps(changed)
+            return evidence
+        with mock.patch.object(returning, "recorded_ingress", altered):
+            failed = returning.retained_manifest(emitted["request_sha256"])[1]
+        self.assertEqual(failed, "RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST")
+
+    def test_an_answer_that_is_not_a_governance_decision_is_not_this_operations(self):
+        packet = {"packet_id": "other", "payload": {"communication_id": "ecosystem-abc", "body": {}}}
+        self.assertIsNone(returning.return_on_consumption(packet, mesh_root=self.mesh))
 
     def test_the_returned_decision_is_admitted_by_the_sdk_in_organization_records_only(self):
         emitted = self.receive()

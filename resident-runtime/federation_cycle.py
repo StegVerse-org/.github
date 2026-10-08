@@ -14,6 +14,29 @@ K=importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(K)
 PRSPEC=importlib.util.spec_from_file_location("propagate_repository_receipts",ROOT/"resident-runtime"/"propagate_repository_receipts.py")
 PR=importlib.util.module_from_spec(PRSPEC); PRSPEC.loader.exec_module(PR)
 
+def returns_for_consumed(results, *, mesh_root):
+    """Materialize the governance return for each decision consumed in this cycle.
+
+    The consumed answer is the event; nothing waits for it. The return operation
+    and the SDK admission it imports load only when such an answer is consumed.
+    """
+    answers=[item["result"]["packet"] for item in results
+             if (item.get("result") or {}).get("status")=="CONSUMED"
+             and str((((item["result"].get("packet") or {}).get("payload")) or {}).get("communication_id") or "").startswith("governance:")]
+    if not answers:
+        return []
+    spec=importlib.util.spec_from_file_location("governance_decision_return",ROOT/"resident-runtime"/"governance_decision_return.py")
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    out=[]
+    for packet in answers:
+        returned=module.return_on_consumption(packet, mesh_root=mesh_root)
+        if returned is not None:
+            out.append({key:returned.get(key) for key in (
+              "disposition","trigger","decision_returned","governance_disposition","failed_predicate",
+              "governance_request_packet_id","governance_communication_id","response_packet_id",
+              "closure_transition_class","retry_entrypoint")})
+    return out
+
 def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
     if node_state_root is None:
         raise SystemExit("NODE_STATE_LOCATION_REQUIRED_FROM_MATERIALIZER")
@@ -24,6 +47,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
     results=K.consume_and_respond(ROOT, mesh_root=mesh_root)
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
+    governance_returns=returns_for_consumed(results, mesh_root=mesh_root)
     receipt={
       "schema_version":"stegverse.org-federation-cycle.v1",
       "organization":K.load_registry(ROOT)["organization"],
@@ -34,6 +58,8 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
       "authority_effect":"NONE_CARRIER_ONLY",
       "transport":"INTERLOCK_INTR_SUPPLIED_MESH"
     }
+    if governance_returns:
+        receipt["governance_returns"]=governance_returns
     # Propagated after the frames are handled, so a cycle that failed to consume
     # does not report having carried receipts it never reached.
     # Propagation is its own attempted transition. Without a supplied
