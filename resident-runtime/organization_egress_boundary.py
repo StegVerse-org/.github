@@ -482,17 +482,27 @@ def closure_record(resolved: Mapping[str, Any], origin: str, packet_id: str,
 
 def _record(transition_id: str, transition_class: str, predecessor: str, successor: str,
             record: Mapping[str, Any], hb_epoch: int | None) -> dict[str, Any]:
-    """Append at both levels: the repository first, the organization consuming it."""
+    """Append at both levels: the repository first, the organization consuming it.
+
+    With a supplied epoch the frame and the record are reproducible, so a replay
+    of the same emission returns the receipts already recorded instead of
+    minting a second pair; the frame and payload digests must match or it is a
+    collision. Without one the frame carries a
+    clock-derived epoch, a replay is a different frame, and each is recorded.
+    """
+    idempotent = hb_epoch is not None
     repository_receipt = repository_ledger.append(
         transition_id, transition_class, predecessor, successor,
-        dict(record), "NONE", hb_epoch=hb_epoch)
+        dict(record), "NONE", hb_epoch=hb_epoch,
+        idempotent_on=("frame_sha256", "payload_sha256") if idempotent else None)
     organization_receipt = organization_ledger.append(
         repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
         {"operation": OPERATION_ID,
          "intended_action": record["intended_action"],
          "disposition": record["disposition"],
          "crossed_an_organization_boundary": record["crossed_an_organization_boundary"]},
-        "NONE", hb_epoch=hb_epoch)
+        "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"] if idempotent else hb_epoch,
+        idempotent=idempotent)
     return {"repository_receipt": repository_receipt,
             "organization_receipt": organization_receipt}
 
@@ -556,7 +566,7 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
                 raise EgressRefused(refused.failed_predicate, refused.reason) from None
             attested = attestation_module.record(declared, signature, receipt)
             packet = {**packet, "attestation": signature}
-        published = kernel.publish_packet(packet, root=mesh_root)
+        published = kernel.publish_packet(packet, root=mesh_root, epoch=hb_epoch)
     except EgressRefused as exc:
         record = emit_refusal_record(exc.failed_predicate, exc.reason,
                                      destination_organization, origin, payload)

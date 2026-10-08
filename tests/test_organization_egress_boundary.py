@@ -120,6 +120,30 @@ class EgressHarness(unittest.TestCase):
 
 class EgressBoundaryTests(EgressHarness):
 
+    # --- an emission at a supplied epoch is one transition ----------------
+
+    def frames(self):
+        return sorted((self.mesh / "frames.d").glob("*.json"))
+
+    def test_a_replayed_emission_at_a_supplied_epoch_publishes_and_records_once(self):
+        first = self.emit()
+        second = self.emit()
+        self.assertEqual(first["disposition"], "ALLOW")
+        self.assertEqual(first["packet_id"], second["packet_id"])
+        self.assertEqual(first["frame_sha256"], second["frame_sha256"])
+        self.assertEqual(first["emission_repository_receipt_sha256"],
+                         second["emission_repository_receipt_sha256"])
+        self.assertEqual(first["emission_organization_receipt_sha256"],
+                         second["emission_organization_receipt_sha256"])
+        self.assertEqual(len(self.frames()), 1)
+        self.assertEqual(len(self.repo_receipts(egress.EMITTED_CLASS)), 1)
+
+    def test_an_emission_without_a_supplied_epoch_is_recorded_each_time(self):
+        """Not reproducible, so not deduplicated: each frame keeps its own record."""
+        self.emit(hb_epoch=None)
+        self.emit(hb_epoch=None)
+        self.assertEqual(len(self.repo_receipts(egress.EMITTED_CLASS)), 2)
+
     # --- a peer is addressed at the service it declares -------------------
 
     def test_an_ordinary_peer_resolves_at_its_organization_control_service(self):

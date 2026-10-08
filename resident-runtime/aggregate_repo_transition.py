@@ -264,8 +264,21 @@ def _validate_existing_head(store):
     return previous
 
 
+def recorded(store, head, source_transition_sha256):
+    """The organization receipt this chain already holds for a source receipt."""
+    cursor = (head or {}).get("receipt_sha256")
+    while cursor:
+        receipt = store.get(receipt_key(cursor))
+        if receipt is None:
+            return None
+        if receipt.get("source_transition_sha256") == source_transition_sha256:
+            return receipt
+        cursor = receipt.get("previous_receipt_sha256")
+    return None
+
+
 def append(source_receipt, org_transition_class, predecessor_state, successor_state,
-           boundary_evidence, authority_effect, hb_epoch=None, store=None):
+           boundary_evidence, authority_effect, hb_epoch=None, store=None, idempotent=False):
     # Admission is decided before the append lock is taken; an inadmissible
     # source receipt never contends for the organization ledger.
     source = verify_source(source_receipt)
@@ -287,6 +300,16 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
             expected_head = target.get(HEAD_KEY)
             previous = (expected_head or {}).get("receipt_sha256")
             _validate_existing_head(target)
+            # A source receipt is consumed once. With `idempotent` the chain is
+            # read at the HEAD this attempt compares against: a receipt already
+            # consuming this exact source is returned instead of a second one
+            # minted, and one consuming it under another class is a collision.
+            if idempotent:
+                prior = recorded(target, expected_head, source["source_transition_sha256"])
+                if prior is not None:
+                    if prior.get("org_transition_class") != org_transition_class:
+                        raise ValueError("ledger_receipt_collision")
+                    return prior
             # Resolved against the HEAD this attempt will compare against, so a
             # retry after a lost comparison re-resolves rather than reusing it.
             if predecessor_state == FROM_HEAD:

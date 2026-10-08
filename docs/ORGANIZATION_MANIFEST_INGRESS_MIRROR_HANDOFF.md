@@ -117,3 +117,31 @@ What the refusal record does *not* claim is anything the organization did not pr
 The capability this organization's internal endpoint currently serves is `ecosystem_diagnostic`. `governance` is refused at the far side as a capability that service does not admit.
 
 One latent conflict is recorded rather than worked around. The SDK's governance result validator requires `organization_master_records_closure_observed: true` before it will admit any governance result, while this organization's own `ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001` states that Master Records `may_be_awaited_by_a_transition: false` and `may_gate_organization_runtime_reality: false`. The organization publishes its organization records and observes no Master Records organization record for the result, so it cannot honestly satisfy that predicate. It is unreachable today because no internal endpoint admits `governance`; it is owned by `StegVerse-org/StegVerse-SDK` and is not resolved here.
+
+## One manifest is one transition
+
+The transition id is derived from the request, but `receive` used to append a
+repository receipt and then an organization receipt on every delivery. A
+resubmitted manifest was recorded twice at both levels, a governance manifest
+asked the deciding organization a second time, and a run that stopped between
+the two appends left a repository receipt the organization never consumed.
+
+`receive` now appends idempotently. A delivery whose transition id the
+repository chain already records returns the recorded receipts
+(`transition_replayed: true`); the same id over a different canonical manifest
+or request digest refuses with `ONE_TRANSITION_ID_BINDS_ONE_MANIFEST`. A run that
+recorded the repository receipt and stopped is completed from the retained
+receipt, not repeated. Everything after the repository receipt takes its epoch
+from that receipt, so a replay rebuilds the same organization receipt and the
+same outbound frame. The egress boundary does the same when an epoch is
+supplied; without one its frame is not reproducible and each emission is still
+recorded.
+
+The check reads the chain at the HEAD the append compares against, so
+concurrent appenders sharing one kernel commit a transition once. Appenders on
+separate kernels are not covered: `PosixLedgerStore` serializes within one
+kernel only.
+
+Tests: `tests/test_manifest_ingress_idempotent.py`, plus replay cases in
+`tests/test_governance_inter_org_route.py` and
+`tests/test_organization_egress_boundary.py`.

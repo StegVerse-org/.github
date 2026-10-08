@@ -156,6 +156,17 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertEqual(operation["governance_decision_state"], "REQUESTED_OF_DECIDING_ORGANIZATION")
         self.assertEqual(len(self.frames_to(DECIDER)), 1)
 
+    def test_a_replayed_governance_manifest_does_not_ask_the_deciding_organization_again(self):
+        first = self.receive()
+        second = self.receive(packet_id="governance-route-redelivered")
+        self.assertEqual(first["disposition"], "ALLOW", first.get("detail"))
+        self.assertEqual(second["disposition"], "ALLOW", second.get("detail"))
+        self.assertIs(second["transition_replayed"], True)
+        self.assertEqual(first["governance_request_packet_id"], second["governance_request_packet_id"])
+        self.assertEqual(first["emission_repository_receipt_sha256"],
+                         second["emission_repository_receipt_sha256"])
+        self.assertEqual(len(self.frames_to(DECIDER)), 1)
+
     def test_nothing_waits_and_the_sdk_is_handed_nothing_before_the_decision(self):
         emitted = self.receive()
         self.assertIs(emitted["awaits_the_decision"], False)
