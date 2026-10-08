@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """Persist the exact StegVerse-002 self-characterization response for SDK consumption."""
 from __future__ import annotations
-import argparse, hashlib, json
+import argparse, hashlib, importlib.util, json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 EXPERIMENT_ID="STEGVERSE-002-SELF-CHARACTERIZATION-001"
+# The response record is this node's own state. It was written under the
+# repository checkout with a bare write_text; it is now written once, atomically,
+# at the node-state location the materializer supplied.
+_nspec=importlib.util.spec_from_file_location("node_store",ROOT/"org-kernel/node_store.py")
+node_store=importlib.util.module_from_spec(_nspec); _nspec.loader.exec_module(node_store)
+RESPONSE_PREFIX="self-characterization/responses/"
 
 def canon(v): return json.dumps(v,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("--envelope",type=Path,required=True); ap.add_argument("--out",type=Path,required=True); a=ap.parse_args()
+    ap=argparse.ArgumentParser(); ap.add_argument("--envelope",type=Path,required=True); ap.add_argument("--out",type=Path,required=True); ap.add_argument("--node-state-root",type=Path,default=None); a=ap.parse_args()
     packet=json.loads(a.envelope.read_text())
     if (packet.get("destination") or {}).get("org")!="StegVerse-org" or (packet.get("destination") or {}).get("service")!="stegverse-org.stegverse-sdk":
         raise SystemExit("wrong-sdk-response-destination")
@@ -34,13 +40,17 @@ def main():
       "authority_transfer":False,
     }
     record["record_sha256"]=hashlib.sha256(canon(record)).hexdigest()
-    dest=ROOT/"resident-runtime/self-characterization/responses"/(manifest_sha+".json")
-    dest.parent.mkdir(parents=True,exist_ok=True)
-    if dest.exists():
-        existing=json.loads(dest.read_text())
-        if existing!=record: raise SystemExit("sdk-response-write-once-collision")
-    else:
-        dest.write_text(json.dumps(record,indent=2,sort_keys=True)+"\n")
+    # Validated first, so a packet that is not this response is refused by name
+    # whether or not node state was supplied.
+    if a.node_state_root is None:
+        raise SystemExit("node_state_location_required_from_materializer")
+    store=node_store.PosixStateStore(a.node_state_root)
+    key=RESPONSE_PREFIX+manifest_sha+".json"
+    try:
+        store.put_once(key,record)
+    except node_store.WriteOnceCollision:
+        raise SystemExit("sdk-response-write-once-collision")
+    dest=store.locator(key)
     a.out.parent.mkdir(parents=True,exist_ok=True); a.out.write_text(json.dumps({"state":"RESPONSE_PERSISTED","response_ref":str(dest),"record_sha256":record["record_sha256"]},indent=2,sort_keys=True)+"\n")
     print(json.dumps({"state":"RESPONSE_PERSISTED","response_ref":str(dest)},sort_keys=True))
     return 0

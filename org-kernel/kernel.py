@@ -217,7 +217,12 @@ def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None,
             td=Path(td); envelope=td/"packet.json"; out=td/"execution.json"; registry_path=td/"registry.json"
             envelope.write_text(json.dumps(packet,indent=2,sort_keys=True)+"\n")
             registry_path.write_text(json.dumps(registry,indent=2,sort_keys=True)+"\n")
-            completed=subprocess.run(["python3",str(processor),"--envelope",str(envelope),"--registry",str(registry_path),"--out",str(out)],cwd=root,capture_output=True,text=True,check=False)
+            command=["python3",str(processor),"--envelope",str(envelope),"--registry",str(registry_path),"--out",str(out)]
+            # An adapter whose effect is a write to node state writes it at the
+            # location this node was materialized with, never under the checkout.
+            if node_state is not None:
+                command+=["--node-state-root",str(node_state.root)]
+            completed=subprocess.run(command,cwd=root,capture_output=True,text=True,check=False)
             if completed.returncode!=0 or not out.is_file():
                 raise ValueError("endpoint_adapter_execution_failed:"+completed.stderr[-512:])
             result=json.loads(out.read_text())
@@ -665,18 +670,23 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
     out=[]
     for item in scan_addressed_frames(organization,root=mesh_root,seen=effective_seen):
         packet=recover_packet(item["frame"])
+        # An answer is stamped with the epoch of the frame it answers, which
+        # recovery has already validated. Consuming the same frame again then
+        # builds the same answer frame, and publishing it is a write-once no-op
+        # rather than a second answer stamped by whatever clock this pass read.
+        epoch=None if now_ns is not None else (item["frame"].get("heartbeat_reference") or {}).get("epoch")
         payload=packet.get("payload") or {}
         message_class=payload.get("message_class")
         result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
         response_publication=None
         if result.get("status")=="CONSUMED" and message_class in RESPONDED_REQUEST_CLASSES:
             response=build_control_response(packet,result["execution_result"])
-            response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns)
+            response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=epoch)
         elif result.get("status")=="CONSUMED" and not payload.get("response_to_packet_id"):
             service=next((svc for svc in registry["services"] if svc.get("service_id")==packet["destination"]["service"]),None)
             if service and service.get("endpoint_adapter"):
                 response=build_endpoint_response(packet,result["execution_result"])
-                response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns)
+                response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=epoch)
         marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result,store=node_state)
         out.append({"path":item["path"],"result":result,"response_publication":response_publication,"seen_marker":str(marker)})
     return out

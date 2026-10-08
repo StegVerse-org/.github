@@ -42,14 +42,22 @@ def resolve_adapter(svc):
         raise SystemExit("FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_MATERIALIZED")
     return candidate
 
-def endpoint_result(env,svc,envelope_path):
+NODE_STATE_WRITE_ONCE="NODE_STATE_WRITE_ONCE"
+
+def endpoint_result(env,svc,envelope_path,node_state_root=None):
     role=svc.get("boundary_role")
     if role=="INTERNAL_ENDPOINT":
         adapter=resolve_adapter(svc)
+        command=["python3",str(adapter),"--envelope",str(Path(envelope_path).resolve())]
+        # Only an adapter declared to write node state is handed its location.
+        # It refuses its write when none was supplied; a pure adapter is given
+        # nothing it could write to.
+        if svc.get("endpoint_adapter_effect")==NODE_STATE_WRITE_ONCE and node_state_root is not None:
+            command+=["--node-state-root",str(node_state_root)]
         with tempfile.TemporaryDirectory() as td:
             out=Path(td)/"endpoint-response.json"
             completed=subprocess.run(
-                ["python3",str(adapter),"--envelope",str(Path(envelope_path).resolve()),"--out",str(out)],
+                command+["--out",str(out)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -69,7 +77,7 @@ def endpoint_result(env,svc,envelope_path):
         return {"echo":env["payload"]}
     raise SystemExit("endpoint-adapter-not-installed")
 def main():
- ap=argparse.ArgumentParser(); ap.add_argument("--envelope",required=True); ap.add_argument("--registry",required=True); ap.add_argument("--out",required=True); a=ap.parse_args()
+ ap=argparse.ArgumentParser(); ap.add_argument("--envelope",required=True); ap.add_argument("--registry",required=True); ap.add_argument("--out",required=True); ap.add_argument("--node-state-root",default=None); a=ap.parse_args()
  env=load(a.envelope); reg=load(a.registry)
  req=["schema_version","packet_id","direction","origin","destination","carrier","intr_profile","transition","payload","evidence"]; miss=[k for k in req if k not in env]
  if miss: raise SystemExit("missing:"+",".join(miss))
@@ -87,7 +95,7 @@ def main():
  receipts=[]; prev=None
  for kind in KINDS:
   subject={**base,"kind":kind,"previous_receipt_id":prev}; rid=hid(kind.lower(),subject); receipts.append({"kind":kind,"receipt_id":rid,"subject":svc["service_id"],"evidence_hash":hashlib.sha256(canon(subject)).hexdigest(),"previous_receipt_id":prev}); prev=rid
- application_result=endpoint_result(env,svc,a.envelope)
+ application_result=endpoint_result(env,svc,a.envelope,a.node_state_root)
  result={"schema_version":reg["organization"].lower().replace(" ","-")+".boundary-execution.v1","packet_id":env["packet_id"],"organization":reg["organization"],"service_id":svc["service_id"],"consumed":True,"application_result":application_result,"authority_effect":env["transition"]["authority_effect"],**selected,**standing,"receipts":receipts,"reconstruction":{"same_execution_required":True,"status":"RECONSTRUCTED","terminal_receipt_id":prev}}
  Path(a.out).parent.mkdir(parents=True,exist_ok=True); Path(a.out).write_text(json.dumps(result,indent=2,sort_keys=True)+"\n"); print(json.dumps({"status":"PASS","terminal_receipt_id":prev}))
 if __name__=="__main__": main()
