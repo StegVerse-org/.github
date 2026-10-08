@@ -37,8 +37,8 @@
   ],
   "federation": {
     "transport": "shared local sovereign spool",
-    "default_root": "$XDG_STATE_HOME/stegverse/org-federation",
-    "override_env": "STEGVERSE_ORG_FEDERATION_ROOT",
+    "root_source": "SUPPLIED_BY_MATERIALIZER",
+    "unsupplied_disposition": "FAIL_CLOSED:mesh_location_required_from_materializer",
     "broker_required": false,
     "github_runtime_required": false,
     "carrier": "HB_DERIVED_INTR_FRAME",

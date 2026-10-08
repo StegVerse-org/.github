@@ -175,6 +175,35 @@ class AnswerEpochTests(unittest.TestCase):
         self.assertEqual(again[0]["response_publication"]["frame"], answer)
         self.assertEqual(self.frames(mesh), before)
 
+    def test_a_monitor_answer_carries_the_frame_epoch_and_replays_as_a_no_op(self):
+        """N-CLOCK: the status a monitor answer embeds used to sample the host
+        clock, so every re-answer was a different frame and a second answer."""
+        mesh, peer = scratch(self), self.peer()
+        request = kernel.build_packet(
+            origin_org="Origin", origin_service="origin.org-control",
+            destination_org=self.ORG, destination_service=self.CONTROL,
+            payload={"communication_id": "monitor-1", "message_class": "ecosystem.monitor.request",
+                     "subject": "s", "body": {}},
+            standing=GENESIS)
+        epoch = kernel.HB_ANCHOR_EPOCH + 4321
+        kernel.publish_packet(request, root=mesh, epoch=epoch)
+        first = peer.consume(mesh_root=mesh, node_state_root=scratch(self))
+        status = first[0]["result"]["execution_result"]["application_result"]["monitor_status"]
+        self.assertEqual(status["heartbeat_reference"]["epoch"], epoch)
+        self.assertIs(status["heartbeat_reference"]["derived_from_clock"], False)
+        self.assertNotIn("sampled_unix_ns", status["heartbeat_reference"])
+        answer = first[0]["response_publication"]["frame"]
+        before = self.frames(mesh)
+        again = peer.consume(mesh_root=mesh, node_state_root=scratch(self))
+        self.assertEqual(again[0]["response_publication"]["frame"], answer)
+        self.assertEqual(self.frames(mesh), before)
+
+    def test_a_local_status_read_is_labelled_as_a_clock_sample(self):
+        status = kernel.resident_status(ROOT)
+        self.assertIs(status["heartbeat_reference"]["derived_from_clock"], True)
+        self.assertEqual(kernel.resident_status(ROOT, epoch=kernel.HB_ANCHOR_EPOCH + 1)
+                         ["heartbeat_reference"]["derived_from_clock"], False)
+
 
 class MasterRecordsSubmitterTests(unittest.TestCase):
     def receipt(self, work):
