@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, importlib.util, json
+import argparse, importlib.util, json, os
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -37,14 +37,42 @@ def returns_for_consumed(results, *, mesh_root):
               "closure_transition_class","retry_entrypoint")})
     return out
 
-def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
+def supplied_ledger(variable):
+    """A ledger location as this organization's materializer supplies it, or None.
+
+    The same interface the repository and organization emitters read. The
+    kernel never reads it; the cycle passes what it was given explicitly.
+    """
+    value=os.environ.get(variable)
+    return Path(value).expanduser().resolve() if value else None
+
+def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
+         repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None):
     if node_state_root is None:
         raise SystemExit("NODE_STATE_LOCATION_REQUIRED_FROM_MATERIALIZER")
     # The carrier is the declared one: kernel frames over the mesh this node
     # was materialized with. Nothing in the host environment selects another.
     if mesh_root is None:
         raise SystemExit("MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
-    results=K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root)
+    repo_ledger_root=repo_ledger_root or supplied_ledger("STEGVERSE_REPO_LEDGER_ROOT")
+    org_ledger_root=org_ledger_root or supplied_ledger("STEGVERSE_ORG_LEDGER_ROOT")
+    # Consuming a crossing is a transition within the organization, so it is
+    # recorded on both ledgers before it is answered or marked. Without both
+    # locations nothing is consumed: the frames stay in the mesh, which is the
+    # durable queue, and the cycle says why rather than aborting.
+    consumption={"disposition":"ALLOW"}
+    try:
+        results=K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
+                                      repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root)
+    except ValueError as exc:
+        if "ledger_location_required_from_materializer" not in str(exc):
+            raise
+        results=[]
+        consumption={"disposition":"FAIL_CLOSED",
+                     "failed_predicate":"LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER",
+                     "required_evidence_or_repair":"supply STEGVERSE_REPO_LEDGER_ROOT and STEGVERSE_ORG_LEDGER_ROOT",
+                     "retry_entrypoint":"resident-runtime/federation_cycle.py::main",
+                     "consequence_committed":False}
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
     governance_returns=returns_for_consumed(results, mesh_root=mesh_root)
@@ -54,6 +82,8 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
       "heartbeat_reference":K.hb_reference(),
       "frames_seen":len(results),
       "frames_consumed":consumed,
+      "consumption":consumption,
+      "organization_receipts_recorded":sum(1 for x in results if x.get("organization_record")),
       "responses_emitted":responses,
       "authority_effect":"NONE_CARRIER_ONLY",
       "transport":"INTERLOCK_INTR_SUPPLIED_MESH"

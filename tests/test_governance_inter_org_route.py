@@ -147,7 +147,9 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
             standing=GENESIS, transition_reference="intr:transition:capability-address-mesh",
             authority_effect="NONE", packet_id="capability-address-mesh")
         kernel.publish_packet(packet, root=self.mesh)
-        results = kernel.consume_addressed_frames(ROOT, mesh_root=self.mesh)
+        results = kernel.consume_addressed_frames(
+            ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
+            org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
         self.assertEqual(len(results), 1)
         application = results[0]["result"]["execution_result"]["application_result"]
         self.assertIs(application["capability_received"], True)
@@ -183,7 +185,9 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         # Consumption markers go to the node state the materializer supplies,
         # never the checkout.
         results = cycle.K.consume_and_respond(ROOT, mesh_root=self.mesh,
-                                              node_state_root=Path(self._work.name) / "node")
+                                              node_state_root=Path(self._work.name) / "node",
+                                              repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
+                                              org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
         return results, cycle.returns_for_consumed(results, mesh_root=self.mesh)
 
     def test_ingress_retains_the_canonical_manifest_and_it_reproduces_the_recorded_request(self):

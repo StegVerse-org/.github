@@ -26,6 +26,12 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# A peer is materialized as its own organization: its own kernel, emitters and
+# ledgers. See tests/peer_organization.py.
+_peer_spec = importlib.util.spec_from_file_location("peer_organization", ROOT / "tests/peer_organization.py")
+peers = importlib.util.module_from_spec(_peer_spec)
+_peer_spec.loader.exec_module(peers)
 CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
 
 _spec = importlib.util.spec_from_file_location(
@@ -93,23 +99,8 @@ class EgressHarness(unittest.TestCase):
 
     def peer_node(self):
         """Stand up the peer organization's own node: its registry and boundary runtime."""
-        root = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, root, True)
-        (root / "org-boundary/registry").mkdir(parents=True)
-        (root / "org-boundary/registry/services.json").write_text(json.dumps({
-            "schema_version": "stegverse.org-boundary-registry.v1",
-            "organization": PEER,
-            "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
-            "services": [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
-                          "boundary_role": "BOUNDARY_LOCAL_CONTROL"}],
-        }), encoding="utf-8")
-        (root / "org-boundary/runtime").mkdir(parents=True)
-        for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
-            shutil.copy2(ROOT / "org-boundary/runtime" / name,
-                         root / "org-boundary/runtime" / name)
-        (root / "docs").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
-        return root
+        return peers.materialize(self, PEER, [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
+                          "boundary_role": "BOUNDARY_LOCAL_CONTROL"}])
 
     def emit(self, destination=PEER, **overrides):
         body = {"payload": payload(), "standing": GENESIS, "mesh_root": self.mesh,
@@ -359,7 +350,7 @@ class EgressBoundaryTests(EgressHarness):
     def test_the_full_round_trip_closes_and_is_recorded(self):
         """Emit, the peer consumes and responds, the closure is observed and bound."""
         emitted = self.emit()
-        consumed = kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        consumed = self.peer_node().consume(mesh_root=self.mesh,
                                               node_state_root=self.node_state)
         self.assertEqual([(row["result"] or {}).get("status") for row in consumed],
                          ["CONSUMED"])
@@ -376,7 +367,7 @@ class EgressBoundaryTests(EgressHarness):
 
     def test_the_emission_and_the_closure_are_two_transitions_on_one_chain(self):
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         egress.close(PEER, emitted["packet_id"], "egress-test-001",
                      mesh_root=self.mesh, hb_epoch=32)
@@ -393,7 +384,7 @@ class EgressBoundaryTests(EgressHarness):
     def test_a_response_answering_another_packet_refuses_the_closure(self):
         """Recorded as a crossing whose disposition is DENY, not as a closed one."""
         self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         closed = egress.close(PEER, "pkt-not-the-one-emitted", "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)
@@ -413,7 +404,7 @@ class EgressBoundaryTests(EgressHarness):
         organization holds.
         """
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)
@@ -433,7 +424,7 @@ class EgressBoundaryTests(EgressHarness):
         recomputed = egress.reconstruct_far_side_chain(
             emitted["packet_id"], emission["far_side_service_id"],
             emission["far_side_payload_hash"])
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)
@@ -442,7 +433,7 @@ class EgressBoundaryTests(EgressHarness):
     def test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure(self):
         """A response that does not recompute did not run this packet."""
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         real = egress.reconstruct_far_side_chain
         egress.reconstruct_far_side_chain = lambda *a, **k: ["forged-terminal-receipt"]
@@ -457,7 +448,7 @@ class EgressBoundaryTests(EgressHarness):
     def test_a_crossing_with_no_emission_record_here_cannot_be_closed(self):
         """The local half of the bilateral match: no record of emitting it."""
         self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         # A response exists, but this organization's chain holds no emission
         # receipt for the packet id being closed.
@@ -470,7 +461,7 @@ class EgressBoundaryTests(EgressHarness):
     def test_the_closure_record_states_what_reconstruction_does_not_establish(self):
         """It proves a boundary ran the packet, not whose boundary it was."""
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         record = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)["closure_record"]
@@ -491,7 +482,7 @@ class EgressBoundaryTests(EgressHarness):
     def test_every_record_states_that_the_origin_is_asserted_and_not_attested(self):
         """A frame in a shared mesh carries whatever origin its writer put in it."""
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+        self.peer_node().consume(mesh_root=self.mesh,
                                    node_state_root=self.node_state)
         closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)
@@ -568,7 +559,7 @@ class UnclosableCrossingTests(EgressHarness):
                     {"message_class": request_class, "communication_id": identifier,
                      "subject": "s", "body": {}})
                 self.assertEqual(emitted["disposition"], "ALLOW")
-                kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                self.peer_node().consume(mesh_root=self.mesh,
                                            node_state_root=self.node_state)
                 closed = egress.close(PEER, emitted["packet_id"], identifier,
                                       mesh_root=self.mesh, hb_epoch=32)

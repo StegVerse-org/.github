@@ -42,6 +42,10 @@ spec = importlib.util.spec_from_file_location("kernel", ROOT / "org-kernel/kerne
 kernel = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(kernel)
 
+_peer_spec = importlib.util.spec_from_file_location("peer_organization", ROOT / "tests/peer_organization.py")
+peers = importlib.util.module_from_spec(_peer_spec)
+_peer_spec.loader.exec_module(peers)
+
 
 def scratch(case):
     path = Path(tempfile.mkdtemp())
@@ -144,18 +148,9 @@ class AnswerEpochTests(unittest.TestCase):
     CONTROL = "epoch-test.org-control"
 
     def peer(self):
-        root = scratch(self)
-        (root / "org-boundary/registry").mkdir(parents=True)
-        (root / "org-boundary/registry/services.json").write_text(json.dumps({
-            "organization": self.ORG,
-            "services": [{"service_id": self.CONTROL, "repository": self.ORG + "/.github",
-                          "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
-        (root / "org-boundary/runtime").mkdir(parents=True)
-        for name in ("manifest_selection.py", "node_standing.py"):
-            shutil.copy2(ROOT / "org-boundary/runtime" / name, root / "org-boundary/runtime" / name)
-        (root / "docs").mkdir()
-        shutil.copy2(ROOT / CONTRACT, root / CONTRACT)
-        return root
+        return peers.materialize(self, self.ORG, [
+            {"service_id": self.CONTROL, "repository": self.ORG + "/.github",
+             "boundary_role": "BOUNDARY_LOCAL_CONTROL"}])
 
     def frames(self, mesh):
         return sorted((mesh / "frames.d").glob("*.json"))
@@ -170,13 +165,13 @@ class AnswerEpochTests(unittest.TestCase):
             standing=GENESIS)
         epoch = kernel.HB_ANCHOR_EPOCH + 1234
         kernel.publish_packet(request, root=mesh, epoch=epoch)
-        first = kernel.consume_and_respond(peer, mesh_root=mesh, node_state_root=scratch(self))
+        first = peer.consume(mesh_root=mesh, node_state_root=scratch(self))
         answer = first[0]["response_publication"]["frame"]
         self.assertEqual(answer["heartbeat_reference"]["epoch"], epoch)
         self.assertIs(answer["heartbeat_reference"].get("derived_from_clock"), False)
         before = self.frames(mesh)
         # A node that lost its consumption marker consumes the frame again.
-        again = kernel.consume_and_respond(peer, mesh_root=mesh, node_state_root=scratch(self))
+        again = peer.consume(mesh_root=mesh, node_state_root=scratch(self))
         self.assertEqual(again[0]["response_publication"]["frame"], answer)
         self.assertEqual(self.frames(mesh), before)
 

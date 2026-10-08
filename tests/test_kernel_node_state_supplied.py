@@ -31,6 +31,10 @@ kernel = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(kernel)
 node_store = kernel.node_store_module
 
+_peer_spec = importlib.util.spec_from_file_location("peer_organization", ROOT / "tests/peer_organization.py")
+peers = importlib.util.module_from_spec(_peer_spec)
+_peer_spec.loader.exec_module(peers)
+
 PEER = "Kernel-Peer"
 CONTROL = "kernel-peer.org-control"
 TICK = kernel.HB_ANCHOR_UNIX_NS + 1_000_000_000
@@ -51,19 +55,17 @@ class SuppliedNodeStateTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.mesh, True)
         self.state = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.state, True)
-        self.peer = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, self.peer, True)
-        (self.peer / "org-boundary/registry").mkdir(parents=True)
-        (self.peer / "org-boundary/registry/services.json").write_text(json.dumps({
-            "organization": PEER,
-            "services": [{"service_id": CONTROL, "repository": PEER + "/.github",
-                          "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
-        (self.peer / "org-boundary/runtime").mkdir(parents=True)
-        for name in ("manifest_selection.py", "node_standing.py"):
-            shutil.copy2(ROOT / "org-boundary/runtime" / name,
-                         self.peer / "org-boundary/runtime" / name)
-        (self.peer / "docs").mkdir(parents=True, exist_ok=True)
-        shutil.copy2(ROOT / CONTRACT, self.peer / CONTRACT)
+        self.node = peers.materialize(self, PEER, [
+            {"service_id": CONTROL, "repository": PEER + "/.github",
+             "boundary_role": "BOUNDARY_LOCAL_CONTROL"}])
+        self.peer = self.node.root
+
+    def node_state_in_checkout(self):
+        """Markers, outbox or intake written under the peer's checkout. The
+        peer carries its own emitters there, which are code, not node state."""
+        return sorted(str(p.relative_to(self.peer)) for prefix in
+                      ("resident-runtime/federation", "resident-runtime/control")
+                      for p in (self.peer / prefix).rglob("*") if p.is_file())
 
     def packet(self, message_class, communication_id="c-1"):
         return kernel.build_packet(
@@ -86,43 +88,40 @@ class SuppliedNodeStateTests(unittest.TestCase):
                          "the frame must still be offered: nothing consumed it")
         self.assertEqual(kernel.scan_addressed_frames("Origin", root=self.mesh), [],
                          "no answer may be published for a frame that was not consumed")
-        self.assertFalse((self.peer / "resident-runtime").exists())
+        self.assertEqual(self.node_state_in_checkout(), [])
 
     def test_markers_and_intake_go_to_the_supplied_state_only(self):
         self.publish("ecosystem.work.request")
-        consumed = kernel.consume_and_respond(self.peer, mesh_root=self.mesh,
-                                              node_state_root=self.state)
+        consumed = self.node.consume(mesh_root=self.mesh, node_state_root=self.state)
         self.assertEqual([row["result"]["status"] for row in consumed], ["CONSUMED"])
         intake = consumed[0]["result"]["execution_result"]["application_result"]["work_intake"]
         self.assertTrue(intake["intake_ref"].startswith(str(self.state.resolve())))
         store = kernel.addressed_node_state_store(self.state)
         self.assertEqual(len(store.list_prefix(node_store.NODE_SEEN_PREFIX)), 1)
         self.assertEqual(len(store.list_prefix(node_store.NODE_INTAKE_PREFIX)), 1)
-        self.assertFalse((self.peer / "resident-runtime").exists(),
+        self.assertEqual(self.node_state_in_checkout(), [],
                          "a cycle must not write into the node's checkout")
-        again = kernel.consume_and_respond(self.peer, mesh_root=self.mesh,
-                                           node_state_root=self.state)
+        again = self.node.consume(mesh_root=self.mesh, node_state_root=self.state)
         self.assertEqual(again, [], "the supplied markers suppress re-consumption")
 
     def test_a_work_request_without_node_state_is_refused_before_any_receipt(self):
         with self.assertRaises(ValueError) as raised:
             kernel.dispatch(self.peer, self.packet("ecosystem.work.request"))
         self.assertEqual(str(raised.exception), REFUSED)
-        self.assertFalse((self.peer / "resident-runtime").exists())
+        self.assertEqual(self.node_state_in_checkout(), [])
 
     def test_classes_that_retain_nothing_still_dispatch_without_node_state(self):
         result = kernel.dispatch(self.peer, self.packet("ecosystem.communication"))
         self.assertIs(result["consumed"], True)
-        self.assertFalse((self.peer / "resident-runtime").exists())
+        self.assertEqual(self.node_state_in_checkout(), [])
 
     def test_consume_addressed_frames_routes_intake_to_supplied_state(self):
         self.publish("ecosystem.work.request")
-        results = kernel.consume_addressed_frames(self.peer, mesh_root=self.mesh,
-                                                  node_state_root=self.state)
+        results = self.node.consume_addressed(mesh_root=self.mesh, node_state_root=self.state)
         self.assertEqual([row["result"]["status"] for row in results], ["CONSUMED"])
         store = kernel.addressed_node_state_store(self.state)
         self.assertEqual(len(store.list_prefix(node_store.NODE_INTAKE_PREFIX)), 1)
-        self.assertFalse((self.peer / "resident-runtime").exists())
+        self.assertEqual(self.node_state_in_checkout(), [])
 
     def test_every_node_state_write_requires_a_supplied_store(self):
         published = self.publish("ecosystem.communication")
@@ -139,7 +138,7 @@ class SuppliedNodeStateTests(unittest.TestCase):
             with self.subTest(name), self.assertRaises(ValueError) as raised:
                 call()
             self.assertEqual(str(raised.exception), REFUSED)
-        self.assertFalse((self.peer / "resident-runtime").exists())
+        self.assertEqual(self.node_state_in_checkout(), [])
 
 
 class OrganizationCheckoutTests(unittest.TestCase):
@@ -157,7 +156,11 @@ class OrganizationCheckoutTests(unittest.TestCase):
                      "subject": "s", "body": {}},
             standing=GENESIS, packet_id="checkout-1:work"), root=mesh, now_ns=TICK)
         before = snapshot(ROOT / "resident-runtime")
-        consumed = kernel.consume_and_respond(ROOT, mesh_root=mesh, node_state_root=state)
+        ledgers = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, ledgers, True)
+        consumed = kernel.consume_and_respond(ROOT, mesh_root=mesh, node_state_root=state,
+                                              repo_ledger_root=ledgers / "repo",
+                                              org_ledger_root=ledgers / "org")
         self.assertEqual([row["result"]["status"] for row in consumed], ["CONSUMED"])
         self.assertEqual(snapshot(ROOT / "resident-runtime"), before)
         store = kernel.addressed_node_state_store(state)

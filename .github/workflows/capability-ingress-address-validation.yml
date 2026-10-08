@@ -117,7 +117,9 @@ jobs:
               authority_effect="NONE", packet_id="ci-peer-manifest-submission")
           kernel.publish_packet(packet, root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]))
 
-          consumed = kernel.consume_addressed_frames(Path.cwd(), mesh_root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]))
+          consumed = kernel.consume_addressed_frames(Path.cwd(), mesh_root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]),
+              repo_ledger_root=Path(os.environ["STEGVERSE_REPO_LEDGER_ROOT"]),
+              org_ledger_root=Path(os.environ["STEGVERSE_ORG_LEDGER_ROOT"]))
           assert len(consumed) == 1, consumed
           execution = consumed[0]["result"]["execution_result"]
           assert consumed[0]["result"]["status"] == "CONSUMED"
