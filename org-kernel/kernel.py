@@ -191,7 +191,7 @@ def load_registry(source:Path|dict[str,Any])->dict[str,Any]:
         raise ValueError("capability_registry_services_invalid")
     return value
 
-def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
+def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None)->dict[str,Any]:
     registry=load_registry(root)
     if packet["destination"]["org"]!=registry["organization"]: raise ValueError("wrong_destination_org")
     service=next((s for s in registry["services"] if s["service_id"]==packet["destination"]["service"]),None)
@@ -246,7 +246,10 @@ def dispatch(root:Path, packet:dict[str,Any])->dict[str,Any]:
         # defective for having no capability resolver, and failing its control
         # dispatch over one would be a limit that is not real.
         try:
-            application_result=capability_ingress(root).receive(root,service,packet,registry=registry)
+            # The mesh this node was materialized with goes to the receiving
+            # operation: a capability another organization decides leaves on it.
+            application_result=capability_ingress(root).receive(root,service,packet,registry=registry,
+                                                                mesh_root=mesh_root)
         except SystemExit as refused:
             raise ValueError("capability_ingress_refused:"+str(refused)) from None
     else:
@@ -271,12 +274,12 @@ def persist_outbox(root:Path, frame:dict[str,Any], *, store:Any|None=None)->Path
         raise ValueError("write_once_collision")
     return Path(target.locator(key))
 
-def ingest_frame(root:Path, frame:dict[str,Any])->dict[str,Any]:
+def ingest_frame(root:Path, frame:dict[str,Any], *, mesh_root:Path|None=None)->dict[str,Any]:
     packet=recover_packet(frame)
     registry=load_registry(root)
     if frame["destination_org"]!=registry["organization"]:
         return {"status":"IGNORED_NOT_ADDRESSED","packet_id":frame["packet_id"]}
-    result=dispatch(root,packet)
+    result=dispatch(root,packet,mesh_root=mesh_root)
     return {"status":"CONSUMED","packet":packet,"execution_result":result}
 
 __all__=["hb_reference","derive_channel","carrier_frame","recover_packet","dispatch","persist_outbox",
@@ -398,7 +401,7 @@ def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:s
     organization=registry["organization"]
     results=[]
     for item in scan_addressed_frames(organization,root=mesh_root,seen=seen):
-        result=ingest_frame(repo_root,item["frame"])
+        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root)
         results.append({"path":item["path"],"result":result})
     return results
 
@@ -632,7 +635,7 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, seen:set[st
         packet=recover_packet(item["frame"])
         payload=packet.get("payload") or {}
         message_class=payload.get("message_class")
-        result=ingest_frame(repo_root,item["frame"])
+        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root)
         response_publication=None
         if result.get("status")=="CONSUMED" and message_class in RESPONDED_REQUEST_CLASSES:
             response=build_control_response(packet,result["execution_result"])

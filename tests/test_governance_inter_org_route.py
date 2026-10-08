@@ -127,6 +127,31 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertEqual(packet["destination"], {"org": DECIDER, "service": DECIDING_SERVICE})
         self.assertEqual(packet["payload"]["message_class"], "ecosystem.work.request")
 
+    def test_a_manifest_arriving_at_the_capability_address_leaves_on_the_mesh_it_arrived_on(self):
+        """Through transport, not only by calling the operation: a peer's frame at
+        `stegverse-org.sdk-manifest-ingress` is consumed by the kernel with the mesh
+        the node was materialized with, and that mesh reaches the receiving
+        operation, so the governance request leaves instead of failing closed
+        on mesh_location_required_from_materializer."""
+        body = manifest()
+        packet = kernel.build_packet(
+            origin_org="SV-LLM", origin_service="sv-llm.org-control",
+            destination_org="StegVerse-org", destination_service="stegverse-org.sdk-manifest-ingress",
+            payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
+                     "declared_transition_surface": "LLM_ADAPTER",
+                     "manifest": body, "manifest_sha256": kernel.sha(body)},
+            standing=GENESIS, transition_reference="intr:transition:capability-address-mesh",
+            authority_effect="NONE", packet_id="capability-address-mesh")
+        kernel.publish_packet(packet, root=self.mesh)
+        results = kernel.consume_addressed_frames(ROOT, mesh_root=self.mesh)
+        self.assertEqual(len(results), 1)
+        application = results[0]["result"]["execution_result"]["application_result"]
+        self.assertIs(application["capability_received"], True)
+        operation = application["receiving_operation_result"]
+        self.assertEqual(operation["disposition"], "ALLOW", operation.get("detail"))
+        self.assertEqual(operation["governance_decision_state"], "REQUESTED_OF_DECIDING_ORGANIZATION")
+        self.assertEqual(len(self.frames_to(DECIDER)), 1)
+
     def test_nothing_waits_and_the_sdk_is_handed_nothing_before_the_decision(self):
         emitted = self.receive()
         self.assertIs(emitted["awaits_the_decision"], False)
