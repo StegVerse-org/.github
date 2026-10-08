@@ -24,18 +24,21 @@
   "federation_mesh_location": "SUPPLIED_BY_MATERIALIZER",
   "hosted_gateway_route": "NONE",
   "resident_cycle_entrypoint": "resident-runtime/resident_executor.py",
-  "federation_poll_mode": "CONTINUOUS_BIDIRECTIONAL",
-  "persistent_executor": {
-    "state": "SOURCE_INSTALLED_ACTIVATION_EVIDENCE_PENDING",
-    "implementation": "resident-runtime/resident_executor.py",
-    "restart_policy": "ALWAYS",
-    "service_template": "resident-runtime/systemd/stegverse-org-resident.service",
-    "github_actions_runtime_authority": "NONE"
-  },
+  "federation_poll_mode": "NONE_ONE_CYCLE_PER_MATERIALIZATION",
   "startup_one_shot": {
     "state": "REQUESTED",
     "request": "resident-runtime/control/sv002-sdk-query.request.json",
     "task_id": "SV002-SDK-QUERY-RELEASE-001",
-    "execution_receipt": "resident-runtime/state/sv002-sdk-query.execution.latest.json"
+    "submission_entrypoint": "resident-runtime/run_sv002_self_characterization_roundtrip.py",
+    "run_by_resident_executor": false
+  },
+  "ephemeral_materialization": {
+    "implementation": "resident-runtime/resident_executor.py",
+    "mode": "ONE_CYCLE_PER_INVOCATION",
+    "loop_or_poll": false,
+    "always_on_service": "NONE",
+    "state_location": "SUPPLIED_NODE_STATE_ROOT",
+    "receiver_unavailable": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION",
+    "github_actions_runtime_authority": "NONE"
   }
 }
