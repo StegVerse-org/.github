@@ -86,7 +86,7 @@ one-device authentic end-to-end execution: NOT PROVEN
 2. Determine the narrow provider operation/probe interface that WorkSpace can consume without exposing credentials or moving TVC authority.
 3. Keep authentic deployed-ingress proof separate from source/CI evidence.
 4. Once provider access is explicitly available, execute the controlled `OBSERVE -> MATERIALIZE -> live edit -> REFRESH -> authorization/probe change -> REVOKE/EXPIRE -> DESTROY` experiment.
-5. Retain MIR transition reporting and independent Master Records custody/reconstruction evidence.
+5. Retain MIR transition reporting and independent Master Records organization records and reconstruction evidence.
 6. Verify the entire path on one current mobile device.
 
 ## Human action

@@ -58,4 +58,4 @@ The bridge requires the SDK, StegVerse-002/.github, and micro-node-runtime repos
 
 `sdk_self_characterization_egress.py --submit` now uses the shared HTTPS Service Gateway when configured and otherwise publishes to the canonical same-host federation spool. The fallback remains an InTr/org-boundary carrier path and is limited to same-host sovereign federation.
 
-Source availability is now established. Authentic principal execution, response transport, Master Records custody/reconstruction, and public observation remain runtime-evidence transitions and must not be inferred from these commits.
+Source availability is now established. Authentic principal execution, response transport, Master Records organization records and reconstruction, and public observation remain runtime-evidence transitions and must not be inferred from these commits.
