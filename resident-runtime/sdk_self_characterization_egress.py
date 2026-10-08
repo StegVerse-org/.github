@@ -44,14 +44,12 @@ Nothing here grants authority. The request carries `authority_transfer: false`
 and resolves its effect from applicable transition elements.
 """
 from __future__ import annotations
-import argparse, hashlib, importlib.util, json, os, re
+import argparse, hashlib, importlib.util, json, re
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 SPEC=importlib.util.spec_from_file_location("org_kernel",ROOT/"org-kernel"/"kernel.py")
 K=importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(K)
-GWSPEC=importlib.util.spec_from_file_location("federation_gateway_transport",ROOT/"resident-runtime"/"federation_gateway_transport.py")
-GW=importlib.util.module_from_spec(GWSPEC); GWSPEC.loader.exec_module(GW)
 
 GENERIC_MANIFEST="stegverse.external_organization.interaction_manifest.v2"
 FIRST_GENERATION_MANIFEST="stegverse.external_organization.interaction_manifest.v1"
@@ -224,7 +222,7 @@ def build_packet(req):
     )
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("--request",type=Path,required=True); ap.add_argument("--packet-out",type=Path,required=True); ap.add_argument("--frame-out",type=Path); ap.add_argument("--submit",action="store_true")
+    ap=argparse.ArgumentParser(); ap.add_argument("--request",type=Path,required=True); ap.add_argument("--packet-out",type=Path,required=True); ap.add_argument("--frame-out",type=Path); ap.add_argument("--submit",action="store_true"); ap.add_argument("--mesh-root",type=Path,default=None)
     a=ap.parse_args(); req=json.loads(a.request.read_text())
     manifest,transport=validate_request(req)
     packet=build_packet(req); frame=K.carrier_frame(packet)
@@ -234,13 +232,11 @@ def main():
     submit_result=None
     transport_kind=None
     if a.submit:
-        if os.getenv("STEGVERSE_ORG_FEDERATION_GATEWAY_URL","").strip():
-            submit_result=GW.submit_frame(frame)
-            transport_kind="SHARED_SERVICE_GATEWAY"
-        else:
-            path=K.publish_frame(frame)
-            submit_result={"state":"PENDING","path":str(path)}
-            transport_kind="LOCAL_SPOOL_FALLBACK"
+        # The declared carrier over the supplied mesh; the kernel refuses an
+        # unsupplied one rather than deriving it from the host.
+        path=K.publish_frame(frame,root=a.mesh_root)
+        submit_result={"state":"PENDING","path":str(path)}
+        transport_kind="INTERLOCK_INTR_SUPPLIED_MESH"
     predecessor=manifest.get("predecessor")
     print(json.dumps({"status":"PASS","packet_id":packet["packet_id"],"destination":packet["destination"],
         "experiment_id":manifest["experiment_id"],
