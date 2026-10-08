@@ -16,6 +16,8 @@ def main():
  # predecessor binding. There is no default: a silent one would be the
  # defaulting the contract forbids.
  p.add_argument("--standing",required=True,help="JSON file declaring mode, node_ref and the predecessor key")
+ # The mesh this node was materialized with; the kernel refuses without one.
+ p.add_argument("--mesh-root",type=Path,required=True)
  a=p.parse_args()
  receipt=load(a.org_receipt)
  if receipt.get("schema")!="stegverse.organization-transition-receipt/v1":raise SystemExit("organization receipt schema mismatch")
@@ -24,6 +26,9 @@ def main():
  standing=load(a.standing)
  if not isinstance(standing,dict) or "predecessor" not in standing:raise SystemExit("standing must declare the predecessor key; null is explicit genesis")
  packet=K.build_packet(origin_org="StegVerse-org",origin_service="stegverse-org.org-control",destination_org="master-records",destination_service=DESTINATION_SERVICE,payload=payload,standing=standing,transition_reference="ecosystem.transition.organization-record.v1",authority_effect="NONE")
- published=K.publish_packet(packet)
+ # Stamped with the epoch of the receipt it carries, so submitting the same
+ # receipt again publishes the same frame -- a write-once no-op -- instead of a
+ # second record request stamped by the host clock.
+ published=K.publish_packet(packet,root=a.mesh_root,epoch=(receipt.get("hb_reference") or {}).get("epoch"))
  print(json.dumps({"status":"PUBLISHED_FOR_ORGANIZATION_RECORD","packet_id":packet["packet_id"],"frame_sha256":published["frame"]["frame_sha256"],"authority_effect":"NONE"},sort_keys=True))
 if __name__=="__main__":main()
