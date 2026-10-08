@@ -116,7 +116,7 @@ What the refusal record does *not* claim is anything the organization did not pr
 
 The capability this organization's internal endpoint currently serves is `ecosystem_diagnostic`. `governance` is refused at the far side as a capability that service does not admit.
 
-The latent conflict once recorded here is resolved at its owner. The SDK's governance result validator no longer requires `organization_master_records_closure_observed: true`; it now requires `records_authority: ORGANIZATION_RECORDS_ONLY` and refuses a governance result that claims a Master Records organization record (`GOVERNANCE_RESULT_MASTER_RECORDS_NOT_IN_GOVERNANCE_PATH`, `stegverse/manifest_state_transition_runtime.py` on StegVerse-SDK main). That matches `ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001`: Master Records is never awaited and never gates organization runtime reality. `governance` is now admitted by `stegverse-org.governance`.
+The latent conflict once recorded here is resolved at its owner. The SDK's governance result validator no longer requires `organization_master_records_closure_observed: true`; it now requires `records_authority: ORGANIZATION_RECORDS_ONLY` and refuses a governance result that claims a Master Records organization record (`GOVERNANCE_RESULT_MASTER_RECORDS_NOT_IN_GOVERNANCE_PATH`, `stegverse/manifest_state_transition_runtime.py` on StegVerse-SDK main). That matches `ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001` (`may_be_awaited_by_a_transition: false`, `may_gate_organization_runtime_reality: false`). `governance` is now admitted by `stegverse-org.governance`.
 
 ## One manifest is one transition
 
