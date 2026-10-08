@@ -18,7 +18,8 @@ def sha(v):return "sha256:"+hashlib.sha256(v if isinstance(v,(bytes,bytearray)) 
 def lr():
  o=os.getenv("STEGVERSE_REPO_LEDGER_ROOT")
  if o:return Path(o).expanduser().resolve()
- return (Path(os.getenv("XDG_STATE_HOME",str(Path.home()/".local/state")))/"stegverse/repo-ledgers"/C["repository"]).resolve()
+ # Supplied, never derived from the host: see aggregate_repo_transition.ledger_root.
+ raise ValueError("ledger_location_required_from_materializer: STEGVERSE_REPO_LEDGER_ROOT")
 # A transition occurring in this repository emits its receipt here. An
 # in-process caller needs the same append the CLI performs, with the same lock
 # and the same HEAD publication -- a second implementation of this would be a
