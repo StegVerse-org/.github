@@ -52,6 +52,14 @@ either is missing the cycle reports `consumption` as `FAIL_CLOSED` with retry
 entrypoint `resident-runtime/federation_cycle.py::main` and consumes nothing.
 The frames stay in the mesh.
 
-Not yet covered: a crossing the boundary refuses (standing, selection, unknown
-service) still leaves `consume_and_respond` by exception rather than being
-recorded as a DENY.
+A crossing the boundary refuses is recorded too, under its own class
+(`ORGANIZATION_FEDERATION_CROSSING_REFUSED`), instead of leaving the pass by
+exception and stopping every frame behind it. A deterministic refusal
+(standing, unknown service, undeclared or unadmitted processing, no installed
+adapter) is `DENY`: recorded and marked. Anything else, such as an adapter that
+failed to execute, is `FAIL_CLOSED`: recorded once with retry entrypoint
+`org-kernel/kernel.py::consume_and_respond`, left unmarked and offered again. A
+crossing refused and later admitted is two transitions. Custody refusals
+(missing node state or ledger location, a foreign root) still refuse the whole
+pass before any mutation, and a capability-address refusal still raises: its
+receiving operation records it.

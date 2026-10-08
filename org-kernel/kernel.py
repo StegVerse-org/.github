@@ -437,12 +437,9 @@ def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:s
     node_state=addressed_node_state_store(node_state_root) if node_state_root is not None else None
     results=[]
     for item in scan_addressed_frames(organization,root=mesh_root,seen=seen):
-        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
-        packet=result.get("packet") or {}
-        service=next((svc for svc in registry["services"]
-                      if svc.get("service_id")==(packet.get("destination") or {}).get("service")),None)
         epoch=(item["frame"].get("heartbeat_reference") or {}).get("epoch")
-        recorded=record_crossing(custody,item,result,service=service,epoch=epoch)
+        result,recorded=ingest_recorded(repo_root,item,custody,registry,mesh_root=mesh_root,
+                                        node_state=node_state,epoch=epoch)
         results.append({"path":item["path"],"result":result,"organization_record":recorded})
     return results
 
@@ -706,6 +703,84 @@ def crossing_custody(repo_root:Path, *, repo_ledger_root:Path|None, org_ledger_r
             "repository_store":emitter.ledger_store.PosixLedgerStore(Path(repo_ledger_root).expanduser().resolve()),
             "organization_store":emitter.ledger_store.PosixLedgerStore(Path(org_ledger_root).expanduser().resolve())}
 
+#: The transition class a crossing this boundary refused is recorded under. Its
+#: own class, so a crossing first refused and later admitted is two transitions
+#: rather than an admission reported as the earlier refusal.
+CROSSING_REFUSED_CLASS="ORGANIZATION_FEDERATION_CROSSING_REFUSED"
+#: Refusals that will not change on a retry: the crossing is refused, recorded
+#: and marked. Anything else is FAIL_CLOSED: recorded, left unmarked, retried.
+DETERMINISTIC_REFUSALS=("unknown_service","node_standing_refused:","standing-",
+                        "PROCESSING_SELECTED_ONLY_BY_ADMITTED_PROCESSING_CAPABILITY_AND_ROUTE_ID",
+                        "manifest-declares-","declared-capability-","endpoint_adapter_not_installed",
+                        "endpoint-adapter-not-installed","wrong_destination_org","wrong-destination-org")
+#: Refusals of custody itself. Nothing can be recorded without it, so the whole
+#: pass refuses before any mutation and the frames stay in the mesh.
+CUSTODY_REFUSALS=("node_state_location_required_from_materializer",
+                  "ledger_location_required_from_materializer",
+                  "dispatch_root_is_not_this_kernels_organization")
+
+def refusal_disposition(reason:str)->str:
+    return "DENY" if any(marker in reason for marker in DETERMINISTIC_REFUSALS) else "FAIL_CLOSED"
+
+def record_refusal(custody:dict[str,Any], item:dict[str,Any], reason:str, disposition:str, *,
+                   service:dict[str,Any]|None, epoch:int|None)->dict[str,Any]:
+    """Append the repository and organization receipts for a refused crossing.
+
+    The crossing arrived, so its disposition is a transition of this
+    organization, recorded like an admission. Identified by the frame, so a
+    FAIL_CLOSED retried on every pass is recorded once.
+    """
+    frame=item["frame"]
+    name=node_store_module.frame_name(str(item["path"]))
+    packet_id=frame.get("packet_id")
+    predecessor="sha256:"+hashlib.sha256(canon({"frame_sha256":frame.get("frame_sha256")})).hexdigest()
+    successor="sha256:"+hashlib.sha256(canon({"packet_id":packet_id,"disposition":disposition,
+                                                "failed_predicate":reason})).hexdigest()
+    evidence={"frame_name":name,"frame_sha256":frame.get("frame_sha256"),"packet_id":packet_id,
+              "destination_org":frame.get("destination_org"),
+              "service_id":(service or {}).get("service_id"),
+              "boundary_role":(service or {}).get("boundary_role"),
+              "disposition":disposition,"failed_predicate":reason,
+              "retry_entrypoint":None if disposition=="DENY" else "org-kernel/kernel.py::consume_and_respond"}
+    emitter=custody["emitter"]; organization_ledger=custody["organization_ledger"]
+    repository_receipt=emitter.append(
+        "ORGANIZATION-FEDERATION-CROSSING-"+hashlib.sha256(name.encode()).hexdigest()[:16],
+        CROSSING_REFUSED_CLASS,predecessor,successor,evidence,"NONE",hb_epoch=epoch,
+        store=custody["repository_store"],idempotent_on=("frame_sha256","packet_id"))
+    organization_receipt=organization_ledger.append(
+        repository_receipt,"REPO_STATE_PROPAGATION",predecessor,successor,
+        {"operation":CROSSING_REFUSED_CLASS,"packet_id":packet_id,
+         "disposition":disposition,"failed_predicate":reason},
+        "NONE",hb_epoch=repository_receipt["hb_reference"]["epoch"],
+        store=custody["organization_store"],idempotent=True)
+    return {"repository_receipt_sha256":repository_receipt["receipt_sha256"],
+            "organization_receipt_sha256":organization_receipt["receipt_sha256"],
+            "disposition":disposition}
+
+def ingest_recorded(repo_root:Path, item:dict[str,Any], custody:dict[str,Any], registry:dict[str,Any], *,
+                    mesh_root:Path|None, node_state:Any|None, epoch:int|None)->tuple[dict[str,Any],dict[str,Any]|None]:
+    """Ingest one frame and record its disposition, admitted or refused.
+
+    A refusal used to leave the consuming pass by exception, recorded nowhere
+    and stopping every frame behind it. A capability-address crossing still
+    raises: its receiving operation records its own refusal at both levels.
+    """
+    destination=(item["frame"].get("destination_service") or
+                 ((recover_packet(item["frame"]).get("destination") or {}).get("service")))
+    service=next((svc for svc in registry["services"] if svc.get("service_id")==destination),None)
+    try:
+        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
+    except ValueError as exc:
+        reason=str(exc)
+        if (any(marker in reason for marker in CUSTODY_REFUSALS)
+                or (service or {}).get("boundary_role")==CAPABILITY_INGRESS_ROLE):
+            raise
+        disposition=refusal_disposition(reason)
+        recorded=record_refusal(custody,item,reason,disposition,service=service,epoch=epoch)
+        return {"status":"REFUSED","disposition":disposition,"failed_predicate":reason,
+                "packet_id":item["frame"].get("packet_id")},recorded
+    return result,record_crossing(custody,item,result,service=service,epoch=epoch)
+
 def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,Any], *,
                     service:dict[str,Any]|None, epoch:int|None)->dict[str,Any]|None:
     """Append the repository and organization receipts for one consumed crossing.
@@ -767,13 +842,18 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
         epoch=None if now_ns is not None else (item["frame"].get("heartbeat_reference") or {}).get("epoch")
         payload=packet.get("payload") or {}
         message_class=payload.get("message_class")
-        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
         service=next((svc for svc in registry["services"] if svc.get("service_id")==packet["destination"]["service"]),None)
         # Recorded before anything leaves this node: no answer is published and
         # no consumption marker written for a crossing the organization has not
         # recorded. A failed append leaves the frame unmarked, so the next pass
         # offers it again and the idempotent append completes it.
-        recorded=record_crossing(custody,item,result,service=service,epoch=epoch)
+        result,recorded=ingest_recorded(repo_root,item,custody,registry,mesh_root=mesh_root,
+                                        node_state=node_state,epoch=epoch)
+        if result.get("status")=="REFUSED" and result["disposition"]!="DENY":
+            # FAIL_CLOSED: recorded, not marked, offered again on the next pass.
+            out.append({"path":item["path"],"result":result,"response_publication":None,
+                        "organization_record":recorded,"seen_marker":None})
+            continue
         response_publication=None
         if result.get("status")=="CONSUMED" and message_class in RESPONDED_REQUEST_CLASSES:
             response=build_control_response(packet,result["execution_result"])
