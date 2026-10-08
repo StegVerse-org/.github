@@ -74,6 +74,7 @@ jobs:
           PEER, PEER_CONTROL = "StegVerse-Labs", "stegverse-labs.org-control"
           CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
           mesh = Path(tempfile.mkdtemp()); peer = Path(tempfile.mkdtemp())
+          peer_state = Path(tempfile.mkdtemp())  # supplied node state, never a checkout
           (peer / "org-boundary/registry").mkdir(parents=True)
           (peer / "org-boundary/registry/services.json").write_text(json.dumps({
               "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
@@ -92,7 +93,7 @@ jobs:
           emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
               "communication_id": "ci-lineage-001", "subject": "ci lineage",
               "body": {"ci": True}}, standing=genesis, mesh_root=mesh, hb_epoch=32)
-          K.consume_and_respond(peer, mesh_root=mesh)
+          K.consume_and_respond(peer, mesh_root=mesh, node_state_root=peer_state)
           egress.close(PEER, emitted["packet_id"], "ci-lineage-001",
                        mesh_root=mesh, hb_epoch=32)
           egress.emit("Not-A-Declared-Peer", {"message_class": "ecosystem.communication",

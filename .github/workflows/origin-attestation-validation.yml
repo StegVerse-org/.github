@@ -108,6 +108,7 @@ jobs:
           AUTHORITY = {"sign": sign, "verify": verify}
 
           peer = Path(tempfile.mkdtemp())
+          peer_state = Path(tempfile.mkdtemp())  # supplied node state, never a checkout
           (peer / "org-boundary/registry").mkdir(parents=True)
           (peer / "org-boundary/registry/services.json").write_text(json.dumps({
               "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
@@ -139,7 +140,7 @@ jobs:
           assert record["proves_the_authority_authenticated_the_asker"] is False
           assert record["initiator_identification_also_requires_the_bilateral_match"] is True
 
-          kernel.consume_and_respond(peer, mesh_root=mesh)
+          kernel.consume_and_respond(peer, mesh_root=mesh, node_state_root=peer_state)
           closure = egress.close(PEER, emitted["packet_id"], "ci-attestation",
                                  mesh_root=mesh, hb_epoch=32)
           assert closure["closed"] is True, closure.get("closure_findings")

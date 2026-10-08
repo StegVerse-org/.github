@@ -268,6 +268,10 @@ class CrossingTests(unittest.TestCase):
             os.environ[name] = str(Path(self._ledger.name) / name.lower())
         self.mesh = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.mesh, True)
+        # The peer node's own consumption markers and work intake, supplied
+        # by the test as a materializer would, never the peer's checkout.
+        self.node_state = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.node_state, True)
         os.environ["STEGVERSE_ORG_FEDERATION_ROOT"] = str(self.mesh)
         self.authority = StandInAuthority()
 
@@ -347,7 +351,8 @@ class CrossingTests(unittest.TestCase):
 
     def test_the_closure_carries_the_attestation_its_own_emission_recorded(self):
         result = self.emit(communication_id="closed-attested")
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         closure = egress.close(PEER, result["packet_id"], "closed-attested",
                                mesh_root=self.mesh, hb_epoch=32)
         self.assertIs(closure["closed"], True)
@@ -358,7 +363,8 @@ class CrossingTests(unittest.TestCase):
 
     def test_a_closure_claims_no_attestation_its_emission_did_not_hold(self):
         result = self.emit(communication_id="closed-unattested", credential_authority=None)
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         closure = egress.close(PEER, result["packet_id"], "closed-unattested",
                                mesh_root=self.mesh, hb_epoch=32)
         self.assertEqual(closure["closure_record"]["origin_attestation_state"],
@@ -367,7 +373,8 @@ class CrossingTests(unittest.TestCase):
     def test_an_attested_crossing_measures_no_unresolved_actor_identity(self):
         """The dimension that was the whole disorder score."""
         result = self.emit(communication_id="measured")
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         egress.close(PEER, result["packet_id"], "measured",
                      mesh_root=self.mesh, hb_epoch=32)
         row = disorder.measure()["classes"]["unresolved_actor_identity"]
@@ -378,7 +385,8 @@ class CrossingTests(unittest.TestCase):
     def test_an_unattested_crossing_still_measures_the_dimension_as_disorder(self):
         """The measurement is not being satisfied by the field changing name."""
         result = self.emit(communication_id="unmeasured", credential_authority=None)
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         egress.close(PEER, result["packet_id"], "unmeasured",
                      mesh_root=self.mesh, hb_epoch=32)
         row = disorder.measure()["classes"]["unresolved_actor_identity"]
