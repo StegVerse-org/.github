@@ -207,9 +207,8 @@ if __name__ == "__main__":
 #:
 #: Scoped to what that assertion covers and no wider. `resident-runtime/control`
 #: looks similar and is not the same thing -- it carries a declared one-shot
-#: request that `resident_executor.py` and the SV-002 roundtrip both read, so it
-#: is content, and a guard sweeping it in would refuse the repository's own
-#: input.
+#: request that the SV-002 submission reads, so it is content, and a guard
+#: sweeping it in would refuse the repository's own input.
 RUNTIME_STATE_PATHS = ("resident-runtime/federation",)
 
 
