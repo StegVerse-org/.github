@@ -23,7 +23,7 @@ This task does not create a second LLM provider broker, governance engine, route
 - StegVerse SDK: manifest construction, validation, declared capability/route semantics, and SDK return contracts.
 - LLM-adapter: provider-neutral LLM access, named-source distributed workload, provider transport, contribution provenance, and packaging of evidence for existing governance.
 - TV/TVC: credential/provider-operation and applicable route authority.
-- Master Records: custody/reconstruction authority.
+- Master Records: organization records/reconstruction.
 - Publisher: governed publication/output continuation where applicable.
 
 ## New foundation responsibility
