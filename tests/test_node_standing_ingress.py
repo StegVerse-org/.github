@@ -283,7 +283,9 @@ class BothDispatchPathsAreGatedTests(unittest.TestCase):
                           "admits_processing": [{"capability": "ecosystem_diagnostic",
                                                  "route_id": "stegverse.route.ecosystem-diagnostic.v1"}]})
         (root / "adapter.py").write_text(self.ADAPTER)
-        result = K.dispatch(root, packet(genesis()))
+        declared = {"processing": {"capability": "ecosystem_diagnostic",
+                                   "route_id": "stegverse.route.ecosystem-diagnostic.v1"}}
+        result = K.dispatch(root, packet(genesis(), declared))
         self.assertEqual(result["node_standing_disposition"], "ALLOW")
         # The adapter receives the envelope, so the standing it carries is
         # visible to the far side rather than being consumed by the kernel.

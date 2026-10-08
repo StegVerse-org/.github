@@ -165,34 +165,73 @@ class CapabilityRouteMismatchTests(unittest.TestCase):
         self.assertIn("service-admitted-processing-binding-incomplete", str(raised.exception))
 
 
-class IdentityShortcutDetectionTests(unittest.TestCase):
-    """Predicate 5, second half: identity-driven routing shortcuts must be detected."""
+class IdentityShortcutRefusalTests(unittest.TestCase):
+    """Predicate 5, second half: an identity-driven routing shortcut is refused.
 
-    def test_undeclared_processing_on_an_internal_endpoint_is_recorded_as_identity_selected(self):
+    It used to be detected, recorded as IDENTITY_SELECTED and dispatched anyway,
+    which left each adapter's own payload checks as the only gate between an
+    undeclared packet and an action. It is now refused before any receipt.
+    """
+
+    REFUSAL = "PROCESSING_SELECTED_ONLY_BY_ADMITTED_PROCESSING_CAPABILITY_AND_ROUTE_ID"
+
+    def refused(self, row, payload):
+        with self.assertRaises(SystemExit) as raised:
+            selection.select_processing(row, payload)
+        return str(raised.exception)
+
+    def test_undeclared_processing_on_an_internal_endpoint_is_refused(self):
         row = service(admits_processing=[{"capability": "governance", "route_id": GOVERNANCE_ROUTE}])
-        result = selection.select_processing(row, {"request": {"anything": True}})
-        self.assertEqual(result["processing_selection"], "IDENTITY_SELECTED_NO_MANIFEST_DECLARATION")
-        self.assertEqual(result["identity_selected_by"], "adapter.py")
-        self.assertIsNone(result["declared_capability"])
-        self.assertIs(result["declared_capability_processed"], False)
+        reason = self.refused(row, {"request": {"anything": True}})
+        self.assertTrue(reason.startswith(self.REFUSAL), reason)
 
-    def test_the_shortcut_names_the_adapter_that_selected_instead_of_the_manifest(self):
-        """Recording which adapter selected is what makes the shortcut auditable."""
-        row = service(endpoint_adapter="resident-runtime/some_adapter.py")
-        result = selection.select_processing(row, {"request": {}})
-        self.assertEqual(result["identity_selected_by"], "resident-runtime/some_adapter.py")
+    def test_the_refusal_names_the_shortcut_and_the_service(self):
+        """The identity label survives only as the refusal's diagnostic."""
+        reason = self.refused(service(), {"request": {}})
+        self.assertIn("IDENTITY_SELECTED_NO_MANIFEST_DECLARATION", reason)
+        self.assertIn("target.endpoint", reason)
 
     def test_an_empty_payload_is_not_treated_as_a_declaration(self):
         for payload in (None, {}, [], "manifest"):
             with self.subTest(payload=payload):
-                result = selection.select_processing(service(), payload)
-                self.assertEqual(result["processing_selection"], "IDENTITY_SELECTED_NO_MANIFEST_DECLARATION")
+                self.assertTrue(self.refused(service(), payload).startswith(self.REFUSAL))
 
     def test_a_malformed_declaration_does_not_fall_through_to_the_shortcut(self):
         """Declaring `processing` badly must fail closed, not quietly become undeclared."""
         with self.assertRaises(SystemExit):
             selection.select_processing(
                 service(admits_processing=[]), {"processing": {"route_id": GOVERNANCE_ROUTE}})
+
+
+class BoundReturnTests(unittest.TestCase):
+    """An answer to a request is the return leg of that request's transition."""
+
+    def response(self, **overrides):
+        payload = {"schema": "stegverse.org-endpoint-response/v1",
+                   "response_to_packet_id": "request-1",
+                   "request_manifest_sha256": "a" * 64}
+        payload.update(overrides)
+        return payload
+
+    def accepting(self):
+        return service(accepts=["stegverse.org-endpoint-response/v1"])
+
+    def test_a_response_bound_to_its_request_is_admitted_as_a_return(self):
+        result = selection.select_processing(self.accepting(), self.response())
+        self.assertEqual(result["processing_selection"], "RETURN_BOUND_TO_REQUEST")
+        self.assertEqual(result["return_bound_to"]["response_to_packet_id"], "request-1")
+        self.assertEqual(result["return_bound_to"]["binding"],
+                         "DECLARED_NOT_VERIFIED_AGAINST_EMISSION_RECORD")
+        self.assertIs(result["declared_capability_processed"], False)
+
+    def test_a_response_to_a_service_that_does_not_accept_responses_is_refused(self):
+        with self.assertRaises(SystemExit):
+            selection.select_processing(service(), self.response())
+
+    def test_a_response_naming_no_request_is_refused(self):
+        for missing in ("response_to_packet_id", "request_manifest_sha256"):
+            with self.subTest(missing=missing), self.assertRaises(SystemExit):
+                selection.select_processing(self.accepting(), self.response(**{missing: None}))
 
 
 class BoundaryLocalSelectionTests(unittest.TestCase):

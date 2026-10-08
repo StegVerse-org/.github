@@ -9,6 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
 
 GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "test-node", "predecessor": None}
+ROUTE = "stegverse.route.ecosystem-diagnostic.v1"
 
 SPEC=importlib.util.spec_from_file_location("org_kernel",ROOT/"org-kernel/kernel.py")
 K=importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(K)
@@ -26,7 +27,10 @@ class InternalEndpointDispatchTests(unittest.TestCase):
         root=Path(td)
         (root/"org-boundary/registry").mkdir(parents=True)
         (root/"org-boundary/runtime").mkdir(parents=True)
-        service={"service_id":service_id,"boundary_role":"INTERNAL_ENDPOINT"}
+        # Processing is selected by the packet's declared capability and route,
+        # which the service must admit; the addressed row alone selects nothing.
+        service={"service_id":service_id,"boundary_role":"INTERNAL_ENDPOINT",
+                 "admits_processing":[{"capability":"ecosystem_diagnostic","route_id":ROUTE}]}
         if adapter is not None:
             service["endpoint_adapter"]=adapter
             service["endpoint_adapter_disposition"]="ALLOW_DECLARED_ADAPTER"
@@ -47,7 +51,8 @@ class InternalEndpointDispatchTests(unittest.TestCase):
             origin_service="source.sdk",
             destination_org="Target-Org",
             destination_service=service_id,
-            payload={"request":{"bindings":{"manifest_sha256":"a"*64}}}, standing=GENESIS,)
+            payload={"processing":{"capability":"ecosystem_diagnostic","route_id":ROUTE},
+                     "request":{"bindings":{"manifest_sha256":"a"*64}}}, standing=GENESIS,)
 
     def test_registered_non_sdk_internal_endpoint_executes_production_adapter_path(self):
         with tempfile.TemporaryDirectory() as td:
@@ -55,6 +60,7 @@ class InternalEndpointDispatchTests(unittest.TestCase):
             (root/"adapter.py").write_text(ADAPTER)
             result=K.dispatch(root,self.packet())
             self.assertTrue(result["consumed"])
+            self.assertEqual(result["processing_selection"],"MANIFEST_DECLARED")
             self.assertEqual(result["service_id"],"target.endpoint")
             self.assertEqual(result["application_result"]["adapter_service"],"target.endpoint")
             response=K.build_endpoint_response(self.packet(),result)
@@ -68,6 +74,16 @@ class InternalEndpointDispatchTests(unittest.TestCase):
             (root/"adapter.py").write_text(ADAPTER)
             result=K.dispatch(root,self.packet("stegverse-org.stegverse-sdk"))
             self.assertEqual(result["application_result"]["adapter_service"],"stegverse-org.stegverse-sdk")
+
+    def test_an_undeclared_packet_is_refused_before_the_adapter_runs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=self.fixture_root(td)
+            (root/"adapter.py").write_text("raise SystemExit('adapter-must-not-run')\n")
+            packet=K.build_packet(origin_org="Source-Org",origin_service="source.sdk",
+                                  destination_org="Target-Org",destination_service="target.endpoint",
+                                  payload={"request":{}},standing=GENESIS)
+            with self.assertRaisesRegex(ValueError,"PROCESSING_SELECTED_ONLY_BY_ADMITTED_PROCESSING_CAPABILITY_AND_ROUTE_ID"):
+                K.dispatch(root,packet)
 
     def test_unknown_service_remains_rejected(self):
         with tempfile.TemporaryDirectory() as td:

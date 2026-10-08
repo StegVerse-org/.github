@@ -151,7 +151,12 @@ class AdapterFailureReportingTests(unittest.TestCase):
     def test_an_adapter_failure_names_its_own_reason(self):
         """The boundary reported one opaque message for every adapter failure,
         which made a routing mismatch indistinguishable from a crash."""
+        # A response bound to its request reaches the adapter; arriving from an
+        # organization the adapter does not answer is the adapter's to refuse.
         packet = ingress_packet(service="stegverse-org.stegverse-sdk", packet_id="intr-adapter-001")
+        packet["payload"] = {"schema": "stegverse.org-endpoint-response/v1",
+                             "response_to_packet_id": "request-1",
+                             "request_manifest_sha256": "a" * 64}
         with tempfile.TemporaryDirectory() as work:
             envelope = Path(work) / "envelope.json"
             envelope.write_text(json.dumps(packet))

@@ -6,6 +6,8 @@ on:
     paths:
       - 'org-boundary/registry/services.json'
       - 'resident-runtime/workspace_resource_consumer_adapter.py'
+      - 'org-boundary/runtime/manifest_selection.py'
+      - 'org-boundary/runtime/process_boundary.py'
       - 'tests/test_workspace_internal_endpoint_binding.py'
       - 'docs/ORG_FEDERATION_GENERIC_ENDPOINT_ADAPTER_MIRROR_HANDOFF.md'
       - 'README.md'
