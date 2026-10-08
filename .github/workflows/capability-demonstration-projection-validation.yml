@@ -91,6 +91,7 @@ jobs:
           # Before any demonstration: the declaration is on the map and unexercised.
           # That cell is the ecosystem's own defect class, and it must be visible.
           peer = Path(tempfile.mkdtemp())
+          peer_state = Path(tempfile.mkdtemp())  # supplied node state, never a checkout
           (peer / "org-boundary/registry").mkdir(parents=True)
           (peer / "org-boundary/registry/services.json").write_text(json.dumps({
               "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
@@ -115,7 +116,7 @@ jobs:
                                 standing=GENESIS, capability=CAPABILITY,
                                 mesh_root=mesh, hb_epoch=32)
           assert emitted["destination_service"] == "stegverse-labs." + CAPABILITY
-          kernel.consume_and_respond(peer, mesh_root=mesh)
+          kernel.consume_and_respond(peer, mesh_root=mesh, node_state_root=peer_state)
           closure = egress.close(PEER, emitted["packet_id"], "ci-capability-map",
                                  mesh_root=mesh, hb_epoch=32)
           assert closure["closed"] is True, closure.get("closure_findings")

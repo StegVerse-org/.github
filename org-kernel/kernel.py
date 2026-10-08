@@ -191,7 +191,8 @@ def load_registry(source:Path|dict[str,Any])->dict[str,Any]:
         raise ValueError("capability_registry_services_invalid")
     return value
 
-def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None)->dict[str,Any]:
+def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None,
+             node_state:Any|None=None)->dict[str,Any]:
     registry=load_registry(root)
     if packet["destination"]["org"]!=registry["organization"]: raise ValueError("wrong_destination_org")
     service=next((s for s in registry["services"] if s["service_id"]==packet["destination"]["service"]),None)
@@ -227,12 +228,19 @@ def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None)->dict
     # Resolved before any receipt is minted: a dispatch that cannot state how
     # processing was selected must not leave a chain implying it was consumed.
     selected=manifest_selection(root).select_processing(service,packet["payload"])
+    # A work request is retained in this node's own state. Without a location
+    # supplied by the materializer there is nowhere to retain it, so it is
+    # refused here, before any receipt implies it was consumed. It used to fall
+    # back to the repository checkout, which is not node state.
+    if (role=="BOUNDARY_LOCAL_CONTROL" and node_state is None
+            and (packet.get("payload") or {}).get("message_class")=="ecosystem.work.request"):
+        raise ValueError("node_state_location_required_from_materializer")
     prev=None; receipts=[]
     for kind in ("INGRESS_ACCEPTED","DISPATCHED","CONSUMED","RESULT_BOUND","EGRESS_EMITTED"):
         r=receipt(kind,packet["packet_id"],service["service_id"],prev,{"payload_hash":sha(packet["payload"])})
         receipts.append(r); prev=r["receipt_id"]
     if role=="BOUNDARY_LOCAL_CONTROL":
-        application_result=handle_control_message(root,packet,registry)
+        application_result=handle_control_message(root,packet,registry,node_state=node_state)
     elif role==CAPABILITY_INGRESS_ROLE:
         # The address resolves to the receiving operation the overlay binds,
         # which records its own dispositions at both ledger levels. Its refusal
@@ -266,7 +274,7 @@ def persist_outbox(root:Path, frame:dict[str,Any], *, store:Any|None=None)->Path
     The write is atomic and write-once by key; it used to be a bare
     `write_text`, so a reader could observe a partial frame.
     """
-    target=store or node_state_store(root)
+    target=required_node_state(store)
     key=node_store_module.outbox_key(frame["packet_id"])
     try:
         target.put_once(key,frame)
@@ -274,19 +282,20 @@ def persist_outbox(root:Path, frame:dict[str,Any], *, store:Any|None=None)->Path
         raise ValueError("write_once_collision")
     return Path(target.locator(key))
 
-def ingest_frame(root:Path, frame:dict[str,Any], *, mesh_root:Path|None=None)->dict[str,Any]:
+def ingest_frame(root:Path, frame:dict[str,Any], *, mesh_root:Path|None=None,
+                 node_state:Any|None=None)->dict[str,Any]:
     packet=recover_packet(frame)
     registry=load_registry(root)
     if frame["destination_org"]!=registry["organization"]:
         return {"status":"IGNORED_NOT_ADDRESSED","packet_id":frame["packet_id"]}
-    result=dispatch(root,packet,mesh_root=mesh_root)
+    result=dispatch(root,packet,mesh_root=mesh_root,node_state=node_state)
     return {"status":"CONSUMED","packet":packet,"execution_result":result}
 
 __all__=["hb_reference","derive_channel","carrier_frame","recover_packet","dispatch","persist_outbox",
          "node_standing","capability_ingress","CAPABILITY_INGRESS_ROLE","carried_standing",
          "ingest_frame","mesh_store","node_state_store","node_state_provenance",
          "resolve_federation_root","resolve_node_state_root","addressed_node_state_store",
-         "record_federation_cycle","federation_cycles"]
+         "record_federation_cycle","federation_cycles","required_node_state"]
 
 
 # --- Federation mesh v1.1 additions ---
@@ -315,6 +324,17 @@ def node_state_store(root:Path)->Any:
     """One node's own markers, outbox and work intake. Expected to be ephemeral."""
     return PosixStateStore(Path(root)/"resident-runtime",
                            provenance=node_store_module.SUPPLIED)
+
+def required_node_state(store:Any|None)->Any:
+    """The node state a write goes to, which the caller must supply.
+
+    There is no default. Each of these writes used to fall back to
+    `resident-runtime/` inside the repository checkout, so a resident pass
+    mutated committed space and its markers outlived the node that wrote them.
+    """
+    if store is None:
+        raise ValueError("node_state_location_required_from_materializer")
+    return store
 
 def node_state_provenance(root:Path|str|None=None, env:dict[str,str]|None=None)->dict[str,Any]:
     """What this node's supplied mesh state depends on."""
@@ -396,12 +416,16 @@ def publish_packet(packet:dict[str,Any], *, root:Path|None=None, now_ns:int|None
     path=publish_frame(frame,root=root)
     return {"packet":packet,"frame":frame,"path":str(path)}
 
-def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:set[str]|None=None)->list[dict[str,Any]]:
+def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:set[str]|None=None,
+                             node_state_root:Path|None=None)->list[dict[str,Any]]:
     registry=load_registry(repo_root)
     organization=registry["organization"]
+    # Node state is optional here because only a work request needs it, and
+    # dispatch refuses that one by name when none was supplied.
+    node_state=addressed_node_state_store(node_state_root) if node_state_root is not None else None
     results=[]
     for item in scan_addressed_frames(organization,root=mesh_root,seen=seen):
-        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root)
+        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
         results.append({"path":item["path"],"result":result})
     return results
 
@@ -526,7 +550,7 @@ def persist_work_request(root:Path, packet:dict[str,Any], *, store:Any|None=None
       "execution_authority_inferred":False,
       "carrier_grants_execution_authority":False
     }
-    target=store or node_state_store(root)
+    target=required_node_state(store)
     key=node_store_module.intake_key(packet["packet_id"],communication_id)
     try:
         target.put_once(key,record)
@@ -535,7 +559,8 @@ def persist_work_request(root:Path, packet:dict[str,Any], *, store:Any|None=None
     return {"state":record["state"],"intake_ref":target.locator(key),
             "execution_authority_inferred":False}
 
-def handle_control_message(root:Path, packet:dict[str,Any], registry:dict[str,Any])->dict[str,Any]:
+def handle_control_message(root:Path, packet:dict[str,Any], registry:dict[str,Any],
+                           *, node_state:Any|None=None)->dict[str,Any]:
     payload=packet.get("payload") or {}
     message_class=payload.get("message_class")
     result={
@@ -549,7 +574,7 @@ def handle_control_message(root:Path, packet:dict[str,Any], registry:dict[str,An
     if message_class=="ecosystem.monitor.request":
         result["monitor_status"]=resident_status(root,registry)
     elif message_class=="ecosystem.work.request":
-        result["work_intake"]=persist_work_request(root,packet)
+        result["work_intake"]=persist_work_request(root,packet,store=node_state)
     elif message_class=="ecosystem.communication":
         result["communication_acknowledged"]=True
     elif message_class in {"ecosystem.monitor.response","ecosystem.work.ack","ecosystem.communication.ack"}:
@@ -624,18 +649,22 @@ def build_endpoint_response(request_packet:dict[str,Any], execution_result:dict[
       packet_id=request_packet["packet_id"]+":response"
     )
 
-def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, seen:set[str]|None=None,
-                        now_ns:int|None=None)->list[dict[str,Any]]:
+def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_root:Path|None=None,
+                        seen:set[str]|None=None, now_ns:int|None=None)->list[dict[str,Any]]:
+    # Consumption markers and work intake are this node's own state, at the
+    # location its materializer supplied. Resolved first, so a node without one
+    # consumes nothing rather than consuming and then failing to remember it.
+    node_state=addressed_node_state_store(node_state_root)
     registry=load_registry(repo_root)
     organization=registry["organization"]
-    durable_seen=federation_seen_frame_names(repo_root)
+    durable_seen=federation_seen_frame_names(repo_root,store=node_state)
     effective_seen=set(seen or set())|durable_seen
     out=[]
     for item in scan_addressed_frames(organization,root=mesh_root,seen=effective_seen):
         packet=recover_packet(item["frame"])
         payload=packet.get("payload") or {}
         message_class=payload.get("message_class")
-        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root)
+        result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
         response_publication=None
         if result.get("status")=="CONSUMED" and message_class in RESPONDED_REQUEST_CLASSES:
             response=build_control_response(packet,result["execution_result"])
@@ -645,7 +674,7 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, seen:set[st
             if service and service.get("endpoint_adapter"):
                 response=build_endpoint_response(packet,result["execution_result"])
                 response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns)
-        marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result)
+        marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result,store=node_state)
         out.append({"path":item["path"],"result":result,"response_publication":response_publication,"seen_marker":str(marker)})
     return out
 
@@ -709,7 +738,7 @@ def federation_seen_frame_names(repo_root:Path, *, store:Any|None=None)->set[str
     The marker records the frame's name rather than its key, so a node holding
     markers written before state was addressed does not re-consume the mesh.
     """
-    target=store or node_state_store(repo_root)
+    target=required_node_state(store)
     names=set()
     for key in target.list_prefix(node_store_module.NODE_SEEN_PREFIX):
         try:
@@ -723,7 +752,7 @@ def federation_seen_frame_names(repo_root:Path, *, store:Any|None=None)->set[str
 def mark_federation_frame_seen(repo_root:Path, frame_path:str, frame:dict[str,Any], result:dict[str,Any],
                                *, store:Any|None=None)->Path:
     """Record that this node consumed a frame, once and atomically."""
-    target=store or node_state_store(repo_root)
+    target=required_node_state(store)
     frame_name=node_store_module.frame_name(str(frame_path))
     marker={
       "schema_version":"stegverse.federation-frame-consumption.v1",

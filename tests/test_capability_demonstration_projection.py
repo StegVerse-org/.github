@@ -69,6 +69,10 @@ class CapabilityMapTests(unittest.TestCase):
             os.environ[name] = str(Path(self._ledger.name) / name.lower())
         self.mesh = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.mesh, True)
+        # The peer node's own consumption markers and work intake, supplied
+        # by the test as a materializer would, never the peer's checkout.
+        self.node_state = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.node_state, True)
         os.environ["STEGVERSE_ORG_FEDERATION_ROOT"] = str(self.mesh)
 
     def _restore(self):
@@ -108,7 +112,8 @@ class CapabilityMapTests(unittest.TestCase):
             PEER, {"message_class": "ecosystem.communication",
                    "communication_id": communication_id, "body": {}},
             standing=GENESIS, capability=PROFILE_ID, mesh_root=self.mesh, hb_epoch=32)
-        kernel.consume_and_respond(self.peer_node(serves), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(serves), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         return egress.close(PEER, emitted["packet_id"], communication_id,
                             mesh_root=self.mesh, hb_epoch=32)
 
@@ -117,7 +122,8 @@ class CapabilityMapTests(unittest.TestCase):
             PEER, {"message_class": "ecosystem.communication",
                    "communication_id": communication_id, "body": {}},
             standing=GENESIS, mesh_root=self.mesh, hb_epoch=32)
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         return egress.close(PEER, emitted["packet_id"], communication_id,
                             mesh_root=self.mesh, hb_epoch=32)
 

@@ -62,6 +62,10 @@ class EgressHarness(unittest.TestCase):
         self.addCleanup(self._restore)
         self.mesh = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.mesh, True)
+        # The peer node's own consumption markers and work intake, supplied
+        # by the test as a materializer would, never the peer's checkout.
+        self.node_state = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.node_state, True)
 
     def _restore(self):
         for name, previous in self._previous.items():
@@ -331,7 +335,8 @@ class EgressBoundaryTests(EgressHarness):
     def test_the_full_round_trip_closes_and_is_recorded(self):
         """Emit, the peer consumes and responds, the closure is observed and bound."""
         emitted = self.emit()
-        consumed = kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        consumed = kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                              node_state_root=self.node_state)
         self.assertEqual([(row["result"] or {}).get("status") for row in consumed],
                          ["CONSUMED"])
         closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
@@ -347,7 +352,8 @@ class EgressBoundaryTests(EgressHarness):
 
     def test_the_emission_and_the_closure_are_two_transitions_on_one_chain(self):
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         egress.close(PEER, emitted["packet_id"], "egress-test-001",
                      mesh_root=self.mesh, hb_epoch=32)
         by = {r["receipt_sha256"]: r for r in self.repo_receipts()}
@@ -363,7 +369,8 @@ class EgressBoundaryTests(EgressHarness):
     def test_a_response_answering_another_packet_refuses_the_closure(self):
         """Recorded as a crossing whose disposition is DENY, not as a closed one."""
         self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         closed = egress.close(PEER, "pkt-not-the-one-emitted", "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)
         self.assertEqual(closed["disposition"], "DENY")
@@ -382,7 +389,8 @@ class EgressBoundaryTests(EgressHarness):
         organization holds.
         """
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)
         record = closed["closure_record"]
@@ -401,7 +409,8 @@ class EgressBoundaryTests(EgressHarness):
         recomputed = egress.reconstruct_far_side_chain(
             emitted["packet_id"], emission["far_side_service_id"],
             emission["far_side_payload_hash"])
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)
         self.assertEqual(closed["far_side_terminal_receipt"], recomputed[-1])
@@ -409,7 +418,8 @@ class EgressBoundaryTests(EgressHarness):
     def test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure(self):
         """A response that does not recompute did not run this packet."""
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         real = egress.reconstruct_far_side_chain
         egress.reconstruct_far_side_chain = lambda *a, **k: ["forged-terminal-receipt"]
         self.addCleanup(setattr, egress, "reconstruct_far_side_chain", real)
@@ -423,7 +433,8 @@ class EgressBoundaryTests(EgressHarness):
     def test_a_crossing_with_no_emission_record_here_cannot_be_closed(self):
         """The local half of the bilateral match: no record of emitting it."""
         self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         # A response exists, but this organization's chain holds no emission
         # receipt for the packet id being closed.
         closed = egress.close(PEER, "pkt-never-emitted-here", "egress-test-001",
@@ -435,7 +446,8 @@ class EgressBoundaryTests(EgressHarness):
     def test_the_closure_record_states_what_reconstruction_does_not_establish(self):
         """It proves a boundary ran the packet, not whose boundary it was."""
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         record = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)["closure_record"]
         self.assertIs(record["reconstruction_proves_the_boundary_ran_this_packet"], True)
@@ -455,7 +467,8 @@ class EgressBoundaryTests(EgressHarness):
     def test_every_record_states_that_the_origin_is_asserted_and_not_attested(self):
         """A frame in a shared mesh carries whatever origin its writer put in it."""
         emitted = self.emit()
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         closed = egress.close(PEER, emitted["packet_id"], "egress-test-001",
                               mesh_root=self.mesh, hb_epoch=32)
         for record in (emitted["emission_record"], closed["closure_record"]):
@@ -531,7 +544,8 @@ class UnclosableCrossingTests(EgressHarness):
                     {"message_class": request_class, "communication_id": identifier,
                      "subject": "s", "body": {}})
                 self.assertEqual(emitted["disposition"], "ALLOW")
-                kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+                kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                           node_state_root=self.node_state)
                 closed = egress.close(PEER, emitted["packet_id"], identifier,
                                       mesh_root=self.mesh, hb_epoch=32)
                 self.assertEqual(closed["disposition"], "ALLOW")

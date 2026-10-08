@@ -44,7 +44,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
     # was materialized with. Nothing in the host environment selects another.
     if mesh_root is None:
         raise SystemExit("MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
-    results=K.consume_and_respond(ROOT, mesh_root=mesh_root)
+    results=K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root)
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
     governance_returns=returns_for_consumed(results, mesh_root=mesh_root)

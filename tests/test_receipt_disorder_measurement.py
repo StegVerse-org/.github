@@ -55,6 +55,10 @@ class DisorderMeasurementTests(unittest.TestCase):
         self.addCleanup(self._restore)
         self.mesh = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.mesh, True)
+        # The peer node's own consumption markers and work intake, supplied
+        # by the test as a materializer would, never the peer's checkout.
+        self.node_state = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.node_state, True)
 
     def _restore(self):
         for name, previous in self._previous.items():
@@ -92,7 +96,8 @@ class DisorderMeasurementTests(unittest.TestCase):
         emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
             "communication_id": communication_id, "subject": "disorder",
             "body": {"probe": True}}, standing=GENESIS, mesh_root=self.mesh, hb_epoch=32)
-        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh)
+        kernel.consume_and_respond(self.peer_node(), mesh_root=self.mesh,
+                                   node_state_root=self.node_state)
         egress.close(PEER, emitted["packet_id"], communication_id,
                      mesh_root=self.mesh, hb_epoch=32)
         egress.emit("Not-A-Declared-Peer", {"message_class": "ecosystem.communication",

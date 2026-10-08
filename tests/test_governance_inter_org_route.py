@@ -23,7 +23,6 @@ import importlib.util
 import io
 import json
 import os
-import shutil
 import sys
 import tempfile
 import unittest
@@ -170,12 +169,10 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
     def consumed_answers(self):
         """This organization's federation cycle consuming its mesh, and the returns it materializes."""
         cycle = _load("federation_cycle_under_test", "resident-runtime/federation_cycle.py")
-        # consume_and_respond records consumption markers under the checkout's
-        # resident-runtime/federation; remove what this test created there.
-        markers = ROOT / "resident-runtime" / "federation"
-        if not markers.exists():
-            self.addCleanup(shutil.rmtree, markers, True)
-        results = cycle.K.consume_and_respond(ROOT, mesh_root=self.mesh)
+        # Consumption markers go to the node state the materializer supplies,
+        # never the checkout.
+        results = cycle.K.consume_and_respond(ROOT, mesh_root=self.mesh,
+                                              node_state_root=Path(self._work.name) / "node")
         return results, cycle.returns_for_consumed(results, mesh_root=self.mesh)
 
     def test_ingress_retains_the_canonical_manifest_and_it_reproduces_the_recorded_request(self):

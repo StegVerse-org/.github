@@ -95,6 +95,7 @@ jobs:
           # The peer organization's own node: its registry and the boundary
           # runtime it needs to dispatch what it consumes.
           peer = Path(tempfile.mkdtemp())
+          peer_state = Path(tempfile.mkdtemp())  # supplied node state, never a checkout
           (peer / "org-boundary/registry").mkdir(parents=True)
           (peer / "org-boundary/registry/services.json").write_text(json.dumps({
               "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
@@ -121,7 +122,7 @@ jobs:
           assert pending["disposition"] == "PENDING", pending
           assert pending["closure_recorded"] is False
 
-          consumed = K.consume_and_respond(peer, mesh_root=mesh)
+          consumed = K.consume_and_respond(peer, mesh_root=mesh, node_state_root=peer_state)
           assert [(r["result"] or {}).get("status") for r in consumed] == ["CONSUMED"], consumed
 
           closed = egress.close(PEER, emitted["packet_id"], "ci-egress-001",
