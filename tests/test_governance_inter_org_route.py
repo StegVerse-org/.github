@@ -169,6 +169,21 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
                          second["emission_repository_receipt_sha256"])
         self.assertEqual(len(self.frames_to(DECIDER)), 1)
 
+    def test_the_request_declares_the_processing_the_deciding_organization_selects_by(self):
+        """The decider refuses an internal-endpoint packet with no declaration, so
+        the request carries the manifest's own capability bound to its route."""
+        self.receive()
+        packet = kernel.recover_packet(self.frames_to(DECIDER)[0])
+        declared = packet["payload"]["processing"]
+        self.assertEqual(declared["capability"], "governance")
+        selection = _load("manifest_selection_for_decider", "org-boundary/runtime/manifest_selection.py")
+        decider_row = {"service_id": DECIDING_SERVICE, "boundary_role": "INTERNAL_ENDPOINT",
+                       "endpoint_adapter": "resident-runtime/governance_endpoint.py",
+                       "admits_processing": [declared]}
+        selected = selection.select_processing(decider_row, packet["payload"])
+        self.assertEqual(selected["processing_selection"], "MANIFEST_DECLARED")
+        self.assertEqual(selected["declared_route_id"], declared["route_id"])
+
     def test_nothing_waits_and_the_sdk_is_handed_nothing_before_the_decision(self):
         emitted = self.receive()
         self.assertIs(emitted["awaits_the_decision"], False)
