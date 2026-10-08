@@ -17,10 +17,10 @@ def main():
  receipt=load(a.org_receipt)
  if receipt.get("schema")!="stegverse.organization-transition-receipt/v1":raise SystemExit("organization receipt schema mismatch")
  if receipt.get("organization")!="StegVerse-org":raise SystemExit("organization receipt owner mismatch")
- payload={"operation":"CUSTODY_ORGANIZATION_TRANSITION","organization_receipt":receipt,"predecessor_ecosystem_state_sha256":a.predecessor_ecosystem_state_sha256,"successor_ecosystem_state_sha256":a.successor_ecosystem_state_sha256,"relation_evidence":json.loads(a.relation_evidence_json),"authority_transfer":False}
+ payload={"operation":"ORGANIZATION_RECORD_ORGANIZATION_TRANSITION","organization_receipt":receipt,"predecessor_ecosystem_state_sha256":a.predecessor_ecosystem_state_sha256,"successor_ecosystem_state_sha256":a.successor_ecosystem_state_sha256,"relation_evidence":json.loads(a.relation_evidence_json),"authority_transfer":False}
  standing=load(a.standing)
  if not isinstance(standing,dict) or "predecessor" not in standing:raise SystemExit("standing must declare the predecessor key; null is explicit genesis")
- packet=K.build_packet(origin_org="StegVerse-org",origin_service="stegverse-org.org-control",destination_org="master-records",destination_service="master-records.ecosystem-transition-ledger",payload=payload,standing=standing,transition_reference="ecosystem.transition.custody.v1",authority_effect="NONE")
+ packet=K.build_packet(origin_org="StegVerse-org",origin_service="stegverse-org.org-control",destination_org="master-records",destination_service="master-records.ecosystem-transition-ledger",payload=payload,standing=standing,transition_reference="ecosystem.transition.organization-record.v1",authority_effect="NONE")
  published=K.publish_packet(packet)
- print(json.dumps({"status":"PUBLISHED_FOR_CUSTODY","packet_id":packet["packet_id"],"frame_sha256":published["frame"]["frame_sha256"],"authority_effect":"NONE"},sort_keys=True))
+ print(json.dumps({"status":"PUBLISHED_FOR_ORGANIZATION_RECORD","packet_id":packet["packet_id"],"frame_sha256":published["frame"]["frame_sha256"],"authority_effect":"NONE"},sort_keys=True))
 if __name__=="__main__":main()
