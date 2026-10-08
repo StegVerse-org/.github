@@ -595,20 +595,34 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     # receipt is completed here, from the retained repository receipt, rather
     # than recorded twice.
     chain = repository_ledger.ledger_store.PosixLedgerStore(repository_ledger.lr())
-    replayed = repository_ledger.recorded(
-        chain, chain.get(repository_ledger.ledger_store.HEAD_KEY),
-        transition_id, OPERATION_ID) is not None
-    try:
-        repository_receipt = repository_ledger.append(
-            transition_id, OPERATION_ID,
-            predecessor_state, successor_state,
-            transition_evidence(request, crossing, closures, manifest),
-            "NONE", hb_epoch=hb_epoch, idempotent_on=("request_sha256",))
-    except ValueError as exc:
-        if str(exc) != "ledger_receipt_collision":
-            raise
-        return refused("ONE_TRANSITION_ID_BINDS_ONE_MANIFEST", str(exc),
-                       request_sha256=request["request_sha256"])
+    # The successor state is the last closure of the crossing that carried the
+    # manifest, and a redelivery is carried again: another packet, another
+    # closure. The repository ledger compares the successor on every exact
+    # retry, so a redelivery of the request already recorded names the
+    # successor that delivery recorded rather than its own carrier's. A
+    # different request under this id keeps its own successor and collides.
+    # The lookup is read again after a collision once, because a concurrent
+    # delivery of the same request may have recorded it in between.
+    evidence = transition_evidence(request, crossing, closures, manifest)
+    for resolution in range(2):
+        prior = repository_ledger.recorded(
+            chain, chain.get(repository_ledger.ledger_store.HEAD_KEY),
+            transition_id, OPERATION_ID)
+        replayed = prior is not None
+        if replayed and (prior.get("evidence") or {}).get("request_sha256") == request["request_sha256"]:
+            successor_state = prior["successor_state_sha256"]
+        try:
+            repository_receipt = repository_ledger.append(
+                transition_id, OPERATION_ID,
+                predecessor_state, successor_state, evidence,
+                "NONE", hb_epoch=hb_epoch, idempotent_on=("request_sha256",))
+            break
+        except ValueError as exc:
+            if str(exc) != "ledger_receipt_collision":
+                raise
+            if resolution:
+                return refused("ONE_TRANSITION_ID_BINDS_ONE_MANIFEST", str(exc),
+                               request_sha256=request["request_sha256"])
     # Everything after the repository receipt takes its epoch from that receipt,
     # so a replay rebuilds the same organization receipt and the same outbound
     # frame rather than ones stamped with whatever epoch this attempt carried.

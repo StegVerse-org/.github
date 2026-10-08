@@ -70,6 +70,31 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         self.assertEqual(len(self.receipts(REPO)), 1)
         self.assertEqual(len(self.receipts(ORG)), 1)
 
+    def test_replay_that_misses_a_concurrent_record_still_returns_it(self):
+        """The lookup before the append can run before a racing delivery lands.
+
+        The repository ledger compares the successor on an exact retry, and a
+        redelivery's successor is its own carrier's closure, so the append
+        collides; the operation reads the chain again, resolves the recorded
+        successor, and returns the recorded receipts rather than a refusal.
+        """
+        first = self.receive()
+        original = repository_ledger.recorded
+        calls = {"n": 0}
+
+        def misses_once(*args, **kwargs):
+            calls["n"] += 1
+            return None if calls["n"] == 1 else original(*args, **kwargs)
+
+        repository_ledger.recorded = misses_once
+        self.addCleanup(setattr, repository_ledger, "recorded", original)
+        second = self.receive(packet_id="org-ingress-raced")
+        self.assertEqual(second["disposition"], "ALLOW", second.get("detail"))
+        self.assertEqual(first["repository_receipt_sha256"], second["repository_receipt_sha256"])
+        self.assertEqual(first["organization_receipt_sha256"], second["organization_receipt_sha256"])
+        self.assertEqual(len(self.receipts(REPO)), 1)
+        self.assertEqual(len(self.receipts(ORG)), 1)
+
     def test_replay_after_the_organization_append_failed_completes_the_chain_once(self):
         original = ingress.organization_ledger.append
         calls = {"n": 0}
