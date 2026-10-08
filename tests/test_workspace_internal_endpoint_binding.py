@@ -13,6 +13,8 @@ from stegverse.state_transition_evidence import attach_state_transition_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSOR = ROOT / "org-boundary/runtime/process_boundary.py"
+ADAPTER = ROOT / "resident-runtime/workspace_resource_consumer_adapter.py"
+REFUSAL = "PROCESSING_SELECTED_ONLY_BY_ADMITTED_PROCESSING_CAPABILITY_AND_ROUTE_ID"
 REGISTRY = ROOT / "org-boundary/registry/services.json"
 SERVICE_ID = "stegverse-org.workspace-resource-consumer"
 
@@ -81,6 +83,28 @@ def envelope(*, operation: str = "MATERIALIZE", unresolved: bool = False, servic
 
 
 class WorkspaceInternalEndpointBindingTests(unittest.TestCase):
+    """The workspace endpoint is not reachable through the boundary yet.
+
+    No published route selects it: its requests declare no processing, and the
+    manifest they carry declares governance, which this endpoint does not
+    process. Processing is selected only by an admitted capability bound to its
+    route, so the boundary refuses these requests until the SDK, which owns
+    PUBLISHED_ROUTES, publishes a workspace route and the registry admits it.
+    The adapter's own behaviour over the canonical SDK consumer is still held,
+    by calling the adapter directly rather than claiming a crossing.
+    """
+
+    def run_adapter(self, packet: dict):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "packet.json"
+            out = Path(td) / "result.json"
+            src.write_text(json.dumps(packet), encoding="utf-8")
+            completed = subprocess.run(
+                ["python3", str(ADAPTER), "--envelope", str(src), "--out", str(out)],
+                cwd=ROOT, env=os.environ.copy(), capture_output=True, text=True, check=False)
+            result = json.loads(out.read_text()) if out.is_file() else None
+            return completed, result
+
     def run_boundary(self, packet: dict):
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "packet.json"
@@ -97,11 +121,15 @@ class WorkspaceInternalEndpointBindingTests(unittest.TestCase):
             result = json.loads(out.read_text()) if out.is_file() else None
             return completed, result
 
-    def test_registry_bound_workspace_endpoint_executes_canonical_sdk_consumer(self):
+    def test_an_undeclared_workspace_request_is_refused_at_the_boundary(self):
         completed, result = self.run_boundary(envelope())
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIsNone(result)
+        self.assertIn(REFUSAL, completed.stderr)
+
+    def test_the_adapter_executes_the_canonical_sdk_consumer(self):
+        completed, app = self.run_adapter(envelope())
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertTrue(result["consumed"])
-        app = result["application_result"]
         self.assertEqual(app["service_id"], SERVICE_ID)
         self.assertEqual(app["consumer_profile"], "stegverse.workspace-resource-consumer.v1")
         self.assertEqual(app["workspace_state"]["operation"], "MATERIALIZE")
@@ -109,17 +137,17 @@ class WorkspaceInternalEndpointBindingTests(unittest.TestCase):
         self.assertFalse(app["authority_transfer"])
         self.assertFalse(app["intr_receipt_minted_by_adapter"])
 
-    def test_probe_required_materialize_fails_closed_through_boundary(self):
-        completed, result = self.run_boundary(envelope(unresolved=True))
+    def test_probe_required_materialize_fails_closed_in_the_adapter(self):
+        completed, result = self.run_adapter(envelope(unresolved=True))
         self.assertNotEqual(completed.returncode, 0)
         self.assertIsNone(result)
-        self.assertIn("endpoint-adapter-execution-failed", completed.stderr)
+        self.assertIn("workspace-consumer-rejected", completed.stderr)
 
     def test_teardown_remains_available_when_probe_required(self):
-        completed, result = self.run_boundary(envelope(operation="REVOKE", unresolved=True))
+        completed, app = self.run_adapter(envelope(operation="REVOKE", unresolved=True))
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertEqual(result["application_result"]["workspace_state"]["readiness"], "PROBE_REQUIRED")
-        self.assertEqual(result["application_result"]["workspace_state"]["operation"], "REVOKE")
+        self.assertEqual(app["workspace_state"]["readiness"], "PROBE_REQUIRED")
+        self.assertEqual(app["workspace_state"]["operation"], "REVOKE")
 
     def test_unknown_workspace_service_fails_closed(self):
         completed, result = self.run_boundary(envelope(service="stegverse-org.workspace-unknown"))

@@ -30,7 +30,11 @@ The two roles differ, and conflating them would be its own overclaim:
 
 * An `INTERNAL_ENDPOINT` selects a processor, so a declaration must select it
   and the service must admit the declared capability bound to the declared
-  route.
+  route. A packet declaring nothing is refused before any receipt
+  (`PROCESSING_SELECTED_ONLY_BY_ADMITTED_PROCESSING_CAPABILITY_AND_ROUTE_ID`);
+  it was once recorded as identity-selected and dispatched anyway. The one
+  exception is an endpoint response bound to the request it answers, which is
+  the return leg of a transition whose manifest already selected processing.
 * A `BOUNDARY_LOCAL_*` surface *is* the processor -- a diagnostic echoes -- so
   no selection occurs. A manifest declaring a capability there is transported,
   not processed under that capability, and the result says so rather than
@@ -49,6 +53,17 @@ from __future__ import annotations
 
 MANIFEST_DECLARED = "MANIFEST_DECLARED"
 IDENTITY_SELECTED = "IDENTITY_SELECTED_NO_MANIFEST_DECLARATION"
+RETURN_BOUND = "RETURN_BOUND_TO_REQUEST"
+# The refusal an undeclared internal-endpoint packet now earns. It was recorded
+# as IDENTITY_SELECTED and dispatched anyway, which left the adapter's own
+# payload checks as the only thing standing between an undeclared packet and an
+# action. The label survives only as the refusal's diagnostic.
+UNDECLARED_REFUSAL = "PROCESSING_SELECTED_ONLY_BY_ADMITTED_PROCESSING_CAPABILITY_AND_ROUTE_ID"
+# An answer to a request is not a new action: it is the return leg of the
+# transition the request began, and the request's manifest selected its
+# processing. It is admitted only in this shape, only where the addressed
+# service declares it accepts it, and only bound to the request it answers.
+ENDPOINT_RESPONSE_SCHEMA = "stegverse.org-endpoint-response/v1"
 BOUNDARY_LOCAL = "BOUNDARY_LOCAL_NO_PROCESSOR_SELECTED"
 
 # A passing selection says nothing about whether the declared route is
@@ -106,6 +121,27 @@ def admitted_bindings(service):
     return bindings
 
 
+def bound_return(service, payload):
+    """The request an endpoint response answers, or None if this is not one.
+
+    Admitted only as the response schema, only where the service declares it
+    accepts that schema, and only naming both the request packet and the
+    manifest digest it answers. Whether this organization recorded emitting
+    that request is not decided here; the binding is declared, not verified.
+    """
+    if not isinstance(payload, dict) or payload.get("schema") != ENDPOINT_RESPONSE_SCHEMA:
+        return None
+    if ENDPOINT_RESPONSE_SCHEMA not in (service.get("accepts") or []):
+        return None
+    request_packet_id = _text(payload.get("response_to_packet_id"))
+    manifest_sha256 = _text(payload.get("request_manifest_sha256"))
+    if request_packet_id is None or manifest_sha256 is None:
+        return None
+    return {"response_to_packet_id": request_packet_id,
+            "request_manifest_sha256": manifest_sha256,
+            "binding": "DECLARED_NOT_VERIFIED_AGAINST_EMISSION_RECORD"}
+
+
 def select_processing(service, payload):
     """Decide how this packet's processing was selected, and refuse what it must.
 
@@ -128,14 +164,19 @@ def select_processing(service, payload):
                 "route_admissibility": ROUTE_ADMISSIBILITY}
 
     if processing is None:
-        # The shortcut this task exists to detect: with nothing declared, the
-        # addressed row's adapter is what selected the processing.
-        return {"processing_selection": IDENTITY_SELECTED,
-                "declared_capability": None,
-                "declared_route_id": None,
-                "declared_capability_processed": False,
-                "route_admissibility": ROUTE_ADMISSIBILITY,
-                "identity_selected_by": service.get("endpoint_adapter")}
+        bound = bound_return(service, payload)
+        if bound is not None:
+            return {"processing_selection": RETURN_BOUND,
+                    "declared_capability": None,
+                    "declared_route_id": None,
+                    "declared_capability_processed": False,
+                    "route_admissibility": ROUTE_ADMISSIBILITY,
+                    "return_bound_to": bound}
+        # With nothing declared, the addressed row's adapter would be what
+        # selected the processing. That is refused here, before any receipt,
+        # rather than recorded and dispatched.
+        raise SystemExit(UNDECLARED_REFUSAL + ":" + IDENTITY_SELECTED + ":"
+                         + str(service.get("service_id")))
 
     if capability is None:
         raise SystemExit("manifest-declares-processing-without-capability")
