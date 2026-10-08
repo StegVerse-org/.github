@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, importlib.util, json, os
+import argparse, importlib.util, json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 SPEC=importlib.util.spec_from_file_location("org_kernel",ROOT/"org-kernel"/"kernel.py")
 K=importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(K)
-GWSPEC=importlib.util.spec_from_file_location("federation_gateway_transport",ROOT/"resident-runtime"/"federation_gateway_transport.py")
-GW=importlib.util.module_from_spec(GWSPEC); GWSPEC.loader.exec_module(GW)
 # Repositories in this organization append their own transitions to their own
 # ledgers. `organization_scope_rule` is that every transition occurring within
 # the organization emits an organization receipt, so carrying them up is part of
@@ -19,26 +17,23 @@ PR=importlib.util.module_from_spec(PRSPEC); PRSPEC.loader.exec_module(PR)
 def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None):
     if node_state_root is None:
         raise SystemExit("NODE_STATE_LOCATION_REQUIRED_FROM_MATERIALIZER")
-    if os.getenv("STEGVERSE_ORG_FEDERATION_GATEWAY_URL","").strip():
-        receipt=GW.resident_gateway_cycle(ROOT)
-        receipt["heartbeat_reference"]=K.hb_reference()
-        receipt["transport"]="SHARED_SERVICE_GATEWAY"
-    else:
-        if mesh_root is None:
-            raise SystemExit("MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
-        results=K.consume_and_respond(ROOT, mesh_root=mesh_root)
-        consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
-        responses=sum(1 for x in results if x.get("response_publication"))
-        receipt={
-          "schema_version":"stegverse.org-federation-cycle.v1",
-          "organization":K.load_registry(ROOT)["organization"],
-          "heartbeat_reference":K.hb_reference(),
-          "frames_seen":len(results),
-          "frames_consumed":consumed,
-          "responses_emitted":responses,
-          "authority_effect":"NONE_CARRIER_ONLY",
-          "transport":"LOCAL_SPOOL_FALLBACK"
-        }
+    # The carrier is the declared one: kernel frames over the mesh this node
+    # was materialized with. Nothing in the host environment selects another.
+    if mesh_root is None:
+        raise SystemExit("MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
+    results=K.consume_and_respond(ROOT, mesh_root=mesh_root)
+    consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
+    responses=sum(1 for x in results if x.get("response_publication"))
+    receipt={
+      "schema_version":"stegverse.org-federation-cycle.v1",
+      "organization":K.load_registry(ROOT)["organization"],
+      "heartbeat_reference":K.hb_reference(),
+      "frames_seen":len(results),
+      "frames_consumed":consumed,
+      "responses_emitted":responses,
+      "authority_effect":"NONE_CARRIER_ONLY",
+      "transport":"INTERLOCK_INTR_SUPPLIED_MESH"
+    }
     # Propagated after the frames are handled, so a cycle that failed to consume
     # does not report having carried receipts it never reached.
     # Propagation is its own attempted transition. Without a supplied
