@@ -146,7 +146,15 @@ class PosixStateStore:
         return json.loads(path.read_text())
 
     def put_once(self, key, value):
-        """Write `value` at `key` unless it already holds something else."""
+        """Write `value` at `key` unless it already holds something else.
+
+        The document is written and synced in full under a temporary name, then
+        linked to the key. `os.link` refuses an existing target, so two writers
+        racing for one key cannot both win: the loser finds the key held and
+        compares, exactly as a later writer would. A crash before the link
+        leaves only a temporary, which no listing returns; a crash after it
+        leaves the complete document.
+        """
         existing = self.get(key)
         if existing is not None:
             if existing != value:
@@ -160,7 +168,12 @@ class PosixStateStore:
                 stream.write(json.dumps(value, indent=2, sort_keys=True).encode() + b"\n")
                 stream.flush()
                 os.fsync(stream.fileno())
-            os.replace(temp, path)
+            try:
+                os.link(temp, path)
+            except FileExistsError:
+                if self.get(key) != value:
+                    raise WriteOnceCollision(key)
+                return key
             self._sync_directory(path.parent)
         finally:
             if os.path.exists(temp):

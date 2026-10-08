@@ -18,11 +18,15 @@ into an operator's runtime reality.
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
+import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -208,6 +212,33 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertEqual(returned["disposition"], "FAIL_CLOSED")
         self.assertIs(returned["decision_returned"], False)
         self.assertEqual(returned["closure_transition_class"], "ORGANIZATION_EGRESS_CLOSURE_REFUSED")
+
+    def run_cli(self, emitted):
+        path = Path(self._work.name) / "manifest.json"
+        path.write_text(json.dumps(manifest()), encoding="utf-8")
+        argv = ["governance_decision_return.py", "--manifest", str(path),
+                "--packet-id", emitted["governance_request_packet_id"],
+                "--communication-id", emitted["governance_communication_id"],
+                "--mesh-root", str(self.mesh), "--hb-epoch", "33"]
+        with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()):
+            return returning.main()
+
+    def test_a_pending_observation_does_not_exit_as_a_returned_decision(self):
+        emitted = self.receive()
+        self.assertEqual(self.run_cli(emitted), returning.EXIT_PENDING_OBSERVATION)
+        self.assertNotEqual(returning.EXIT_PENDING_OBSERVATION, returning.EXIT_RETURNED)
+        self.assertNotEqual(returning.EXIT_PENDING_OBSERVATION, returning.EXIT_NOT_ALLOWED)
+        self.assertIs(self.return_decision(emitted)["observation_only"], True)
+
+    def test_a_returned_decision_exits_as_returned_whatever_the_governance_disposition(self):
+        emitted = self.receive()
+        self.answer(emitted)
+        self.assertEqual(self.run_cli(emitted), returning.EXIT_RETURNED)
+
+    def test_a_refused_return_exits_as_not_allowed(self):
+        emitted = self.receive()
+        self.answer(emitted, terminal="egress_emitted-" + "0" * 24)
+        self.assertEqual(self.run_cli(emitted), returning.EXIT_NOT_ALLOWED)
 
     def test_a_node_materialized_without_a_mesh_records_why_the_request_did_not_leave(self):
         refused = self.receive(mesh_root=None)

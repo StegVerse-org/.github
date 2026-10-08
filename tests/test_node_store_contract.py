@@ -17,6 +17,7 @@ Source validation only. No authority effect is claimed.
 """
 import importlib.util
 import json
+import multiprocessing
 import tempfile
 import unittest
 from pathlib import Path
@@ -118,6 +119,76 @@ class StateStoreContractTests(unittest.TestCase):
             self.assertFalse(store(root, provenance=node_store.FROM_ENVIRONMENT).portable)
 
 
+class _CheckBypassed(node_store.PosixStateStore):
+    """A store whose first read misses, as a writer racing another one would."""
+
+    def __init__(self, root):
+        super().__init__(root)
+        self._missed = False
+
+    def get(self, key):
+        if not self._missed:
+            self._missed = True
+            return None
+        return super().get(key)
+
+
+def _race(root, packet_id, start, results):
+    start.wait()
+    try:
+        store(root).put_once("frames.d/a.json", {**FRAME, "packet_id": packet_id})
+        results.put("WON")
+    except node_store.WriteOnceCollision:
+        results.put("COLLIDED")
+
+
+class WriteOnceUnderContentionTests(unittest.TestCase):
+    """A held key is never overwritten, including by a writer that checked first."""
+
+    def test_a_writer_that_missed_the_held_key_still_collides(self):
+        with tempfile.TemporaryDirectory() as root:
+            store(root).put_once("frames.d/a.json", FRAME)
+            with self.assertRaises(node_store.WriteOnceCollision):
+                _CheckBypassed(root).put_once("frames.d/a.json", {**FRAME, "destination_org": "Other"})
+            self.assertEqual(store(root).get("frames.d/a.json"), FRAME)
+
+    def test_a_writer_that_missed_an_equal_document_is_a_no_op(self):
+        with tempfile.TemporaryDirectory() as root:
+            store(root).put_once("frames.d/a.json", FRAME)
+            _CheckBypassed(root).put_once("frames.d/a.json", dict(FRAME))
+            self.assertEqual(store(root).get("frames.d/a.json"), FRAME)
+
+    def test_concurrent_writers_of_different_documents_leave_exactly_one(self):
+        with tempfile.TemporaryDirectory() as root:
+            ctx = multiprocessing.get_context("fork")
+            start, results = ctx.Event(), ctx.Queue()
+            writers = [ctx.Process(target=_race, args=(root, "pkt-%d" % i, start, results)) for i in range(8)]
+            for writer in writers:
+                writer.start()
+            start.set()
+            for writer in writers:
+                writer.join(30)
+            outcomes = sorted(results.get(timeout=5) for _ in writers)
+            self.assertEqual(outcomes.count("WON"), 1, outcomes)
+            self.assertEqual(outcomes.count("COLLIDED"), 7, outcomes)
+            held = store(root).get("frames.d/a.json")
+            self.assertTrue(held["packet_id"].startswith("pkt-"))
+            self.assertEqual(list((Path(root) / "frames.d").glob(".node-put-*")), [])
+
+    def test_a_write_interrupted_before_the_link_leaves_the_key_absent(self):
+        """A crash leaves a temporary that no listing returns; the next write proceeds."""
+        with tempfile.TemporaryDirectory() as root:
+            frames = Path(root) / "frames.d"
+            frames.mkdir()
+            (frames / ".node-put-orphan.tmp").write_text(json.dumps({**FRAME, "packet_id": "torn"}))
+            subject = store(root)
+            self.assertIsNone(subject.get("frames.d/a.json"))
+            self.assertEqual(subject.list_prefix("frames.d/"), [])
+            subject.put_once("frames.d/a.json", FRAME)
+            self.assertEqual(subject.list_prefix("frames.d/"), ["frames.d/a.json"])
+            self.assertEqual(subject.get("frames.d/a.json"), FRAME)
+
+
 class PosixLayoutTests(unittest.TestCase):
     """Only true of a filesystem. A networked store is not expected to match."""
 
@@ -133,7 +204,7 @@ class PosixLayoutTests(unittest.TestCase):
             self.assertEqual(raw, json.dumps(FRAME, indent=2, sort_keys=True) + "\n")
 
     def test_no_temporary_file_survives_a_write(self):
-        """Atomic replacement, so a reader never observes a partial frame."""
+        """The document is complete before it is linked, so a reader never observes a partial frame."""
         with tempfile.TemporaryDirectory() as root:
             store(root).put_once("frames.d/a.json", FRAME)
             self.assertEqual(list((Path(root) / "frames.d").glob(".node-put-*")), [])
