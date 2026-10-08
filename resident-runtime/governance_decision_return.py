@@ -108,7 +108,7 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
             "governance_communication_id": communication_id,
             "deciding_organization": binding["destination_organization"],
             "records_authority": "ORGANIZATION_RECORDS_ONLY",
-            "master_records_closure_observed": False}
+            "master_records_organization_record_observed": False}
     if request.get("processing_capability") != "governance":
         return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,
                 "failed_predicate": "MANIFEST_DECLARES_GOVERNANCE_PROCESSING",

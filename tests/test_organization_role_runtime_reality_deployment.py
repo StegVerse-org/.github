@@ -112,8 +112,7 @@ class DeclarationTests(unittest.TestCase):
             restated["release_predecessor_required"],
             "VERIFIED_ORGANIZATION_RECEIPT_CHAIN_SEGMENT",
         )
-        for retained in ("CUSTODY", "RECONSTRUCTION", "CROSS_ORGANIZATION_HISTORY"):
-            self.assertIn(retained, restated["retained_capabilities"])
+        self.assertEqual(restated["retained_capabilities"], ["ORGANIZATION_RECORDS", "RECONSTRUCTION"])
 
     def test_authorities_this_deployment_does_not_move_are_restated(self):
         unchanged = load_json(DECLARATION)["unchanged_authorities"]
@@ -236,7 +235,7 @@ class SupersededProseTests(unittest.TestCase):
 
     def test_retained_custody_only_statements_are_not_claimed_as_superseded(self):
         retained = load_json(DECLARATION)["retained_statements"]
-        self.assertIn("CUSTODY_RECONSTRUCTION_ONLY", retained["rule"])
+        self.assertIn("ORGANIZATION_RECORDS_RECONSTRUCTION_ONLY", retained["rule"])
         for example in retained["examples_in_this_organization"]:
             self.assertTrue((ROOT / example).is_file())
 
@@ -263,13 +262,13 @@ class LedgerContractTests(unittest.TestCase):
         `propagation_gates_organization_runtime_reality` is already asserted
         above, and this is its replay-side twin: organization replay requires
         verified repository and organization receipts, and explicitly not
-        ecosystem replay. Together they are what makes Master Records the
-        propagation target rather than a precondition.
+        ecosystem replay. Together they are what makes Master Records only the
+        propagation target for organization records.
 
         It is held because an external surface currently contradicts it --
         `docs/INTERLOCK_RETURN_PRECONDITION_FINDING_001.md` records that the
-        SDK's interlock-return builder refuses until a run reports Master
-        Records custody RECORDED. The fix is that surface's, not this one's,
+        SDK's interlock-return builder refuses until a run reports a Master
+        Records organization record RECORDED. The fix is that surface's, not this one's,
         and this case exists so the contradiction is never resolved by
         weakening the position here.
         """

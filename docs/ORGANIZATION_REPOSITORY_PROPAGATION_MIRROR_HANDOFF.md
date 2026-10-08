@@ -75,6 +75,6 @@ The documents that already live under a checkout — consumption markers, outbox
 
 ## One thing recorded, not fixed here
 
-The organization to Master Records hop still reaches only `PUBLISHED_FOR_CUSTODY`. That one *is* inter-organization, does need Interlock/InTr, and carries the validator conflict recorded on `.github` #40.
+The hop that publishes organization records to Master Records still ends at the publisher script's publication status. That hop *is* inter-organization, does need Interlock/InTr, and carries the validator conflict recorded on `.github` #40.
 
 Nothing here grants authority, performs a transition, or claims custody. It records, at the organization level, transitions that already occurred.

@@ -279,9 +279,10 @@ class ReceivingOperationTests(unittest.TestCase):
                          result["organization_receipt_sha256"])
 
     def test_custody_is_published_separately_and_never_awaited(self):
-        """`may_be_awaited_by_a_transition` is false, so this claims no closure."""
+        """`may_be_awaited_by_a_transition` is false, so this claims no Master Records organization record."""
         result = self.receive()
-        self.assertIs(result["master_records_closure_observed"], False)
+        self.assertIs(result["master_records_organization_record_observed"], False)
+        self.assertNotIn("master_records_closure_observed", result)
         self.assertEqual(result["master_records_propagation_entrypoint"],
                          "resident-runtime/submit_org_transition_to_master_records.py")
         self.assertEqual(result["authority_effect"], "NONE_RECEIVING_OPERATION_ONLY")
@@ -408,6 +409,8 @@ class GovernanceDecisionReturnTests(unittest.TestCase):
         fields = ingress.governance_fields(self.REQUEST, {"disposition": "ALLOW"})
         self.assertEqual(fields["records_authority"], "ORGANIZATION_RECORDS_ONLY")
         self.assertEqual((fields["state"], fields["terminal"]), ("COMPLETE", False))
+        # Neither the SDK's organization-record flag nor its legacy name is self-asserted.
+        self.assertNotIn("organization_master_records_organization_record_observed", fields)
         self.assertNotIn("organization_master_records_closure_observed", fields)
 
     def test_a_missing_decision_fails_closed(self):

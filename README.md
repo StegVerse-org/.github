@@ -33,7 +33,7 @@ Organization-crossing messages use the registered Interlock/InTr federation boun
 
 The adapter must resolve inside the organization repository root and must exist as a file. Missing, external-path, or failing adapters fail closed. Registry-driven dispatch does not itself grant transport, credential, governance, or transition authority; those authorities remain governed by their applicable layers.
 
-The provider-neutral WorkSpace resource consumer is exposed through the registered `stegverse-org.workspace-resource-consumer` internal endpoint. Its organization-local adapter remains thin and delegates projection semantics to the installed canonical StegVerse SDK consumer instead of copying that logic into the organization boundary. The adapter and SDK consumer remain non-authorizing; boundary receipts, governance authority, MIR custody, and Master Records custody are not conferred by the adapter.
+The provider-neutral WorkSpace resource consumer is exposed through the registered `stegverse-org.workspace-resource-consumer` internal endpoint. Its organization-local adapter remains thin and delegates projection semantics to the installed canonical StegVerse SDK consumer instead of copying that logic into the organization boundary. The adapter and SDK consumer remain non-authorizing; boundary receipts, governance authority and MIR custody are not conferred by the adapter, and neither is any Master Records organization record.
 
 This keeps the organization boundary extensible without hardcoding each future service into the boundary processor.
 
@@ -45,7 +45,7 @@ This keeps the organization boundary extensible without hardcoding each future s
 
 Both ledger levels are written, in order. The transition occurs in this repository, so `.stegverse/transition-ledger/emit.py` records a `stegverse.repo-transition-receipt/v1` first and the organization ledger consumes *that* — the organization authoring its own source receipt and then recording it as its own was one writer standing in for two levels, which left `preserves_repo_receipt` with nothing to preserve and left organization replay resting on a receipt the same call had minted. The organization receipt now carries `source_repository`, `repo_receipt_sha256` and `repo_transition_id`, so `ORGANIZATION_REPLAY_MUST_REQUIRE_ONLY_VERIFIED_REPO_RECEIPTS_AND_ORG_RECEIPTS` has a verified repository receipt underneath it.
 
-The organization does not grade its own result: it reports what it observed to the SDK's own `admit_runtime_result` and returns that verdict, with `manifest_receipt_id` bound to the organization receipt that exists. Custody is published through `resident-runtime/submit_org_transition_to_master_records.py` and never awaited — `propagation_gates_organization_runtime_reality` is false and Master Records `may_be_awaited_by_a_transition` is false — so `master_records_closure_observed` stays false and says so.
+The organization does not grade its own result: it reports what it observed to the SDK's own `admit_runtime_result` and returns that verdict, with `manifest_receipt_id` bound to the organization receipt that exists. Organization records are published to Master Records through `resident-runtime/submit_org_transition_to_master_records.py` and never awaited — `propagation_gates_organization_runtime_reality` is false and Master Records `may_be_awaited_by_a_transition` is false — so `master_records_organization_record_observed` stays false and says so.
 
 ### Repository transitions reach the organization chain
 

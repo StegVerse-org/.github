@@ -13,8 +13,9 @@ build an interlock return at all unless the run it is handed reports:
 
     master_records_custody_status == "RECORDED"
 
-That makes an **organization-level return** wait on **ecosystem-level
-custody**. This organization's own ledger contract says it does not.
+(the SDK's pre-migration name for the Master Records organization-record status,
+`master_records_organization_record_status`). That makes an **organization-level
+return** wait on an **ecosystem-level organization record**. This organization's own ledger contract says it does not.
 
 ## The evidence, from the surface that owns it
 
@@ -31,41 +32,41 @@ custody**. This organization's own ledger contract says it does not.
 
 Four of those are the finding on their own. Master Records is the
 **propagation target** and the **batch receipt recorder** — where organization
-transitions go afterwards as observed reality and custody. It is explicitly
-**not** a gate: `propagation_gates_organization_runtime_reality` is false, and
+transitions go afterwards as organization records, for reconstruction. Observed
+reality and custody stay with the Organization. The contract's own fields say
+Master Records does not hold up a transition here: `propagation_gates_organization_runtime_reality` is false, and
 `always_on_receiver_required` is false, so Master Records being unreachable is
 declared not to block this organization's runtime reality. The replay rule says
 the same thing from the replay side.
 
 ## Why it matters, stated narrowly
 
-This is not a claim that Master Records is the wrong custody authority. It is
-the right one, and the authority split in
-`StegVerse-Labs/.github` says so: *Master Records: observed reality, custody,
-reconstruction.*
+This is not a claim about what Master Records keeps. It keeps organization
+records and reconstructs from them; the Organization owns custody and observed
+reality, and Interlock/InTr admits transitions.
 
 The finding is about **gating**. A return describes a transition that occurred
 within an organization, and the evidence for that transition is the
 organization receipt this boundary already writes on every crossing —
 `organization_scope_rule` requires one for every state transition occurring
-within the organization. Requiring ecosystem custody before that return can be
+within the organization. Requiring an ecosystem-level organization record before that return can be
 constructed inverts the layering: it makes the slower, broader authority a
 precondition of the narrower, faster one, which is the opposite of how the
 contract arranges them.
 
 It also has a practical consequence worth naming. With that gate in place the
-return leg cannot be exercised at all until custody closes, so a capability
+return leg cannot be exercised at all until that organization record exists, so a capability
 that is written and tested reads as unbuilt. Relocating the precondition to
 org receipts would let the return be exercised against evidence that already
-exists, without weakening what custody means.
+exists, without weakening what an organization record means.
 
 ## What this document does not do
 
 It does not change the SDK, which owns the gate and its own contract process.
 It does not assert that org receipts are *sufficient* evidence for a return —
 only that the contract makes them the organization-level locus and makes
-ecosystem custody a propagation target rather than a precondition. Whether the
-return additionally wants custody as *recorded context* rather than as a
+the ecosystem-level organization record a propagation target. Whether the
+return additionally wants that record as *recorded context* rather than as a
 *refusal condition* is the owning surface's design call.
 
 It creates no route, runtime, credential, node, ingress, authority, deployment,

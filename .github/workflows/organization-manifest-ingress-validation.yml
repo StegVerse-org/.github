@@ -111,8 +111,9 @@ jobs:
           assert x["boundary_receipt_chain_reconstructed_independently"] is True
           assert [c["transition_id"] for c in x["transition_closures"]] == [
               "INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED", "RESULT_BOUND", "EGRESS_EMITTED"]
-          # Custody is published separately and is never awaited.
-          assert x["master_records_closure_observed"] is False
+          # Organization records are published to Master Records separately and never awaited.
+          assert x["master_records_organization_record_observed"] is False
+          assert "master_records_closure_observed" not in x
           assert x["authority_effect"] == "NONE_RECEIVING_OPERATION_ONLY"
           print("ORGANIZATION_MANIFEST_INGRESS=PASS", x["organization_transition_id"])
           PY

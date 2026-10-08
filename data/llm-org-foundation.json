@@ -11,7 +11,7 @@
     "manifest_and_sdk_loop": "StegVerse SDK",
     "llm_provider_routing_and_transport": "StegVerse-org/LLM-adapter",
     "credential_and_provider_operation": "TV/TVC",
-    "custody_reconstruction": "Master Records",
+    "organization_records_reconstruction": "Master Records",
     "governed_output": "Publisher where applicable"
   },
   "work_context": {

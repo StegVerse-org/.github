@@ -4,7 +4,8 @@
 The adapter is intentionally thin: organization registry/dispatch selects this local
 file, while the actual WorkSpace projection semantics remain owned by the installed
 StegVerse SDK package. This module does not duplicate the consumer, mint InTr
-receipts, grant governance authority, or claim MIR/Master Records custody.
+receipts, grant governance authority, or claim MIR custody. It also claims no
+Master Records organization record.
 """
 from __future__ import annotations
 
@@ -77,7 +78,7 @@ def main() -> int:
         "governance_authority": False,
         "intr_receipt_minted_by_adapter": False,
         "mir_custody_claimed": False,
-        "master_records_custody_claimed": False,
+        "master_records_organization_record_claimed": False,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -149,7 +149,8 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertEqual(admitted["disposition"], "DENY")
         self.assertEqual(admitted["failed_predicate"], "signal.inputs_incomplete")
         self.assertEqual(admitted["records_authority"], "ORGANIZATION_RECORDS_ONLY")
-        self.assertIs(returned["master_records_closure_observed"], False)
+        self.assertIs(returned["master_records_organization_record_observed"], False)
+        self.assertNotIn("master_records_closure_observed", returned)
 
     def test_every_transition_here_is_in_this_organizations_records(self):
         emitted = self.receive()

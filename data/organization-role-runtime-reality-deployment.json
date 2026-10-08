@@ -41,9 +41,8 @@
     "records": "RELEASED_ORGANIZATION_BATCH_RECEIPTS",
     "release_predecessor_required": "VERIFIED_ORGANIZATION_RECEIPT_CHAIN_SEGMENT",
     "retained_capabilities": [
-      "CUSTODY",
-      "RECONSTRUCTION",
-      "CROSS_ORGANIZATION_HISTORY"
+      "ORGANIZATION_RECORDS",
+      "RECONSTRUCTION"
     ],
     "propagation_target": "master-records/.github",
     "may_gate_organization_runtime_reality": false,
@@ -90,7 +89,7 @@
     "register_opens_empty": true
   },
   "superseded_prose_statements": {
-    "rule": "A_PROSE_STATEMENT_ASSIGNING_OBSERVED_OR_RUNTIME_REALITY_AUTHORITY_TO_MASTER_RECORDS_IS_SUPERSEDED_BY_THIS_DECLARATION_AT_ITS_OWNING_SURFACE",
+    "rule": "A_PROSE_STATEMENT_PLACING_OBSERVED_OR_RUNTIME_REALITY_OUTSIDE_THE_ORGANIZATION_IS_SUPERSEDED_BY_THIS_DECLARATION_AT_ITS_OWNING_SURFACE",
     "cross_owner_edit_performed": false,
     "measured_on_commit_of_this_declaration": true,
     "comparison_key": "PATH_AND_STATEMENT_TEXT",
@@ -98,12 +97,12 @@
     "count": 0,
     "files": [],
     "occurrences": [],
-    "measured_empty_reason": "NO_PROSE_IN_THIS_ORGANIZATION_ASSIGNS_OBSERVED_OR_RUNTIME_REALITY_AUTHORITY_TO_MASTER_RECORDS",
+    "measured_empty_reason": "NO_PROSE_IN_THIS_ORGANIZATION_PLACES_OBSERVED_OR_RUNTIME_REALITY_OUTSIDE_THE_ORGANIZATION",
     "measured_empty_is_asserted_by_the_same_measurement_as_a_non_empty_set": true
   },
   "retained_statements": {
-    "rule": "A_STATEMENT_THAT_MASTER_RECORDS_IS_CUSTODY_RECONSTRUCTION_ONLY_AND_HOLDS_NO_TRANSITION_AUTHORITY_REMAINS_CORRECT_AND_IS_NOT_SUPERSEDED",
-    "reason": "THIS_DECLARATION_MOVES_RUNTIME_REALITY_NOT_CUSTODY",
+    "rule": "A_STATEMENT_THAT_MASTER_RECORDS_IS_ORGANIZATION_RECORDS_RECONSTRUCTION_ONLY_AND_HOLDS_NO_TRANSITION_AUTHORITY_REMAINS_CORRECT_AND_IS_NOT_SUPERSEDED",
+    "reason": "THIS_DECLARATION_MOVES_RUNTIME_REALITY_NOT_ORGANIZATION_RECORDS",
     "examples_in_this_organization": [
       "docs/ORGANIZATION_TRANSITION_LEDGER_MIRROR_HANDOFF.md",
       "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",

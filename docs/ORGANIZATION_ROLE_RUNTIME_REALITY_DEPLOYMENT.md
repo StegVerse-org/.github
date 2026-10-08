@@ -39,12 +39,12 @@ Admission is decided before the append lock is taken, so an inadmissible source 
 
 `master-records` is the **recorder of released organization batch receipts**.
 
-- It records organization batches that the organization has independently verified and released, for durable cross-organization custody and complex reconstruction (`propagation_target: master-records/.github`).
+- It records organization batches that the organization has independently verified and released, as organization records for complex reconstruction across organizations (`propagation_target: master-records/.github`).
 - Its release predecessor is a verified organization receipt-chain segment. It cannot create, admit, authorize, infer or repair a transition, and it never held transition authority.
 - It is **not** the runtime-reality authority of this organization and is **not** a gate on this organization's runtime reality. An organization transition is real when it is appended under the organization ledger lock, not when a batch carrying it is recorded downstream.
 - Nothing in this organization awaits it. A batch that has not been released or recorded is a value in the attempted transition's evidence state, not a blocker and not proof of non-occurrence.
 
-Master Records retains custody, reconstruction and cross-organization history. Every existing statement in this repository that Master Records is *custody/reconstruction only and holds no transition authority* remains correct and is strengthened, not superseded, by this declaration.
+Master Records keeps organization records and reconstructs from them; custody and durable history stay with each Organization. Every existing statement in this repository that Master Records is *organization records/reconstruction only and holds no transition authority* remains correct and is strengthened, not superseded, by this declaration.
 
 ## Conformance standard
 
@@ -72,9 +72,9 @@ The register refuses the justifications the standard already forbids — an exte
 
 ## Superseded prose
 
-Measured on the commit of this declaration: **no** prose statement in this repository assigns *observed-reality* or *runtime-reality* authority to Master Records, so the supersession inventory is empty — `count: 0`, enumerated in `data/organization-role-runtime-reality-deployment.json` under `superseded_prose_statements`. The emptiness is measured, not assumed: `tests/test_organization_role_runtime_reality_deployment.py` re-measures the tree with the same pattern that would enumerate a non-empty set, so a statement added later fails the test rather than passing silently.
+Measured on the commit of this declaration, every prose statement in this repository places *observed reality* and *runtime reality* with the Organization, so the supersession inventory is empty — `count: 0`, enumerated in `data/organization-role-runtime-reality-deployment.json` under `superseded_prose_statements`. The emptiness is measured, not assumed: `tests/test_organization_role_runtime_reality_deployment.py` re-measures the tree with the same pattern that would enumerate a non-empty set, so a statement added later fails the test rather than passing silently.
 
-The Master Records statements this repository does carry are custody/reconstruction-only and explicitly non-authorizing. They are retained, not superseded.
+The Master Records statements this repository does carry are organization-records/reconstruction-only and explicitly non-authorizing. They are retained, not superseded.
 
 ## Record-side work this declaration does not perform
 
