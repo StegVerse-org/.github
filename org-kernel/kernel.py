@@ -411,8 +411,11 @@ def build_packet(*, origin_org:str, origin_service:str, destination_org:str, des
       "evidence":{"ingress_receipt":None,"dispatch_receipt":None,"consumption_receipt":None,"egress_receipt":None,"reconstruction_reference":None}
     }
 
-def publish_packet(packet:dict[str,Any], *, root:Path|None=None, now_ns:int|None=None)->dict[str,Any]:
-    frame=carrier_frame(packet,now_ns=now_ns)
+def publish_packet(packet:dict[str,Any], *, root:Path|None=None, now_ns:int|None=None,
+                   epoch:int|None=None)->dict[str,Any]:
+    # A supplied epoch makes the frame reproducible: the same packet at the same
+    # epoch is the same frame, so publishing it again is a write-once no-op.
+    frame=carrier_frame(packet,now_ns=now_ns,epoch=epoch)
     path=publish_frame(frame,root=root)
     return {"packet":packet,"frame":frame,"path":str(path)}
 

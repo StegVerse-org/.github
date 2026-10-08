@@ -151,10 +151,27 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertIs(result["replay_requires_only_verified_repo_and_organization_receipts"],
                       True)
 
+    def admitted(self, source_output_id):
+        """A second admitted manifest, distinct from the committed fixture by its output id."""
+        # Built exactly as the committed fixture is (spec defaults, then the
+        # common arguments, then the manifest's own), with only its output id
+        # changed.
+        spec = json.loads(BUILD_SPEC.read_text(encoding="utf-8"))
+        arguments = {"data": spec["data"], "processor_request": spec["processor_request"],
+                     **spec["common"], **spec["manifests"]["task-registry-disclosure-to-llm-adapter"],
+                     "source_output_id": source_output_id}
+        return build_manifest(**arguments)
+
     def test_the_repository_chain_continues_rather_than_forking(self):
-        """A second ingress links to the first; the chain position is the ledger's."""
+        """A second ingress links to the first; the chain position is the ledger's.
+
+        The second is a different manifest. The same manifest delivered again is
+        the same transition, and is covered by the idempotency tests.
+        """
         first = self.receive()
-        second = self.receive(packet_id="org-ingress-test-2")
+        second = self.receive(manifest=self.admitted("org-ingress-second"),
+                              packet_id="org-ingress-test-2")
+        self.assertEqual(second["disposition"], "ALLOW", second.get("detail"))
         self.assertNotEqual(first["repository_receipt_sha256"],
                             second["repository_receipt_sha256"])
         repository = {receipt["receipt_sha256"]: receipt for receipt in self.ledger_receipts(
