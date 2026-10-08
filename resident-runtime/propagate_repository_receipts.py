@@ -76,8 +76,7 @@ def repository_ledger_home() -> Path:
     override = os.getenv(LEDGER_HOME_VARIABLE)
     if override:
         return Path(override).expanduser().resolve()
-    return (Path(os.getenv("XDG_STATE_HOME", str(Path.home() / ".local/state")))
-            / "stegverse/repo-ledgers").resolve()
+    raise organization_ledger.LedgerLocationRequired(LEDGER_HOME_VARIABLE)
 
 
 def declared_repositories() -> list[str]:

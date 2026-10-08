@@ -77,16 +77,48 @@ def canon(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
+class LedgerLocationRequired(ValueError):
+    """No ledger root was supplied; nothing is appended and nothing is derived."""
+
+    failed_predicate = "LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER"
+
+    def __init__(self, variable):
+        super().__init__("ledger_location_required_from_materializer: " + variable)
+        self.variable = variable
+
+
+def location_refusal(exc):
+    """The append attempt's own disposition when no ledger root was supplied."""
+    return {
+        "schema": "stegverse.organization-ledger-append-refusal/v1",
+        "organization": C["organization"],
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": exc.failed_predicate,
+        "required_evidence_or_repair": "supply the organization ledger root as " + exc.variable,
+        "retry_entrypoint": "resident-runtime/aggregate_repo_transition.py::append",
+        "consequence_committed": False,
+        "authority_effect": "NONE_REFUSAL_ONLY",
+    }
+
+
 def sha(value):
     return "sha256:" + hashlib.sha256(canon(value)).hexdigest()
 
 
 def ledger_root():
+    """The organization ledger root, as supplied to this execution.
+
+    The ledger is the organization's runtime reality, so its location is
+    supplied by whatever materialized this execution, exactly as the mesh is.
+    It is never derived from the host: a home directory belongs to whichever
+    machine happens to run this, and a chain written there is discarded with
+    an ephemeral execution while appearing to have been appended. With no
+    supplied root the append fails closed at this boundary.
+    """
     override = os.getenv("STEGVERSE_ORG_LEDGER_ROOT")
     if override:
         return Path(override).expanduser().resolve()
-    return (Path(os.getenv("XDG_STATE_HOME", str(Path.home() / ".local/state")))
-            / "stegverse/org-ledgers" / C["organization"]).resolve()
+    raise LedgerLocationRequired("STEGVERSE_ORG_LEDGER_ROOT")
 
 
 def load(path):
@@ -314,10 +346,14 @@ def main():
     default_class = ("REPO_STATE_PROPAGATION"
                      if receipt.get("schema") == "stegverse.repo-transition-receipt/v1"
                      else "ORGANIZATION_STATE_TRANSITION")
-    result = append(receipt, args.org_transition_class or default_class,
-                    args.predecessor_org_state_sha256, args.successor_org_state_sha256,
-                    json.loads(args.boundary_evidence_json), args.authority_effect,
-                    hb_epoch=args.hb_epoch)
+    try:
+        result = append(receipt, args.org_transition_class or default_class,
+                        args.predecessor_org_state_sha256, args.successor_org_state_sha256,
+                        json.loads(args.boundary_evidence_json), args.authority_effect,
+                        hb_epoch=args.hb_epoch)
+    except LedgerLocationRequired as exc:
+        print(json.dumps(location_refusal(exc), sort_keys=True))
+        raise SystemExit(1)
     print(json.dumps(result, sort_keys=True))
 
 
