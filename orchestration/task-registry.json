@@ -263,9 +263,9 @@
       "depends_on": [],
       "required_evidence": [
         "StegVerse-org/LLM-adapter#368 comment 6084397140 findings F1-F14 are each repaired or carry the disposition that comment assigns",
-        "LLM-adapter PR-1 (branch 368-pr1-ingress-validation: F1, F2, F3, F9, F11, F14) merged with exact-head CI green",
-        "LLM-adapter PR-2 (branch 368-pr2-master-records-decoupling: F6, F7) merged with exact-head CI green",
-        "LLM-adapter PR-3 (branch 368-pr3-docs-declaration: F4, F5, F10, F12, F13) merged with exact-head CI green",
+        "LLM-adapter #369 merged as 2319ba4 (F1, F2, F3, F9, F11; F14 SDK-only processing remains open)",
+        "LLM-adapter #370 merged as 650eb7e (F6, F7; VA and activation verifier follow-ups remain open)",
+        "LLM-adapter #371 merged as 5b0b45d (F4, F5, F10, F12; F13 COSV checker remains open)",
         "every non-ALLOW result carries failure_code, failed_predicate, required_evidence_or_repair, retry_entrypoint, owning_existing_goal and next_attempt",
         "no execution or completion path is gated on Master Records",
         "zero dependencies added"
@@ -285,9 +285,10 @@
         "StegVerse-org/LLM-adapter"
       ],
       "unresolved_obligations": [
-        "LAND_PR1_INGRESS_VALIDATION_F1_F2_F3_F9_F11_F14",
-        "LAND_PR2_MASTER_RECORDS_DECOUPLING_F6_F7",
-        "LAND_PR3_DOCS_AND_ORGANIZATION_ROLE_DECLARATION_F4_F5_F10_F12_F13",
+        "VA_CLAIMS_MASTER_RECORDS_RECONSTRUCTION_GATE",
+        "ACTIVATION_VERIFIERS_MASTER_RECORDS_PREDICATE",
+        "F14_SDK_ONLY_PROCESSING_SELECTION_RECONCILIATION",
+        "F13_COSV_PROJECTION_CHECKER",
         "AUTHENTIC_MANIFEST_DIRECTED_INTR_TRANSITION_AND_ORG_LEDGER_READBACK"
       ]
     }
