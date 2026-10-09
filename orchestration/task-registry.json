@@ -266,6 +266,10 @@
         "LLM-adapter #369 merged as 2319ba4 (F1, F2, F3, F9, F11; F14 SDK-only processing remains open)",
         "LLM-adapter #370 merged as 650eb7e (F6, F7; VA and activation verifier follow-ups remain open)",
         "LLM-adapter #371 merged as 5b0b45d (F4, F5, F10, F12; F13 COSV checker remains open)",
+        "LLM-adapter #373 merged as 1cd1aca (VA claims turn closes on its transition receipt; Master Records reconstruction no longer gates the turn)",
+        "LLM-adapter #374 merged as 1b58b1f (activation verifiers read the provider usage record and transition receipt; no Master Records predicate)",
+        "LLM-adapter #372 merged as f581f3d (F14: adapter build is an opaque SDK pass-through; processing selection is SDK-owned)",
+        "LLM-adapter #375 merged as 112da47 (F13: COSV projection checker distinguishes terminal tasks)",
         "every non-ALLOW result carries failure_code, failed_predicate, required_evidence_or_repair, retry_entrypoint, owning_existing_goal and next_attempt",
         "no execution or completion path is gated on Master Records",
         "zero dependencies added"
@@ -285,10 +289,6 @@
         "StegVerse-org/LLM-adapter"
       ],
       "unresolved_obligations": [
-        "VA_CLAIMS_MASTER_RECORDS_RECONSTRUCTION_GATE",
-        "ACTIVATION_VERIFIERS_MASTER_RECORDS_PREDICATE",
-        "F14_SDK_ONLY_PROCESSING_SELECTION_RECONCILIATION",
-        "F13_COSV_PROJECTION_CHECKER",
         "AUTHENTIC_MANIFEST_DIRECTED_INTR_TRANSITION_AND_ORG_LEDGER_READBACK"
       ]
     }
