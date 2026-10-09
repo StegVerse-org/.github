@@ -253,6 +253,43 @@
         "ADD_NON_AUTHORITY_AND_INFERENCE_WINDOW_TESTS",
         "README_RECONCILIATION"
       ]
+    },
+    {
+      "task_id": "LLMA-DECLARED-PATH-CONFORMANCE-368",
+      "issue": 102,
+      "title": "Conform LLM-adapter to the owner-declared manifest path and organization-role standard",
+      "status": "in_progress",
+      "workstream": "llm-adapter-declared-path-conformance",
+      "depends_on": [],
+      "required_evidence": [
+        "StegVerse-org/LLM-adapter#368 comment 6084397140 findings F1-F14 are each repaired or carry the disposition that comment assigns",
+        "LLM-adapter PR-1 (branch 368-pr1-ingress-validation: F1, F2, F3, F9, F11, F14) merged with exact-head CI green",
+        "LLM-adapter PR-2 (branch 368-pr2-master-records-decoupling: F6, F7) merged with exact-head CI green",
+        "LLM-adapter PR-3 (branch 368-pr3-docs-declaration: F4, F5, F10, F12, F13) merged with exact-head CI green",
+        "every non-ALLOW result carries failure_code, failed_predicate, required_evidence_or_repair, retry_entrypoint, owning_existing_goal and next_attempt",
+        "no execution or completion path is gated on Master Records",
+        "zero dependencies added"
+      ],
+      "outputs": [
+        "StegVerse-org/LLM-adapter/llm_adapter/governed_manifest_ingress.py",
+        "StegVerse-org/LLM-adapter/llm_adapter/sdk_boundary.py",
+        "StegVerse-org/LLM-adapter/llm_adapter/node_standing.py",
+        "StegVerse-org/LLM-adapter/llm_adapter/deepseek_tvc_runtime_executor.py",
+        "StegVerse-org/LLM-adapter/llm_adapter/combined_gateway.py",
+        "StegVerse-org/LLM-adapter/README.md",
+        "StegVerse-org/LLM-adapter/LLM_ADAPTER_MIRROR_HANDOFF.md"
+      ],
+      "tag_allowed": false,
+      "activation_condition": "owner follow-up on StegVerse-org/LLM-adapter#368 (comment 6084623475) authorizes existing source repair and focused validation only; no new architecture, dependency, deployment or release",
+      "destinations": [
+        "StegVerse-org/LLM-adapter"
+      ],
+      "unresolved_obligations": [
+        "LAND_PR1_INGRESS_VALIDATION_F1_F2_F3_F9_F11_F14",
+        "LAND_PR2_MASTER_RECORDS_DECOUPLING_F6_F7",
+        "LAND_PR3_DOCS_AND_ORGANIZATION_ROLE_DECLARATION_F4_F5_F10_F12_F13",
+        "AUTHENTIC_MANIFEST_DIRECTED_INTR_TRANSITION_AND_ORG_LEDGER_READBACK"
+      ]
     }
   ]
 }

@@ -1,0 +1,38 @@
+{
+  "schema": "stegverse.cosv-task-vector/v0.1",
+  "identity": "LLMA-DECLARED-PATH-CONFORMANCE-368",
+  "profile": "task.v1",
+  "level": "task",
+  "vector": "20033300110000",
+  "evidence_refs": [
+    "StegVerse-org/.github#102",
+    "StegVerse-org/LLM-adapter#368",
+    "orchestration/task-registry.json"
+  ],
+  "observed_at": "2026-10-09",
+  "exact_metrics": {
+    "lifecycle": "CLAIMED_IMPLEMENTATION",
+    "archive_ready": false,
+    "unassigned_work": 0,
+    "chat_owned_implementation": 3,
+    "chat_owned_validation": 3,
+    "chat_owned_integration": 3,
+    "chat_owned_observation": 0,
+    "chat_owned_credentials": 0,
+    "canonical_owner_installed": true,
+    "thread_required": true,
+    "blocker_count": 0,
+    "evidence_complete": false,
+    "activated": false,
+    "propagated": false
+  },
+  "authority_effect": "NONE_SOURCE_COORDINATION_ONLY",
+  "canonical_encoder_ref": "StegVerse-Labs/.github@fa65cf7ffcf7727b02450955f61a97febba6667f:scripts/cosv.py",
+  "metric_basis": {
+    "lifecycle": "Owner-authorized source repair (LLM-adapter#368 comment 6084623475); not a work claim or fence.",
+    "chat_owned_work": "Three bounded LLM-adapter PR lanes (PR-1, PR-2, PR-3), each with its own implementation, validation and review/integration obligation; no runtime observation or credential operation assigned.",
+    "unassigned_work": "Every finding F1-F14 is scoped to one of the three lanes; none is unassigned.",
+    "thread_required": "Continuation is held by StegVerse-org/.github#102 and StegVerse-org/LLM-adapter#368 rather than chat.",
+    "terminal_flags": "No lane has merged; evidence is incomplete and nothing is activated or propagated."
+  }
+}

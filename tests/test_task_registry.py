@@ -295,5 +295,35 @@ class ReferencesResolveHereTests(unittest.TestCase):
                 self.assertTrue((ROOT / relative).exists(), relative + " no longer exists")
 
 
+class TaskVectorProjectionTests(unittest.TestCase):
+    """A COSV task vector is a projection of a registered task, not a second record.
+
+    `control/task-vector-index.json` lists each projected vector and the file
+    holding its exact metrics. Nothing compared the index against the registry
+    or against those files, so a vector could name a task the registry dropped,
+    or the index and the file could disagree on the digits.
+    """
+
+    INDEX = json.loads((ROOT / "control/task-vector-index.json").read_text(encoding="utf-8"))
+
+    def test_every_projected_task_is_registered(self):
+        ids = {task["task_id"] for task in TASKS}
+        for entry in self.INDEX["tasks"]:
+            with self.subTest(task=entry["task_id"]):
+                self.assertIn(entry["task_id"], ids)
+                self.assertEqual(entry["registry_ref"], "orchestration/task-registry.json")
+
+    def test_the_index_and_the_vector_file_carry_the_same_vector(self):
+        for entry in self.INDEX["tasks"]:
+            with self.subTest(task=entry["task_id"]):
+                path = ROOT / entry["source_state_vector_ref"]
+                self.assertTrue(path.is_file(), entry["source_state_vector_ref"] + " is missing")
+                record = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual(record["vector"], entry["vector"])
+                self.assertEqual(record["profile"], self.INDEX["profile"])
+                self.assertTrue(record["identity"].endswith(entry["task_id"]))
+                self.assertRegex(record["vector"], r"^[0-9]{%d}$" % self.INDEX["width"])
+
+
 if __name__ == "__main__":
     unittest.main()
