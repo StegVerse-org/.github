@@ -17,7 +17,7 @@ def canon(v):return json.dumps(v,sort_keys=True,separators=(",",":"),ensure_asci
 def sha(v):return "sha256:"+hashlib.sha256(v if isinstance(v,(bytes,bytearray)) else canon(v)).hexdigest()
 def lr():
  o=os.getenv("STEGVERSE_REPO_LEDGER_ROOT")
- if o:return Path(o).expanduser().resolve()
+ if o:return ledger_store.parse_locator(o)
  # Supplied, never derived from the host: see aggregate_repo_transition.ledger_root.
  raise ValueError("ledger_location_required_from_materializer: STEGVERSE_REPO_LEDGER_ROOT")
 # A chain is only as good as the nodes it walks. A missing node used to end the
@@ -88,7 +88,7 @@ def append(transition_id,transition_class,predecessor_state_sha256,successor_sta
  from HEAD and raises `RepoLedgerChainBreak` on a missing or corrupted node,
  so no receipt is ever minted on top of a broken chain.
  """
- target=store or ledger_store.PosixLedgerStore(lr());target.initialize()
+ target=store or ledger_store.open_store(lr());target.initialize()
  for _attempt in range(128):
   expected_head=target.get(ledger_store.HEAD_KEY)
   prev=(expected_head or {}).get("receipt_sha256")

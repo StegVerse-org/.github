@@ -126,5 +126,54 @@ class PortableOrganizationAppendTests(unittest.TestCase):
         self.assertEqual(store.list_prefix(ledger.RECEIPT_PREFIX),
                          {ledger.receipt_key(digest) for digest in visited})
 
+class GitRefSubstrateTests(unittest.TestCase):
+    """The same appenders on a git ref: one commit per append, published by
+    `git update-ref`'s compare-and-swap. Threads share one store instance."""
+
+    def setUp(self):
+        import tempfile
+        self._dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._dir.cleanup)
+        self.store = ledger.GitLedgerStore(Path(self._dir.name) / "ledger.git", "refs/test/substrate-ledger")
+
+    def test_repository_appenders_leave_one_reconstructable_chain(self):
+        errors = []
+        def worker(index):
+            try:
+                repo_emit.append("portable-git-repo-" + str(index), "CONCURRENCY",
+                                 STATE_BEFORE, STATE_AFTER, {}, "NONE",
+                                 hb_epoch=EPOCH, store=self.store)
+            except Exception as exc:
+                errors.append(exc)
+        threads = [threading.Thread(target=worker, args=(i,)) for i in range(6)]
+        for thread in threads: thread.start()
+        for thread in threads: thread.join()
+        self.assertEqual(errors, [])
+        visited = reachable(self.store)
+        self.assertEqual(len(visited), 6)
+        self.assertEqual(self.store.list_prefix(ledger.RECEIPT_PREFIX),
+                         {ledger.receipt_key(digest) for digest in visited})
+
+    def test_organization_appenders_use_the_same_transaction_contract(self):
+        errors = []
+        def worker(index):
+            body = {"schema": "stegverse.repo-transition-receipt/v1",
+                    "repository": "StegVerse-org/StegVerse-SDK",
+                    "transition_id": "portable-git-org-" + str(index)}
+            try:
+                org_emit.append({**body, "receipt_sha256": org_emit.sha(body)}, "REPO_STATE_PROPAGATION",
+                                STATE_BEFORE, STATE_AFTER, {}, "NONE",
+                                hb_epoch=EPOCH, store=self.store)
+            except Exception as exc:
+                errors.append(exc)
+        threads = [threading.Thread(target=worker, args=(i,)) for i in range(6)]
+        for thread in threads: thread.start()
+        for thread in threads: thread.join()
+        self.assertEqual(errors, [])
+        visited = reachable(self.store)
+        self.assertEqual(len(visited), 6)
+        self.assertEqual(self.store.list_prefix(ledger.RECEIPT_PREFIX),
+                         {ledger.receipt_key(digest) for digest in visited})
+
 if __name__ == "__main__":
     unittest.main()

@@ -10,7 +10,8 @@ These tests fix the contract a store must satisfy, so a key-value
 implementation for ephemeral nodes can be validated against the same suite
 rather than against a reading of the filesystem one. `StoreContractTests` is
 written against `make_store` and is the part a sibling implementation
-inherits; `PosixLayoutTests` pins what is specific to the filesystem.
+inherits -- `GitStoreContractTests` runs it unchanged against a git ref;
+`PosixLayoutTests` pins what is specific to the filesystem.
 
 Source validation only. No authority effect is claimed.
 """
@@ -97,6 +98,15 @@ class StoreContractTests(unittest.TestCase):
         locator = self.store.locator(ledger_store.receipt_key(DIGEST))
         self.assertIsInstance(locator, str)
         self.assertTrue(locator)
+
+
+class GitStoreContractTests(StoreContractTests):
+    """The same contract, on a ref in a temporary bare repository."""
+
+    def make_store(self, root):
+        store = ledger_store.GitLedgerStore(Path(root) / "ledger.git", "refs/test/contract-ledger")
+        store.initialize()
+        return store
 
 
 class PosixLayoutTests(unittest.TestCase):

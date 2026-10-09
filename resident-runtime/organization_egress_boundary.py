@@ -670,7 +670,7 @@ def recorded_emission(packet_id: str) -> dict[str, Any] | None:
     half of the bilateral match: a crossing with no emission receipt here is one
     this organization has no record of making, and it cannot be closed.
     """
-    store = ledger_store.PosixLedgerStore(repository_ledger.lr())
+    store = ledger_store.open_store(repository_ledger.lr())
     head = store.get(ledger_store.HEAD_KEY)
     cursor = (head or {}).get("receipt_sha256")
     wanted = EMITTED_CLASS + ":" + packet_id

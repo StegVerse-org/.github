@@ -33,7 +33,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ledger_store import HEAD_KEY, RECEIPT_PREFIX, SOURCE_PREFIX, PosixLedgerStore, receipt_key, source_key  # noqa: E402
+from ledger_store import HEAD_KEY, RECEIPT_PREFIX, SOURCE_PREFIX, open_store, parse_locator, receipt_key, source_key  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 C = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_text())
@@ -114,10 +114,14 @@ def ledger_root():
     machine happens to run this, and a chain written there is discarded with
     an ephemeral execution while appearing to have been appended. With no
     supplied root the append fails closed at this boundary.
+
+    A supplied `git+<repository>#<ref>` names a git ref rather than a
+    directory (see `ledger_store.parse_locator`). Which location is the
+    organization's ledger is never decided here.
     """
     override = os.getenv("STEGVERSE_ORG_LEDGER_ROOT")
     if override:
-        return Path(override).expanduser().resolve()
+        return parse_locator(override)
     raise LedgerLocationRequired("STEGVERSE_ORG_LEDGER_ROOT")
 
 
@@ -290,7 +294,7 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     # the receipt reproducible; deriving one from the host clock is permitted
     # but marks itself so the two can be told apart.
     heartbeat = kernel.hb_reference(epoch=hb_epoch) if hb_epoch is not None else kernel.hb_reference()
-    target = store or PosixLedgerStore(ledger_root())
+    target = store or open_store(ledger_root())
     target.initialize()
     # The storage substrate owns serialization. A lost comparison writes
     # nothing, so a retry cannot strand an orphan receipt.

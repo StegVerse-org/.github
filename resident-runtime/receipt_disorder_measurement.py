@@ -152,7 +152,7 @@ def _binary(tripped: bool, population: int, counted: str) -> dict[str, Any]:
 
 
 def _store_receipts(root: Path, sha) -> dict[str, Any]:
-    store = ledger_store.PosixLedgerStore(root)
+    store = ledger_store.open_store(root)
     found = {}
     for key in store.list_prefix(ledger_store.RECEIPT_PREFIX):
         value = store.get(key)
@@ -181,8 +181,8 @@ def measure(*, repository_root: Path | None = None,
     if not repo_chain and not org_chain:
         raise MeasurementRefused("NO_RECEIPTS_TO_MEASURE")
 
-    repo_root = Path(repository_root) if repository_root else repository_ledger.lr()
-    org_root = (Path(organization_root) if organization_root
+    repo_root = repository_root if repository_root else repository_ledger.lr()
+    org_root = (organization_root if organization_root
                 else organization_ledger.ledger_root())
     repo_stored = _store_receipts(repo_root, repository_ledger.sha)
     org_stored = _store_receipts(org_root, organization_ledger.sha)

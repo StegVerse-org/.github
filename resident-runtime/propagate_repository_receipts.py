@@ -45,7 +45,7 @@ from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ledger_store import HEAD_KEY, RECEIPT_PREFIX, PosixLedgerStore  # noqa: E402
+from ledger_store import HEAD_KEY, RECEIPT_PREFIX, PosixLedgerStore, open_store  # noqa: E402
 
 REGISTRY = ROOT / "org-boundary/registry/services.json"
 REPOSITORY_RECEIPT_SCHEMA = "stegverse.repo-transition-receipt/v1"
@@ -130,7 +130,7 @@ def repository_chain(root: Path) -> list[dict[str, Any]]:
 
 def already_propagated(organization_root: Path) -> set[str]:
     """The repository receipts the organization chain already carries."""
-    store = PosixLedgerStore(organization_root)
+    store = open_store(organization_root)
     carried: set[str] = set()
     for key in store.list_prefix(RECEIPT_PREFIX):
         receipt = store.get(key) or {}

@@ -594,7 +594,7 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     # recorded the repository receipt and stopped before the organization
     # receipt is completed here, from the retained repository receipt, rather
     # than recorded twice.
-    chain = repository_ledger.ledger_store.PosixLedgerStore(repository_ledger.lr())
+    chain = repository_ledger.ledger_store.open_store(repository_ledger.lr())
     # The successor state is the last closure of the crossing that carried the
     # manifest, and a redelivery is carried again: another packet, another
     # closure. The repository ledger compares the successor on every exact
