@@ -29,7 +29,7 @@
       "repository": "StegVerse-org/.github",
       "registry_ref": "orchestration/task-registry.json",
       "source_state_vector_ref": "control/task-vectors/LLMA-DECLARED-PATH-CONFORMANCE-368.json",
-      "vector": "20033300110000",
+      "vector": "20044400110000",
       "vector_state": "EMITTED",
       "authority_effect": "NONE"
     }

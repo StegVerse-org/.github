@@ -234,7 +234,7 @@
         "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md defines non-duplicative ownership and completion predicates",
         "data/llm-org-foundation.json defines work-context, Sandbox, Ecosystem AI evidence-matching, and disposition-complete Inference Window contracts",
         "tests prove participating LLM/AI entities acquire no governance authority",
-        "tests prove provider routing/transport reuses LLM-adapter rather than duplicating it",
+        "tests prove external provider/LLM ingress is delegated to LLM-adapter on the declared path (healthy node -> LLM-adapter -> SDK -> StegVerse-org/.github -> Interlock/InTr => Org Ledger, owner decision StegVerse-Labs/hybrid-collab-bridge#39) rather than duplicated, and that internal admitted Sandbox operations do not re-traverse LLM-adapter",
         "README reconciles the organization-level coordination responsibility"
       ],
       "outputs": [
