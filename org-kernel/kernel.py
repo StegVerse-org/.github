@@ -709,8 +709,8 @@ def crossing_custody(repo_root:Path, *, repo_ledger_root:Path|None, org_ledger_r
     if Path(repo_root).resolve()!=own or organization!=organization_ledger.C["organization"]:
         raise ValueError("dispatch_root_is_not_this_kernels_organization")
     return {"emitter":emitter,"organization_ledger":organization_ledger,
-            "repository_store":emitter.ledger_store.PosixLedgerStore(Path(repo_ledger_root).expanduser().resolve()),
-            "organization_store":emitter.ledger_store.PosixLedgerStore(Path(org_ledger_root).expanduser().resolve())}
+            "repository_store":emitter.ledger_store.open_store(emitter.ledger_store.parse_locator(repo_ledger_root)),
+            "organization_store":emitter.ledger_store.open_store(emitter.ledger_store.parse_locator(org_ledger_root))}
 
 #: The transition class a crossing this boundary refused is recorded under. Its
 #: own class, so a crossing first refused and later admitted is two transitions

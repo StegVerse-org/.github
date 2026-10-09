@@ -6,6 +6,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 SPEC=importlib.util.spec_from_file_location("org_kernel",ROOT/"org-kernel"/"kernel.py")
 K=importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(K)
+LSSPEC=importlib.util.spec_from_file_location("ledger_store",ROOT/"resident-runtime"/"ledger_store.py")
+LS=importlib.util.module_from_spec(LSSPEC); LSSPEC.loader.exec_module(LS)
 # Repositories in this organization append their own transitions to their own
 # ledgers. `organization_scope_rule` is that every transition occurring within
 # the organization emits an organization receipt, so carrying them up is part of
@@ -44,7 +46,7 @@ def supplied_ledger(variable):
     kernel never reads it; the cycle passes what it was given explicitly.
     """
     value=os.environ.get(variable)
-    return Path(value).expanduser().resolve() if value else None
+    return LS.parse_locator(value) if value else None
 
 def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
          repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None):

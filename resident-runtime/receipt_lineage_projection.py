@@ -119,7 +119,7 @@ def _walk(root: Path, sha) -> list[dict[str, Any]]:
     directory listing's: a glob would present receipts in whatever order the
     filesystem offers, and `orphaned_or_reordered_history_fails_closed`.
     """
-    store = ledger_store.PosixLedgerStore(root)
+    store = ledger_store.open_store(root)
     head = store.get(ledger_store.HEAD_KEY)
     cursor = (head or {}).get("receipt_sha256")
     chain, seen = [], set()
@@ -138,12 +138,12 @@ def _walk(root: Path, sha) -> list[dict[str, Any]]:
 
 def repository_chain(root: Path | None = None) -> list[dict[str, Any]]:
     """This repository's own transition chain."""
-    return _walk(Path(root) if root else repository_ledger.lr(), repository_ledger.sha)
+    return _walk(root if root else repository_ledger.lr(), repository_ledger.sha)
 
 
 def organization_chain(root: Path | None = None) -> list[dict[str, Any]]:
     """This organization's chain, which consumes the repository receipts."""
-    return _walk(Path(root) if root else organization_ledger.ledger_root(),
+    return _walk(root if root else organization_ledger.ledger_root(),
                  organization_ledger.sha)
 
 

@@ -65,7 +65,7 @@ def governance_binding() -> dict[str, Any]:
 
 def recorded_ingress(transition_id: str) -> dict[str, Any] | None:
     """The ingress transition's evidence, read off this organization's repository ledger."""
-    store = egress.ledger_store.PosixLedgerStore(egress.repository_ledger.lr())
+    store = egress.ledger_store.open_store(egress.repository_ledger.lr())
     cursor = (store.get(egress.ledger_store.HEAD_KEY) or {}).get("receipt_sha256")
     while cursor:
         receipt = store.get(egress.ledger_store.receipt_key(cursor))
