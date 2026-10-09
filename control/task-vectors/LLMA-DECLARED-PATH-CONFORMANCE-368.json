@@ -3,10 +3,14 @@
   "identity": "LLMA-DECLARED-PATH-CONFORMANCE-368",
   "profile": "task.v1",
   "level": "task",
-  "vector": "20033300110000",
+  "vector": "20044400110000",
   "evidence_refs": [
     "StegVerse-org/.github#102",
+    "StegVerse-org/.github#104",
     "StegVerse-org/LLM-adapter#368",
+    "StegVerse-org/LLM-adapter#369",
+    "StegVerse-org/LLM-adapter#370",
+    "StegVerse-org/LLM-adapter#371",
     "orchestration/task-registry.json"
   ],
   "observed_at": "2026-10-09",
@@ -14,9 +18,9 @@
     "lifecycle": "CLAIMED_IMPLEMENTATION",
     "archive_ready": false,
     "unassigned_work": 0,
-    "chat_owned_implementation": 3,
-    "chat_owned_validation": 3,
-    "chat_owned_integration": 3,
+    "chat_owned_implementation": 4,
+    "chat_owned_validation": 4,
+    "chat_owned_integration": 4,
     "chat_owned_observation": 0,
     "chat_owned_credentials": 0,
     "canonical_owner_installed": true,
@@ -30,9 +34,9 @@
   "canonical_encoder_ref": "StegVerse-Labs/.github@fa65cf7ffcf7727b02450955f61a97febba6667f:scripts/cosv.py",
   "metric_basis": {
     "lifecycle": "Owner-authorized source repair (LLM-adapter#368 comment 6084623475); not a work claim or fence.",
-    "chat_owned_work": "Three bounded LLM-adapter PR lanes (PR-1, PR-2, PR-3), each with its own implementation, validation and review/integration obligation; no runtime observation or credential operation assigned.",
-    "unassigned_work": "Every finding F1-F14 is scoped to one of the three lanes; none is unassigned.",
+    "chat_owned_work": "Original lanes PR-1, PR-2 and PR-3 merged as LLM-adapter 2319ba4 (#369), 650eb7e (#370) and 5b0b45d (#371). Four bounded source-repair obligations remain open in the Registry (VA claims Master Records reconstruction gate, activation verifier Master Records predicate, F14 SDK-only processing selection, F13 COSV projection checker), each with its own implementation, validation and review/integration obligation. No runtime observation or credential operation is assigned to chat.",
+    "unassigned_work": "Every open source obligation is scoped to one of the four remaining lanes. AUTHENTIC_MANIFEST_DIRECTED_INTR_TRANSITION_AND_ORG_LEDGER_READBACK is held by the goal and closes only on an authentic Interlock/InTr transition and Org Ledger readback, not by chat work.",
     "thread_required": "Continuation is held by StegVerse-org/.github#102 and StegVerse-org/LLM-adapter#368 rather than chat.",
-    "terminal_flags": "No lane has merged; evidence is incomplete and nothing is activated or propagated."
+    "terminal_flags": "Three lanes merged, but obligations remain open: evidence is incomplete, the task is not archive-ready, and nothing is activated or propagated."
   }
 }
