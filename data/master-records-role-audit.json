@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 120,
+      "PROPER": 126,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
-      "NAMING_ONLY": 18,
-      "total": 157
+      "NAMING_ONLY": 19,
+      "total": 164
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1160,6 +1160,55 @@
       "text": "(publisher module; failure paths)",
       "classification": "PROPER",
       "reason": "Ported from SV-LLM/.github#22 (61d7635): releases a verified organization receipt-chain segment (repeatable --org-receipt; schema, owner, self-digest and previous_receipt_sha256 linkage checked; a single receipt is a batch of one) as RECORD_RELEASED_ORGANIZATION_BATCH with recorder_role RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER, gates_organization_runtime_reality=false and awaited_by_organization=false. Runs after the organization ledger append; every failure is a six-field downstream DENY with organization_transition_blocked=false. Filename, transition_reference and destination_service unchanged."
+    },
+    {
+      "file": "README.md",
+      "line": 174,
+      "text": "External LLM ingress stays on the declared `healthy node → LLM-adapter → SDK → StegVerse-org/.github → Interlock/InTr → Organization Ledger` path. HCB is optional and never a required hop; already-admitted internal Sandbox work does not re-",
+      "classification": "PROPER",
+      "reason": "States Master Records is downstream and non-gating on the declared external ingress path."
+    },
+    {
+      "file": "data/llm-org-foundation.json",
+      "line": 96,
+      "text": "\"master_records_role\": \"DOWNSTREAM_NON_GATING\",",
+      "classification": "PROPER",
+      "reason": "Foundation boundary declares master_records_role DOWNSTREAM_NON_GATING."
+    },
+    {
+      "file": "data/llma-hcb-terminal-review.json",
+      "line": 33,
+      "text": "\"Master_Records_reconstruction\",",
+      "classification": "PROPER",
+      "reason": "Listed among the effects the terminal review does not claim; Master Records reconstruction is not asserted."
+    },
+    {
+      "file": "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md",
+      "line": 136,
+      "text": "No provider/Sandbox activation, Master Records reconstruction, release or propagation",
+      "classification": "PROPER",
+      "reason": "States the foundation performs no Master Records reconstruction."
+    },
+    {
+      "file": "llm_org_foundation_validation.py",
+      "line": 15,
+      "text": "\"mirror_handoffs\", \"manifests\", \"receipts\", \"master_records_references\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Name of a work-context evidence class (references to Master Records); grants no role or authority."
+    },
+    {
+      "file": "resident-runtime/organization_ledger_readback.py",
+      "line": 118,
+      "text": "\"master_records_awaited\": False,",
+      "classification": "PROPER",
+      "reason": "Readback asserts master_records_awaited false: the organization ledger readback never waits on Master Records."
+    },
+    {
+      "file": "tests/test_llm_org_foundation.py",
+      "line": 69,
+      "text": "assert boundary[\"master_records_role\"] == \"DOWNSTREAM_NON_GATING\"",
+      "classification": "PROPER",
+      "reason": "Test asserts the foundation's Master Records role is DOWNSTREAM_NON_GATING."
     }
   ]
 }

@@ -35,7 +35,7 @@ class RepoLedgerChainBreak(ValueError):
   self.receipt_sha256=receipt_sha256;self.detail=detail
 def chain_break_refusal(exc):
  """The append attempt's own disposition when the chain it would extend is broken."""
- return {"schema":"stegverse.repo-ledger-append-refusal/v1","repository":C["repository"],"disposition":"FAIL_CLOSED","failed_predicate":exc.failed_predicate,"detail":exc.detail,"receipt_sha256":exc.receipt_sha256,"required_evidence_or_repair":"restore the receipt addressed by receipt_sha256, byte-for-byte as minted; a chain is never re-minted over a break","retry_entrypoint":".stegverse/transition-ledger/emit.py::append","consequence_committed":False,"authority_effect":"NONE_REFUSAL_ONLY"}
+ return {"schema":"stegverse.repo-ledger-append-refusal/v1","repository":C["repository"],"disposition":"FAIL_CLOSED","failed_predicate":exc.failed_predicate,"detail":exc.detail,"receipt_sha256":exc.receipt_sha256,"failure_code":"REPO_LEDGER_CHAIN_BROKEN","required_evidence_or_repair":"restore the receipt addressed by receipt_sha256, byte-for-byte as minted; a chain is never re-minted over a break","retry_entrypoint":".stegverse/transition-ledger/emit.py::append","owning_existing_goal":"REPO-LEDGER-DURABILITY-001","next_attempt":"rerun the same append once the addressed receipt is restored; nothing was appended","consequence_committed":False,"authority_effect":"NONE_REFUSAL_ONLY"}
 def node(target,cursor):
  """The receipt `cursor` addresses, recomputed and proven to be that receipt."""
  if not isinstance(cursor,str) or not DIGEST.match(cursor):raise RepoLedgerChainBreak(cursor,"malformed_receipt_address")
