@@ -132,7 +132,12 @@ jobs:
           set -euo pipefail
           fresh="$RUNNER_TEMP/readback.git"
           git init -q --bare "$fresh"
-          git --git-dir="$fresh" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
+          auth_header=$(git config --local --get http.https://github.com/.extraheader || true)
+          if [ -z "$auth_header" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE","failed_predicate":"FRESH_FETCH_AUTHENTICATED","required_evidence_or_repair":"checkout credentials unavailable for independent sovereign ref fetch","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"LLMA-DECLARED-PATH-CONFORMANCE-368","next_attempt":"retry with authorized existing repository contents token"}'
+            exit 1
+          fi
+          git --git-dir="$fresh" -c http.https://github.com/.extraheader="$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
           status=0
           for out in "$RUNNER_TEMP"/results/*/; do
             [ -f "$out/ingress.json" ] || continue
