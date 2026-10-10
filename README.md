@@ -172,3 +172,9 @@ The later Ecosystem Chat consumer loop through SDK Manifest Builder -> LLM Org -
 The existing `SVORG-LLM-ORG-FOUNDATION-001` goal is owned by this organization's Task Registry and COSV vector `20011100110000` (see `docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md`). `llm_org_foundation_validation.py` validates relevance-bounded canonical work-context references, Sandbox work objects, non-authorizing LLM/AI-entity candidates, and disposition-complete forward-looking Inference Window projections. Its structural `ALLOW` means only that the supplied source object passes these checks; it is **not** an Interlock/InTr authorization or evidence of observed execution. Every source refusal carries actionable six-field `DENY` or `FAIL_CLOSED` metadata.
 
 External LLM ingress stays on the declared `healthy node → LLM-adapter → SDK → StegVerse-org/.github → Interlock/InTr → Organization Ledger` path. HCB is optional and never a required hop; already-admitted internal Sandbox work does not re-enter the external adapter. The existing SDK builds/submits manifests, Interlock/InTr alone determines governance transitions, and Master Records is downstream and non-gating. The foundation introduces no provider broker, credential authority, always-on receiver, independent ledger, or required second machine. Runtime activation and terminal owner/COSV disposition require separate authentic evidence.
+
+The foundation source obligations were reconciled against merged PR #115 and its
+seven successful exact-head workflows on 2026-10-10. See the canonical
+[handoff](docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md) for evidence and the separate
+LLMA-368 ledger readback. Registry/COSV terminal review and Sandbox activation
+remain distinct from source validation.

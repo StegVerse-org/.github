@@ -15,9 +15,11 @@
     "StegVerse-org/LLM-adapter#373",
     "StegVerse-org/LLM-adapter#374",
     "StegVerse-org/LLM-adapter#375",
-    "orchestration/task-registry.json"
+    "orchestration/task-registry.json",
+    "https://github.com/StegVerse-org/.github/actions/runs/38020580790",
+    "refs/stegverse/organization-ledger@6b2705fe480d70afa15338ca93eb0ca19033e0ac"
   ],
-  "observed_at": "2026-10-09",
+  "observed_at": "2026-10-10",
   "exact_metrics": {
     "lifecycle": "MACHINE_OWNED",
     "archive_ready": false,
@@ -37,10 +39,10 @@
   "authority_effect": "NONE_SOURCE_COORDINATION_ONLY",
   "canonical_encoder_ref": "StegVerse-Labs/.github@fa65cf7ffcf7727b02450955f61a97febba6667f:scripts/cosv.py",
   "metric_basis": {
-    "lifecycle": "Every owner-authorized source repair on LLM-adapter#368 is merged; the one remaining obligation is held by the manifest-directed Interlock/InTr transition and Org Ledger readback, not by chat. Non-terminal: the task stays in_progress.",
+    "lifecycle": "Source repairs and the declared-path transition/readback are evidenced in the canonical Registry. Task remains in_progress pending terminal coordination review; the vector is retained, not a new runtime disposition.",
     "chat_owned_work": "All lanes merged: 2319ba4 (#369), 650eb7e (#370), 5b0b45d (#371), f581f3d (#372, F14), 1cd1aca (#373, VA claims), 1b58b1f (#374, activation verifiers) and 112da47 (#375, F13). No implementation, validation, integration, runtime observation or credential operation remains assigned to chat.",
-    "unassigned_work": "AUTHENTIC_MANIFEST_DIRECTED_INTR_TRANSITION_AND_ORG_LEDGER_READBACK is held by the goal and closes only on an authentic Interlock/InTr transition and Org Ledger readback; it is not source-fixable and not chat work.",
+    "unassigned_work": "Registry unresolved_obligations is empty. The prior authentic transition/readback obligation is satisfied by organization receipt sha256:4643742af4298db9c27e9c88de31bfa25163778d29383fd4fccbd63cd23de55d, independently verified from the sovereign ledger ref on 2026-10-10.",
     "thread_required": "Continuation is held by StegVerse-org/.github#102 and StegVerse-org/LLM-adapter#368 rather than chat.",
-    "terminal_flags": "Source repairs are merged, but authentic transition evidence is absent: evidence is incomplete, the task is not archive-ready, and nothing is activated or propagated."
+    "terminal_flags": "Authentic declared-path transition evidence is present. Retained non-terminal flags do not assert absent runtime evidence: terminal coordination review is outstanding; no Sandbox/provider/product activation or propagation follows from this read-only registry-disclosure transition."
   }
 }

@@ -1,6 +1,6 @@
 # LLM Org Foundation Mirror Handoff
 
-Updated: 2026-10-06
+Updated: 2026-10-10
 Organization: `StegVerse-org`
 Repository: `.github`
 Goal Task ID: `SVORG-LLM-ORG-FOUNDATION-001`
@@ -99,3 +99,28 @@ That is a successor integration after the foundation contracts are canonical.
 8. Merge uses expected-head protection.
 
 No runtime activation, external provider execution, Publisher delivery, Ecosystem Chat delivery, or Master Records organization record is claimed by source completion alone.
+
+## Verified source reconciliation — 2026-10-10
+
+PR #115 merged at `7d57e8afa05e6e562dd4e1eb8445765f34451b7a` after
+all seven workflows succeeded for head `daed4d8196aa6b1454a33d5b9dc8e33884e6f27d`.
+Foundation validation run: `38030595921`; Registry validation run: `38030595755`.
+The non-authority/Inference Window tests and README obligations are now reconciled
+in `orchestration/task-registry.json`; no source obligations remain there.
+The 13 existing foundation contract and validator tests also passed locally.
+Registry status `accepted`, COSV `20011100110000`, and the existing active goal
+are preserved pending terminal coordination review. This is not Sandbox activation.
+
+The separate LLMA-368 read-only Registry disclosure has an authentic historical
+organization-ledger receipt, independently verified from a fresh fetch at
+`6b2705fe480d70afa15338ca93eb0ca19033e0ac`. Receipt:
+`sha256:4643742af4298db9c27e9c88de31bfa25163778d29383fd4fccbd63cd23de55d`.
+It is shared path evidence only, not an HCB or Sandbox runtime invocation.
+The stale LLMA COSV metric explanation claiming that evidence is absent is corrected;
+its vector and terminal flags are not promoted by this evidence reconciliation.
+
+A second bounded Registry-disclosure request is committed to read the reconciled
+Registry generation through the existing SDK/organization ingress workflow.
+Only the resulting sovereign ledger receipt and fresh readback may establish its
+outcome; this handoff does not predeclare that outcome. No Node-boundary amendment,
+provider execution, new dependency, release, or downstream propagation is included.
