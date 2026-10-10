@@ -104,6 +104,8 @@ GOVERNANCE_REQUEST_SCHEMA = "stegverse.org-governance-decision-request/v1"
 #: submission indistinguishable from one that never arrived.
 INTENDED_ACTION = "RECEIVE_A_SUBMITTED_SDK_MANIFEST"
 REFUSED_CLASS = "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED"
+#: The declaration every non-ALLOW answers to (docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md).
+OWNING_EXISTING_GOAL = "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001"
 # The organization ledger is its own runtime reality locus, so replay of this
 # transition terminates on this chain. That is the contract's own replay_rule,
 # not a claim about any higher level.
@@ -229,8 +231,17 @@ def _refused(failed_predicate: str, detail: str, *, manifest: Any,
         "receiving_operation": OPERATION_ID,
         "disposition": "FAIL_CLOSED",
         "received": False,
+        # Every non-ALLOW carries the six fields a caller needs to repair and
+        # retry (docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md).
+        "failure_code": REFUSED_CLASS,
         "failed_predicate": failed_predicate,
         "detail": detail,
+        "required_evidence_or_repair": "satisfy the failed predicate (" + failed_predicate + ": " + detail
+                                       + ") and resubmit the manifest",
+        "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
+        "owning_existing_goal": OWNING_EXISTING_GOAL,
+        "next_attempt": "resubmit the same manifest once the predicate is satisfied; the refusal is "
+                        "recorded and nothing was admitted",
         # The refusal is recorded at both levels. `organization_receipt_observed`
         # stays false regardless: it means an admitted crossing was observed, and
         # a refusal receipt is not that. A caller reading it as one would treat a
@@ -485,9 +496,15 @@ def request_governance_decision(request: Mapping[str, Any], crossing: Mapping[st
     if (decision_request.get("schema") != GOVERNANCE_REQUEST_SCHEMA
             or decision_request.get("governance_request_sha256") != request_digest(decision_request.get("governance_request"))):
         return {**base, "disposition": "FAIL_CLOSED",
+                "failure_code": "GOVERNANCE_REQUEST_UNBOUND",
                 "failed_predicate": "GOVERNANCE_REQUEST_IS_BOUND_TO_THE_SUBMITTED_MANIFEST",
                 "detail": "the governance processor returned no request bound to this manifest",
+                "required_evidence_or_repair": "a governance processor result carrying "
+                                               "stegverse_governance_request bound to this manifest's digest",
                 "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
+                "owning_existing_goal": OWNING_EXISTING_GOAL,
+                "next_attempt": "resubmit the same manifest once the processor binds its request; "
+                                "nothing was emitted",
                 "authority_effect": "NONE_REFUSAL_ONLY"}
 
     egress = _module("organization_egress_boundary", "resident-runtime/organization_egress_boundary.py")
@@ -503,15 +520,16 @@ def request_governance_decision(request: Mapping[str, Any], crossing: Mapping[st
         # Recorded by the egress boundary as a refused emission. The ingress
         # transition stands; the request did not leave, and says why.
         return {**base, **emission, "disposition": "FAIL_CLOSED",
+                "failure_code": "GOVERNANCE_REQUEST_NOT_EMITTED",
                 "failed_predicate": emitted.get("failed_predicate"),
                 "detail": emitted.get("detail"),
                 "governance_decision_state": "REQUEST_NOT_EMITTED",
-                "required_evidence_or_repair": (
-                    "materialize this node with its federation mesh location"
-                    if "mesh_location_required" in str(emitted.get("detail"))
-                    else "satisfy the egress boundary's failed predicate: "
-                         + str(emitted.get("failed_predicate"))),
+                "required_evidence_or_repair": egress.refusal_repair(
+                    emitted.get("failed_predicate"), emitted.get("detail")),
                 "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
+                "owning_existing_goal": OWNING_EXISTING_GOAL,
+                "next_attempt": "resubmit the same manifest once the repair is in place; the ingress "
+                                "transition is recorded and the request did not leave",
                 "authority_effect": "NONE_REFUSAL_ONLY"}
     return {**base, **emission,
             "disposition": "ALLOW",

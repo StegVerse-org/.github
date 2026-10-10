@@ -268,6 +268,17 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertIs(result["organization_receipt_observed"], False)
         self.assertNotIn("organization_receipt_sha256", result)
 
+    def test_a_refusal_carries_the_six_fields_of_a_non_allow(self):
+        result = self.refuse()
+        self.assertEqual(result["disposition"], "FAIL_CLOSED")
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                      "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+            self.assertTrue(result.get(field), field)
+        self.assertEqual(result["failure_code"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        self.assertEqual(result["retry_entrypoint"], "resident-runtime/organization_manifest_ingress.py::receive")
+        self.assertEqual(result["owning_existing_goal"], "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001")
+        self.assertIn(result["failed_predicate"], result["required_evidence_or_repair"])
+
     def test_a_manifest_the_crossing_cannot_drive_is_recorded_rather_than_raised(self):
         """No declared standing used to leave the operation by exception."""
         result = self.refuse(standing=None)
