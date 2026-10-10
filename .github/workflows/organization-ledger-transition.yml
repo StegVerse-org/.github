@@ -49,6 +49,20 @@ jobs:
       - name: Install SDK
         run: python -m pip install --no-deps -e ./sdk
 
+      - name: Validate committed request and readback implementation before any append
+        run: |
+          python -m py_compile resident-runtime/organization_ledger_readback.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          contract = json.loads(Path(".stegverse/transition-ledger/org-contract.json").read_text())
+          assert contract["organization_ledger_repository"] == "StegVerse-org/.github"
+          assert contract["organization_ledger_ref"] == "refs/stegverse/organization-ledger"
+          for path in Path(".stegverse/transition-requests").glob("*.json"):
+              request = json.loads(path.read_text())
+              assert request["owning_existing_goal"] and request["build_manifest"] and request["standing"]
+          PY
+
       - name: Bind the designated organization ledger ref
         run: |
           ref=$(python -c 'import json; c=json.load(open(".stegverse/transition-ledger/org-contract.json")); assert c["organization_ledger_repository"]=="StegVerse-org/.github", c; print(c["organization_ledger_ref"])')
