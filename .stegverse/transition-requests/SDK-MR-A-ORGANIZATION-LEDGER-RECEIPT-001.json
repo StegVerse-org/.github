@@ -1,0 +1,112 @@
+{
+  "schema": "stegverse.organization-transition-request/v1",
+  "request_id": "SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001",
+  "owning_existing_goal": "SDK-MR-A-VALIDATION-CUSTODY-001",
+  "purpose": "Governance-process transition for SDK-MR-A validation custody (StegVerse-org/StegVerse-SDK#452): ask the organization that owns StegCore (StegVerse-Labs) to decide the terminal custody authority of the SDK validation lanes, so that the SDK-MR-A transition has an authentic organization-ledger receipt and a sovereign readback of this repository's chain (StegVerse-org/.github#118). Not an ecosystem_diagnostic; the receipted LLMA Task Registry disclosure is not replayed. No provider execution, no Sandbox activation, no external effect.",
+  "build_manifest": {
+    "created_at": "2026-10-10T23:20:00Z",
+    "data": {
+      "external_side_effect": false,
+      "purpose": "SDK-MR-A validation custody: terminal authority decision requested of the deciding organization; organization records only",
+      "request_id": "SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001",
+      "canonical_task_record": {
+        "repository": "StegVerse-Labs/.github",
+        "commit": "6e2e573a31c217dc7c3b432d265a10f39d6e10db",
+        "path": "data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json",
+        "sha256": "c08ae696b8ee44dba6fe392b5611d8ac0c877a69dbbaf45d10c1a170c468e443",
+        "registry_generation": 306,
+        "cosv_task_vector": "10100000100000"
+      },
+      "source_state": {
+        "StegVerse-org/StegVerse-SDK": "8559c4700a076a733de048910344f99bedaae4ca",
+        "StegVerse-org/.github": "6a7c2e4e0bbfc713c324d62ee28ae65a8dcc22ae"
+      }
+    },
+    "data_class": "sv.organization.validation-custody-governance.v1",
+    "declared_intent": "Request the governance decision on SDK-MR-A-VALIDATION-CUSTODY-001 terminal custody authority from the organization that owns StegCore",
+    "egress_surface": "LLM_ADAPTER",
+    "process": "governance",
+    "processor_request": {
+      "candidate": {
+        "action": "decide_terminal_custody_authority",
+        "actor_class": "sdk_validation_lane",
+        "parameters": {
+          "external_side_effect": false,
+          "proposed_terminal_authority": "ORGANIZATION_LEDGER",
+          "superseded_terminal_authority": "MASTER_RECORDS",
+          "master_records_role": "DOWNSTREAM_NON_GATING"
+        },
+        "scope": "StegVerse-org/StegVerse-SDK validation lanes",
+        "target": "SDK-MR-A-VALIDATION-CUSTODY-001"
+      },
+      "judgment": {
+        "evidence_refs": [
+          "StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json",
+          "StegVerse-org/StegVerse-SDK@8559c4700a076a733de048910344f99bedaae4ca:data/master-records-role-audit.json"
+        ],
+        "isolation_state": "supported",
+        "operator_recoverability": "available",
+        "refusal_available": true,
+        "time_pressure": "normal",
+        "workload_state": "supported"
+      },
+      "signal": {
+        "admitted_signal_refs": [
+          "StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json"
+        ],
+        "excluded_signal_refs": [],
+        "expected_reference_state_hash": "c08ae696b8ee44dba6fe392b5611d8ac0c877a69dbbaf45d10c1a170c468e443",
+        "missing_inputs": [
+          "authenticated_current_grant"
+        ],
+        "reconstruction_available": true,
+        "reference_state_hash": "c08ae696b8ee44dba6fe392b5611d8ac0c877a69dbbaf45d10c1a170c468e443",
+        "transformation_provenance_complete": true,
+        "transformations": [],
+        "uncertainty_state": "known"
+      },
+      "execution": {
+        "actor_authority_current": false,
+        "affected_entity_conditions_represented": true,
+        "delegation_current": false,
+        "delegation_ref": "none:no-runtime-authenticated-delegation",
+        "evidence_current": true,
+        "evidence_refs": [
+          "StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json"
+        ],
+        "policy_current": true,
+        "policy_ref": "StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-registry.json#generation-306",
+        "recoverability_profile": "recoverable",
+        "validity_window_open": true
+      },
+      "capability": {
+        "allowed": true
+      },
+      "continuity": {
+        "required": true
+      },
+      "approval": {
+        "required": true
+      },
+      "permission_present": false,
+      "declared_context": {
+        "authority_evidence_status": "NOT_AUTHENTICATED",
+        "no_external_effect": true,
+        "other_framework_evidence_used": false,
+        "semantic_status": "RESOLVED_FROM_CANONICAL_RECORD",
+        "source_only": true
+      }
+    },
+    "publisher_required": false,
+    "requested_consequence": "Record the governance disposition only as genuinely decided by the deciding organization; admit nothing locally",
+    "return_depth": "full-trace",
+    "source_framework": "StegVerse-org/StegVerse-SDK",
+    "source_output_id": "SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001"
+  },
+  "standing": {
+    "mode": "ESTABLISH_GENESIS",
+    "node_ref": "StegVerse-org/StegVerse-SDK",
+    "predecessor": null,
+    "_declared_not_authenticated": "A declared standing is not authenticated standing; the ingress decides the disposition and the organization ledger records it either way."
+  }
+}
