@@ -175,6 +175,10 @@ class ChainBreakTests(LedgerCase):
         self.assertEqual(refusal["failed_predicate"], "REPO_LEDGER_CHAIN_BREAK")
         self.assertEqual(refusal["receipt_sha256"], receipts[1]["receipt_sha256"])
         self.assertFalse(refusal["consequence_committed"])
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                      "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+            self.assertTrue(refusal[field], field)
+        self.assertEqual(refusal["failure_code"], "REPO_LEDGER_CHAIN_BROKEN")
 
 
 class ExactRetryTests(LedgerCase):
