@@ -15,7 +15,8 @@ def test_task_is_registered_without_replacing_existing_active_goal():
     registry = load(REGISTRY)
     assert registry["active_goal"] == "SVORG-STEGOS-PORTABILITY-001"
     task = next(t for t in registry["tasks"] if t["task_id"] == "SVORG-LLM-ORG-FOUNDATION-001")
-    assert task["status"] == "accepted"
+    assert task["status"] == "complete"
+    assert task["unresolved_obligations"] == []
     assert task["issue"] == 74
 
 
@@ -48,7 +49,9 @@ def test_cosv_projection_matches_registered_foundation():
     vector = load(VECTOR)
     assert vector["identity"] == "SVORG-LLM-ORG-FOUNDATION-001"
     assert vector["profile"] == "task.v1"
-    assert vector["vector"] == "20011100110000"
+    assert vector["vector"] == "71000000100100"
+    assert vector["exact_metrics"]["activated"] is False
+    assert vector["exact_metrics"]["propagated"] is False
     assert vector["authority_effect"] == "NONE_SOURCE_COORDINATION_ONLY"
 
 

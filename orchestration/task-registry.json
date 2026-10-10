@@ -227,7 +227,7 @@
       "task_id": "SVORG-LLM-ORG-FOUNDATION-001",
       "issue": 74,
       "title": "Establish InTr-resolved LLM Org ecosystem work context and multi-entity Sandbox",
-      "status": "accepted",
+      "status": "complete",
       "workstream": "llm-org-foundation",
       "depends_on": [],
       "required_evidence": [
@@ -238,7 +238,8 @@
         "README reconciles the organization-level coordination responsibility",
         "StegVerse-org/.github#112 merged at 03ad5be1bd2b64d22fe936b3e7a9c4affb98e441; exact-head validate-task-registry success for declared external SDK ingress and admitted Sandbox internal no-hop source contract tests (not runtime activation)",
         "StegVerse-org/.github#114 merged at 7801937d6bac772f25414356b9e927214e32df4a, exact-head sandbox validation success 46304ace679443dc37277c9a55100ca7d50f491f: bounded work-context and Sandbox source validators (not runtime admission)",
-        "StegVerse-org/.github#115 merged at 7d57e8afa05e6e562dd4e1eb8445765f34451b7a; exact head daed4d8196aa6b1454a33d5b9dc8e33884e6f27d passed 7/7 workflows, including 38030595921: non-authority and disposition-complete Inference Window tests plus README reconciliation; source-only, not Sandbox runtime activation"
+        "StegVerse-org/.github#115 merged at 7d57e8afa05e6e562dd4e1eb8445765f34451b7a; exact head daed4d8196aa6b1454a33d5b9dc8e33884e6f27d passed 7/7 workflows, including 38030595921: non-authority and disposition-complete Inference Window tests plus README reconciliation; source-only, not Sandbox runtime activation",
+        "Terminal review 2026-10-10: CI_VALIDATED source scope; data/llma-hcb-terminal-review.json; no provider, Sandbox activation, release or propagation claim. PR #116 merged 3b6c75e3c7e3d0c680c0647d4d96ec1c20edc200; six exact-head workflows passed."
       ],
       "outputs": [
         "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md",
@@ -256,7 +257,7 @@
       "task_id": "LLMA-DECLARED-PATH-CONFORMANCE-368",
       "issue": 102,
       "title": "Conform LLM-adapter to the owner-declared manifest path and organization-role standard",
-      "status": "in_progress",
+      "status": "complete",
       "workstream": "llm-adapter-declared-path-conformance",
       "depends_on": [],
       "required_evidence": [
@@ -272,7 +273,9 @@
         "no execution or completion path is gated on Master Records",
         "zero dependencies added",
         "Authenticated StegVerse-org/.github Organization Ledger Transition run 38020580790: ingress ALLOW, canonical manifest sha256:1609719774d9cadaaf0e3f6f8c347248b6f6749fb750f73441678e5e8e2501af; independent fresh-fetch ledger readback succeeded",
-        "Authoritative refs/stegverse/organization-ledger commit 6b2705fe480d70afa15338ca93eb0ca19033e0ac: HEAD receipt sha256:4643742af4298db9c27e9c88de31bfa25163778d29383fd4fccbd63cd23de55d, source sha256:861b33b398c25d333e8308c3fb151ea60f8b634da5311b8a9f5d4c277ef028e2, previous_receipt_sha256 null"
+        "Authoritative refs/stegverse/organization-ledger commit 6b2705fe480d70afa15338ca93eb0ca19033e0ac: HEAD receipt sha256:4643742af4298db9c27e9c88de31bfa25163778d29383fd4fccbd63cd23de55d, source sha256:861b33b398c25d333e8308c3fb151ea60f8b634da5311b8a9f5d4c277ef028e2, previous_receipt_sha256 null",
+        "Terminal review 2026-10-10: CI_VALIDATED source scope; data/llma-hcb-terminal-review.json; no provider, Sandbox activation, release or propagation claim. PR #116 merged 3b6c75e3c7e3d0c680c0647d4d96ec1c20edc200; six exact-head workflows passed.",
+        "Declared-path read-only Registry disclosure ALLOW: run 38031123470; sovereign ledger 98738ceb6feee16a3de935319ec307c31719ba9d; receipt sha256:01c59b58331d670d31ead504b0710ec06ef7120413c4300219469170e42c1110; independent chain/source readback PASS."
       ],
       "outputs": [
         "StegVerse-org/LLM-adapter/llm_adapter/governed_manifest_ingress.py",

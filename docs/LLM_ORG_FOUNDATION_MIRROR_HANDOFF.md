@@ -5,9 +5,9 @@ Organization: `StegVerse-org`
 Repository: `.github`
 Goal Task ID: `SVORG-LLM-ORG-FOUNDATION-001`
 Issue: `#74`
-Task Registry status: `accepted`
-COSV ID: `20011100110000`
-Status: `SOURCE_VALIDATORS_IMPLEMENTED / NOT_RUNTIME_ACTIVATED`
+Task Registry status: `complete` (CI_VALIDATED source scope)
+COSV ID: `71000000100100`
+Status: `CI_VALIDATED_SOURCE_COMPLETE / NOT_RUNTIME_ACTIVATED`
 
 ## Goal
 
@@ -124,3 +124,14 @@ Registry generation through the existing SDK/organization ingress workflow.
 Only the resulting sovereign ledger receipt and fresh readback may establish its
 outcome; this handoff does not predeclare that outcome. No Node-boundary amendment,
 provider execution, new dependency, release, or downstream propagation is included.
+
+## Terminal reconciliation — 2026-10-10
+
+The prior pending terminal review is superseded by the owner-requested reconciliation.
+Registry source scope is complete; COSV `71000000100100` is encoded with the canonical encoder.
+PR #116 merged with 6/6 exact-head workflows. The separate second LLMA disclosure
+returned ALLOW in run 38031123470; ledger commit
+`98738ceb6feee16a3de935319ec307c31719ba9d` independently verifies both receipts
+and retained sources. See `data/llma-hcb-terminal-review.json` for scoped evidence.
+No provider/Sandbox activation, Master Records reconstruction, release or propagation
+is claimed. Consumer-loop integration remains outside this foundation scope.
