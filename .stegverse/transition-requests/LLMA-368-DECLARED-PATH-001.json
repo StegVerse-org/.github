@@ -1,0 +1,45 @@
+{
+  "schema": "stegverse.organization-transition-request/v1",
+  "request_id": "LLMA-368-DECLARED-PATH-001",
+  "owning_existing_goal": "LLMA-DECLARED-PATH-CONFORMANCE-368",
+  "purpose": "First manifest-directed transition recorded on the designated organization ledger ref (StegVerse-org/LLM-adapter#368): a read-only disclosure of this organization's current task registry generation over the declared LLM_ADAPTER surface.",
+  "build_manifest": {
+    "created_at": "2026-10-10T02:45:00Z",
+    "data": {
+      "external_side_effect": false,
+      "purpose": "declared-path verification: read the current task registry generation; admit nothing",
+      "request_id": "LLMA-368-DECLARED-PATH-001"
+    },
+    "data_class": "sv.organization.task-registry-disclosure.v1",
+    "declared_intent": "Read this organization's current task registry generation",
+    "egress_surface": "LLM_ADAPTER",
+    "process": "ecosystem_diagnostic",
+    "processor_request": {
+      "diagnostic_request_id": "LLMA-368-DECLARED-PATH-001",
+      "expected_evidence_fields": ["registry_sha256", "active_goal", "tasks"],
+      "mutation_permitted": false,
+      "schema": "stegverse.ecosystem-diagnostic-request.v1",
+      "scope": "repository",
+      "tests": [
+        {
+          "authority_owner": "StegVerse-org/.github",
+          "component_id": "StegVerse-org/.github:orchestration/task-registry.json",
+          "observation": null,
+          "predicate_id": "REGISTRY_SERVED_MATCHES_COMMITTED_DIGEST",
+          "test_id": "CURRENT_TASK_REGISTRY_GENERATION_IS_SERVED"
+        }
+      ]
+    },
+    "publisher_required": false,
+    "requested_consequence": "Return the committed registry and its digest; admit nothing",
+    "return_depth": "full-trace",
+    "source_framework": "StegVerse-org/LLM-adapter",
+    "source_output_id": "LLMA-368-DECLARED-PATH-001"
+  },
+  "standing": {
+    "mode": "ESTABLISH_GENESIS",
+    "node_ref": "StegVerse-org/LLM-adapter",
+    "predecessor": null,
+    "_declared_not_authenticated": "A declared standing is not authenticated standing; the ingress decides the disposition and the organization ledger records it either way."
+  }
+}
