@@ -107,14 +107,23 @@ jobs:
           # repository_ledger_location; StegVerse-org/.github#118).
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           mkdir -p "$RUNNER_TEMP/results"
-          # A durable mesh locator is explicitly supplied by the materializer;
-          # never infer it from environment, runner home, or sovereign ledger ref.
+          # A durable mesh locator is explicitly supplied by the materializer
+          # (workflow_dispatch input mesh_root); never infer it from environment,
+          # runner home, or sovereign ledger ref. A push-triggered run has none:
+          # the node is then materialized without a mesh, and a capability that
+          # must leave this organization is refused at egress by the ingress
+          # itself (mesh_location_required_from_materializer), with all six
+          # fields, recorded on both ledgers and read back below. The ledger
+          # carries that disposition; this run does not stand in for it.
           mesh_root='${{ github.event.inputs.mesh_root }}'
-          if [ -z "$mesh_root" ]; then
-            echo '{"disposition":"FAIL_CLOSED","failure_code":"MESH_LOCATION_REQUIRED","failed_predicate":"MATERIALIZER_SUPPLIES_MESH_LOCATION","required_evidence_or_repair":"workflow_dispatch mesh_root git+ locator required","retry_entrypoint":"organization-ledger-transition.yml","owning_existing_goal":"SVORG-MESH-LOCATION-BINDING-001","next_attempt":"rerun with authorized mesh locator"}'
-            exit 1
+          mesh_args=()
+          if [ -n "$mesh_root" ]; then
+            case "$mesh_root" in git+*\#refs/*) ;; *) echo 'invalid git-ref mesh locator'; exit 1;; esac
+            mesh_args=(--mesh-root "$mesh_root")
+            echo "mesh supplied by the materializer: $mesh_root"
+          else
+            echo "no mesh supplied by the materializer; an emission is refused at egress and the refusal is recorded (SVORG-MESH-LOCATION-BINDING-001)"
           fi
-          case "$mesh_root" in git+*\#refs/*) ;; *) echo 'invalid git-ref mesh locator'; exit 1;; esac
           while IFS= read -r request; do
             [ -n "$request" ] || continue
             name=$(basename "$request" .json)
@@ -149,7 +158,7 @@ jobs:
             python resident-runtime/organization_manifest_ingress.py \
               --registry org-boundary/registry/services.json \
               --manifest "$out/manifest.json" --standing "$out/standing.json" \
-              --packet-id "$name" --mesh-root "$mesh_root" --out "$out/ingress.json" || true
+              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} --out "$out/ingress.json" || true
             python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
           done < "$RUNNER_TEMP/requests.txt"
 
