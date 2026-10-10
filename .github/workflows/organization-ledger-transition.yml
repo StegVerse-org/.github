@@ -1,0 +1,158 @@
+name: Organization Ledger Transition
+
+# Action by manifest: a transition request committed under
+# .stegverse/transition-requests/ is built into an SDK manifest, received on
+# this organization's ingress, appended to the organization ledger on the
+# designated ref (org-contract.json organization_ledger_ref), published by a
+# fast-forward-only push, and read back from a fresh fetch. The ledger is the
+# evidence; this run's success is not.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.stegverse/transition-requests/**'
+  workflow_dispatch:
+    inputs:
+      request:
+        description: 'Path of a committed transition request'
+        required: true
+
+permissions:
+  contents: write
+
+# ORGANIZATION_LEDGER_LOCK: one appender at a time. The push below is the
+# compare-and-swap against the published ref, so a writer that lost a race
+# fails closed instead of overwriting.
+concurrency:
+  group: organization-ledger
+  cancel-in-progress: false
+
+jobs:
+  transition:
+    runs-on: ubuntu-latest
+    env:
+      LEDGER_REF: refs/stegverse/organization-ledger
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout exact merged SDK manifest state-transition runtime
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: e67851968fb6b45b0a02529152824770cbcf5f95
+          path: sdk
+          persist-credentials: false
+
+      - name: Install SDK
+        run: python -m pip install --no-deps -e ./sdk
+
+      - name: Bind the designated organization ledger ref
+        run: |
+          ref=$(python -c 'import json; c=json.load(open(".stegverse/transition-ledger/org-contract.json")); assert c["organization_ledger_repository"]=="StegVerse-org/.github", c; print(c["organization_ledger_ref"])')
+          test "$ref" = "$LEDGER_REF"
+          if git ls-remote --exit-code origin "$LEDGER_REF" >/dev/null; then
+            git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
+            echo "ledger tip: $(git rev-parse "$LEDGER_REF")"
+          else
+            echo "ledger ref not yet materialized; the first append opens it at genesis"
+          fi
+
+      - name: Select committed transition requests
+        env:
+          INPUT_REQUEST: ${{ github.event.inputs.request }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -n "$INPUT_REQUEST" ]; then
+            printf '%s\n' "$INPUT_REQUEST" > "$RUNNER_TEMP/requests.txt"
+          else
+            git diff --name-only --diff-filter=AM "$BEFORE" "$GITHUB_SHA" -- '.stegverse/transition-requests/*.json' > "$RUNNER_TEMP/requests.txt"
+          fi
+          cat "$RUNNER_TEMP/requests.txt"
+
+      - name: Receive each request and append to the organization ledger
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+        run: |
+          set -euo pipefail
+          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
+          mkdir -p "$RUNNER_TEMP/results"
+          while IFS= read -r request; do
+            [ -n "$request" ] || continue
+            name=$(basename "$request" .json)
+            out="$RUNNER_TEMP/results/$name"
+            mkdir -p "$out"
+            python - "$request" "$out" <<'PY'
+          import importlib.util, json, sys
+          from pathlib import Path
+          from stegverse.manifest_builder import build_manifest
+          from stegverse.manifest_contract import validate_ingress_manifest
+          request = json.loads(Path(sys.argv[1]).read_text())
+          out = Path(sys.argv[2])
+          manifest = build_manifest(**request["build_manifest"])
+          validate_ingress_manifest(manifest)
+          spec = importlib.util.spec_from_file_location("ingress", "resident-runtime/organization_manifest_ingress.py")
+          ingress = importlib.util.module_from_spec(spec); spec.loader.exec_module(ingress)
+          canonical = ingress.derive_execution_request(manifest, ingress.boundary())["canonical_manifest_sha256"]
+          (out / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+          (out / "standing.json").write_text(json.dumps(request["standing"], indent=2, sort_keys=True) + "\n")
+          (out / "canonical_manifest_sha256").write_text(canonical)
+          print("built", request["request_id"], "canonical manifest", canonical)
+          PY
+            canonical=$(cat "$out/canonical_manifest_sha256")
+            recorded=$(python resident-runtime/organization_ledger_readback.py \
+              --location "$STEGVERSE_ORG_LEDGER_ROOT" --recorded-for "$canonical")
+            if [ -n "$recorded" ]; then
+              echo "already recorded as $recorded; one manifest is one transition, nothing appended"
+              python -c 'import json,sys; json.dump({"disposition":"ALREADY_RECORDED","organization_receipt_sha256":sys.argv[1],"canonical_manifest_sha256":sys.argv[2]}, open(sys.argv[3],"w"))' \
+                "$recorded" "$canonical" "$out/ingress.json"
+              continue
+            fi
+            python resident-runtime/organization_manifest_ingress.py \
+              --registry org-boundary/registry/services.json \
+              --manifest "$out/manifest.json" --standing "$out/standing.json" \
+              --packet-id "$name" --out "$out/ingress.json" || true
+            python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
+          done < "$RUNNER_TEMP/requests.txt"
+
+      - name: Publish the ledger ref (fast-forward only)
+        run: |
+          if ! git rev-parse --verify --quiet "$LEDGER_REF" >/dev/null; then
+            echo "nothing appended; ledger ref not materialized"; exit 0
+          fi
+          if ! git push origin "$LEDGER_REF:$LEDGER_REF"; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"ORGANIZATION_LEDGER_PUBLISH_RACE","failed_predicate":"PUBLISHED_REF_FAST_FORWARDS","required_evidence_or_repair":"another append moved the ref first; this run published nothing","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"LLMA-DECLARED-PATH-CONFORMANCE-368","next_attempt":"re-run; the request is answered from the ledger if already recorded"}'
+            exit 1
+          fi
+
+      - name: Read the organization ledger back from a fresh fetch
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/readback.git"
+          git init -q --bare "$fresh"
+          git --git-dir="$fresh" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
+          status=0
+          for out in "$RUNNER_TEMP"/results/*/; do
+            [ -f "$out/ingress.json" ] || continue
+            python resident-runtime/organization_ledger_readback.py \
+              --location "git+$fresh#$LEDGER_REF" --ingress-result "$out/ingress.json" \
+              --manifest "$out/manifest.json" \
+              --out "$out/readback.json" || status=1
+            {
+              echo "### $(basename "$out")"
+              echo '```json'
+              cat "$out/readback.json"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+          exit $status
+
+      - name: Retain the run's evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: organization-ledger-transition
+          path: ${{ runner.temp }}/results
+          if-no-files-found: ignore
