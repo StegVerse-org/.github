@@ -24,6 +24,9 @@ on:
       - 'tests/test_repo_ledger_exact_retry.py'
       - 'tests/test_ledger_store_contract.py'
       - 'tests/test_git_ledger_store.py'
+      - 'tests/test_repo_ledger_durable_in_sovereign_ref.py'
+      - 'resident-runtime/organization_ledger_readback.py'
+      - '.github/workflows/organization-ledger-transition.yml'
       - 'resident-runtime/README.md'
       - 'tests/test_ledger_substrate_transaction.py'
       - 'tests/test_ledger_substrate_transaction.py'
@@ -88,6 +91,9 @@ on:
       - 'tests/test_repo_ledger_exact_retry.py'
       - 'tests/test_ledger_store_contract.py'
       - 'tests/test_git_ledger_store.py'
+      - 'tests/test_repo_ledger_durable_in_sovereign_ref.py'
+      - 'resident-runtime/organization_ledger_readback.py'
+      - '.github/workflows/organization-ledger-transition.yml'
       - 'resident-runtime/README.md'
       - 'org-boundary/runtime/intr_transport.py'
       - 'org-boundary/runtime/process_boundary.py'
@@ -144,6 +150,8 @@ jobs:
         run: python -m unittest tests.test_ledger_store_contract -v
       - name: Test the git-ref ledger store against temporary repositories only
         run: python -m unittest tests.test_git_ledger_store -v
+      - name: Test the repository chain is durable in its own subtree of the designated organization ledger ref
+        run: python -m unittest tests.test_repo_ledger_durable_in_sovereign_ref -v
       - name: Test Organization Role deployment and generalized ledger admission
         run: python -m unittest discover -s tests -p 'test_organization_role_runtime_reality_deployment.py' -v
       - name: Test complete Interlock/InTr organization crossing

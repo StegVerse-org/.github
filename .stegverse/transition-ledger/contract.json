@@ -16,6 +16,15 @@
     "previous_receipt_sha256"
   ],
   "replay_rule": "REPOSITORY_REPLAY_MUST_NOT_REQUIRE_ORGANIZATION_OR_ECOSYSTEM_REPLAY",
+  "repository_ledger_location": {
+    "repository": "StegVerse-org/.github",
+    "ref": "refs/stegverse/organization-ledger",
+    "namespace": "repository-ledger/StegVerse-org/.github",
+    "locator_form": "git+<checkout>#refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/.github",
+    "new_ledger_root": false,
+    "designation_source": "org-contract.json organization_ledger_ref (StegVerse-org/LLM-adapter#368 issuecomment-6092785329); preserves_repo_receipt: true; StegVerse-org/.github#118",
+    "rule": "The repository chain is kept in its own subtree of the designated organization ledger ref, published by the same fast-forward push under ORGANIZATION_LEDGER_LOCK. Repository replay walks repository-ledger/<repository>/HEAD.json back through its own receipts and never reads an organization receipt. Repository receipts minted before this location was bound (previous_receipt_sha256 null, retained under source-receipts/) are history, not the head of this chain."
+  },
   "propagation_rule": "PROPAGATE_ONLY_EVIDENCE_NEEDED_BY_NEXT_HIGHER_LEVEL",
   "authority_effect": "NONE_CONTRACT_ONLY"
 }
