@@ -1,0 +1,37 @@
+name: Validate LLM Org Foundation Sandbox
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'llm_org_foundation_validation.py'
+      - 'tests/test_llm_org_foundation_validation.py'
+      - '.github/workflows/llm-org-foundation-validation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'llm_org_foundation_validation.py'
+      - 'tests/test_llm_org_foundation_validation.py'
+      - '.github/workflows/llm-org-foundation-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-foundation-sandbox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Source-only bounded Sandbox conformance (stdlib)
+        run: |
+          python - <<'PY'
+          import runpy
+          tests = runpy.run_path("tests/test_llm_org_foundation_validation.py")
+          names = sorted(name for name in tests if name.startswith("test_") and callable(tests[name]))
+          assert len(names) >= 5
+          for name in names:
+              tests[name]()
+              print("PASS", name)
+          PY
