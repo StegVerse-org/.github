@@ -16,6 +16,9 @@ on:
       request:
         description: 'Path of a committed transition request'
         required: true
+      mesh_root:
+        description: 'Authorized materializer-supplied git+repository#refs/... mesh locator'
+        required: true
 
 permissions:
   contents: write
@@ -104,6 +107,14 @@ jobs:
           # repository_ledger_location; StegVerse-org/.github#118).
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           mkdir -p "$RUNNER_TEMP/results"
+          # A durable mesh locator is explicitly supplied by the materializer;
+          # never infer it from environment, runner home, or sovereign ledger ref.
+          mesh_root='${{ github.event.inputs.mesh_root }}'
+          if [ -z "$mesh_root" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"MESH_LOCATION_REQUIRED","failed_predicate":"MATERIALIZER_SUPPLIES_MESH_LOCATION","required_evidence_or_repair":"workflow_dispatch mesh_root git+ locator required","retry_entrypoint":"organization-ledger-transition.yml","owning_existing_goal":"SVORG-MESH-LOCATION-BINDING-001","next_attempt":"rerun with authorized mesh locator"}'
+            exit 1
+          fi
+          case "$mesh_root" in git+*\#refs/*) ;; *) echo 'invalid git-ref mesh locator'; exit 1;; esac
           while IFS= read -r request; do
             [ -n "$request" ] || continue
             name=$(basename "$request" .json)
@@ -138,7 +149,7 @@ jobs:
             python resident-runtime/organization_manifest_ingress.py \
               --registry org-boundary/registry/services.json \
               --manifest "$out/manifest.json" --standing "$out/standing.json" \
-              --packet-id "$name" --out "$out/ingress.json" || true
+              --packet-id "$name" --mesh-root "$mesh_root" --out "$out/ingress.json" || true
             python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
           done < "$RUNNER_TEMP/requests.txt"
 

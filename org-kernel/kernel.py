@@ -319,6 +319,8 @@ def resolve_federation_root(root:Path|str|None)->tuple[Path,str]:
     """
     if root is None:
         raise ValueError("mesh_location_required_from_materializer")
+    if str(root).startswith('git+'):
+        return str(root), node_store_module.SUPPLIED
     return Path(root).expanduser().resolve(), node_store_module.SUPPLIED
 
 def mesh_store(root:Path|str|None=None, env:dict[str,str]|None=None)->Any:
@@ -326,6 +328,11 @@ def mesh_store(root:Path|str|None=None, env:dict[str,str]|None=None)->Any:
     if env is not None:
         raise ValueError("host_environment_mesh_binding_forbidden")
     resolved,provenance=resolve_federation_root(root)
+    if isinstance(resolved, str) and resolved.startswith('git+'):
+        repository, separator, ref = resolved[4:].partition('#')
+        if not separator or not repository or not ref.startswith('refs/'):
+            raise ValueError('mesh_git_locator_invalid')
+        return node_store_module.GitStateStore(repository, ref)
     return PosixStateStore(resolved, provenance=provenance)
 
 def node_state_store(root:Path)->Any:
