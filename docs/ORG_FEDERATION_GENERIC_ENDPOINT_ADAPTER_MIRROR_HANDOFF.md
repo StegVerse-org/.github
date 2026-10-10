@@ -76,7 +76,7 @@ provider-neutral active probe execution: IMPLEMENTED / VALIDATED / MERGED
 authentic provider probe: NOT PROVEN
 Shared Docs live transport/projection proof: NOT PROVEN
 MIR transition reporting: NOT PROVEN
-Master Records authentic organization records/reconstruction: NOT PROVEN
+Master Records: NOT A COMPLETION PREDICATE (downstream recorder of released organization batch receipts; nothing awaits it)
 one-device authentic end-to-end execution: NOT PROVEN
 ```
 
@@ -86,7 +86,7 @@ one-device authentic end-to-end execution: NOT PROVEN
 2. Determine the narrow provider operation/probe interface that WorkSpace can consume without exposing credentials or moving TVC authority.
 3. Keep authentic deployed-ingress proof separate from source/CI evidence.
 4. Once provider access is explicitly available, execute the controlled `OBSERVE -> MATERIALIZE -> live edit -> REFRESH -> authorization/probe change -> REVOKE/EXPIRE -> DESTROY` experiment.
-5. Retain MIR transition reporting and independent Master Records organization records and reconstruction evidence.
+5. Retain MIR transition reporting. Released organization batches may be published to Master Records afterwards as downstream evidence preservation; that publication is not awaited and is not a step this path waits on.
 6. Verify the entire path on one current mobile device.
 
 ## Human action

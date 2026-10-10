@@ -20,6 +20,7 @@ and the bytes of a replayed effect are identical. These cases hold both.
 
 Source validation only. No authority effect is claimed.
 """
+import hashlib
 import importlib.util
 import json
 import re
@@ -206,25 +207,73 @@ class AnswerEpochTests(unittest.TestCase):
 
 
 class MasterRecordsSubmitterTests(unittest.TestCase):
-    def receipt(self, work):
-        receipt = {"schema": "stegverse.organization-transition-receipt/v1",
-                   "organization": "StegVerse-org",
-                   "hb_reference": kernel.hb_reference(epoch=kernel.HB_ANCHOR_EPOCH + 77),
-                   "receipt_sha256": "sha256:" + "e" * 64}
-        path = work / "receipt.json"
-        path.write_text(json.dumps(receipt))
+    """Master Records records released organization batches downstream; it gates nothing."""
+
+    SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                  "retry_entrypoint", "owning_existing_goal", "next_attempt")
+
+    @staticmethod
+    def sealed(body):
+        """An organization receipt as the append returns it: bound by its own digest."""
+        canon = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+        return {**body, "receipt_sha256": "sha256:" + hashlib.sha256(canon).hexdigest()}
+
+    def chain(self, length, epoch=kernel.HB_ANCHOR_EPOCH + 77):
+        receipts, previous = [], None
+        for index in range(length):
+            receipts.append(self.sealed({
+                "schema": "stegverse.organization-transition-receipt/v1",
+                "organization": "StegVerse-org", "transition_id": f"T-{index}",
+                "previous_receipt_sha256": previous,
+                "hb_reference": kernel.hb_reference(epoch=epoch + index)}))
+            previous = receipts[-1]["receipt_sha256"]
+        return receipts
+
+    def write(self, work, receipts):
+        paths = []
+        for index, receipt in enumerate(receipts):
+            path = work / f"receipt-{index}.json"
+            path.write_text(json.dumps(receipt))
+            paths.append(path)
         standing = work / "standing.json"
         standing.write_text(json.dumps(GENESIS))
-        return path, standing
+        return paths, standing
 
-    def submit(self, receipt, standing, mesh=None):
-        command = [sys.executable, str(SUBMITTER), "--org-receipt", str(receipt),
-                   "--predecessor-ecosystem-state-sha256", "sha256:" + "1" * 64,
-                   "--successor-ecosystem-state-sha256", "sha256:" + "2" * 64,
-                   "--standing", str(standing)]
+    def receipt(self, work):
+        paths, standing = self.write(work, self.chain(1))
+        return paths[0], standing
+
+    def submit(self, receipts, standing, mesh=None):
+        if not isinstance(receipts, list):
+            receipts = [receipts]
+        command = [sys.executable, str(SUBMITTER)]
+        for receipt in receipts:
+            command += ["--org-receipt", str(receipt)]
+        command += ["--predecessor-ecosystem-state-sha256", "sha256:" + "1" * 64,
+                    "--successor-ecosystem-state-sha256", "sha256:" + "2" * 64,
+                    "--standing", str(standing)]
         if mesh is not None:
             command += ["--mesh-root", str(mesh)]
         return subprocess.run(command, cwd=str(ROOT), capture_output=True, text=True)
+
+    def published_frames(self, mesh):
+        return [json.loads(path.read_text()) for path in (mesh / "frames.d").glob("*.json")] \
+            if (mesh / "frames.d").exists() else []
+
+    def assert_downstream_deny(self, completed, failure_code, mesh=None):
+        """A failure to release is a six-field DENY that never blocks the organization transition."""
+        self.assertEqual(completed.returncode, 3, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["disposition"], "DENY")
+        self.assertEqual(result["failure_code"], failure_code)
+        for field in self.SIX_FIELDS:
+            self.assertTrue(result[field], field)
+        self.assertIs(result["organization_transition_blocked"], False)
+        self.assertIs(result["master_records_awaited"], False)
+        self.assertIs(result["gates_organization_runtime_reality"], False)
+        self.assertEqual(result["authority_effect"], "NONE")
+        if mesh is not None:
+            self.assertEqual(self.published_frames(mesh), [])
 
     def test_the_same_receipt_submitted_twice_publishes_one_frame_at_its_epoch(self):
         work, mesh = scratch(self), scratch(self)
@@ -233,18 +282,61 @@ class MasterRecordsSubmitterTests(unittest.TestCase):
         self.assertEqual(first.returncode, 0, first.stderr)
         second = self.submit(receipt, standing, mesh)
         self.assertEqual(second.returncode, 0, second.stderr)
-        frames = list((mesh / "frames.d").glob("*.json"))
+        frames = self.published_frames(mesh)
         self.assertEqual(len(frames), 1)
-        frame = json.loads(frames[0].read_text())
-        self.assertEqual(frame["heartbeat_reference"]["epoch"], kernel.HB_ANCHOR_EPOCH + 77)
+        self.assertEqual(frames[0]["heartbeat_reference"]["epoch"], kernel.HB_ANCHOR_EPOCH + 77)
 
     def test_without_a_mesh_location_nothing_is_published(self):
         work = scratch(self)
         receipt, standing = self.receipt(work)
         refused = self.submit(receipt, standing)
-        self.assertNotEqual(refused.returncode, 0)
         self.assertIn("--mesh-root", refused.stderr)
+        self.assert_downstream_deny(refused, "MASTER_RECORDS_RELEASE_MESH_LOCATION_NOT_SUPPLIED")
 
+    def test_a_contiguous_segment_is_released_as_one_batch(self):
+        work, mesh = scratch(self), scratch(self)
+        receipts = self.chain(3)
+        paths, standing = self.write(work, receipts)
+        completed = self.submit(paths, standing, mesh)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["receipt_count"], 3)
+        self.assertIs(result["organization_transition_blocked"], False)
+        self.assertIs(result["master_records_awaited"], False)
+        frames = self.published_frames(mesh)
+        self.assertEqual(len(frames), 1)
+        # Stamped with the segment head's epoch.
+        self.assertEqual(frames[0]["heartbeat_reference"]["epoch"], kernel.HB_ANCHOR_EPOCH + 79)
+        payload = kernel.recover_packet(frames[0])["payload"]
+        self.assertEqual(payload["operation"], "RECORD_RELEASED_ORGANIZATION_BATCH")
+        self.assertEqual(payload["recorder_role"], "RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER")
+        self.assertIs(payload["gates_organization_runtime_reality"], False)
+        self.assertIs(payload["awaited_by_organization"], False)
+        self.assertEqual(payload["released_batch"]["receipt_count"], 3)
+        self.assertEqual(payload["released_batch"]["segment_head_receipt_sha256"], receipts[-1]["receipt_sha256"])
+
+    def test_a_segment_with_a_gap_is_refused(self):
+        work, mesh = scratch(self), scratch(self)
+        receipts = self.chain(3)
+        paths, standing = self.write(work, [receipts[0], receipts[2]])
+        self.assert_downstream_deny(self.submit(paths, standing, mesh),
+                                    "MASTER_RECORDS_RELEASE_SEGMENT_NOT_CONTIGUOUS", mesh)
+
+    def test_a_receipt_not_as_appended_is_not_released(self):
+        work, mesh = scratch(self), scratch(self)
+        receipt = self.chain(1)[0]
+        receipt["transition_id"] = "ALTERED"
+        paths, standing = self.write(work, [receipt])
+        self.assert_downstream_deny(self.submit(paths, standing, mesh),
+                                    "MASTER_RECORDS_RELEASE_RECEIPT_DIGEST_MISMATCH", mesh)
+
+    def test_a_foreign_receipt_is_refused(self):
+        work, mesh = scratch(self), scratch(self)
+        receipt = self.chain(1)[0]
+        receipt["organization"] = "Elsewhere"
+        paths, standing = self.write(work, [self.sealed({k: v for k, v in receipt.items() if k != "receipt_sha256"})])
+        self.assert_downstream_deny(self.submit(paths, standing, mesh),
+                                    "MASTER_RECORDS_RELEASE_RECEIPT_OWNER_MISMATCH", mesh)
 
 if __name__ == "__main__":
     unittest.main()

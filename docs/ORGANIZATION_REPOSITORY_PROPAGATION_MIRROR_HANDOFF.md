@@ -73,8 +73,8 @@ A cycle is recorded through `kernel.record_federation_cycle`, addressed by what 
 
 The documents that already live under a checkout — consumption markers, outbox, work intake — keep resolving exactly where they did. `node_store.py` states that as a property: keys keep the names the filesystem gave them and nothing migrates. Only newly recorded state resolves through the addressed root.
 
-## One thing recorded, not fixed here
+## The Master Records hop ends at publication, by design
 
-The hop that publishes organization records to Master Records still ends at the publisher script's publication status. That hop *is* inter-organization, does need Interlock/InTr, and carries the validator conflict recorded on `.github` #40.
+The hop that publishes organization records to Master Records ends at the publisher script's publication status, and that is its whole job: Master Records is the downstream recorder of released organization batch receipts, not a gate, so nothing here waits for it to record. That hop *is* inter-organization and does need Interlock/InTr. A publication failure is a six-field downstream non-ALLOW that never blocks the organization transition. The validator conflict once recorded on `.github` #40 is resolved at its owner (see `docs/ORGANIZATION_MANIFEST_INGRESS_MIRROR_HANDOFF.md`).
 
 Nothing here grants authority, performs a transition, or claims custody. It records, at the organization level, transitions that already occurred.
