@@ -1,0 +1,230 @@
+{
+  "authority_effect": "NONE",
+  "evidence": {
+    "canonical_manifest_json": "{\"attestation\":null,\"candidate\":{\"action\":\"decide_terminal_custody_authority\",\"actor_class\":\"sdk_validation_lane\",\"parameters\":{\"external_side_effect\":false,\"master_records_role\":\"DOWNSTREAM_NON_GATING\",\"proposed_terminal_authority\":\"ORGANIZATION_LEDGER\",\"superseded_terminal_authority\":\"MASTER_RECORDS\"},\"scope\":\"StegVerse-org/StegVerse-SDK validation lanes\",\"target\":\"SDK-MR-A-VALIDATION-CUSTODY-001\"},\"canonicalization_profile\":\"steggate.jcs.v1\",\"completion\":{\"direction\":\"SOUTH\",\"egress\":{\"far_side_transition_required\":true,\"final_stegverse_transition_surface\":\"LLM_ADAPTER\",\"transport\":\"INTERLOCK_INTR\"},\"initiator\":{\"class\":\"external_framework\",\"ref\":\"StegVerse-org/StegVerse-SDK\"}},\"context_refs\":[],\"created_at\":\"2026-10-10T23:20:00Z\",\"declared_intent\":\"Request the governance decision on SDK-MR-A-VALIDATION-CUSTODY-001 terminal custody authority from the organization that owns StegCore\",\"extensions\":{\"capability_resolution\":{\"authority_effect\":\"NONE_CLASSIFICATION_ONLY\",\"capability\":\"governance\",\"next_action\":\"BUILD_AND_SUBMIT_MANIFEST\",\"route_id\":\"stegverse.route.canonical-governed.v1\",\"schema\":\"stegverse.manifest-capability-resolution.v1\",\"solution_required\":false,\"status\":\"ONLINE\"},\"manifest_builder\":{\"builder_grants_authority\":false,\"capability_status\":\"ONLINE\",\"external_review_requested\":false,\"processing_capability\":\"governance\",\"profile\":\"stegverse.manifest-builder.v1\",\"publisher_required_by_review_default\":false,\"publisher_selected_by_destination\":false,\"return_depth\":\"full-trace\",\"route_id\":\"stegverse.route.canonical-governed.v1\",\"source_semantic_custody\":\"EXTERNAL\"},\"source_data_class\":\"sv.organization.validation-custody-governance.v1\",\"stegverse_governance_request\":{\"approval\":{\"required\":true},\"candidate\":{\"action\":\"decide_terminal_custody_authority\",\"actor_class\":\"sdk_validation_lane\",\"parameters\":{\"external_side_effect\":false,\"master_records_role\":\"DOWNSTREAM_NON_GATING\",\"proposed_terminal_authority\":\"ORGANIZATION_LEDGER\",\"superseded_terminal_authority\":\"MASTER_RECORDS\"},\"scope\":\"StegVerse-org/StegVerse-SDK validation lanes\",\"target\":\"SDK-MR-A-VALIDATION-CUSTODY-001\"},\"capability\":{\"allowed\":true},\"continuity\":{\"required\":true},\"declared_context\":{\"authority_evidence_status\":\"NOT_AUTHENTICATED\",\"no_external_effect\":true,\"other_framework_evidence_used\":false,\"semantic_status\":\"RESOLVED_FROM_CANONICAL_RECORD\",\"source_only\":true},\"execution\":{\"actor_authority_current\":false,\"affected_entity_conditions_represented\":true,\"delegation_current\":false,\"delegation_ref\":\"none:no-runtime-authenticated-delegation\",\"evidence_current\":true,\"evidence_refs\":[\"StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json\"],\"policy_current\":true,\"policy_ref\":\"StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-registry.json#generation-306\",\"recoverability_profile\":\"recoverable\",\"validity_window_open\":true},\"judgment\":{\"evidence_refs\":[\"StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json\",\"StegVerse-org/StegVerse-SDK@8559c4700a076a733de048910344f99bedaae4ca:data/master-records-role-audit.json\"],\"isolation_state\":\"supported\",\"operator_recoverability\":\"available\",\"refusal_available\":true,\"time_pressure\":\"normal\",\"workload_state\":\"supported\"},\"permission_present\":false,\"signal\":{\"admitted_signal_refs\":[\"StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json\"],\"excluded_signal_refs\":[],\"expected_reference_state_hash\":\"c08ae696b8ee44dba6fe392b5611d8ac0c877a69dbbaf45d10c1a170c468e443\",\"missing_inputs\":[\"authenticated_current_grant\"],\"reconstruction_available\":true,\"reference_state_hash\":\"c08ae696b8ee44dba6fe392b5611d8ac0c877a69dbbaf45d10c1a170c468e443\",\"transformation_provenance_complete\":true,\"transformations\":[],\"uncertainty_state\":\"known\"}},\"stegverse_route\":{\"containment\":\"PRODUCTION_ROUTE_BOUNDED_CONSEQUENCE\",\"external_consequence_enabled\":false,\"lane_class\":\"PRODUCTION_VALIDATION\",\"route_id\":\"stegverse.route.canonical-governed.v1\",\"routing_surface\":\"CANONICAL_PRODUCTION\",\"sandbox_required\":false}},\"freshness\":{},\"hashes\":{\"candidate_sha256\":\"dd699620fce12f6a1dad0b10b556e9222137ef216458b91f83973f3106fb7367\",\"payload_sha256\":\"07dfc86760c14acb0a8df8e4c520d5065e7b9df5ea55f5799830cda9015f14cb\"},\"manifest_labels\":{\"mode\":\"NONE\"},\"manifest_profile\":\"stegverse.ingress-manifest.v1\",\"manifest_profile_version\":\"1\",\"payload\":{\"canonical_task_record\":{\"commit\":\"6e2e573a31c217dc7c3b432d265a10f39d6e10db\",\"cosv_task_vector\":\"10100000100000\",\"path\":\"data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json\",\"registry_generation\":306,\"repository\":\"StegVerse-Labs/.github\",\"sha256\":\"c08ae696b8ee44dba6fe392b5611d8ac0c877a69dbbaf45d10c1a170c468e443\"},\"external_side_effect\":false,\"purpose\":\"SDK-MR-A validation custody: terminal authority decision requested of the deciding organization; organization records only\",\"request_id\":\"SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001\",\"source_state\":{\"StegVerse-org/.github\":\"6a7c2e4e0bbfc713c324d62ee28ae65a8dcc22ae\",\"StegVerse-org/StegVerse-SDK\":\"8559c4700a076a733de048910344f99bedaae4ca\"}},\"processing\":{\"capability\":\"governance\",\"route_id\":\"stegverse.route.canonical-governed.v1\"},\"requested_consequence\":\"Record the governance disposition only as genuinely decided by the deciding organization; admit nothing locally\",\"return_projection\":{\"mode\":\"ALL\",\"transition_classes\":[]},\"source_framework\":\"StegVerse-org/StegVerse-SDK\",\"source_instance\":null,\"source_output_id\":\"SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001\"}",
+    "canonical_manifest_sha256": "04aca3d5ee7833a07757d9bf79687b6d23c424f721f51475437f9ffc34aee890",
+    "crossing": {
+      "application_result": {
+        "authority_effect": "NONE_DECISION_REQUEST_ONLY",
+        "deciding_organization": "StegVerse-Labs",
+        "deciding_repository": "StegVerse-Labs/.github",
+        "deciding_service": "stegverse-labs.governance",
+        "decision_authority": "stegcore.steggate.evaluate_admissibility",
+        "decision_authority_repository": "StegVerse-Labs/StegCore",
+        "decision_state": "REQUESTED_OF_DECIDING_ORGANIZATION",
+        "evaluator_imported_in_this_organization": false,
+        "external_side_effect": false,
+        "governance_request": {
+          "approval": {
+            "required": true
+          },
+          "candidate": {
+            "action": "decide_terminal_custody_authority",
+            "actor_class": "sdk_validation_lane",
+            "parameters": {
+              "external_side_effect": false,
+              "master_records_role": "DOWNSTREAM_NON_GATING",
+              "proposed_terminal_authority": "ORGANIZATION_LEDGER",
+              "superseded_terminal_authority": "MASTER_RECORDS"
+            },
+            "scope": "StegVerse-org/StegVerse-SDK validation lanes",
+            "target": "SDK-MR-A-VALIDATION-CUSTODY-001"
+          },
+          "capability": {
+            "allowed": true
+          },
+          "continuity": {
+            "required": true
+          },
+          "declared_context": {
+            "authority_evidence_status": "NOT_AUTHENTICATED",
+            "no_external_effect": true,
+            "other_framework_evidence_used": false,
+            "semantic_status": "RESOLVED_FROM_CANONICAL_RECORD",
+            "source_only": true
+          },
+          "execution": {
+            "actor_authority_current": false,
+            "affected_entity_conditions_represented": true,
+            "delegation_current": false,
+            "delegation_ref": "none:no-runtime-authenticated-delegation",
+            "evidence_current": true,
+            "evidence_refs": [
+              "StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json"
+            ],
+            "policy_current": true,
+            "policy_ref": "StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-registry.json#generation-306",
+            "recoverability_profile": "recoverable",
+            "validity_window_open": true
+          },
+          "judgment": {
+            "evidence_refs": [
+              "StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json",
+              "StegVerse-org/StegVerse-SDK@8559c4700a076a733de048910344f99bedaae4ca:data/master-records-role-audit.json"
+            ],
+            "isolation_state": "supported",
+            "operator_recoverability": "available",
+            "refusal_available": true,
+            "time_pressure": "normal",
+            "workload_state": "supported"
+          },
+          "permission_present": false,
+          "signal": {
+            "admitted_signal_refs": [
+              "StegVerse-Labs/.github@6e2e573a31c217dc7c3b432d265a10f39d6e10db:data/canonical-task-records/SDK-MR-A-VALIDATION-CUSTODY-001.json"
+            ],
+            "excluded_signal_refs": [],
+            "expected_reference_state_hash": "c08ae696b8ee44dba6fe392b5611d8ac0c877a69dbbaf45d10c1a170c468e443",
+            "missing_inputs": [
+              "authenticated_current_grant"
+            ],
+            "reconstruction_available": true,
+            "reference_state_hash": "c08ae696b8ee44dba6fe392b5611d8ac0c877a69dbbaf45d10c1a170c468e443",
+            "transformation_provenance_complete": true,
+            "transformations": [],
+            "uncertainty_state": "known"
+          }
+        },
+        "governance_request_sha256": "c98313483b567acf18fd39c440bdb045b7e2a1e2bd2bb0f1e2a2457ee6b4143b",
+        "schema": "stegverse.org-governance-decision-request/v1",
+        "service_id": "stegverse-org.governance"
+      },
+      "authority_effect": "NONE",
+      "boundary_receipts": [
+        {
+          "evidence_hash": "598394de804e574ab6d6a2e678fcb98066d839ecc31e7b68d3492b79a0d83158",
+          "kind": "INGRESS_ACCEPTED",
+          "previous_receipt_id": null,
+          "receipt_id": "ingress_accepted-598394de804e574ab6d6a2e6",
+          "subject": "stegverse-org.governance"
+        },
+        {
+          "evidence_hash": "3559a8dc72586cf5675d750b06511dad92a4347811f1c0ab46d01c4f1a4e50a8",
+          "kind": "DISPATCHED",
+          "previous_receipt_id": "ingress_accepted-598394de804e574ab6d6a2e6",
+          "receipt_id": "dispatched-3559a8dc72586cf5675d750b",
+          "subject": "stegverse-org.governance"
+        },
+        {
+          "evidence_hash": "da76b8477808689c3cd6bbf148eedf11b6b67a0ce6e97452c9b91287f3f5c4cd",
+          "kind": "CONSUMED",
+          "previous_receipt_id": "dispatched-3559a8dc72586cf5675d750b",
+          "receipt_id": "consumed-da76b8477808689c3cd6bbf1",
+          "subject": "stegverse-org.governance"
+        },
+        {
+          "evidence_hash": "3d36abdc1b662bb3b33c7739f35a10eb96763c7dc0ec367904c76c0ac797e433",
+          "kind": "RESULT_BOUND",
+          "previous_receipt_id": "consumed-da76b8477808689c3cd6bbf1",
+          "receipt_id": "result_bound-3d36abdc1b662bb3b33c7739",
+          "subject": "stegverse-org.governance"
+        },
+        {
+          "evidence_hash": "bb0e072cb63acb84baef4767f79f6965b61a77d6a4f89d277c08355157386c3c",
+          "kind": "EGRESS_EMITTED",
+          "previous_receipt_id": "result_bound-3d36abdc1b662bb3b33c7739",
+          "receipt_id": "egress_emitted-bb0e072cb63acb84baef4767",
+          "subject": "stegverse-org.governance"
+        }
+      ],
+      "consumed": true,
+      "crossing_completed": true,
+      "declared_capability": "governance",
+      "declared_capability_processed": true,
+      "declared_route_id": "stegverse.route.canonical-governed.v1",
+      "declared_transition_surface": "LLM_ADAPTER",
+      "egress_packet_id": "SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001:egress",
+      "ingress_packet_id": "SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001",
+      "manifest_sha256": "sha256:f9fd574ae3b50c63887b50066d4fda3e10985e3c8d82aaf041c6387ee6411689",
+      "payload_hash": "3870fc912c3717365eaa1145b9851d0aaee7790b0fb6b04c6ec1982378e90f76",
+      "processing_selection": "MANIFEST_DECLARED",
+      "receipts": [
+        "INGRESS_ACCEPTED",
+        "DISPATCHED",
+        "CONSUMED",
+        "RESULT_BOUND",
+        "EGRESS_EMITTED"
+      ],
+      "reconstruction": "RECONSTRUCTED",
+      "resolved_service_id": "stegverse-org.governance",
+      "route_admissibility": "NOT_RESOLVED_AT_BOUNDARY_ROUTE_OWNER_IS_SDK",
+      "schema": "stegverse.sdk-manifest-crossing-result/v1",
+      "terminal_receipt_id": "egress_emitted-bb0e072cb63acb84baef4767"
+    },
+    "destination_resolution_source": "CANONICAL_CONNECTOR_CAPABILITY_OVERLAY",
+    "graph_id": "RTC-GOVERNED-PROCESSING-002",
+    "operation": "SUBMIT_MANIFEST",
+    "processing_capability": "governance",
+    "profile_id": "sdk-manifest-ingress",
+    "profile_name": "SDK:ManifestIngress",
+    "receiving_operation": "ORGANIZATION_SDK_MANIFEST_INGRESS",
+    "request_sha256": "3c9c6e672f81cffdae609f0ab0bc3d3757f9c15fdfdb7f7020407e129c0f7f20",
+    "route_id": "stegverse.route.canonical-governed.v1",
+    "transition_closures": [
+      {
+        "receipt_sha256": "598394de804e574ab6d6a2e678fcb98066d839ecc31e7b68d3492b79a0d83158",
+        "reconstructed_receipt_sha256": "598394de804e574ab6d6a2e678fcb98066d839ecc31e7b68d3492b79a0d83158",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "INGRESS_ACCEPTED"
+      },
+      {
+        "predecessor_receipt_sha256": "598394de804e574ab6d6a2e678fcb98066d839ecc31e7b68d3492b79a0d83158",
+        "receipt_sha256": "3559a8dc72586cf5675d750b06511dad92a4347811f1c0ab46d01c4f1a4e50a8",
+        "reconstructed_receipt_sha256": "3559a8dc72586cf5675d750b06511dad92a4347811f1c0ab46d01c4f1a4e50a8",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "DISPATCHED"
+      },
+      {
+        "predecessor_receipt_sha256": "3559a8dc72586cf5675d750b06511dad92a4347811f1c0ab46d01c4f1a4e50a8",
+        "receipt_sha256": "da76b8477808689c3cd6bbf148eedf11b6b67a0ce6e97452c9b91287f3f5c4cd",
+        "reconstructed_receipt_sha256": "da76b8477808689c3cd6bbf148eedf11b6b67a0ce6e97452c9b91287f3f5c4cd",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "CONSUMED"
+      },
+      {
+        "predecessor_receipt_sha256": "da76b8477808689c3cd6bbf148eedf11b6b67a0ce6e97452c9b91287f3f5c4cd",
+        "receipt_sha256": "3d36abdc1b662bb3b33c7739f35a10eb96763c7dc0ec367904c76c0ac797e433",
+        "reconstructed_receipt_sha256": "3d36abdc1b662bb3b33c7739f35a10eb96763c7dc0ec367904c76c0ac797e433",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "RESULT_BOUND"
+      },
+      {
+        "predecessor_receipt_sha256": "3d36abdc1b662bb3b33c7739f35a10eb96763c7dc0ec367904c76c0ac797e433",
+        "receipt_sha256": "bb0e072cb63acb84baef4767f79f6965b61a77d6a4f89d277c08355157386c3c",
+        "reconstructed_receipt_sha256": "bb0e072cb63acb84baef4767f79f6965b61a77d6a4f89d277c08355157386c3c",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "EGRESS_EMITTED"
+      }
+    ],
+    "wire_manifest_sha256": "f9fd574ae3b50c63887b50066d4fda3e10985e3c8d82aaf041c6387ee6411689"
+  },
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": true,
+    "epoch": 416276300,
+    "frequency_hz": 100,
+    "generation": 416276300,
+    "heartbeat_id": "HB:416276300",
+    "phase_offset_ns": 167936,
+    "progression_dependency": "OSCILLATOR_ONLY",
+    "sampled_unix_ns": 1791674362680167936
+  },
+  "predecessor_state_sha256": "sha256:04aca3d5ee7833a07757d9bf79687b6d23c424f721f51475437f9ffc34aee890",
+  "previous_receipt_sha256": null,
+  "receipt_sha256": "sha256:f9000da6171d0595a976b5e4e76fa45304315ddcf35af77d993cdedbe1bf1d0e",
+  "repository": "StegVerse-org/.github",
+  "schema": "stegverse.repo-transition-receipt/v1",
+  "successor_state_sha256": "sha256:bb0e072cb63acb84baef4767f79f6965b61a77d6a4f89d277c08355157386c3c",
+  "transition_class": "ORGANIZATION_SDK_MANIFEST_INGRESS",
+  "transition_id": "ORGANIZATION-SDK-MANIFEST-INGRESS-3c9c6e672f81cffd"
+}
