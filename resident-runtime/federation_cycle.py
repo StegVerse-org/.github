@@ -71,9 +71,12 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
             raise
         results=[]
         consumption={"disposition":"FAIL_CLOSED",
+                     "failure_code":PR.organization_ledger.LOCATION_FAILURE_CODE,
                      "failed_predicate":"LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER",
                      "required_evidence_or_repair":"supply STEGVERSE_REPO_LEDGER_ROOT and STEGVERSE_ORG_LEDGER_ROOT",
                      "retry_entrypoint":"resident-runtime/federation_cycle.py::main",
+                     "owning_existing_goal":PR.organization_ledger.LOCATION_OWNING_GOAL,
+                     "next_attempt":PR.organization_ledger.location_next_attempt("STEGVERSE_REPO_LEDGER_ROOT and STEGVERSE_ORG_LEDGER_ROOT"),
                      "consequence_committed":False}
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
@@ -102,9 +105,12 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     except PR.organization_ledger.LedgerLocationRequired as exc:
         receipt["repository_propagation"]={
           "disposition":"FAIL_CLOSED",
+          "failure_code":PR.organization_ledger.LOCATION_FAILURE_CODE,
           "failed_predicate":exc.failed_predicate,
           "required_evidence_or_repair":"supply "+exc.variable,
           "retry_entrypoint":"resident-runtime/propagate_repository_receipts.py::propagate_all",
+          "owning_existing_goal":PR.organization_ledger.LOCATION_OWNING_GOAL,
+          "next_attempt":PR.organization_ledger.location_next_attempt(exc.variable),
           "consequence_committed":False,
           "crossed_an_organization_boundary":False,
           "interlock_intr_involved":False,

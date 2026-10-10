@@ -86,6 +86,10 @@ class LedgerLocationIsSuppliedTests(unittest.TestCase):
             self.assertEqual(refusal["failed_predicate"], "LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER")
             self.assertIs(refusal["consequence_committed"], False)
             self.assertTrue(refusal["retry_entrypoint"])
+            for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                          "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+                self.assertTrue(refusal[field], field)
+            self.assertEqual(refusal["failure_code"], "LEDGER_LOCATION_NOT_SUPPLIED")
             self.assertEqual(list(Path(home).iterdir()), [])
 
 

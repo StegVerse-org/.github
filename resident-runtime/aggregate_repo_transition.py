@@ -87,6 +87,18 @@ class LedgerLocationRequired(ValueError):
         self.variable = variable
 
 
+# A ledger location is supplied by the materializer, and the organization root
+# is owner-designated (StegVerse-org/LLM-adapter#368). Until one is supplied,
+# every append refuses with the six fields of a non-ALLOW.
+LOCATION_FAILURE_CODE = "LEDGER_LOCATION_NOT_SUPPLIED"
+LOCATION_OWNING_GOAL = "LLMA-DECLARED-PATH-CONFORMANCE-368"
+
+
+def location_next_attempt(variable):
+    return ("rerun once " + variable + " is supplied; nothing was appended, "
+            "so retry the same receipt unchanged")
+
+
 def location_refusal(exc):
     """The append attempt's own disposition when no ledger root was supplied."""
     return {
@@ -94,8 +106,11 @@ def location_refusal(exc):
         "organization": C["organization"],
         "disposition": "FAIL_CLOSED",
         "failed_predicate": exc.failed_predicate,
+        "failure_code": LOCATION_FAILURE_CODE,
         "required_evidence_or_repair": "supply the organization ledger root as " + exc.variable,
         "retry_entrypoint": "resident-runtime/aggregate_repo_transition.py::append",
+        "owning_existing_goal": LOCATION_OWNING_GOAL,
+        "next_attempt": location_next_attempt(exc.variable),
         "consequence_committed": False,
         "authority_effect": "NONE_REFUSAL_ONLY",
     }

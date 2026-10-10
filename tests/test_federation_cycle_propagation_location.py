@@ -42,6 +42,10 @@ class PropagationLocationTests(unittest.TestCase):
             self.assertEqual(propagation["disposition"], "FAIL_CLOSED")
             self.assertEqual(propagation["failed_predicate"], "LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER")
             self.assertIs(propagation["consequence_committed"], False)
+            for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                          "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+                self.assertTrue(propagation[field], field)
+            self.assertEqual(propagation["failure_code"], "LEDGER_LOCATION_NOT_SUPPLIED")
             self.assertTrue(propagation["retry_entrypoint"])
             self.assertIn("frames_consumed", receipt)
             self.assertFalse((Path(work) / ".local").exists())
