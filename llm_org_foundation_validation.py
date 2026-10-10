@@ -35,7 +35,7 @@ def _result(kind, code, predicate, repair, retry, next_attempt, evidence=None):
     result = {
         "schema": "stegverse.llm-org-foundation.validation/v1",
         "kind": kind,
-        "disposition": "DENY" if code.startswith("FORBIDDEN") else "FAIL_CLOSED" if code else "ALLOW",
+        "disposition": "DENY" if (code or "").startswith("FORBIDDEN") else "FAIL_CLOSED" if code else "ALLOW",
         "authority_effect": "NONE",
         "owning_existing_goal": GOAL,
         "evidence": evidence or {},
