@@ -194,3 +194,48 @@ class PosixStateStore:
             os.fsync(fd)
         finally:
             os.close(fd)
+
+class GitStateStore:
+    """Durable, write-once mesh frames on a caller-designated Git ref.
+
+    Reuses the existing GitLedgerStore CAS substrate, without treating a mesh
+    frame as an organization-ledger receipt or selecting a sovereign ref.
+    """
+    kind = "GIT_REF"
+    provenance = SUPPLIED
+    portable = True
+
+    def __init__(self, repository, ref):
+        import importlib.util
+        module_path = Path(__file__).resolve().parents[1] / "resident-runtime" / "ledger_store.py"
+        spec = importlib.util.spec_from_file_location("stegos_mesh_git_ledger", module_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.backend = module.GitLedgerStore(repository, ref)
+        self.root = "git+" + str(repository) + "#" + str(ref)
+        self.backend.initialize()
+
+    def locator(self, key):
+        return self.backend.locator(key)
+
+    def exists(self, key):
+        return self.backend.exists(key)
+
+    def get(self, key):
+        return self.backend.get(key)
+
+    def list_prefix(self, prefix):
+        return sorted(self.backend.list_prefix(prefix))
+
+    def put_once(self, key, value):
+        if not key.startswith(MESH_FRAME_PREFIX):
+            raise ValueError("mesh_frame_key_required")
+        for _ in range(128):
+            existing = self.backend.get(key)
+            if existing is not None:
+                if existing != value:
+                    raise WriteOnceCollision(key)
+                return key
+            if self.backend.compare_and_swap(key, None, value):
+                return key
+        raise RuntimeError("mesh_git_ref_cas_retry_exhausted")
