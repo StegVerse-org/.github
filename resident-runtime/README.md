@@ -22,7 +22,13 @@ only from the location supplied as `STEGVERSE_ORG_LEDGER_ROOT` or
 With nothing supplied, every append still fails closed with
 `LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER`.
 
-No path, repository, ref, branch or workflow here is the organization's
-ledger, and none is designated by being openable. Designating the
-organization's sovereign ledger root is an owner decision, pending on
-StegVerse-org/LLM-adapter#368 (`ORG_LEDGER_ROOT_NOT_DESIGNATED`).
+The owner-directed sovereign ledger designation for this organization is
+`StegVerse-org/.github` at fully qualified Git ref
+`refs/stegverse/organization-ledger` (StegVerse-org/LLM-adapter#368,
+issuecomment-6092785329; canonical contract:
+`.stegverse/transition-ledger/org-contract.json`). The execution materializer
+must supply the actual authorized local checkout locator as
+`STEGVERSE_ORG_LEDGER_ROOT=git+<authorized-local-checkout>#refs/stegverse/organization-ledger`.
+This declaration does not initialize the ref, append a receipt, or claim
+authenticated runtime readback. No default machine or remote receiver is
+required or authorized.
