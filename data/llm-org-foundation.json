@@ -74,7 +74,28 @@
     "distributed_llm_workload": "StegVerse-org/LLM-adapter/docs/DISTRIBUTED_LLM_WORKLOAD_MIRROR_HANDOFF.md",
     "external_llm_connection": "StegVerse-org/LLM-adapter/docs/EXTERNAL_LLM_CONNECTION_CONVERGENCE_MIRROR_HANDOFF.md",
     "duplicate_provider_broker_forbidden": true,
-    "duplicate_governance_engine_forbidden": true
+    "duplicate_governance_engine_forbidden": true,
+    "external_ingress_boundary": {
+      "path": [
+        "healthy node",
+        "StegVerse-org/LLM-adapter",
+        "StegVerse-org/StegVerse-SDK",
+        "StegVerse-org/.github",
+        "Interlock/InTr",
+        "Organization Ledger"
+      ],
+      "sdk_owns": [
+        "manifest_build",
+        "manifest_submission"
+      ],
+      "llm_adapter_authority_effect": "NONE_TRANSPORT_AND_NECESSARY_TRANSLATION_ONLY",
+      "hcb_authority_effect": "NONE_OPTIONAL_PROTOCOL_EVIDENCE",
+      "hcb_mandatory_hop": false,
+      "sandbox_admitted_internal_operations_reenter_llm_adapter": false,
+      "organization_ledger_owner": "StegVerse-org/.github",
+      "master_records_role": "DOWNSTREAM_NON_GATING",
+      "runtime_observation_claimed": false
+    }
   },
   "deferred": [
     "ECOSYSTEM_CHAT_MANIFEST_LLM_ORG_GOVERNANCE_PUBLISHER_SDK_RETURN_LOOP"

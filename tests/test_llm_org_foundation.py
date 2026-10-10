@@ -50,3 +50,24 @@ def test_cosv_projection_matches_registered_foundation():
     assert vector["profile"] == "task.v1"
     assert vector["vector"] == "20011100110000"
     assert vector["authority_effect"] == "NONE_SOURCE_COORDINATION_ONLY"
+
+
+def test_external_ingress_delegates_to_existing_sdk_and_org_ledger():
+    boundary = load(CONTRACT)["reuse"]["external_ingress_boundary"]
+    assert boundary["path"] == [
+        "healthy node", "StegVerse-org/LLM-adapter", "StegVerse-org/StegVerse-SDK",
+        "StegVerse-org/.github", "Interlock/InTr", "Organization Ledger",
+    ]
+    assert boundary["sdk_owns"] == ["manifest_build", "manifest_submission"]
+    assert boundary["llm_adapter_authority_effect"] == "NONE_TRANSPORT_AND_NECESSARY_TRANSLATION_ONLY"
+    assert boundary["hcb_authority_effect"] == "NONE_OPTIONAL_PROTOCOL_EVIDENCE"
+    assert boundary["hcb_mandatory_hop"] is False
+    assert boundary["organization_ledger_owner"] == "StegVerse-org/.github"
+    assert boundary["master_records_role"] == "DOWNSTREAM_NON_GATING"
+    assert boundary["runtime_observation_claimed"] is False
+
+
+def test_admitted_internal_sandbox_does_not_reenter_external_llm_adapter():
+    boundary = load(CONTRACT)["reuse"]["external_ingress_boundary"]
+    assert boundary["sandbox_admitted_internal_operations_reenter_llm_adapter"] is False
+    assert load(CONTRACT)["sandbox"]["candidate_output_authority_effect"] == "NONE"
