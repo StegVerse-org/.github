@@ -272,7 +272,9 @@
         "LLM-adapter #375 merged as 112da47 (F13: COSV projection checker distinguishes terminal tasks)",
         "every non-ALLOW result carries failure_code, failed_predicate, required_evidence_or_repair, retry_entrypoint, owning_existing_goal and next_attempt",
         "no execution or completion path is gated on Master Records",
-        "zero dependencies added"
+        "zero dependencies added",
+        "Authenticated StegVerse-org/.github Organization Ledger Transition run 38020580790: ingress ALLOW, canonical manifest sha256:1609719774d9cadaaf0e3f6f8c347248b6f6749fb750f73441678e5e8e2501af; independent fresh-fetch ledger readback succeeded",
+        "Authoritative refs/stegverse/organization-ledger commit 6b2705fe480d70afa15338ca93eb0ca19033e0ac: HEAD receipt sha256:4643742af4298db9c27e9c88de31bfa25163778d29383fd4fccbd63cd23de55d, source sha256:861b33b398c25d333e8308c3fb151ea60f8b634da5311b8a9f5d4c277ef028e2, previous_receipt_sha256 null"
       ],
       "outputs": [
         "StegVerse-org/LLM-adapter/llm_adapter/governed_manifest_ingress.py",
@@ -288,9 +290,7 @@
       "destinations": [
         "StegVerse-org/LLM-adapter"
       ],
-      "unresolved_obligations": [
-        "AUTHENTIC_MANIFEST_DIRECTED_INTR_TRANSITION_AND_ORG_LEDGER_READBACK"
-      ]
+      "unresolved_obligations": []
     }
   ]
 }
