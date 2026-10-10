@@ -17,6 +17,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 DECLARATION = ROOT / "data" / "organization-role-runtime-reality-deployment.json"
 REGISTER = ROOT / "data" / "organization-role-exemption-register.json"
+MR_AUDIT = ROOT / "data" / "master-records-role-audit.json"
 CONTRACT = ROOT / ".stegverse" / "transition-ledger" / "org-contract.json"
 DOC = ROOT / "docs" / "ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md"
 EMITTER = ROOT / "resident-runtime" / "aggregate_repo_transition.py"
@@ -419,6 +420,55 @@ class DeclarationDocTests(unittest.TestCase):
         self.assertIn("MASTER_RECORDS_RECONSTRUCTED", text)
         self.assertIn(CANONICAL, text)
         self.assertIn(ORGANIZATION, text)
+
+
+class MasterRecordsRoleAuditTests(unittest.TestCase):
+    """The Master Records role audit is measured, not asserted.
+
+    Every line in the tree matching the audit pattern is classified in
+    `data/master-records-role-audit.json`, compared by path and text (line
+    numbers are provenance only), and none remains IMPROPER_*.
+    """
+    CLASSES = {"PROPER", "IMPROPER_CODE", "IMPROPER_DOC", "HISTORICAL_EVIDENCE", "NAMING_ONLY"}
+
+    def setUp(self):
+        self.audit = load_json(MR_AUDIT)
+
+    def test_no_improper_occurrence_remains(self):
+        after = self.audit["counts"]["after"]
+        self.assertEqual(after["IMPROPER_CODE"], 0)
+        self.assertEqual(after["IMPROPER_DOC"], 0)
+        for entry in self.audit["occurrences"]:
+            self.assertIn(entry["classification"], self.CLASSES)
+            self.assertFalse(entry["classification"].startswith("IMPROPER_"), entry)
+            self.assertTrue(entry["reason"].strip(), entry)
+        self.assertEqual(after["total"], len(self.audit["occurrences"]))
+
+    def test_the_audit_matches_the_tree(self):
+        pattern = re.compile(self.audit["pattern"])
+        measured = []
+        for path in sorted(ROOT.rglob("*")):
+            rel = path.relative_to(ROOT)
+            if not path.is_file() or path == MR_AUDIT or ".git" in rel.parts or "__pycache__" in rel.parts:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+            for line in text.splitlines():
+                if pattern.search(line):
+                    measured.append((rel.as_posix(), line.strip()[:240]))
+        declared = [(e["file"], e["text"]) for e in self.audit["occurrences"] if e["line"] is not None]
+        self.assertEqual(sorted(measured), sorted(declared),
+                         "the Master Records role audit has drifted from the tree; "
+                         "re-measure data/master-records-role-audit.json")
+
+    def test_the_completion_evidence_class_is_classified_not_renamed(self):
+        entries = [e for e in self.audit["occurrences"] if "MASTER_RECORDS_RECONSTRUCTED" in e["text"]]
+        self.assertTrue(entries)
+        for entry in entries:
+            self.assertEqual(entry["classification"], "NAMING_ONLY")
+            self.assertIn("registry-wide vocabulary migration", entry["reason"])
 
 
 if __name__ == "__main__":

@@ -245,6 +245,56 @@ class MasterRecordsSubmitterTests(unittest.TestCase):
         self.assertNotEqual(refused.returncode, 0)
         self.assertIn("--mesh-root", refused.stderr)
 
+    SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                  "retry_entrypoint", "owning_existing_goal", "next_attempt")
+
+    def assert_downstream_non_allow(self, completed, failure_code):
+        """Master Records is downstream of the organization ledger append: a failure
+        to publish is a six-field non-ALLOW that never blocks the organization transition."""
+        self.assertEqual(completed.returncode, 3, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["failure_code"], failure_code)
+        for field in self.SIX_FIELDS:
+            self.assertTrue(result[field], field)
+        self.assertIs(result["organization_transition_blocked"], False)
+        self.assertIs(result["master_records_awaited"], False)
+        self.assertEqual(result["authority_effect"], "NONE")
+
+    def test_a_missing_mesh_is_a_six_field_non_allow(self):
+        work = scratch(self)
+        receipt, standing = self.receipt(work)
+        self.assert_downstream_non_allow(self.submit(receipt, standing),
+                                         "MASTER_RECORDS_PUBLICATION_MESH_LOCATION_NOT_SUPPLIED")
+
+    def test_a_receipt_not_yet_appended_is_not_released_downstream(self):
+        work, mesh = scratch(self), scratch(self)
+        receipt, standing = self.receipt(work)
+        body = json.loads(receipt.read_text())
+        del body["receipt_sha256"]
+        receipt.write_text(json.dumps(body))
+        self.assert_downstream_non_allow(self.submit(receipt, standing, mesh),
+                                         "MASTER_RECORDS_PUBLICATION_RECEIPT_NOT_APPENDED")
+        self.assertEqual(list(mesh.rglob("*.json")), [])
+
+    def test_a_foreign_receipt_is_a_six_field_non_allow(self):
+        work, mesh = scratch(self), scratch(self)
+        receipt, standing = self.receipt(work)
+        body = json.loads(receipt.read_text())
+        body["organization"] = "Elsewhere"
+        receipt.write_text(json.dumps(body))
+        self.assert_downstream_non_allow(self.submit(receipt, standing, mesh),
+                                         "MASTER_RECORDS_PUBLICATION_RECEIPT_OWNER_MISMATCH")
+
+    def test_a_published_record_reports_it_was_never_awaited(self):
+        work, mesh = scratch(self), scratch(self)
+        receipt, standing = self.receipt(work)
+        completed = self.submit(receipt, standing, mesh)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["status"], "PUBLISHED_FOR_ORGANIZATION_RECORD")
+        self.assertIs(result["organization_transition_blocked"], False)
+        self.assertIs(result["master_records_awaited"], False)
+
 
 if __name__ == "__main__":
     unittest.main()
