@@ -1,0 +1,445 @@
+{
+  "authority_effect": "NONE",
+  "evidence": {
+    "canonical_manifest_json": "{\"attestation\":null,\"canonicalization_profile\":\"steggate.jcs.v1\",\"completion\":{\"direction\":\"SOUTH\",\"egress\":{\"far_side_transition_required\":true,\"final_stegverse_transition_surface\":\"LLM_ADAPTER\",\"transport\":\"INTERLOCK_INTR\"},\"initiator\":{\"class\":\"external_framework\",\"ref\":\"StegVerse-org/LLM-adapter\"}},\"context_refs\":[],\"created_at\":\"2026-10-10T06:28:38Z\",\"declared_intent\":\"Read this organization's current task registry generation\",\"extensions\":{\"capability_resolution\":{\"authority_effect\":\"NONE_CLASSIFICATION_ONLY\",\"capability\":\"ecosystem_diagnostic\",\"next_action\":\"BUILD_AND_SUBMIT_MANIFEST\",\"route_id\":\"stegverse.route.ecosystem-diagnostic.v1\",\"schema\":\"stegverse.manifest-capability-resolution.v1\",\"solution_required\":false,\"status\":\"ONLINE\"},\"manifest_builder\":{\"builder_grants_authority\":false,\"capability_status\":\"ONLINE\",\"external_review_requested\":false,\"processing_capability\":\"ecosystem_diagnostic\",\"profile\":\"stegverse.manifest-builder.v1\",\"publisher_required_by_review_default\":false,\"publisher_selected_by_destination\":false,\"return_depth\":\"full-trace\",\"route_id\":\"stegverse.route.ecosystem-diagnostic.v1\",\"source_semantic_custody\":\"EXTERNAL\"},\"source_data_class\":\"sv.organization.task-registry-disclosure.v1\",\"stegverse_ecosystem_diagnostic_request\":{\"diagnostic_request_id\":\"LLMA-368-DECLARED-PATH-002\",\"expected_evidence_fields\":[\"registry_sha256\",\"active_goal\",\"tasks\"],\"mutation_permitted\":false,\"schema\":\"stegverse.ecosystem-diagnostic-request.v1\",\"scope\":\"repository\",\"tests\":[{\"authority_owner\":\"StegVerse-org/.github\",\"component_id\":\"StegVerse-org/.github:orchestration/task-registry.json\",\"observation\":null,\"predicate_id\":\"REGISTRY_SERVED_MATCHES_COMMITTED_DIGEST\",\"test_id\":\"CURRENT_TASK_REGISTRY_GENERATION_IS_SERVED\"}]},\"stegverse_route\":{\"containment\":\"READ_ONLY_DIAGNOSTIC\",\"external_consequence_enabled\":false,\"lane_class\":\"DIAGNOSTIC_OBSERVATION\",\"route_id\":\"stegverse.route.ecosystem-diagnostic.v1\",\"routing_surface\":\"ECOSYSTEM_DIAGNOSTIC\",\"sandbox_required\":false}},\"freshness\":{},\"hashes\":{\"payload_sha256\":\"8025e9a82594dbe4e15f78bf13fef7ce86961bb3827326b9214df4b2a9695a90\"},\"manifest_labels\":{\"mode\":\"NONE\"},\"manifest_profile\":\"stegverse.ingress-manifest.v1\",\"manifest_profile_version\":\"1\",\"payload\":{\"external_side_effect\":false,\"purpose\":\"declared-path verification: read the current task registry generation; admit nothing\",\"request_id\":\"LLMA-368-DECLARED-PATH-002\"},\"processing\":{\"capability\":\"ecosystem_diagnostic\",\"route_id\":\"stegverse.route.ecosystem-diagnostic.v1\"},\"requested_consequence\":\"Return the committed registry and its digest; admit nothing\",\"return_projection\":{\"mode\":\"ALL\",\"transition_classes\":[]},\"source_framework\":\"StegVerse-org/LLM-adapter\",\"source_instance\":null,\"source_output_id\":\"LLMA-368-DECLARED-PATH-002\"}",
+    "canonical_manifest_sha256": "ad52f296ab29676e486c5cac30beab80cf9bca037cc156704bea2d5a6c40e49f",
+    "crossing": {
+      "application_result": {
+        "active_goal": "SVORG-STEGOS-PORTABILITY-001",
+        "archive_status": "ACTIVE",
+        "authority_effect": "NONE_DISCLOSURE_ONLY",
+        "disclosure_is_not_admission": true,
+        "organization": "StegVerse-org",
+        "registry_is_work_intent_truth_not_runtime_proof": true,
+        "registry_path": "orchestration/task-registry.json",
+        "registry_sha256": "9df653fc08815e9fc61c99e0c86a606aacc38077dd09591612891ddbe0925d56",
+        "schema": "stegverse.task-registry-disclosure/v1",
+        "served_capability": "ecosystem_diagnostic",
+        "served_route_id": "stegverse.route.ecosystem-diagnostic.v1",
+        "task_count": 11,
+        "tasks": [
+          {
+            "activation_condition": "every subordinate task reports a portable substrate and no surface derives its location from a host",
+            "depends_on": [],
+            "issue": null,
+            "issue_refs": [
+              23,
+              24,
+              25,
+              26,
+              27
+            ],
+            "outputs": [
+              "org-kernel/node_store.py",
+              "resident-runtime/ledger_store.py"
+            ],
+            "repository_artifact_history": [
+              {
+                "pull_request": 22,
+                "role": "PORTABILITY_PREDECESSOR_SOURCE_REPAIR",
+                "state": "MERGED"
+              }
+            ],
+            "required_evidence": [
+              "tests/test_node_store_contract.py",
+              "tests/test_kernel_node_state_is_addressed.py",
+              "org-kernel/kernel.py::node_state_provenance reports mesh_portable"
+            ],
+            "status": "in_progress",
+            "tag_allowed": false,
+            "task_id": "SVORG-STEGOS-PORTABILITY-001",
+            "title": "Remove every host dependency from StegOS node and mesh state",
+            "unresolved_obligations": [
+              "SDK_MACHINE_DISCOVERY_AND_CANONICAL_MANIFEST_SUBMISSION",
+              "REMOVE_REMAINING_HOST_BOUND_PORTABILITY_SURFACES"
+            ],
+            "workstream": "stegos-portability"
+          },
+          {
+            "activation_condition": "the handoff that supplies a materializing node its mesh location is decided",
+            "depends_on": [
+              "SVORG-STEGOS-PORTABILITY-001"
+            ],
+            "issue": 23,
+            "outputs": [
+              "org-kernel/kernel.py"
+            ],
+            "required_evidence": [
+              "org-kernel/kernel.py carries no FEDERATION_ROOT_ENV",
+              "a node receives its mesh location from whatever materialized it",
+              "node_state_provenance reports SUPPLIED for a node started without environment"
+            ],
+            "status": "proposed",
+            "tag_allowed": false,
+            "task_id": "SVORG-MESH-LOCATION-BINDING-001",
+            "title": "Stop binding the StegOS mesh location from the environment",
+            "workstream": "stegos-portability"
+          },
+          {
+            "activation_condition": "whether the capability map and the ST-022 KV participant spec are one spec is decided",
+            "depends_on": [
+              "SVORG-STEGOS-PORTABILITY-001"
+            ],
+            "destinations": [
+              "StegVerse-Labs/repo-standards"
+            ],
+            "issue": 24,
+            "outputs": [
+              "org-boundary/registry/services.json",
+              "org-boundary/registry/federation.json"
+            ],
+            "required_evidence": [
+              "org-kernel/kernel.py::load_registry resolves without a filesystem root",
+              "org-boundary/runtime/process_boundary.py resolves its registry without a path default",
+              "resident-runtime/sdk_manifest_crossing.py resolves its registry without a path default"
+            ],
+            "status": "proposed",
+            "tag_allowed": false,
+            "task_id": "SVORG-CAPABILITY-MAP-DISCOVERY-001",
+            "title": "Decide how the capability map reaches a node that holds no repository",
+            "workstream": "discovery-portability"
+          },
+          {
+            "activation_condition": "capability-map discovery is resolved, since admissibility is read from the map",
+            "depends_on": [
+              "SVORG-CAPABILITY-MAP-DISCOVERY-001"
+            ],
+            "issue": 25,
+            "outputs": [
+              "org-boundary/runtime/process_boundary.py"
+            ],
+            "required_evidence": [
+              "a boundary refuses an undeclared adapter with no reference to an organization root",
+              "a test driving both the admit and the refuse path",
+              "the 16 rows declaring runtime_required_for_consumption with no endpoint_adapter each carry an actionable disposition"
+            ],
+            "status": "blocked",
+            "tag_allowed": false,
+            "task_id": "SVORG-ADAPTER-ADMISSIBILITY-001",
+            "title": "Express endpoint adapter admissibility without a filesystem root",
+            "workstream": "boundary-admissibility"
+          },
+          {
+            "activation_condition": "the fail-closed semantics of a lost swap versus an orphaned receipt are decided",
+            "depends_on": [
+              "SVORG-STEGOS-PORTABILITY-001"
+            ],
+            "issue": 26,
+            "outputs": [
+              "resident-runtime/ledger_store.py",
+              "resident-runtime/aggregate_repo_transition.py",
+              ".stegverse/transition-ledger/emit.py"
+            ],
+            "required_evidence": [
+              "appenders sharing no filesystem produce one reconstructable chain",
+              "a recorded decision on what a lost compare-and-swap leaves behind",
+              "tests/test_repo_ledger_serialized_append.py continues to pass",
+              "tests/test_org_ledger_atomic_append.py continues to pass"
+            ],
+            "status": "blocked",
+            "tag_allowed": false,
+            "task_id": "SVORG-LEDGER-APPEND-SUBSTRATE-001",
+            "title": "Serialize ledger append across substrates that share no lock",
+            "workstream": "ledger-portability"
+          },
+          {
+            "depends_on": [],
+            "issue": 27,
+            "outputs": [
+              "org-boundary/runtime/intr_transport.py"
+            ],
+            "required_evidence": [
+              "no clock field in either direction's carrier",
+              "the same crossing at the same heartbeat tick yields an identical envelope digest from two separate emitters",
+              "tests/test_intr_org_crossing.py continues to pass"
+            ],
+            "status": "proposed",
+            "tag_allowed": false,
+            "task_id": "SVORG-CARRIER-HEARTBEAT-ONLY-001",
+            "title": "Time the InTr carrier by the heartbeat rather than a host clock",
+            "workstream": "heartbeat-time-base"
+          },
+          {
+            "activation_condition": "a surface in this organization declares an admitted capability/route binding, which none yet does; until then detection is proven and enforcement on paths this organization does not own belongs to their owners",
+            "depends_on": [],
+            "issue": 29,
+            "outputs": [
+              "org-boundary/runtime/manifest_selection.py",
+              "org-boundary/runtime/process_boundary.py",
+              "org-kernel/kernel.py",
+              "resident-runtime/sdk_manifest_crossing.py"
+            ],
+            "required_evidence": [
+              "tests/test_boundary_processing_selection.py drives capability/route mismatch and the identity shortcut",
+              "a refused declaration mints no receipt, in the boundary runtime and in the kernel",
+              "the SDK-facing crossing result carries declared_capability_processed",
+              "no result claims the boundary resolved route admissibility; the route owner is StegVerse-org/StegVerse-SDK"
+            ],
+            "status": "validating",
+            "tag_allowed": false,
+            "task_id": "SVORG-MANIFEST-SELECTS-PROCESSING-001",
+            "title": "Select boundary processing from the admitted manifest rather than the addressed row",
+            "workstream": "boundary-admissibility"
+          },
+          {
+            "activation_condition": "ICV v1.0.0 is published at exact release commit and Site remains an explicit ICV public commercial mirror",
+            "depends_on": [],
+            "destinations": [
+              "StegVerse-Labs/Site"
+            ],
+            "issue": 64,
+            "outputs": [
+              "StegVerse-Labs/Site/docs/ICV_PUBLIC_COMMERCIAL_CATALOG_MIRROR_HANDOFF.md"
+            ],
+            "required_evidence": [
+              "Infrastructure-Continuity-Ventures/.github v1.0.0 resolves exact commit 9b691cfaac076b565153c5a1c0f6c4072b8b044e",
+              "released public-facing ICV catalog/request semantics compared against StegVerse-Labs/Site mirror",
+              "NO_PROPAGATION_REQUIRED evidence or exact-head Site propagation and served-body verification",
+              "NO_PROPAGATION_REQUIRED: v1.0.0 public catalog/maturity/discovery-request/purchase-path semantics are already represented by current Site main"
+            ],
+            "status": "complete",
+            "tag_allowed": false,
+            "task_id": "ICV-V1-SITE-PROPAGATION-VERIFICATION-001",
+            "title": "Verify ICV v1.0.0 propagation to Site public commercial mirror",
+            "unresolved_obligations": [],
+            "workstream": "icv-release-propagation"
+          },
+          {
+            "activation_condition": "exact baseline and candidate set are source-validated; progression beyond OBSERVATION_STARTED requires an actually exposed TT next-capability derivation primitive",
+            "depends_on": [],
+            "destinations": [
+              "SV-011/entity",
+              "StegVerse-org/StegVerse-SDK"
+            ],
+            "issue": 68,
+            "outputs": [
+              "SV-011/entity/docs/SV011_TT_CAPABILITY_MAP_OBSERVATION_MIRROR_HANDOFF.md",
+              "SV-011/entity/construction/observation/observation-start.json",
+              "SV-011/entity/construction/observation/sdk-observation-projection.json"
+            ],
+            "required_evidence": [
+              "OBSERVATION_STARTED binds exact SV-011/entity baseline commit/tree, authority state, experiment identity, and mathematical candidate-set identity",
+              "AE -> RTG -> GTG -> TT candidate consumer retains every considered candidate and disposition",
+              "TT next-required-capability derivation is invoked only if an existing canonical TT primitive actually exposes that operation",
+              "first authentic non-ALLOW or missing primitive terminalizes the current observation step without inventing a target capability",
+              "SDK observation projection reconstructs initial state -> trigger -> every derived construction/exercise cycle -> terminal state without transport or authority creation"
+            ],
+            "status": "in_progress",
+            "tag_allowed": false,
+            "task_id": "SV011-TT-CAPABILITY-MAP-OBSERVATION-001",
+            "title": "Observe SV-011 construction from exact initial state through TT-derived next capability",
+            "unresolved_obligations": [
+              "EXPOSE_OR_IDENTIFY_CANONICAL_TT_NEXT_REQUIRED_CAPABILITY_DERIVATION_PRIMITIVE",
+              "AUTHENTICALLY_OBSERVE_DERIVED_CONSTRUCTION_EXERCISE_CYCLES",
+              "SDK_SINGLE_ARTIFACT_OBSERVATION_PROJECTION"
+            ],
+            "workstream": "sv011-open-ended-capability-observation"
+          },
+          {
+            "activation_condition": "canonical foundation contracts validate and merge without changing the existing active_goal until separately checked out",
+            "depends_on": [],
+            "destinations": [
+              "StegVerse-org/LLM-adapter",
+              "StegVerse-org/StegVerse-SDK"
+            ],
+            "issue": 74,
+            "outputs": [
+              "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md",
+              "data/llm-org-foundation.json"
+            ],
+            "required_evidence": [
+              "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md defines non-duplicative ownership and completion predicates",
+              "data/llm-org-foundation.json defines work-context, Sandbox, Ecosystem AI evidence-matching, and disposition-complete Inference Window contracts",
+              "tests prove participating LLM/AI entities acquire no governance authority",
+              "tests prove external provider/LLM ingress is delegated to LLM-adapter on the declared path (healthy node -> LLM-adapter -> SDK -> StegVerse-org/.github -> Interlock/InTr => Org Ledger, owner decision StegVerse-Labs/hybrid-collab-bridge#39) rather than duplicated, and that internal admitted Sandbox operations do not re-traverse LLM-adapter",
+              "README reconciles the organization-level coordination responsibility",
+              "StegVerse-org/.github#112 merged at 03ad5be1bd2b64d22fe936b3e7a9c4affb98e441; exact-head validate-task-registry success for declared external SDK ingress and admitted Sandbox internal no-hop source contract tests (not runtime activation)",
+              "StegVerse-org/.github#114 merged at 7801937d6bac772f25414356b9e927214e32df4a, exact-head sandbox validation success 46304ace679443dc37277c9a55100ca7d50f491f: bounded work-context and Sandbox source validators (not runtime admission)",
+              "StegVerse-org/.github#115 merged at 7d57e8afa05e6e562dd4e1eb8445765f34451b7a; exact head daed4d8196aa6b1454a33d5b9dc8e33884e6f27d passed 7/7 workflows, including 38030595921: non-authority and disposition-complete Inference Window tests plus README reconciliation; source-only, not Sandbox runtime activation"
+            ],
+            "status": "accepted",
+            "tag_allowed": false,
+            "task_id": "SVORG-LLM-ORG-FOUNDATION-001",
+            "title": "Establish InTr-resolved LLM Org ecosystem work context and multi-entity Sandbox",
+            "unresolved_obligations": [],
+            "workstream": "llm-org-foundation"
+          },
+          {
+            "activation_condition": "owner follow-up on StegVerse-org/LLM-adapter#368 (comment 6084623475) authorizes existing source repair and focused validation only; no new architecture, dependency, deployment or release",
+            "depends_on": [],
+            "destinations": [
+              "StegVerse-org/LLM-adapter"
+            ],
+            "issue": 102,
+            "outputs": [
+              "StegVerse-org/LLM-adapter/llm_adapter/governed_manifest_ingress.py",
+              "StegVerse-org/LLM-adapter/llm_adapter/sdk_boundary.py",
+              "StegVerse-org/LLM-adapter/llm_adapter/node_standing.py",
+              "StegVerse-org/LLM-adapter/llm_adapter/deepseek_tvc_runtime_executor.py",
+              "StegVerse-org/LLM-adapter/llm_adapter/combined_gateway.py",
+              "StegVerse-org/LLM-adapter/README.md",
+              "StegVerse-org/LLM-adapter/LLM_ADAPTER_MIRROR_HANDOFF.md"
+            ],
+            "required_evidence": [
+              "StegVerse-org/LLM-adapter#368 comment 6084397140 findings F1-F14 are each repaired or carry the disposition that comment assigns",
+              "LLM-adapter #369 merged as 2319ba4 (F1, F2, F3, F9, F11; F14 SDK-only processing remains open)",
+              "LLM-adapter #370 merged as 650eb7e (F6, F7; VA and activation verifier follow-ups remain open)",
+              "LLM-adapter #371 merged as 5b0b45d (F4, F5, F10, F12; F13 COSV checker remains open)",
+              "LLM-adapter #373 merged as 1cd1aca (VA claims turn closes on its transition receipt; Master Records reconstruction no longer gates the turn)",
+              "LLM-adapter #374 merged as 1b58b1f (activation verifiers read the provider usage record and transition receipt; no Master Records predicate)",
+              "LLM-adapter #372 merged as f581f3d (F14: adapter build is an opaque SDK pass-through; processing selection is SDK-owned)",
+              "LLM-adapter #375 merged as 112da47 (F13: COSV projection checker distinguishes terminal tasks)",
+              "every non-ALLOW result carries failure_code, failed_predicate, required_evidence_or_repair, retry_entrypoint, owning_existing_goal and next_attempt",
+              "no execution or completion path is gated on Master Records",
+              "zero dependencies added",
+              "Authenticated StegVerse-org/.github Organization Ledger Transition run 38020580790: ingress ALLOW, canonical manifest sha256:1609719774d9cadaaf0e3f6f8c347248b6f6749fb750f73441678e5e8e2501af; independent fresh-fetch ledger readback succeeded",
+              "Authoritative refs/stegverse/organization-ledger commit 6b2705fe480d70afa15338ca93eb0ca19033e0ac: HEAD receipt sha256:4643742af4298db9c27e9c88de31bfa25163778d29383fd4fccbd63cd23de55d, source sha256:861b33b398c25d333e8308c3fb151ea60f8b634da5311b8a9f5d4c277ef028e2, previous_receipt_sha256 null"
+            ],
+            "status": "in_progress",
+            "tag_allowed": false,
+            "task_id": "LLMA-DECLARED-PATH-CONFORMANCE-368",
+            "title": "Conform LLM-adapter to the owner-declared manifest path and organization-role standard",
+            "unresolved_obligations": [],
+            "workstream": "llm-adapter-declared-path-conformance"
+          }
+        ]
+      },
+      "authority_effect": "NONE",
+      "boundary_receipts": [
+        {
+          "evidence_hash": "6c0983460b848c453cdef7b9e5df94e9b2de86f0eaea7a7808c4bd987873b165",
+          "kind": "INGRESS_ACCEPTED",
+          "previous_receipt_id": null,
+          "receipt_id": "ingress_accepted-6c0983460b848c453cdef7b9",
+          "subject": "stegverse-org.llm-adapter"
+        },
+        {
+          "evidence_hash": "a589a2c06bc4bf3a6edfb3a48c4ba03ad19e7268bc1cdf0ff706b9306d4b336c",
+          "kind": "DISPATCHED",
+          "previous_receipt_id": "ingress_accepted-6c0983460b848c453cdef7b9",
+          "receipt_id": "dispatched-a589a2c06bc4bf3a6edfb3a4",
+          "subject": "stegverse-org.llm-adapter"
+        },
+        {
+          "evidence_hash": "e0eae0ac75dc5f708897bdb6b9c6823f2751f0bf28174cf5a9b6fdfc234556ba",
+          "kind": "CONSUMED",
+          "previous_receipt_id": "dispatched-a589a2c06bc4bf3a6edfb3a4",
+          "receipt_id": "consumed-e0eae0ac75dc5f708897bdb6",
+          "subject": "stegverse-org.llm-adapter"
+        },
+        {
+          "evidence_hash": "6e27efb699e66e2b212dc6e0a5def467dd2b96ba512fab4ba37d09e361a30f44",
+          "kind": "RESULT_BOUND",
+          "previous_receipt_id": "consumed-e0eae0ac75dc5f708897bdb6",
+          "receipt_id": "result_bound-6e27efb699e66e2b212dc6e0",
+          "subject": "stegverse-org.llm-adapter"
+        },
+        {
+          "evidence_hash": "46639cb1d833a82461438889d1366af1384fb45c5faa8033142e7cc7223ec558",
+          "kind": "EGRESS_EMITTED",
+          "previous_receipt_id": "result_bound-6e27efb699e66e2b212dc6e0",
+          "receipt_id": "egress_emitted-46639cb1d833a82461438889",
+          "subject": "stegverse-org.llm-adapter"
+        }
+      ],
+      "consumed": true,
+      "crossing_completed": true,
+      "declared_capability": "ecosystem_diagnostic",
+      "declared_capability_processed": true,
+      "declared_route_id": "stegverse.route.ecosystem-diagnostic.v1",
+      "declared_transition_surface": "LLM_ADAPTER",
+      "egress_packet_id": "LLMA-368-DECLARED-PATH-002:egress",
+      "ingress_packet_id": "LLMA-368-DECLARED-PATH-002",
+      "manifest_sha256": "sha256:08a4337178ad74f32c5abc623b2ea4dbccbfa6bb1d9364f89afb092a93413619",
+      "payload_hash": "32d34eac3958646d11be4a70b2deb2572767cd635c5191a7c2f9afa8f9b7955b",
+      "processing_selection": "MANIFEST_DECLARED",
+      "receipts": [
+        "INGRESS_ACCEPTED",
+        "DISPATCHED",
+        "CONSUMED",
+        "RESULT_BOUND",
+        "EGRESS_EMITTED"
+      ],
+      "reconstruction": "RECONSTRUCTED",
+      "resolved_service_id": "stegverse-org.llm-adapter",
+      "route_admissibility": "NOT_RESOLVED_AT_BOUNDARY_ROUTE_OWNER_IS_SDK",
+      "schema": "stegverse.sdk-manifest-crossing-result/v1",
+      "terminal_receipt_id": "egress_emitted-46639cb1d833a82461438889"
+    },
+    "destination_resolution_source": "CANONICAL_CONNECTOR_CAPABILITY_OVERLAY",
+    "graph_id": "RTC-GOVERNED-PROCESSING-002:ECOSYSTEM_DIAGNOSTIC",
+    "operation": "SUBMIT_MANIFEST",
+    "processing_capability": "ecosystem_diagnostic",
+    "profile_id": "sdk-manifest-ingress",
+    "profile_name": "SDK:ManifestIngress",
+    "receiving_operation": "ORGANIZATION_SDK_MANIFEST_INGRESS",
+    "request_sha256": "75ddde2969e8a6c4fa29e0be17b6205f655dd6b953bd09c5a2fd5b3ebfe4304a",
+    "route_id": "stegverse.route.ecosystem-diagnostic.v1",
+    "transition_closures": [
+      {
+        "receipt_sha256": "6c0983460b848c453cdef7b9e5df94e9b2de86f0eaea7a7808c4bd987873b165",
+        "reconstructed_receipt_sha256": "6c0983460b848c453cdef7b9e5df94e9b2de86f0eaea7a7808c4bd987873b165",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "INGRESS_ACCEPTED"
+      },
+      {
+        "predecessor_receipt_sha256": "6c0983460b848c453cdef7b9e5df94e9b2de86f0eaea7a7808c4bd987873b165",
+        "receipt_sha256": "a589a2c06bc4bf3a6edfb3a48c4ba03ad19e7268bc1cdf0ff706b9306d4b336c",
+        "reconstructed_receipt_sha256": "a589a2c06bc4bf3a6edfb3a48c4ba03ad19e7268bc1cdf0ff706b9306d4b336c",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "DISPATCHED"
+      },
+      {
+        "predecessor_receipt_sha256": "a589a2c06bc4bf3a6edfb3a48c4ba03ad19e7268bc1cdf0ff706b9306d4b336c",
+        "receipt_sha256": "e0eae0ac75dc5f708897bdb6b9c6823f2751f0bf28174cf5a9b6fdfc234556ba",
+        "reconstructed_receipt_sha256": "e0eae0ac75dc5f708897bdb6b9c6823f2751f0bf28174cf5a9b6fdfc234556ba",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "CONSUMED"
+      },
+      {
+        "predecessor_receipt_sha256": "e0eae0ac75dc5f708897bdb6b9c6823f2751f0bf28174cf5a9b6fdfc234556ba",
+        "receipt_sha256": "6e27efb699e66e2b212dc6e0a5def467dd2b96ba512fab4ba37d09e361a30f44",
+        "reconstructed_receipt_sha256": "6e27efb699e66e2b212dc6e0a5def467dd2b96ba512fab4ba37d09e361a30f44",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "RESULT_BOUND"
+      },
+      {
+        "predecessor_receipt_sha256": "6e27efb699e66e2b212dc6e0a5def467dd2b96ba512fab4ba37d09e361a30f44",
+        "receipt_sha256": "46639cb1d833a82461438889d1366af1384fb45c5faa8033142e7cc7223ec558",
+        "reconstructed_receipt_sha256": "46639cb1d833a82461438889d1366af1384fb45c5faa8033142e7cc7223ec558",
+        "reconstruction_status": "PASS",
+        "required_evidence_validation_status": "PASS",
+        "state": "RECORDED",
+        "transition_id": "EGRESS_EMITTED"
+      }
+    ],
+    "wire_manifest_sha256": "08a4337178ad74f32c5abc623b2ea4dbccbfa6bb1d9364f89afb092a93413619"
+  },
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": true,
+    "epoch": 410219334,
+    "frequency_hz": 100,
+    "generation": 410219334,
+    "heartbeat_id": "HB:410219334",
+    "phase_offset_ns": 4072960,
+    "progression_dependency": "OSCILLATOR_ONLY",
+    "sampled_unix_ns": 1791613793024072960
+  },
+  "predecessor_state_sha256": "sha256:ad52f296ab29676e486c5cac30beab80cf9bca037cc156704bea2d5a6c40e49f",
+  "previous_receipt_sha256": null,
+  "receipt_sha256": "sha256:8471fbfd9631144cb9c09b5072ed036cfb4b5a50f2e2711cf1805843be8816f2",
+  "repository": "StegVerse-org/.github",
+  "schema": "stegverse.repo-transition-receipt/v1",
+  "successor_state_sha256": "sha256:46639cb1d833a82461438889d1366af1384fb45c5faa8033142e7cc7223ec558",
+  "transition_class": "ORGANIZATION_SDK_MANIFEST_INGRESS",
+  "transition_id": "ORGANIZATION-SDK-MANIFEST-INGRESS-75ddde2969e8a6c4"
+}
