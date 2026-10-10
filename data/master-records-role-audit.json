@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 118,
+      "PROPER": 120,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 18,
-      "total": 155
+      "total": 157
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -58,7 +58,7 @@
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
       "line_before": null,
       "classification_before": "IMPROPER_CODE",
-      "reason": "Every failure raised a bare SystemExit string (schema, owner, standing) or an uncaught kernel exception: no six-field non-ALLOW, no statement that the organization transition is unaffected, and it released any receipt without checking it was appended."
+      "reason": "Sent a single unverified receipt (schema and owner only; no self-digest or chain linkage), so it did not release a verified organization receipt-chain segment as the recorder role requires, and every failure was a bare SystemExit string or an uncaught kernel exception: no six-field non-ALLOW and no statement that the organization transition is unaffected."
     }
   ],
   "occurrences": [
@@ -499,7 +499,7 @@
     {
       "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
       "line": 23,
-      "text": "- Any publication failure is a downstream non-ALLOW carrying `failure_code`, `failed_predicate`, `required_evidence_or_repair`, `retry_entrypoint`, `owning_existing_goal` and `next_attempt`, with `organization_transition_blocked: false` and",
+      "text": "- Any release failure is a downstream `DENY` carrying `failure_code`, `failed_predicate`, `required_evidence_or_repair`, `retry_entrypoint`, `owning_existing_goal` and `next_attempt`, with `organization_transition_blocked: false` and `maste",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -681,7 +681,7 @@
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
       "line": 2,
-      "text": "\"\"\"Publish an already-appended organization receipt to Master Records.",
+      "text": "\"\"\"Release one verified organization receipt batch to Master Records as downstream evidence.",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -694,99 +694,106 @@
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 21,
+      "line": 32,
+      "text": "DESTINATION_ORG=\"master-records\"",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 33,
       "text": "# Destination service (MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002): the organization transition",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 22,
+      "line": 34,
       "text": "# ledger owns the ledger role. Legacy name \"master-records.ecosystem-transition-ledger\" is no longer sent.",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 24,
+      "line": 40,
       "text": "RETRY_ENTRYPOINT=\"resident-runtime/submit_org_transition_to_master_records.py::main\"",
       "classification": "NAMING_ONLY",
       "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 37,
-      "text": "\"organization_transition_blocked\":False,\"master_records_awaited\":False,\"authority_effect\":\"NONE\"}",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 40,
-      "text": "return not_recorded(\"MASTER_RECORDS_PUBLICATION_MESH_LOCATION_NOT_SUPPLIED\",\"MESH_ROOT_SUPPLIED\",\"supply --mesh-root, the mesh this node was materialized with\")",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 43,
-      "text": "return not_recorded(\"MASTER_RECORDS_PUBLICATION_RECEIPT_UNREADABLE\",\"ORGANIZATION_RECEIPT_READABLE\",\"supply a readable organization receipt JSON file (\"+type(exc).__name__+\")\")",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 45,
-      "text": "return not_recorded(\"MASTER_RECORDS_PUBLICATION_RECEIPT_SCHEMA_MISMATCH\",\"ORGANIZATION_RECEIPT_SCHEMA\",\"supply a stegverse.organization-transition-receipt/v1\")",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "resident-runtime/submit_org_transition_to_master_records.py",
       "line": 47,
-      "text": "return not_recorded(\"MASTER_RECORDS_PUBLICATION_RECEIPT_OWNER_MISMATCH\",\"ORGANIZATION_RECEIPT_OWNER\",\"supply a receipt owned by StegVerse-org\")",
+      "text": "\"MESH_ROOT_SUPPLIED\":(\"MASTER_RECORDS_RELEASE_MESH_LOCATION_NOT_SUPPLIED\",\"supply --mesh-root, the mesh this node was materialized with\"),",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 48,
+      "text": "\"PUBLICATION_INPUTS_READABLE\":(\"MASTER_RECORDS_RELEASE_INPUT_UNREADABLE\",\"supply readable --org-receipt, --standing and --relation-evidence-json JSON\"),",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 49,
+      "text": "\"RELEASED_BATCH_IS_NOT_EMPTY\":(\"MASTER_RECORDS_RELEASE_BATCH_EMPTY\",\"supply at least one organization receipt with --org-receipt\"),",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
       "line": 50,
-      "text": "return not_recorded(\"MASTER_RECORDS_PUBLICATION_RECEIPT_NOT_APPENDED\",\"ORGANIZATION_LEDGER_APPEND_PRECEDES_PUBLICATION\",\"append the transition to the organization ledger first; publish the receipt the append returned\")",
+      "text": "\"ORGANIZATION_RECEIPT_SCHEMA_MATCHES\":(\"MASTER_RECORDS_RELEASE_RECEIPT_SCHEMA_MISMATCH\",\"release only \"+ORG_RECEIPT_SCHEMA+\" receipts\"),",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 51,
+      "text": "\"ORGANIZATION_RECEIPT_OWNER_MATCHES\":(\"MASTER_RECORDS_RELEASE_RECEIPT_OWNER_MISMATCH\",\"release only receipts emitted by \"+ORGANIZATION+\"'s own ledger\"),",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 52,
+      "text": "\"ORGANIZATION_RECEIPT_SELF_DIGEST_MATCHES\":(\"MASTER_RECORDS_RELEASE_RECEIPT_DIGEST_MISMATCH\",\"supply the receipt bytes exactly as appended to the organization ledger; only an appended receipt is released\"),",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 53,
+      "text": "\"ORGANIZATION_RECEIPT_CHAIN_SEGMENT_IS_CONTIGUOUS\":(\"MASTER_RECORDS_RELEASE_SEGMENT_NOT_CONTIGUOUS\",\"supply a contiguous segment in chain order: each receipt's previous_receipt_sha256 names the receipt before it\"),",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 54,
+      "text": "\"STANDING_DECLARES_PREDECESSOR\":(\"MASTER_RECORDS_RELEASE_STANDING_UNDECLARED\",\"standing must declare the predecessor key; null is explicit genesis\"),",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
       "line": 55,
-      "text": "return not_recorded(\"MASTER_RECORDS_PUBLICATION_INPUT_UNREADABLE\",\"PUBLICATION_INPUTS_READABLE\",\"supply readable --standing and --relation-evidence-json (\"+type(exc).__name__+\")\")",
+      "text": "\"PACKET_PUBLISHED_TO_SUPPLIED_MESH\":(\"MASTER_RECORDS_RELEASE_NOT_PUBLISHED\",\"repair the packet or mesh the kernel refused\"),",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 57,
-      "text": "return not_recorded(\"MASTER_RECORDS_PUBLICATION_STANDING_UNDECLARED\",\"STANDING_DECLARES_PREDECESSOR\",\"standing must declare the predecessor key; null is explicit genesis\")",
+      "line": 65,
+      "text": "\"detail\":detail[:240],\"organization_transition_blocked\":False,\"master_records_awaited\":False,",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 60,
-      "text": "packet=K.build_packet(origin_org=\"StegVerse-org\",origin_service=\"stegverse-org.org-control\",destination_org=\"master-records\",destination_service=DESTINATION_SERVICE,payload=payload,standing=standing,transition_reference=\"ecosystem.transitio",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 66,
-      "text": "return not_recorded(\"MASTER_RECORDS_PUBLICATION_NOT_PUBLISHED\",\"PACKET_PUBLISHED_TO_SUPPLIED_MESH\",\"repair the packet or mesh the kernel refused: \"+str(exc)[:200])",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 67,
-      "text": "return {\"status\":\"PUBLISHED_FOR_ORGANIZATION_RECORD\",\"packet_id\":packet[\"packet_id\"],\"frame_sha256\":published[\"frame\"][\"frame_sha256\"],\"organization_transition_blocked\":False,\"master_records_awaited\":False,\"authority_effect\":\"NONE\"}",
+      "line": 112,
+      "text": "\"frame_sha256\":published[\"frame\"][\"frame_sha256\"],\"organization_transition_blocked\":False,\"master_records_awaited\":False,",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -1086,57 +1093,64 @@
     },
     {
       "file": "tests/test_stable_epoch_and_adapter_effects.py",
-      "line": 39,
+      "line": 40,
       "text": "SUBMITTER = ROOT / \"resident-runtime/submit_org_transition_to_master_records.py\"",
       "classification": "NAMING_ONLY",
       "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": "tests/test_stable_epoch_and_adapter_effects.py",
-      "line": 208,
+      "line": 209,
       "text": "class MasterRecordsSubmitterTests(unittest.TestCase):",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "tests/test_stable_epoch_and_adapter_effects.py",
-      "line": 252,
-      "text": "\"\"\"Master Records is downstream of the organization ledger append: a failure",
+      "line": 210,
+      "text": "\"\"\"Master Records records released organization batches downstream; it gates nothing.\"\"\"",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "tests/test_stable_epoch_and_adapter_effects.py",
-      "line": 260,
+      "line": 272,
       "text": "self.assertIs(result[\"master_records_awaited\"], False)",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "tests/test_stable_epoch_and_adapter_effects.py",
-      "line": 267,
-      "text": "\"MASTER_RECORDS_PUBLICATION_MESH_LOCATION_NOT_SUPPLIED\")",
+      "line": 294,
+      "text": "self.assert_downstream_deny(refused, \"MASTER_RECORDS_RELEASE_MESH_LOCATION_NOT_SUPPLIED\")",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "tests/test_stable_epoch_and_adapter_effects.py",
-      "line": 276,
-      "text": "\"MASTER_RECORDS_PUBLICATION_RECEIPT_NOT_APPENDED\")",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "tests/test_stable_epoch_and_adapter_effects.py",
-      "line": 286,
-      "text": "\"MASTER_RECORDS_PUBLICATION_RECEIPT_OWNER_MISMATCH\")",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "tests/test_stable_epoch_and_adapter_effects.py",
-      "line": 296,
+      "line": 305,
       "text": "self.assertIs(result[\"master_records_awaited\"], False)",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "tests/test_stable_epoch_and_adapter_effects.py",
+      "line": 323,
+      "text": "\"MASTER_RECORDS_RELEASE_SEGMENT_NOT_CONTIGUOUS\", mesh)",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "tests/test_stable_epoch_and_adapter_effects.py",
+      "line": 331,
+      "text": "\"MASTER_RECORDS_RELEASE_RECEIPT_DIGEST_MISMATCH\", mesh)",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "tests/test_stable_epoch_and_adapter_effects.py",
+      "line": 339,
+      "text": "\"MASTER_RECORDS_RELEASE_RECEIPT_OWNER_MISMATCH\", mesh)",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -1145,7 +1159,7 @@
       "line": null,
       "text": "(publisher module; failure paths)",
       "classification": "PROPER",
-      "reason": "Runs after the organization ledger append, releases only an appended (receipt_sha256-bound) receipt, and returns every failure as a six-field downstream non-ALLOW with organization_transition_blocked=false and master_records_awaited=false."
+      "reason": "Ported from SV-LLM/.github#22 (61d7635): releases a verified organization receipt-chain segment (repeatable --org-receipt; schema, owner, self-digest and previous_receipt_sha256 linkage checked; a single receipt is a batch of one) as RECORD_RELEASED_ORGANIZATION_BATCH with recorder_role RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER, gates_organization_runtime_reality=false and awaited_by_organization=false. Runs after the organization ledger append; every failure is a six-field downstream DENY with organization_transition_blocked=false. Filename, transition_reference and destination_service unchanged."
     }
   ]
 }
