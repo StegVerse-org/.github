@@ -14,8 +14,10 @@ def load(name, relative):
     spec.loader.exec_module(module)
     return module
 
-store_module = load("mesh_store_test", "org-kernel/node_store.py")
 kernel = load("mesh_kernel_test", "org-kernel/kernel.py")
+# Use the kernel's own node_store module so WriteOnceCollision is the same
+# class the kernel raises (a second load would mint a distinct class).
+store_module = kernel.node_store_module
 
 class GitMeshTests(unittest.TestCase):
     def setUp(self):
