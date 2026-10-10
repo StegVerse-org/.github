@@ -63,7 +63,7 @@ def validate_work_context(value):
         return _result("work_context", "INVALID_CONTEXT_REFS", "bounded_unique_nonempty_refs",
                        "supply 1..128 distinct nonempty canonical references", retry, "resubmit references")
     classes = value.get("evidence_classes")
-    if not isinstance(classes, list) or not classes or any(c not in CONTEXT_CLASSES for c in classes):
+    if not isinstance(classes, list) or not classes or any(not isinstance(c, str) or c not in CONTEXT_CLASSES for c in classes):
         return _result("work_context", "INVALID_EVIDENCE_CLASSES", "known_context_evidence_classes",
                        "declare supported evidence classes", retry, "resubmit classes")
     if not isinstance(value.get("work_id"), str) or not value["work_id"].strip():
