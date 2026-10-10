@@ -120,6 +120,76 @@ def readback(location, ingress_result=None, manifest=None):
     return result
 
 
+def _repository_emitter():
+    """The repository ledger's own chain walker, so the readback verifies nodes the way the writer does."""
+    import importlib.util
+    emit = Path(__file__).resolve().parents[1] / ".stegverse/transition-ledger/emit.py"
+    spec = importlib.util.spec_from_file_location("repository_ledger_readback_emit", emit)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def repository_readback(location, namespace, organization_result, ingress_result=None):
+    """Read the repository chain kept in `namespace` of the same ref back and verify it.
+
+    The repository ledger is durable only if its chain survives the run that
+    wrote it, so this walks `repository-ledger/<repository>/HEAD.json` back
+    through repository receipts alone -- never an organization receipt, as the
+    repository replay rule requires -- and checks every node the way the
+    emitter does. Each repository receipt in the chain must also be retained
+    byte-for-byte by the organization ledger it was consumed into. Given an
+    ingress result, the repository receipt it names must be in this chain and
+    be the source the ingress's organization receipt consumed.
+    """
+    emitter = _repository_emitter()
+    locator = parse_locator(location)
+    repository_location = str(locator) + ":" + namespace
+    store = open_store(repository_location)
+    organization_store = open_store(locator)
+    head = store.get(HEAD_KEY)
+    if head is None:
+        raise ReadbackRefused("REPOSITORY_LEDGER_HEAD_PRESENT", "no HEAD at " + repository_location)
+    try:
+        chain = list(emitter.chain(store, head))
+    except emitter.RepoLedgerChainBreak as exc:
+        raise ReadbackRefused("REPOSITORY_CHAIN_VERIFIES", str(exc)) from None
+    chain.reverse()
+    for receipt in chain:
+        retained = organization_store.get(source_key(receipt["receipt_sha256"]))
+        if retained != receipt:
+            raise ReadbackRefused("REPOSITORY_RECEIPT_RETAINED_IN_ORGANIZATION_LEDGER",
+                                  receipt["receipt_sha256"])
+    result = {
+        "location": repository_location,
+        "namespace": namespace,
+        "head_receipt_sha256": head["receipt_sha256"],
+        "chain_length": len(chain),
+        "genesis_receipt_sha256": chain[0]["receipt_sha256"],
+        "chain": [{"receipt_sha256": r["receipt_sha256"],
+                   "previous_receipt_sha256": r.get("previous_receipt_sha256"),
+                   "transition_id": r.get("transition_id"),
+                   "transition_class": r.get("transition_class")} for r in chain],
+        "every_receipt_verifies_against_its_body": True,
+        "every_receipt_retained_in_organization_ledger": True,
+        "replay_read_organization_receipts": False,
+    }
+    if ingress_result is not None:
+        refused = ingress_result.get("refusal_organization_receipt_sha256") is not None
+        digest = ingress_result.get("refusal_repository_receipt_sha256" if refused
+                                    else "repository_receipt_sha256")
+        if not any(r["receipt_sha256"] == digest for r in chain):
+            raise ReadbackRefused("INGRESS_REPOSITORY_RECEIPT_IS_IN_THE_REPOSITORY_LEDGER", str(digest))
+        organization_digest = organization_result["ingress_organization_receipt_sha256"]
+        consumed = organization_store.get(receipt_key(organization_digest)) or {}
+        if consumed.get("source_transition_sha256") != digest:
+            raise ReadbackRefused("ORGANIZATION_RECEIPT_CONSUMES_THE_REPOSITORY_RECEIPT", str(digest))
+        result.update({"ingress_repository_receipt_sha256": digest,
+                       "ingress_repository_receipt_in_chain": True,
+                       "consumed_by_organization_receipt_sha256": organization_digest})
+    return result
+
+
 def recorded_for(location, canonical_manifest_sha256):
     """The verified receipt already binding this manifest, or None.
 
@@ -146,6 +216,8 @@ def main():
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--recorded-for", metavar="CANONICAL_MANIFEST_SHA256", default=None,
                         help="print the receipt already binding this manifest, or nothing")
+    parser.add_argument("--repository-namespace", default=None,
+                        help="also read back the repository chain kept in this subtree of the same ref")
     args = parser.parse_args()
     if args.recorded_for:
         print(recorded_for(args.location, args.recorded_for) or "")
@@ -154,6 +226,9 @@ def main():
     manifest = json.loads(args.manifest.read_text()) if args.manifest else None
     try:
         result, code = readback(args.location, ingress, manifest), 0
+        if args.repository_namespace:
+            result["repository_ledger"] = repository_readback(
+                args.location, args.repository_namespace, result, ingress)
     except (ReadbackRefused, ValueError, RuntimeError, FileNotFoundError) as exc:
         result, code = {
             "schema": "stegverse.organization-ledger-readback/v1",

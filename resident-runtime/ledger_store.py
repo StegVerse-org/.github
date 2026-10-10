@@ -79,14 +79,26 @@ class LedgerLocatorInvalid(ValueError):
 
 
 class GitLocator:
-    """A ledger addressed as a ref in a git repository: `git+<repository>#<ref>`."""
+    """A ledger addressed as a ref in a git repository: `git+<repository>#<ref>`.
 
-    def __init__(self, repository, ref):
+    `git+<repository>#<ref>:<namespace>` addresses a ledger kept in a subtree
+    of that ref. Two ledgers can then share one ref -- one commit history, one
+    compare-and-swap, one push -- without their keys colliding: each store
+    sees only its own subtree. The repository ledger of this organization's
+    `.github` lives this way inside the designated organization ledger ref,
+    so its chain is as durable as the organization's and no second ref is
+    named. A namespace is a key prefix, not a ref: `:` cannot appear in a
+    ref name, so the two halves never mix.
+    """
+
+    def __init__(self, repository, ref, namespace=None):
         self.repository = Path(repository)
         self.ref = ref
+        self.namespace = namespace
 
     def __str__(self):
-        return GIT_SCHEME + str(self.repository) + "#" + self.ref
+        text = GIT_SCHEME + str(self.repository) + "#" + self.ref
+        return text + ":" + self.namespace if self.namespace else text
 
     def __repr__(self):
         return "GitLocator(" + repr(str(self)) + ")"
@@ -107,13 +119,34 @@ def _require_ref(ref, locator):
     return ref
 
 
+# The keys a ledger writes at the top of its tree. A namespace may not begin
+# with one of them, or a namespaced store would write into another store's
+# documents instead of beside them.
+_TOP_LEVEL_KEYS = ("HEAD.json", RECEIPT_PREFIX.rstrip("/"), SOURCE_PREFIX.rstrip("/"))
+
+
+def _require_namespace(namespace, locator):
+    """A namespace is a relative, normalized tree path with no reserved head."""
+    segments = namespace.split("/")
+    # `.github` is a repository name, so a leading dot is allowed; only the
+    # path-relative segments and separators that could escape the subtree are not.
+    if any(segment in ("", ".", "..") or
+           any(c.isspace() or c in ":\\" for c in segment) for segment in segments):
+        raise LedgerLocatorInvalid(locator, "namespace_is_not_a_relative_normalized_tree_path")
+    if segments[0] in _TOP_LEVEL_KEYS:
+        raise LedgerLocatorInvalid(locator, "namespace_may_not_shadow_a_ledger_key")
+    return namespace
+
+
 def parse_locator(value):
     """The store location a supplied value names.
 
     A `git+<repository>#<ref>` string (or a locator printed from one) names a
     git ref; both halves are required and the ref must be fully qualified, so
-    nothing about where a chain lives is filled in here. Anything else is a
-    filesystem path, resolved exactly as the ledger roots always resolved it.
+    nothing about where a chain lives is filled in here. An optional
+    `:<namespace>` after the ref names a subtree of that ref (see
+    `GitLocator`). Anything else is a filesystem path, resolved exactly as the
+    ledger roots always resolved it.
     """
     if not isinstance(value, PurePath):
         text = str(value)
@@ -121,7 +154,11 @@ def parse_locator(value):
             repository, separator, ref = text[len(GIT_SCHEME):].rpartition("#")
             if not separator or not repository or not ref:
                 raise LedgerLocatorInvalid(text, "git_locator_requires_repository_and_ref")
-            return GitLocator(Path(repository).expanduser().resolve(), _require_ref(ref, text))
+            ref, has_namespace, namespace = ref.partition(":")
+            if has_namespace and not namespace:
+                raise LedgerLocatorInvalid(text, "namespace_separator_without_a_namespace")
+            return GitLocator(Path(repository).expanduser().resolve(), _require_ref(ref, text),
+                              _require_namespace(namespace, text) if has_namespace else None)
     return Path(value).expanduser().resolve()
 
 
@@ -133,7 +170,7 @@ def open_store(location):
     """
     if not isinstance(location, PurePath) and str(location).startswith(GIT_SCHEME):
         locator = parse_locator(location)
-        return GitLedgerStore(locator.repository, locator.ref)
+        return GitLedgerStore(locator.repository, locator.ref, locator.namespace)
     return PosixLedgerStore(location)
 
 
@@ -314,10 +351,18 @@ class GitLedgerStore:
     _IMMUTABLE_PREFIXES = (RECEIPT_PREFIX, SOURCE_PREFIX)
     _ATTEMPTS = 128
 
-    def __init__(self, repository, ref):
+    def __init__(self, repository, ref, namespace=None):
         self.repository = Path(repository)
-        self.ref = _require_ref(ref, GIT_SCHEME + str(repository) + "#" + str(ref))
+        text = GIT_SCHEME + str(repository) + "#" + str(ref) + (":" + str(namespace) if namespace else "")
+        self.ref = _require_ref(ref, text)
+        # The subtree of the ref this store reads and writes; None is the whole
+        # tree. Keys are translated at the git boundary only, so every reader
+        # and writer above sees the same `HEAD.json` and `receipts/` it always did.
+        self.namespace = _require_namespace(namespace, text) if namespace else None
         self._local = threading.local()
+
+    def _path(self, key):
+        return self.namespace + "/" + key if self.namespace else key
 
     # -- git plumbing -----------------------------------------------------
 
@@ -372,7 +417,7 @@ class GitLedgerStore:
         keys = list(keys)
         if revision is None or not keys:
             return {key: None for key in keys}
-        request = "".join(revision + ":" + key + "\n" for key in keys).encode()
+        request = "".join(revision + ":" + self._path(key) + "\n" for key in keys).encode()
         output = self._git("cat-file", "--batch", stdin=request).stdout
         found, offset = {}, 0
         for key in keys:
@@ -406,7 +451,7 @@ class GitLedgerStore:
             entries = []
             for key in sorted(documents):
                 blob = self._git("hash-object", "-w", "--stdin", stdin=documents[key]).stdout.decode().strip()
-                entries.append("100644 " + blob + "\t" + key + "\n")
+                entries.append("100644 " + blob + "\t" + self._path(key) + "\n")
             self._git("update-index", "--index-info", stdin="".join(entries).encode(), env=env)
             tree = self._git("write-tree", env=env).stdout.decode().strip()
         if parent is not None and tree == self._git("rev-parse", parent + "^{tree}").stdout.decode().strip():
@@ -465,7 +510,7 @@ class GitLedgerStore:
 
     def locator(self, key):
         """How this substrate names the key, for a reader outside the ledger."""
-        return GIT_SCHEME + str(self.repository) + "#" + self.ref + ":" + key
+        return GIT_SCHEME + str(self.repository) + "#" + self.ref + ":" + self._path(key)
 
     def exists(self, key):
         return self._read(self._tip(), [key])[key] is not None
@@ -486,11 +531,13 @@ class GitLedgerStore:
 
     def list_prefix(self, prefix):
         tip = self._tip()
-        directory = prefix.rstrip("/")
+        directory = self._path(prefix.rstrip("/"))
         if tip is None:
             return set()
         listed = self._git("ls-tree", "-z", "--name-only", tip, "--", directory + "/").stdout
-        return {name for name in listed.decode().split("\0")
+        skip = len(self.namespace) + 1 if self.namespace else 0
+        names = {name[skip:] for name in listed.decode().split("\0") if name}
+        return {name for name in names
                 if name.endswith(".json") and name.startswith(prefix) and "/" not in name[len(prefix):]}
 
     @contextmanager

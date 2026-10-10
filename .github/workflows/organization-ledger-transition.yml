@@ -58,15 +58,24 @@ jobs:
           contract = json.loads(Path(".stegverse/transition-ledger/org-contract.json").read_text())
           assert contract["organization_ledger_repository"] == "StegVerse-org/.github"
           assert contract["organization_ledger_ref"] == "refs/stegverse/organization-ledger"
+          # The repository ledger lives in a subtree of the same designated ref
+          # (contract.json repository_ledger_location); no second ref is named.
+          location = json.loads(Path(".stegverse/transition-ledger/contract.json").read_text())["repository_ledger_location"]
+          assert location["repository"] == contract["organization_ledger_repository"]
+          assert location["ref"] == contract["organization_ledger_ref"]
+          assert location["new_ledger_root"] is False and location["namespace"]
           for path in Path(".stegverse/transition-requests").glob("*.json"):
               request = json.loads(path.read_text())
               assert request["owning_existing_goal"] and request["build_manifest"] and request["standing"]
           PY
 
-      - name: Bind the designated organization ledger ref
+      - name: Bind the designated organization ledger ref and the repository ledger subtree within it
         run: |
           ref=$(python -c 'import json; c=json.load(open(".stegverse/transition-ledger/org-contract.json")); assert c["organization_ledger_repository"]=="StegVerse-org/.github", c; print(c["organization_ledger_ref"])')
           test "$ref" = "$LEDGER_REF"
+          namespace=$(python -c 'import json; l=json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]; assert l["ref"]=="refs/stegverse/organization-ledger", l; print(l["namespace"])')
+          echo "REPO_LEDGER_NAMESPACE=$namespace" >> "$GITHUB_ENV"
+          echo "repository ledger subtree: $namespace"
           if git ls-remote --exit-code origin "$LEDGER_REF" >/dev/null; then
             git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
             echo "ledger tip: $(git rev-parse "$LEDGER_REF")"
@@ -86,12 +95,14 @@ jobs:
           fi
           cat "$RUNNER_TEMP/requests.txt"
 
-      - name: Receive each request and append to the organization ledger
-        env:
-          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+      - name: Receive each request and append to the repository and organization ledgers
         run: |
           set -euo pipefail
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
+          # Same ref, own subtree: the repository chain is published by the same
+          # fast-forward push below and survives this run (contract.json
+          # repository_ledger_location; StegVerse-org/.github#118).
+          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           mkdir -p "$RUNNER_TEMP/results"
           while IFS= read -r request; do
             [ -n "$request" ] || continue
@@ -141,7 +152,7 @@ jobs:
             exit 1
           fi
 
-      - name: Read the organization ledger back from a fresh fetch
+      - name: Read the organization and repository ledgers back from a fresh fetch
         run: |
           set -euo pipefail
           fresh="$RUNNER_TEMP/readback.git"
@@ -157,7 +168,7 @@ jobs:
             [ -f "$out/ingress.json" ] || continue
             python resident-runtime/organization_ledger_readback.py \
               --location "git+$fresh#$LEDGER_REF" --ingress-result "$out/ingress.json" \
-              --manifest "$out/manifest.json" \
+              --manifest "$out/manifest.json" --repository-namespace "$REPO_LEDGER_NAMESPACE" \
               --out "$out/readback.json" || status=1
             {
               echo "### $(basename "$out")"
