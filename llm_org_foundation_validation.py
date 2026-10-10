@@ -101,7 +101,7 @@ def validate_sandbox_work(value):
             return _result("sandbox", "FORBIDDEN_CANDIDATE_AUTHORITY", "candidate_authority_effect_NONE",
                            "candidate output must explicitly have authority_effect NONE",
                            retry, "resubmit non-authorizing candidate")
-        if candidate.get("disposition") in FORBIDDEN_AUTHORITY:
+        if isinstance(candidate.get("disposition"), str) and candidate["disposition"] in FORBIDDEN_AUTHORITY:
             return _result("sandbox", "FORBIDDEN_CANDIDATE_AUTHORITY", "no_candidate_governance_disposition",
                            "remove candidate's governance claim", retry, "resubmit candidate")
     if value["governance_handoff_state"] not in ("NOT_SUBMITTED", "CANDIDATE_EVIDENCE_ONLY"):
