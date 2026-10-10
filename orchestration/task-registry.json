@@ -237,7 +237,8 @@
         "tests prove external provider/LLM ingress is delegated to LLM-adapter on the declared path (healthy node -> LLM-adapter -> SDK -> StegVerse-org/.github -> Interlock/InTr => Org Ledger, owner decision StegVerse-Labs/hybrid-collab-bridge#39) rather than duplicated, and that internal admitted Sandbox operations do not re-traverse LLM-adapter",
         "README reconciles the organization-level coordination responsibility",
         "StegVerse-org/.github#112 merged at 03ad5be1bd2b64d22fe936b3e7a9c4affb98e441; exact-head validate-task-registry success for declared external SDK ingress and admitted Sandbox internal no-hop source contract tests (not runtime activation)",
-        "StegVerse-org/.github#114 merged at 7801937d6bac772f25414356b9e927214e32df4a, exact-head sandbox validation success 46304ace679443dc37277c9a55100ca7d50f491f: bounded work-context and Sandbox source validators (not runtime admission)"
+        "StegVerse-org/.github#114 merged at 7801937d6bac772f25414356b9e927214e32df4a, exact-head sandbox validation success 46304ace679443dc37277c9a55100ca7d50f491f: bounded work-context and Sandbox source validators (not runtime admission)",
+        "StegVerse-org/.github#115 merged at 7d57e8afa05e6e562dd4e1eb8445765f34451b7a; exact head daed4d8196aa6b1454a33d5b9dc8e33884e6f27d passed 7/7 workflows, including 38030595921: non-authority and disposition-complete Inference Window tests plus README reconciliation; source-only, not Sandbox runtime activation"
       ],
       "outputs": [
         "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md",
@@ -249,10 +250,7 @@
         "StegVerse-org/LLM-adapter",
         "StegVerse-org/StegVerse-SDK"
       ],
-      "unresolved_obligations": [
-        "ADD_NON_AUTHORITY_AND_INFERENCE_WINDOW_TESTS",
-        "README_RECONCILIATION"
-      ]
+      "unresolved_obligations": []
     },
     {
       "task_id": "LLMA-DECLARED-PATH-CONFORMANCE-368",
