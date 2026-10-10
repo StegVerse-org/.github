@@ -115,3 +115,52 @@ def validate_sandbox_work(value):
                    {"work_id": value["work_id"], "context_sha256": context["evidence"]["context_sha256"],
                     "evidence_reference_count": len(value["evidence_refs"]),
                     "candidate_count": len(value["candidate_outputs"]), "source_only": True})
+
+
+def validate_inference_window(value, applicable_dispositions):
+    """Validate prospective projections, never promote a prediction to history."""
+    retry = "StegVerse-org/.github foundation Inference Window validation"
+    if not isinstance(applicable_dispositions, list) or not applicable_dispositions or (
+        any(not isinstance(d, str) or not d.strip() for d in applicable_dispositions)
+        or len(set(applicable_dispositions)) != len(applicable_dispositions)
+    ):
+        return _result("inference_window", "INVALID_ADMISSIBILITY_MATRIX",
+                       "bounded_unique_applicable_dispositions",
+                       "supply distinct disposition identifiers from the applicable matrix",
+                       retry, "resubmit matrix dispositions")
+    if not isinstance(value, Mapping) or not isinstance(value.get("projections"), list):
+        return _result("inference_window", "INVALID_PROJECTION_SET", "projections_are_list",
+                       "provide one projection for each applicable disposition",
+                       retry, "resubmit projections")
+    projections = value["projections"]
+    if len(projections) != len(applicable_dispositions):
+        return _result("inference_window", "INCOMPLETE_DISPOSITION_COVERAGE",
+                       "all_applicable_dispositions_projected",
+                       "project every matrix disposition once", retry, "complete coverage")
+    observed = set()
+    for projection in projections:
+        if not isinstance(projection, Mapping):
+            return _result("inference_window", "INVALID_PROJECTION", "projection_is_object",
+                           "supply a structured projection", retry, "resubmit projection")
+        disposition = projection.get("disposition")
+        if not isinstance(disposition, str) or disposition not in applicable_dispositions or disposition in observed:
+            return _result("inference_window", "INVALID_PROJECTION_DISPOSITION",
+                           "exactly_one_projection_per_matrix_disposition",
+                           "bind one projection to each applicable disposition",
+                           retry, "resubmit disposition coverage")
+        observed.add(disposition)
+        for field in ("evidence_basis", "assumptions", "uncertainty_conditions",
+                      "reachable_consequences", "non_reachable_consequences"):
+            if not isinstance(projection.get(field), list):
+                return _result("inference_window", "MISSING_PROJECTION_FIELD",
+                               field + "_is_list", "provide " + field + " as a list",
+                               retry, "resubmit projection")
+        if projection.get("occurrence_observed") is not False or projection.get("authority_effect") != "NONE":
+            return _result("inference_window", "FORBIDDEN_PROJECTION_AS_HISTORY",
+                           "projection_not_observed_and_non_authorizing",
+                           "mark forecast as unobserved and non-authorizing",
+                           retry, "resubmit non-historical projection")
+    return _result("inference_window", None, None, None, None, None,
+                   {"matrix_disposition_count": len(applicable_dispositions),
+                    "projection_sha256": _digest(projections),
+                    "projection_is_historical_evidence": False, "source_only": True})
