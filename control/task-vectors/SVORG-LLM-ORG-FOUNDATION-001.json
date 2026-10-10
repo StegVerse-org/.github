@@ -3,30 +3,36 @@
   "identity": "SVORG-LLM-ORG-FOUNDATION-001",
   "profile": "task.v1",
   "level": "task",
-  "vector": "20011100110000",
+  "vector": "71000000100100",
   "evidence_refs": [
     "StegVerse-org/.github#74",
     "orchestration/task-registry.json",
     "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md",
-    "data/llm-org-foundation.json"
+    "data/llm-org-foundation.json",
+    "data/llma-hcb-terminal-review.json"
   ],
-  "observed_at": "2026-10-06",
+  "observed_at": "2026-10-10",
   "exact_metrics": {
-    "lifecycle": "CLAIMED_IMPLEMENTATION",
-    "archive_ready": false,
+    "lifecycle": "COMPLETE",
+    "archive_ready": true,
     "unassigned_work": 0,
-    "chat_owned_implementation": 1,
-    "chat_owned_validation": 1,
-    "chat_owned_integration": 1,
+    "chat_owned_implementation": 0,
+    "chat_owned_validation": 0,
+    "chat_owned_integration": 0,
     "chat_owned_observation": 0,
     "chat_owned_credentials": 0,
     "canonical_owner_installed": true,
-    "thread_required": true,
+    "thread_required": false,
     "blocker_count": 0,
-    "evidence_complete": false,
+    "evidence_complete": true,
     "activated": false,
     "propagated": false
   },
   "authority_effect": "NONE_SOURCE_COORDINATION_ONLY",
-  "canonical_encoder_ref": "StegVerse-Labs/.github:scripts/cosv.py"
+  "canonical_encoder_ref": "StegVerse-Labs/.github:scripts/cosv.py",
+  "metric_basis": {
+    "completion_scope": "CI_VALIDATED owner-authorized source conformance. LLMA declared-path disclosure separately verified in sovereign ledger; foundation source contracts only. No product/provider/Sandbox activation or propagation.",
+    "coordination": "Owner instructed terminal Registry/COSV reconciliation on 2026-10-10; all declared source obligations satisfied.",
+    "encoder": "StegVerse-Labs/.github:scripts/cosv.py encode_task; no execution or credential authority granted."
+  }
 }

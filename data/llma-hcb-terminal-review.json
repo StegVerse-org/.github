@@ -1,0 +1,40 @@
+{
+  "schema": "stegverse.scoped-terminal-review/v1",
+  "review_date": "2026-10-10",
+  "goals": [
+    "LLMA-DECLARED-PATH-CONFORMANCE-368",
+    "SVORG-LLM-ORG-FOUNDATION-001"
+  ],
+  "completion": {
+    "evidence_contract_version": "v1",
+    "claimed": true,
+    "validated": true,
+    "evidence_class": "CI_VALIDATED",
+    "terminal_evidence_class": "CI_VALIDATED",
+    "end_to_end_complete": false,
+    "evidence_refs": [
+      "https://github.com/StegVerse-org/.github/pull/115",
+      "https://github.com/StegVerse-org/.github/pull/116"
+    ]
+  },
+  "cosv": "71000000100100",
+  "runtime_evidence": {
+    "scope": "LLMA read-only Registry disclosure only",
+    "run": 38031123470,
+    "ledger_commit": "98738ceb6feee16a3de935319ec307c31719ba9d",
+    "receipt_sha256": "sha256:01c59b58331d670d31ead504b0710ec06ef7120413c4300219469170e42c1110",
+    "chain_length": 2,
+    "independent_readback": "ALLOW"
+  },
+  "excluded_claims": [
+    "provider_execution",
+    "Sandbox_runtime_activation",
+    "product_activation",
+    "Master_Records_reconstruction",
+    "release",
+    "propagation"
+  ],
+  "goal_prompt_count": null,
+  "goal_prompt_count_basis": "Prior cumulative count absent; two qualifying prompts observed in this session, historical total unrecoverable from comments.",
+  "authority_effect": "NONE_COORDINATION_ONLY"
+}
