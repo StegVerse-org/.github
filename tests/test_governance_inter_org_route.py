@@ -349,6 +349,13 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertEqual(refused["emission_transition_class"], "ORGANIZATION_EGRESS_REFUSED")
         self.assertIn("mesh_location_required_from_materializer", refused["detail"])
         self.assertIs(refused["organization_receipt_observed"], True)
+        # The six fields of a non-ALLOW: the repair names the mesh the materializer must supply.
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                      "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+            self.assertTrue(refused.get(field), field)
+        self.assertEqual(refused["failure_code"], "GOVERNANCE_REQUEST_NOT_EMITTED")
+        self.assertIn("federation mesh location", refused["required_evidence_or_repair"])
+        self.assertEqual(refused["owning_existing_goal"], "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001")
 
     def test_governance_is_bound_to_stegverse_labs_and_nowhere_else(self):
         resolved = returning.egress.resolve_destination(DECIDER, capability="governance")

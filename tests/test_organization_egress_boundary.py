@@ -295,6 +295,14 @@ class EgressBoundaryTests(EgressHarness):
         repository, = self.repo_receipts(egress.EMIT_REFUSED_CLASS)
         self.assertEqual(repository["receipt_sha256"],
                          result["emission_repository_receipt_sha256"])
+        # Every non-ALLOW carries the six fields a caller needs to repair and retry.
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                      "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+            self.assertTrue(result.get(field), field)
+        self.assertEqual(result["failure_code"], egress.EMIT_REFUSED_CLASS)
+        self.assertEqual(result["retry_entrypoint"], "resident-runtime/organization_egress_boundary.py::emit")
+        self.assertEqual(result["owning_existing_goal"], egress.OWNING_EXISTING_GOAL)
+        self.assertIn(result["failed_predicate"], result["required_evidence_or_repair"])
 
     def test_a_refusal_is_never_recorded_as_a_crossing_that_left(self):
         result = self.emit(destination="Not-A-Declared-Peer")

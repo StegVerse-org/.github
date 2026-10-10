@@ -608,14 +608,31 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
     }
 
 
+#: The declaration every non-ALLOW answers to: a refusal names what failed, what
+#: repairs it and where to retry (docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md).
+OWNING_EXISTING_GOAL = "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001"
+
+
+def refusal_repair(failed_predicate: str, detail: str) -> str:
+    """What the materializer or caller supplies before the same emission is attempted again."""
+    if "mesh_location_required" in str(detail):
+        return "materialize this node with its federation mesh location (the supplied mesh is the durable queue)"
+    return "satisfy the egress boundary's failed predicate: " + str(failed_predicate)
+
+
 def _refusal_result(record: Mapping[str, Any], appended: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "schema": RESULT_SCHEMA,
         "operation": OPERATION_ID,
         "disposition": DENY,
         "emitted": False,
+        "failure_code": EMIT_REFUSED_CLASS,
         "failed_predicate": record["failed_predicate"],
         "detail": record["refusal_reason"],
+        "required_evidence_or_repair": refusal_repair(record["failed_predicate"], record["refusal_reason"]),
+        "retry_entrypoint": "resident-runtime/organization_egress_boundary.py::emit",
+        "owning_existing_goal": OWNING_EXISTING_GOAL,
+        "next_attempt": "emit the same payload again once the repair is in place; nothing was published",
         "refusal_recorded": True,
         "emission_transition_class": EMIT_REFUSED_CLASS,
         "emission_record": dict(record),
