@@ -22,5 +22,8 @@
   "propagation_gates_organization_runtime_reality": false,
   "propagation_receiver_unavailable_disposition": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION",
   "always_on_receiver_required": false,
-  "declaration": "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001"
+  "declaration": "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001",
+  "organization_ledger_ref": "refs/stegverse/organization-ledger",
+  "organization_ledger_repository": "StegVerse-org/.github",
+  "organization_ledger_ref_designation_source": "StegVerse-org/LLM-adapter#368 issuecomment-6092785329"
 }
