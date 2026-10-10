@@ -7,7 +7,7 @@ Goal Task ID: `SVORG-LLM-ORG-FOUNDATION-001`
 Issue: `#74`
 Task Registry status: `accepted`
 COSV ID: `20011100110000`
-Status: `ACTIVE_SOURCE_CONSTRUCTION / NOT_RUNTIME_ACTIVATED`
+Status: `SOURCE_CONTRACT_BOUNDARY_TESTED / NOT_RUNTIME_ACTIVATED`
 
 ## Goal
 
@@ -92,7 +92,7 @@ That is a successor integration after the foundation contracts are canonical.
 1. Task Registry and COSV projection are canonical.
 2. Machine-readable work-context and Sandbox contracts exist.
 3. Tests prove participating LLM/AI entities cannot acquire governance authority through these contracts.
-4. Tests prove external provider/LLM ingress is delegated to existing LLM-adapter surfaces on the declared path rather than duplicated: healthy node -> LLM-adapter -> SDK -> StegVerse-org/.github -> Interlock/InTr => Org Ledger (owner decision, StegVerse-Labs/hybrid-collab-bridge#39). Internal operations already admitted to the Sandbox do not re-traverse LLM-adapter. This predicate is not yet satisfied.
+4. Tests prove external provider/LLM ingress is delegated to existing LLM-adapter surfaces on the declared path rather than duplicated: healthy node -> LLM-adapter -> SDK -> StegVerse-org/.github -> Interlock/InTr => Org Ledger (owner decision, StegVerse-Labs/hybrid-collab-bridge#39). Internal operations already admitted to the Sandbox do not re-traverse LLM-adapter. The source-contract and no-hop regression-test portion of this predicate was merged in StegVerse-org/.github#112 at 03ad5be1bd2b64d22fe936b3e7a9c4affb98e441 (validated exact head b5e59aff8442124281da7a008f816d8bce5ac42a). This is source validation, not an independent runtime Sandbox observation; no Node-boundary amendment is authorized.
 5. Tests prove disposition-complete Inference Window records distinguish projection from observed/receipted history.
 6. README describes the new organization-level coordination responsibility and reuse boundaries.
 7. Repository-required validation succeeds at exact head.
