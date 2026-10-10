@@ -58,3 +58,25 @@ def test_sandbox_rejects_unbounded_evidence():
     s = sample()
     s["evidence_refs"] = [str(i) for i in range(129)]
     assert validate_sandbox_work(s)["disposition"] == "FAIL_CLOSED"
+
+
+def test_inference_window_disposition_complete_and_nonhistorical():
+    from llm_org_foundation_validation import validate_inference_window
+    def projection(disposition):
+        return {"disposition": disposition, "evidence_basis": ["sha256:e"],
+                "assumptions": [], "uncertainty_conditions": ["unknown"],
+                "reachable_consequences": ["candidate"], "non_reachable_consequences": [],
+                "occurrence_observed": False, "authority_effect": "NONE"}
+    matrix = ["ALLOW", "DENY", "FAIL_CLOSED"]
+    projections = [projection(d) for d in matrix]
+    result = validate_inference_window({"projections": projections}, matrix)
+    assert result["disposition"] == "ALLOW"
+    assert result["authority_effect"] == "NONE"
+    assert result["evidence"]["projection_is_historical_evidence"] is False
+    assert validate_inference_window({"projections": projections[:-1]}, matrix)["disposition"] == "FAIL_CLOSED"
+    fake_history = copy.deepcopy(projections)
+    fake_history[0]["occurrence_observed"] = True
+    assert validate_inference_window({"projections": fake_history}, matrix)["failure_code"] == "FORBIDDEN_PROJECTION_AS_HISTORY"
+    duplicate = copy.deepcopy(projections)
+    duplicate[1]["disposition"] = "ALLOW"
+    assert validate_inference_window({"projections": duplicate}, matrix)["disposition"] == "FAIL_CLOSED"
