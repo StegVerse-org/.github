@@ -56,11 +56,21 @@ def main() -> int:
     processing = manifest.get("processing") or {}
     if processing.get("capability") != "governance":
         raise SystemExit("governance-endpoint-received-other-capability:" + str(processing.get("capability")))
+    binding = governance_binding()
+    # The invariant binds the capability to its route, so the declaration this
+    # adapter re-reads is the pair, not the capability half alone. The route is
+    # the one the overlay binds `governance` to, read from the overlay rather
+    # than restated here; a manifest declaring the capability under another
+    # route is refused, as the task-registry adapter refuses it.
+    bound_route = binding.get("route_id")
+    if not isinstance(bound_route, str) or not bound_route.strip():
+        raise SystemExit("governance-destination-binding-declares-no-route")
+    if processing.get("route_id") != bound_route:
+        raise SystemExit("governance-endpoint-received-other-route:" + str(processing.get("route_id")))
     request = (manifest.get("extensions") or {}).get(REQUEST_EXTENSION)
     if not isinstance(request, dict):
         raise SystemExit("governance-request-missing")
 
-    binding = governance_binding()
     result = {
         "schema": REQUEST_SCHEMA,
         "service_id": SERVICE_ID,
