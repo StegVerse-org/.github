@@ -149,6 +149,16 @@ class WorkflowBinding(unittest.TestCase):
         self.assertIn('${mesh_args[@]+"${mesh_args[@]}"}', receive)
         self.assertNotIn("MESH_LOCATION_REQUIRED", receive)
 
+    def test_a_run_without_a_locator_defers_a_request_that_leaves_this_organization(self):
+        # Recording it without a mesh would spend it: the emission would be refused
+        # and a later dispatch with the mesh answered ALREADY_RECORDED.
+        receive = self.workflow.split("Receive each request")[1].split("- name:")[0]
+        defer = receive.split("[ ${#mesh_args[@]} -eq 0 ]")[1].split("continue")[0]
+        self.assertIn("capability_destination_bindings", defer)
+        self.assertIn('build_manifest") or {}).get("process") in bound', defer)
+        self.assertIn("deferred $name", defer)
+        self.assertLess(receive.index("deferred $name"), receive.index("organization_manifest_ingress.py"))
+
     def test_the_mesh_ref_is_published_before_the_ledger_ref_and_read_back_fresh(self):
         steps = re.findall(r"- name: (.+)", self.workflow)
         self.assertLess(steps.index("Publish the designated mesh ref (fast-forward only)"),

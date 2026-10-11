@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 132,
+      "PROPER": 135,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 19,
-      "total": 170
+      "total": 173
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1248,6 +1248,27 @@
     {
       "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-002.json",
       "line": 52,
+      "text": "\"StegVerse-org/StegVerse-SDK@8559c4700a076a733de048910344f99bedaae4ca:data/master-records-role-audit.json\"",
+      "classification": "PROPER",
+      "reason": "Evidence reference to the SDK's Master Records role audit file; a path only."
+    },
+    {
+      "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-003.json",
+      "line": 46,
+      "text": "\"superseded_terminal_authority\": \"MASTER_RECORDS\",",
+      "classification": "PROPER",
+      "reason": "Governance candidate parameter naming Master Records as the terminal authority this transition asks the deciding organization to supersede; Master Records is not consulted or gated on."
+    },
+    {
+      "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-003.json",
+      "line": 47,
+      "text": "\"master_records_role\": \"DOWNSTREAM_NON_GATING\"",
+      "classification": "PROPER",
+      "reason": "Governance candidate parameter declaring the canonical downstream non-gating role of Master Records."
+    },
+    {
+      "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-003.json",
+      "line": 55,
       "text": "\"StegVerse-org/StegVerse-SDK@8559c4700a076a733de048910344f99bedaae4ca:data/master-records-role-audit.json\"",
       "classification": "PROPER",
       "reason": "Evidence reference to the SDK's Master Records role audit file; a path only."

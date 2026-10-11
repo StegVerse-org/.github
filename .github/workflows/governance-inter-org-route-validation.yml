@@ -29,6 +29,8 @@ on:
       - 'resident-runtime/mesh_locator_binding.py'
       - 'tests/test_governance_return_peer_mesh.py'
       - '.github/workflows/organization-governance-return.yml'
+      - 'tests/test_governance_request_vocabulary.py'
+      - '.stegverse/transition-requests/**'
       - '.github/workflows/governance-inter-org-route-validation.yml'
   push:
     branches: [main]
@@ -58,6 +60,8 @@ on:
       - 'resident-runtime/mesh_locator_binding.py'
       - 'tests/test_governance_return_peer_mesh.py'
       - '.github/workflows/organization-governance-return.yml'
+      - 'tests/test_governance_request_vocabulary.py'
+      - '.stegverse/transition-requests/**'
       - '.github/workflows/governance-inter-org-route-validation.yml'
   workflow_dispatch:
 
@@ -103,3 +107,6 @@ jobs:
 
       - name: A deciding organization's answer on its own mesh ref is taken in and returned, once
         run: python -m unittest tests.test_governance_return_peer_mesh -v
+
+      - name: A committed governance request uses the deciding organization's request vocabulary
+        run: python -m unittest tests.test_governance_request_vocabulary -v
