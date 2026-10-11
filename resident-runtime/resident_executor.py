@@ -50,6 +50,27 @@ def cycle(mesh_root, node_state_root):
         raise RuntimeError("federation cycle failed: "+p.stderr[-1024:])
     return result
 
+# The cycle records each attempted transition with its own disposition and
+# exits 0 once it has recorded them. Its exit code says the cycle ran, not that
+# what it attempted was allowed, so the executor reads the dispositions.
+CHILD_TRANSITIONS=("consumption","repository_propagation")
+NOT_ALLOWED=("DENY","FAIL_CLOSED")
+
+def failed_transitions(fed):
+    """Every transition the cycle recorded as DENY or FAIL_CLOSED, with its predicate."""
+    if not isinstance(fed,dict):
+        return [{"transition":"federation_cycle","disposition":"FAIL_CLOSED",
+                 "failed_predicate":"FEDERATION_CYCLE_RECEIPT_ABSENT"}]
+    rows=[(name,fed.get(name)) for name in CHILD_TRANSITIONS]
+    rows+=[("governance_return",item) for item in (fed.get("governance_returns") or [])]
+    failed=[]
+    for name,value in rows:
+        if isinstance(value,dict) and value.get("disposition") in NOT_ALLOWED:
+            failed.append({"transition":name,"disposition":value["disposition"],
+                           "failed_predicate":value.get("failed_predicate"),
+                           "retry_entrypoint":value.get("retry_entrypoint")})
+    return failed
+
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--mesh-root",type=Path,required=True)
@@ -64,22 +85,30 @@ def main():
     except Exception as exc:
         fed=None
         error=str(exc)
+    failed=[] if error is not None else failed_transitions(fed)
+    allowed=error is None and not failed
     state={
         "schema":"stegverse.organization-resident-executor/v2",
         "organization":"StegVerse-org",
         "observed_at":datetime.now(timezone.utc).isoformat(),
         "materialization":"ONE_CYCLE_PER_INVOCATION",
-        "disposition":"ALLOW" if error is None else "FAIL_CLOSED",
+        "disposition":"ALLOW" if allowed else "FAIL_CLOSED",
+        "failed_predicate":(None if allowed else
+                            "FEDERATION_CYCLE_FAILED" if error is not None else
+                            "FEDERATION_CYCLE_TRANSITION_NOT_ALLOWED"),
+        "failed_transitions":failed,
         "federation_cycle":fed,
         "error":error,
-        "retry_entrypoint":None if error is None else "resident-runtime/resident_executor.py",
+        "retry_entrypoint":None if allowed else (
+            "resident-runtime/resident_executor.py" if error is not None else
+            failed[0]["retry_entrypoint"] or "resident-runtime/resident_executor.py"),
         "github_actions_runtime_authority":"NONE",
         "authority_effect":"NONE_EXECUTOR_ONLY",
     }
     # Recorded in the node state this materialization was given, not the checkout.
     atomic_json(Path(a.node_state_root)/"resident-runtime"/"resident-executor.latest.json",state)
     print(json.dumps(state,sort_keys=True),flush=True)
-    return 0 if error is None else 2
+    return 0 if state["disposition"]=="ALLOW" else 2
 
 if __name__=="__main__":
     raise SystemExit(main())
