@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 135,
+      "PROPER": 144,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 19,
-      "total": 173
+      "total": 182
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1251,6 +1251,69 @@
       "text": "\"StegVerse-org/StegVerse-SDK@8559c4700a076a733de048910344f99bedaae4ca:data/master-records-role-audit.json\"",
       "classification": "PROPER",
       "reason": "Evidence reference to the SDK's Master Records role audit file; a path only."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 16,
+      "text": "* Master Records gates nothing and is awaited by nothing;",
+      "classification": "PROPER",
+      "reason": "Census docstring restating the canonical role: Master Records gates nothing and is awaited by nothing."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 65,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\": (\"release\",),",
+      "classification": "PROPER",
+      "reason": "Census row naming the publisher module as a governed entry surface; a path only."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 311,
+      "text": "class MasterRecordsAndWaitingTests(unittest.TestCase):",
+      "classification": "PROPER",
+      "reason": "Test class name grouping the census assertions that Master Records gates and delays nothing."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 312,
+      "text": "def test_master_records_is_a_downstream_recorder_that_gates_and_delays_nothing(self):",
+      "classification": "PROPER",
+      "reason": "Test name asserting Master Records is the downstream recorder that gates and delays nothing."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 313,
+      "text": "release = _load(\"census_release\", \"resident-runtime/submit_org_transition_to_master_records.py\")",
+      "classification": "PROPER",
+      "reason": "Loads the publisher module to assert its refusal carries organization_transition_blocked=false; a path only."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 318,
+      "text": "self.assertIs(refusal[\"master_records_awaited\"], False)",
+      "classification": "PROPER",
+      "reason": "Asserts the publisher's downstream DENY carries master_records_awaited=false."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 322,
+      "text": "self.assertIs(governance[\"master_records_in_path\"], False)",
+      "classification": "PROPER",
+      "reason": "Asserts the overlay's governance destination binding declares master_records_in_path=false."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 326,
+      "text": "self.assertIn('\"master_records_organization_record_observed\": False', ingress)",
+      "classification": "PROPER",
+      "reason": "Asserts the ingress operation reports master_records_organization_record_observed=false."
+    },
+    {
+      "file": "tests/test_governed_ingress_census.py",
+      "line": 327,
+      "text": "self.assertNotIn('\"master_records_organization_record_observed\": True', ingress)",
+      "classification": "PROPER",
+      "reason": "Asserts the ingress operation never reports master_records_organization_record_observed=true."
     },
     {
       "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-003.json",
