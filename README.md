@@ -14,3 +14,9 @@ Base: StegVerse-Labs/.github main `fee0c755` (after #3132).
 Apply: `sha256sum -c patches/SHA256SUMS`; then in StegVerse-Labs/.github on a
 branch from main `git am patches/pr1/*.patch` (PR 1), and on a branch from that
 one `git am patches/pr2/*.patch` (PR 2).
+
+- `patches/pr3/` (stacked on StegVerse-Labs/.github#3143 head `8e8a94f5`):
+  optional `runs_on` runner label for the decision workflow, so a run that decides
+  with StegCore can execute on a runner on the TV/TVC host (option C on
+  StegVerse-org/StegVerse-SDK#465). Apply with `git am patches/pr3/*.patch` on a
+  branch from #3143.

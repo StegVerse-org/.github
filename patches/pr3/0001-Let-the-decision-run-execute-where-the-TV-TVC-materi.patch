@@ -1,0 +1,66 @@
+From 01dfe9e211b68eb64187891a47e535d2289919ca Mon Sep 17 00:00:00 2001
+From: StegVerse <210078727+StegVerse@users.noreply.github.com>
+Date: Sun, 11 Oct 2026 23:16:25 +0000
+Subject: [PATCH] Let the decision run execute where the TV/TVC materialization
+ exists
+
+TV/TVC keeps the StegCore read credential on its own host
+(tv.private-source-read.v1), so a run that decides with StegCore must run
+there. organization-governance-decision.yml takes an optional runs_on
+runner label (default ubuntu-latest); without it nothing changes.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01DDXUuBBSUMvA4z87YhFjvX
+---
+ .github/workflows/organization-governance-decision.yml |  9 ++++++++-
+ .../test_organization_governance_decision_authority.py | 10 ++++++++++
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/.github/workflows/organization-governance-decision.yml b/.github/workflows/organization-governance-decision.yml
+index f765e326..4c5ec215 100644
+--- a/.github/workflows/organization-governance-decision.yml
++++ b/.github/workflows/organization-governance-decision.yml
+@@ -45,6 +45,11 @@ on:
+         required: false
+         default: ''
+         type: string
++      runs_on:
++        description: Runner label; a runner on the TV/TVC host where the materialization exists, else ubuntu-latest
++        required: false
++        default: ubuntu-latest
++        type: string
+ 
+ concurrency:
+   group: organization-ledger
+@@ -55,7 +60,9 @@ permissions:
+ 
+ jobs:
+   decide:
+-    runs-on: ubuntu-latest
++    # TV/TVC keeps the StegCore read credential on its own host (tv.private-source-read.v1),
++    # so a run that decides with StegCore executes on a runner there, by label.
++    runs-on: ${{ inputs.runs_on || 'ubuntu-latest' }}
+     env:
+       MESH_ROOT: ${{ inputs.mesh_root }}
+       OWN_URL: https://github.com/${{ github.repository }}
+diff --git a/tests/test_organization_governance_decision_authority.py b/tests/test_organization_governance_decision_authority.py
+index 3dab21b8..49b2ba26 100644
+--- a/tests/test_organization_governance_decision_authority.py
++++ b/tests/test_organization_governance_decision_authority.py
+@@ -243,3 +243,13 @@ def test_report_names_which_evaluator_decided(tmp_path):
+     report, _ = decision.build_report(evidence, mesh_root="git+https://github.com/StegVerse-org/.github#refs/x")
+     assert report["decision_authority_installed"] is True
+     assert report["decision_authority_commit"] == _pin()["commit"]
++
++
++def test_the_run_can_execute_where_the_tv_tvc_materialization_exists():
++    # The credential never leaves the TV/TVC host, so the decision run is placed there by
++    # runner label; without one it runs hosted and records the dependency unmet.
++    text = WORKFLOW.read_text(encoding="utf-8")
++    inputs = text.split("workflow_dispatch:", 1)[1].split("concurrency:", 1)[0]
++    assert re.search(r"runs_on:\n\s+description: .+\n\s+required: false\n\s+default: ubuntu-latest", inputs)
++    assert "runs-on: ${{ inputs.runs_on || 'ubuntu-latest' }}" in text
++    assert "secrets." not in text
+-- 
+2.43.0
+
