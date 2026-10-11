@@ -178,10 +178,16 @@ def repository_readback(location, namespace, organization_result, ingress_result
         refused = ingress_result.get("refusal_organization_receipt_sha256") is not None
         digest = ingress_result.get("refusal_repository_receipt_sha256" if refused
                                     else "repository_receipt_sha256")
-        if not any(r["receipt_sha256"] == digest for r in chain):
-            raise ReadbackRefused("INGRESS_REPOSITORY_RECEIPT_IS_IN_THE_REPOSITORY_LEDGER", str(digest))
         organization_digest = organization_result["ingress_organization_receipt_sha256"]
         consumed = organization_store.get(receipt_key(organization_digest)) or {}
+        if digest is None and ingress_result.get("disposition") == "ALREADY_RECORDED":
+            # A request answered from the ledger appended nothing, so it names
+            # only the organization receipt already binding its manifest. The
+            # repository receipt is the one that receipt consumed; it must still
+            # be in this chain, so a missing or foreign source fails closed below.
+            digest = consumed.get("source_transition_sha256")
+        if not any(r["receipt_sha256"] == digest for r in chain):
+            raise ReadbackRefused("INGRESS_REPOSITORY_RECEIPT_IS_IN_THE_REPOSITORY_LEDGER", str(digest))
         if consumed.get("source_transition_sha256") != digest:
             raise ReadbackRefused("ORGANIZATION_RECEIPT_CONSUMES_THE_REPOSITORY_RECEIPT", str(digest))
         result.update({"ingress_repository_receipt_sha256": digest,
