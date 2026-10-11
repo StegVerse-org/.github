@@ -59,6 +59,15 @@ def _fetch_url(repository):
     return "https://github.com/" + repository
 
 
+def _anonymous_env():
+    """The environment the peer's ref is read under: no GIT_* variable survives, so no
+    credential helper, askpass, ssh command or injected config reaches git, and no
+    prompt is answered. Built as resident-runtime/ledger_store.py::_env builds its own."""
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
 def intake(peer_locator, *, own_mesh_root, organization=None):
     """Place every verified frame the peer published for this organization on its own mesh."""
     organization = organization or kernel.load_registry(ROOT)["organization"]
@@ -70,9 +79,10 @@ def intake(peer_locator, *, own_mesh_root, organization=None):
                         "rerun the dispatch with a well-formed peer locator", detail=str(exc), peer=peer_locator)
     with tempfile.TemporaryDirectory() as tmp:
         peer_git = Path(tmp) / "peer.git"
-        subprocess.run(["git", "init", "-q", "--bare", str(peer_git)], check=True)
-        # Run outside any checkout, so no repository-local credential applies.
-        anonymous = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+        # Run outside any checkout, so no repository-local credential applies,
+        # and under an environment carrying no GIT_* variable, so none is injected.
+        anonymous = _anonymous_env()
+        subprocess.run(["git", "init", "-q", "--bare", str(peer_git)], check=True, cwd=tmp, env=anonymous)
         listed = subprocess.run(["git", "ls-remote", _fetch_url(repository), ref], capture_output=True, text=True,
                                 cwd=tmp, env=anonymous)
         if listed.returncode != 0:
@@ -84,10 +94,23 @@ def intake(peer_locator, *, own_mesh_root, organization=None):
             return {"schema": SCHEMA, "disposition": "NOTHING_PUBLISHED", "peer": peer_locator,
                     "observation_only": True, "absence_is_not_a_transition": True, "taken": [],
                     "authority_effect": "NONE_OBSERVATION_ONLY"}
-        subprocess.run(["git", "--git-dir", str(peer_git), "fetch", "-q", "--no-tags", _fetch_url(repository),
-                        "+" + ref + ":" + ref], check=True, capture_output=True, cwd=tmp, env=anonymous)
-        peer_tip = subprocess.run(["git", "--git-dir", str(peer_git), "rev-parse", ref],
-                                  capture_output=True, text=True, check=True).stdout.strip()
+        fetched = subprocess.run(["git", "--git-dir", str(peer_git), "fetch", "-q", "--no-tags", _fetch_url(repository),
+                                  "+" + ref + ":" + ref], capture_output=True, text=True, cwd=tmp, env=anonymous)
+        if fetched.returncode != 0:
+            # The ref moved or vanished after it was listed, or the transport failed:
+            # a disposition, not a traceback. Nothing has been placed.
+            return _refused("PEER_MESH_FETCH_FAILED", "PEER_MESH_REF_IS_ANONYMOUSLY_FETCHABLE",
+                            "the peer's mesh ref must be fetchable without a credential; none is inferred here",
+                            "rerun once the peer's mesh ref is reachable",
+                            peer=peer_locator, detail=fetched.stderr.strip()[-300:])
+        resolved = subprocess.run(["git", "--git-dir", str(peer_git), "rev-parse", "--verify", "--quiet", ref],
+                                  capture_output=True, text=True, cwd=tmp, env=anonymous)
+        if resolved.returncode != 0:
+            return _refused("PEER_MESH_REF_RESOLUTION_FAILED", "PEER_MESH_REF_RESOLVES_TO_A_FETCHED_COMMIT",
+                            "the fetched peer ref must resolve to a commit in the anonymous fetch",
+                            "rerun once the peer's mesh ref names a commit",
+                            peer=peer_locator, detail=resolved.stderr.strip()[-300:])
+        peer_tip = resolved.stdout.strip()
         peer = kernel.mesh_store("git+" + str(peer_git) + "#" + ref)
         own = kernel.mesh_store(own_mesh_root)
         addressed, findings = [], []
@@ -120,7 +143,14 @@ def intake(peer_locator, *, own_mesh_root, organization=None):
             if held:
                 present.append(row)
                 continue
-            own.put_once(key, frame)
+            try:
+                own.put_once(key, frame)
+            except node_store.WriteOnceCollision:
+                # Placed by another writer between the check above and this put.
+                # The key addresses the frame's content, so what is held is this
+                # frame: present, not taken. A differing frame was refused above.
+                present.append(row)
+                continue
             taken.append(row)
         return {"schema": SCHEMA, "disposition": "ALLOW", "organization": organization, "peer": peer_locator,
                 "peer_tip": peer_tip, "own_mesh_root": str(own_mesh_root), "taken": taken,
