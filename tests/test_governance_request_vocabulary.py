@@ -15,7 +15,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUESTS = ROOT / ".stegverse/transition-requests"
-RECORDED_HISTORY = {"SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001", "SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-002"}
+# As received and recorded: -001/-002 declared "known"; -003 was received under
+# the pre-migration SDK with its source_output_id left as -002.
+RECORDED_HISTORY = {"SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-001": "known",
+                    "SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-002": "known",
+                    "SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-003": "bounded"}
 UNCERTAINTY_STATES = {"bounded", "material", "unknown"}
 REQUIRED_SECTIONS = {"candidate", "judgment", "signal", "execution"}
 
@@ -42,9 +46,21 @@ class GovernanceRequestVocabulary(unittest.TestCase):
                 self.assertIn((processor.get("signal") or {}).get("uncertainty_state"), UNCERTAINTY_STATES)
 
     def test_the_recorded_requests_stay_as_they_were_received(self):
-        known = {request["request_id"]: processor["signal"]["uncertainty_state"]
-                 for _, request, processor in governance_requests() if request["request_id"] in RECORDED_HISTORY}
-        self.assertEqual(known, {request_id: "known" for request_id in RECORDED_HISTORY})
+        recorded = {request["request_id"]: processor["signal"]["uncertainty_state"]
+                    for _, request, processor in governance_requests() if request["request_id"] in RECORDED_HISTORY}
+        self.assertEqual(recorded, RECORDED_HISTORY)
+
+    def test_every_unrecorded_request_names_itself_consistently(self):
+        # -003 carried its predecessor's source_output_id, so its derived request
+        # id names -002; the manifest's identities must all name the request.
+        for name, request, _ in governance_requests():
+            if request["request_id"] in RECORDED_HISTORY:
+                continue
+            build = request["build_manifest"]
+            with self.subTest(request=name):
+                self.assertEqual(name, request["request_id"] + ".json")
+                self.assertEqual(build.get("source_output_id"), request["request_id"])
+                self.assertEqual((build.get("data") or {}).get("request_id"), request["request_id"])
 
 
 if __name__ == "__main__":
