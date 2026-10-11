@@ -22,21 +22,29 @@ def returns_for_consumed(results, *, mesh_root):
     The consumed answer is the event; nothing waits for it. The return operation
     and the SDK admission it imports load only when such an answer is consumed.
     """
-    answers=[item["result"]["packet"] for item in results
+    answers=[item for item in results
              if (item.get("result") or {}).get("status")=="CONSUMED"
              and str((((item["result"].get("packet") or {}).get("payload")) or {}).get("communication_id") or "").startswith("governance:")]
     if not answers:
         return []
     spec=importlib.util.spec_from_file_location("governance_decision_return",ROOT/"resident-runtime"/"governance_decision_return.py")
     module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    mesh=K.mesh_store(mesh_root)
     out=[]
-    for packet in answers:
-        returned=module.return_on_consumption(packet, mesh_root=mesh_root)
+    for item in answers:
+        # The closure is stamped with the epoch of the answer frame it observes,
+        # as the kernel stamps an answer with the epoch of the frame it answers:
+        # consuming the same answer again (a fresh node state, a re-dispatch)
+        # then returns the closure already recorded instead of minting another.
+        frame=mesh.get(K.node_store_module.MESH_FRAME_PREFIX+K.node_store_module.frame_name(str(item["path"])))
+        epoch=((frame or {}).get("heartbeat_reference") or {}).get("epoch")
+        returned=module.return_on_consumption(item["result"]["packet"], mesh_root=mesh_root, hb_epoch=epoch)
         if returned is not None:
             out.append({key:returned.get(key) for key in (
-              "disposition","trigger","decision_returned","governance_disposition","failed_predicate",
+              "disposition","trigger","decision_returned","governance_disposition","governance_failed_predicate","failed_predicate",
               "governance_request_packet_id","governance_communication_id","response_packet_id",
-              "closure_transition_class","retry_entrypoint")})
+              "closure_transition_class","closure_organization_receipt_sha256",
+              "deciding_organization_receipt_sha256","retry_entrypoint")})
     return out
 
 def supplied_ledger(variable):
