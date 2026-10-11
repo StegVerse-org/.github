@@ -147,6 +147,49 @@ class PeerAnswerReturned(unittest.TestCase):
         self.assertEqual((second["disposition"], second["governance_disposition"]),
                          (first["disposition"], first["governance_disposition"]))
 
+    def test_a_returned_answer_replayed_under_another_sdk_is_observed_not_refused(self):
+        # The pin moved after the return: this SDK no longer reproduces the request.
+        import stegverse.manifest_state_transition_runtime as runtime
+        derive = runtime.derive_execution_request
+
+        def another_sdk(manifest, boundary):
+            return {**derive(manifest, boundary), "request_sha256": "sha256:" + "0" * 64}
+
+        self.answer_on_the_peer_mesh()
+        intake.intake(self.peer, own_mesh_root=self.own)
+        first = self.return_cycle("node-a")["governance_returns"][0]
+        self.assertEqual(first["disposition"], "ALLOW", first)
+        tip = self.ledger_tip()
+        intake.intake(self.peer, own_mesh_root=self.own)
+        with mock.patch.object(runtime, "derive_execution_request", another_sdk):
+            result = self.return_cycle("node-b")
+            status = cycle.main(["--mesh-root", self.own, "--node-state-root",
+                                 str(Path(self.temp.name) / "node-c")])
+        replayed = result["governance_returns"][0]
+        self.assertEqual(self.ledger_tip(), tip, "a replayed answer appended to the ledger")
+        self.assertEqual(replayed["disposition"], "CLOSURE_ALREADY_RECORDED", replayed)
+        self.assertEqual((replayed["closure_transition_class"], replayed["closure_organization_receipt_sha256"]),
+                         ("ORGANIZATION_EGRESS_CLOSED", first["closure_organization_receipt_sha256"]))
+        self.assertIsNone(replayed["failed_predicate"])
+        self.assertEqual(status, 0, "an observed replay failed the run")
+
+    def test_an_unreturned_answer_under_another_sdk_still_fails_closed(self):
+        import stegverse.manifest_state_transition_runtime as runtime
+        derive = runtime.derive_execution_request
+
+        def another_sdk(manifest, boundary):
+            return {**derive(manifest, boundary), "request_sha256": "sha256:" + "0" * 64}
+
+        self.answer_on_the_peer_mesh()
+        intake.intake(self.peer, own_mesh_root=self.own)
+        with mock.patch.object(runtime, "derive_execution_request", another_sdk):
+            returned = self.return_cycle("node")["governance_returns"][0]
+        self.assertEqual((returned["disposition"], returned["failed_predicate"]),
+                         ("FAIL_CLOSED", "RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST"))
+        organization = readback.readback(os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
+        repository = readback.repository_readback(os.environ["STEGVERSE_ORG_LEDGER_ROOT"], NAMESPACE, organization)
+        self.assertNotIn("ORGANIZATION_EGRESS_CLOSED", [c["transition_class"] for c in repository["chain"]])
+
     def test_frames_not_addressed_here_are_left_on_the_peer(self):
         self.answer_on_the_peer_mesh()
         before = set(self.frames(self.own))
