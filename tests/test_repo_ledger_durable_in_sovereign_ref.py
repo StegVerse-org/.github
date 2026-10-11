@@ -241,8 +241,15 @@ class BindingTests(unittest.TestCase):
         self.assertIn('export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"', workflow)
         self.assertIn("repository_ledger_location", workflow)
         self.assertIn('--repository-namespace "$REPO_LEDGER_NAMESPACE"', workflow)
-        # One push publishes both chains; no second ref is pushed.
-        self.assertEqual(workflow.count("git push origin"), 1)
+        # One push publishes both chains; no second ledger ref is pushed. The
+        # only other push is the designated mesh ref (a queue of frames, not a
+        # ledger), and it goes out before the ledger ref so a receipt never
+        # claims an emission whose frame did not outlive the run.
+        self.assertEqual(workflow.count('git push origin "$LEDGER_REF:$LEDGER_REF"'), 1)
+        self.assertEqual(workflow.count("git push origin"), 2)
+        self.assertNotIn("refs/stegverse/repository-ledger", workflow)
+        self.assertLess(workflow.index('git push origin "$MESH_PUBLISH_REF:$MESH_PUBLISH_REF"'),
+                        workflow.index('git push origin "$LEDGER_REF:$LEDGER_REF"'))
 
 
 if __name__ == "__main__":

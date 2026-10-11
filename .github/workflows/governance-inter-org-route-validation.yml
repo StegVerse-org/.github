@@ -18,6 +18,9 @@ on:
       - 'org-boundary/registry/services.json'
       - 'org-boundary/registry/federation.json'
       - 'tests/test_governance_inter_org_route.py'
+      - 'tests/test_governance_mesh_locator_readback.py'
+      - 'org-kernel/node_store.py'
+      - 'resident-runtime/organization_ledger_readback.py'
       - 'tests/fixtures/sdk-manifests/**'
       - 'docs/GOVERNANCE_INTER_ORG_ROUTE_MIRROR_HANDOFF.md'
       - 'docs/peer-patches/stegverse-labs.governance-endpoint.patch'
@@ -39,6 +42,9 @@ on:
       - 'org-boundary/registry/services.json'
       - 'org-boundary/registry/federation.json'
       - 'tests/test_governance_inter_org_route.py'
+      - 'tests/test_governance_mesh_locator_readback.py'
+      - 'org-kernel/node_store.py'
+      - 'resident-runtime/organization_ledger_readback.py'
       - 'tests/fixtures/sdk-manifests/**'
       - 'docs/GOVERNANCE_INTER_ORG_ROUTE_MIRROR_HANDOFF.md'
       - 'docs/peer-patches/stegverse-labs.governance-endpoint.patch'
@@ -78,3 +84,9 @@ jobs:
           STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: python -m unittest tests.test_governance_inter_org_route -v
+
+      # A governance request on a materializer-supplied git-ref mesh leaves and is
+      # read back by a peer; without a mesh it is refused with six fields and
+      # recorded on both chains. Temporary repositories only.
+      - name: A governance request leaves on a supplied git-ref mesh, and is refused on the ledger without one
+        run: python -m unittest tests.test_governance_mesh_locator_readback -v

@@ -118,9 +118,27 @@ jobs:
           mesh_root='${{ github.event.inputs.mesh_root }}'
           mesh_args=()
           if [ -n "$mesh_root" ]; then
-            case "$mesh_root" in git+*\#refs/*) ;; *) echo 'invalid git-ref mesh locator'; exit 1;; esac
-            mesh_args=(--mesh-root "$mesh_root")
-            echo "mesh supplied by the materializer: $mesh_root"
+            # The designated locator names a repository and a ref. This run can
+            # publish a ref of its own repository only, so the binding resolves
+            # the locator onto the checkout (or refuses with six fields; no
+            # credential for another repository is inferred). The mesh ref is
+            # fetched here and pushed fast-forward below, so a frame placed on it
+            # outlives this run: the mesh is the durable queue.
+            if ! binding=$(python resident-runtime/mesh_locator_binding.py \
+                --locator "$mesh_root" --repository "$GITHUB_REPOSITORY" --workspace "$GITHUB_WORKSPACE"); then
+              echo "$binding"; exit 1
+            fi
+            echo "$binding"
+            mesh_ref=$(python -c 'import json,sys; print(json.loads(sys.argv[1])["publish_ref"])' "$binding")
+            if git ls-remote --exit-code origin "$mesh_ref" >/dev/null; then
+              git fetch --no-tags origin "+$mesh_ref:$mesh_ref"
+              echo "mesh tip: $(git rev-parse "$mesh_ref")"
+            else
+              echo "mesh ref not yet materialized; the first frame opens it"
+            fi
+            echo "MESH_PUBLISH_REF=$mesh_ref" >> "$GITHUB_ENV"
+            mesh_args=(--mesh-root "git+$GITHUB_WORKSPACE#$mesh_ref")
+            echo "mesh supplied by the materializer: $mesh_root -> ${mesh_args[1]}"
           else
             echo "no mesh supplied by the materializer; an emission is refused at egress and the refusal is recorded (SVORG-MESH-LOCATION-BINDING-001)"
           fi
@@ -162,6 +180,23 @@ jobs:
             python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
           done < "$RUNNER_TEMP/requests.txt"
 
+      # The frames a request left on the designated mesh are published before
+      # the ledger that says they were emitted: a receipt never claims an
+      # emission whose frame did not outlive this run.
+      - name: Publish the designated mesh ref (fast-forward only)
+        run: |
+          if [ -z "${MESH_PUBLISH_REF:-}" ]; then
+            echo "no mesh ref bound by this run; nothing to publish"; exit 0
+          fi
+          if ! git rev-parse --verify --quiet "$MESH_PUBLISH_REF" >/dev/null; then
+            echo "no frame placed on $MESH_PUBLISH_REF; nothing to publish"; exit 0
+          fi
+          if ! git push origin "$MESH_PUBLISH_REF:$MESH_PUBLISH_REF"; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"MESH_REF_PUBLISH_RACE","failed_predicate":"PUBLISHED_MESH_REF_FAST_FORWARDS","required_evidence_or_repair":"another writer moved the mesh ref first; this run published no frame and no ledger receipt","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"SVORG-MESH-LOCATION-BINDING-001","next_attempt":"re-run the dispatch; the request is received again and its frame placed on the moved ref"}'
+            exit 1
+          fi
+          echo "mesh ref published: $MESH_PUBLISH_REF $(git rev-parse "$MESH_PUBLISH_REF")"
+
       - name: Publish the ledger ref (fast-forward only)
         run: |
           if ! git rev-parse --verify --quiet "$LEDGER_REF" >/dev/null; then
@@ -198,6 +233,35 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           done
           exit $status
+
+      # What the designated mesh holds after this run, read from a fresh fetch
+      # the way a peer that materializes later would read it.
+      - name: Read the designated mesh ref back from a fresh fetch
+        if: env.MESH_PUBLISH_REF != ''
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/mesh-readback.git"
+          git init -q --bare "$fresh"
+          if ! git --git-dir="$fresh" fetch -q "$(git remote get-url origin)" "+$MESH_PUBLISH_REF:$MESH_PUBLISH_REF" 2>/dev/null; then
+            echo '{"mesh_ref":"'"$MESH_PUBLISH_REF"'","frames":[],"note":"the mesh ref is not published; no request of this run was emitted"}' | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python - "$fresh" "$MESH_PUBLISH_REF" "$RUNNER_TEMP/results" <<'PY' | tee "$RUNNER_TEMP/results/mesh-readback.json" >> "$GITHUB_STEP_SUMMARY"
+          import importlib.util, json, sys
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location("kernel", "org-kernel/kernel.py")
+          kernel = importlib.util.module_from_spec(spec); spec.loader.exec_module(kernel)
+          store = kernel.mesh_store("git+" + sys.argv[1] + "#" + sys.argv[2])
+          frames = [store.get(key) for key in store.list_prefix(kernel.node_store_module.MESH_FRAME_PREFIX)]
+          emitted = [json.loads(p.read_text()) for p in Path(sys.argv[3]).glob("*/ingress.json")]
+          emitted = [x for x in emitted if x.get("emission_transition_class") == "ORGANIZATION_EGRESS_EMITTED"]
+          out = {"schema": "stegverse.mesh-readback/v1", "mesh_ref": sys.argv[2], "frame_count": len(frames),
+                 "frames": [{"destination_org": f.get("destination_org"), "frame_sha256": f.get("frame_sha256")} for f in frames],
+                 "emitted_by_this_run": len(emitted), "authority_effect": "NONE_READBACK_ONLY"}
+          print(json.dumps(out, indent=2, sort_keys=True))
+          if emitted and not frames:
+              raise SystemExit("an emission was recorded but the published mesh holds no frame")
+          PY
 
       - name: Retain the run's evidence
         if: always()
