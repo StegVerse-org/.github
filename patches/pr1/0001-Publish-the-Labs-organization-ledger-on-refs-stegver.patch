@@ -1,0 +1,559 @@
+From 148200bc218c450f1e9260659bd21ac54259df00 Mon Sep 17 00:00:00 2001
+From: StegVerse <210078727+StegVerse@users.noreply.github.com>
+Date: Sun, 11 Oct 2026 22:09:19 +0000
+Subject: [PATCH 1/2] Publish the Labs organization ledger on
+ refs/stegverse/organization-ledger
+
+---
+ .../organization-governance-decision.yml      |  30 ++++-
+ .../transition-ledger/org-contract.json       |  12 +-
+ resident-runtime/ledger_store.py              |  12 +-
+ .../organization_governance_decision.py       | 119 ++++++++++++++++--
+ tests/test_organization_git_ledger_store.py   |  12 +-
+ .../test_organization_governance_decision.py  |  79 ++++++++++--
+ ...organization_ledger_explicit_root_guard.py |   2 +-
+ ...organization_ledger_same_store_readback.py |   2 +-
+ 8 files changed, 232 insertions(+), 36 deletions(-)
+
+diff --git a/.github/workflows/organization-governance-decision.yml b/.github/workflows/organization-governance-decision.yml
+index 014fcb32..2f6bd04a 100644
+--- a/.github/workflows/organization-governance-decision.yml
++++ b/.github/workflows/organization-governance-decision.yml
+@@ -8,11 +8,15 @@ name: Organization governance decision
+ # ref this workflow writes is this repository's own refs/stegverse/federation-mesh,
+ # fast-forward only.
+ #
+-# Both ledgers are run-scoped: the organization ledger is opened by
+-# organization_store() exactly as org-contract.json declares it (git, PRIVATE,
+-# propagate_target null), so its receipts are real appends that are published
+-# nowhere. A FAIL_CLOSED governance decision is a decision and is answered; only
+-# a FAIL_CLOSED of this run itself fails the job.
++# The organization ledger is opened by organization_store() exactly as
++# org-contract.json declares it: git, PRIVATE, on this repository's designated
++# refs/stegverse/organization-ledger (the location structure StegVerse-org/.github
++# declares). It is materialized into this checkout's git directory before the
++# cycle, published fast-forward only after the mesh, and read back from a fresh
++# fetch; a decision whose receipt is not on the read-back chain fails the run.
++# The repository ledger stays run-scoped; its receipts are retained in the
++# organization ledger as source receipts. A FAIL_CLOSED governance decision is a
++# decision and is answered; only a FAIL_CLOSED of this run itself fails the job.
+ #
+ # The decision authority is StegCore (private), pinned in exactly one place,
+ # org-runtime/decision-authority.json. It is installed only when the owner has
+@@ -106,7 +110,9 @@ jobs:
+       - name: Run the cycle
+         env:
+           STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+-          STEGVERSE_ORG_LEDGER_GIT_DIR: ${{ runner.temp }}/organization-ledger.git
++          # The ledger ref lives in this checkout's git directory, so publishing it
++          # uses the job's own contents: write credential for this repository only.
++          STEGVERSE_ORG_LEDGER_GIT_DIR: ${{ github.workspace }}/.git
+         run: >-
+           python resident-runtime/organization_governance_decision.py --evidence "$EVIDENCE"
+           cycle --mesh "$RUNNER_TEMP/mesh" --node-state "$RUNNER_TEMP/node-state"
+@@ -118,11 +124,23 @@ jobs:
+           publish --mesh "$RUNNER_TEMP/mesh" --work "$RUNNER_TEMP/work"
+           --push-repo "$GITHUB_WORKSPACE" --remote origin
+ 
++      - name: Publish the organization ledger (after the mesh, fast-forward only)
++        env:
++          STEGVERSE_ORG_LEDGER_GIT_DIR: ${{ github.workspace }}/.git
++        run: >-
++          python resident-runtime/organization_governance_decision.py --evidence "$EVIDENCE"
++          ledger-publish
++
+       - name: Read back
+         run: >-
+           python resident-runtime/organization_governance_decision.py --evidence "$EVIDENCE"
+           readback --work "$RUNNER_TEMP/work" --own-url "$OWN_URL"
+ 
++      - name: Read the organization ledger back from a fresh fetch
++        run: >-
++          python resident-runtime/organization_governance_decision.py --evidence "$EVIDENCE"
++          ledger-readback --work "$RUNNER_TEMP/work" --own-url "$OWN_URL"
++
+       - name: Evidence
+         if: ${{ always() }}
+         run: |
+diff --git a/.stegverse/transition-ledger/org-contract.json b/.stegverse/transition-ledger/org-contract.json
+index d799afa0..f3cd73f7 100644
+--- a/.stegverse/transition-ledger/org-contract.json
++++ b/.stegverse/transition-ledger/org-contract.json
+@@ -25,8 +25,14 @@
+   "declaration": "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001",
+   "organization_ledger": {
+     "store": "git",
+-    "ref": "refs/heads/organization-ledger/StegVerse-Labs",
++    "ref": "refs/stegverse/organization-ledger",
+     "custody": "PRIVATE",
+-    "propagate_target": null
+-  }
++    "propagate_target": {
++      "custody": "PRIVATE",
++      "remote": "https://github.com/StegVerse-Labs/.github"
++    }
++  },
++  "organization_ledger_ref": "refs/stegverse/organization-ledger",
++  "organization_ledger_repository": "StegVerse-Labs/.github",
++  "organization_ledger_ref_designation_source": "owner decision relayed on StegVerse-org/StegVerse-SDK#465 for StegVerse-Labs/.github#3099 (2026-10-11): use StegVerse-org's ledger location structure (StegVerse-org/.github org-contract.json organization_ledger_ref refs/stegverse/organization-ledger)"
+ }
+diff --git a/resident-runtime/ledger_store.py b/resident-runtime/ledger_store.py
+index f9c01e5d..8cfc0678 100644
+--- a/resident-runtime/ledger_store.py
++++ b/resident-runtime/ledger_store.py
+@@ -212,6 +212,11 @@ class PosixLedgerStore:
+ 
+ 
+ LEDGER_REF_PREFIX = "refs/heads/organization-ledger/"
++#: The designated organization ledger ref an organization keeps in its own
++#: `.github`, in the location structure StegVerse-org/.github declares
++#: (org-contract.json organization_ledger_ref). It is dedicated to the ledger
++#: exactly as a ref under LEDGER_REF_PREFIX is.
++DESIGNATED_LEDGER_REF = "refs/stegverse/organization-ledger"
+ PRIVATE_CUSTODY = "PRIVATE"
+ PAYLOAD_CLASSIFICATION = "ORGANIZATION_LEDGER_PRIVATE_EVIDENCE"
+ CAS_PREDICATE = "ORGANIZATION_LEDGER_REF_COMPARE_AND_SWAP"
+@@ -289,10 +294,13 @@ class GitLedgerStore:
+     kind = "GIT_REF"
+ 
+     def __init__(self, git_dir, ref, *, remote=None, custody=None):
+-        if not isinstance(ref, str) or not ref.startswith(LEDGER_REF_PREFIX) or ref == LEDGER_REF_PREFIX:
++        dedicated = isinstance(ref, str) and (
++            ref == DESIGNATED_LEDGER_REF or (ref.startswith(LEDGER_REF_PREFIX) and ref != LEDGER_REF_PREFIX))
++        if not dedicated:
+             raise LedgerStoreRefused(
+                 "ORGANIZATION_LEDGER_REF_INVALID",
+-                "supply a dedicated Organization ledger ref under " + LEDGER_REF_PREFIX,
++                "supply a dedicated Organization ledger ref: " + DESIGNATED_LEDGER_REF
++                + " or one under " + LEDGER_REF_PREFIX,
+                 detail=str(ref),
+             )
+         self.git_dir = Path(git_dir).expanduser().resolve()
+diff --git a/resident-runtime/organization_governance_decision.py b/resident-runtime/organization_governance_decision.py
+index 3a8d6bb3..cd333991 100644
+--- a/resident-runtime/organization_governance_decision.py
++++ b/resident-runtime/organization_governance_decision.py
+@@ -16,8 +16,9 @@ delivered: a materializer names that ref, and one execution
+    directory, with node state and both ledgers at locations under the run's own
+    temporary space. The organization ledger is opened by `organization_store()`
+    exactly as `.stegverse/transition-ledger/org-contract.json` declares it --
+-   git, private custody, `propagate_target: null` -- so its receipts are real
+-   appends that, by that declaration, are published nowhere. A request this
++   git, private custody, on this organization's designated
++   `refs/stegverse/organization-ledger` (StegVerse-org's location structure) --
++   and materialized from that ref before the cycle appends to it. A request this
+    organization already answered on its own ref is passed as seen, so a replay
+    decides nothing twice;
+ 3. **publishes** every frame the cycle added onto this repository's own
+@@ -25,7 +26,11 @@ delivered: a materializer names that ref, and one execution
+    the existing own tree plus the new frames. No other repository or ref is
+    written. A lost race is refused, never forced;
+ 4. **reads back** what it published from a fresh anonymous fetch and recovers
+-   each answer with the kernel.
++   each answer with the kernel;
++5. **publishes the organization ledger** ref, after the mesh, fast-forward only
++   (`GitLedgerStore.propagate`), and **reads it back** from a fresh anonymous
++   fetch: every receipt must verify against its own body and link to its
++   predecessor, and every decision's organization receipt must be on the chain.
+ 
+ Every refusal of this execution is a six-field FAIL_CLOSED and exits 1. A
+ FAIL_CLOSED governance *decision* is a decision, carried back like any other.
+@@ -51,7 +56,7 @@ ROOT = Path(__file__).resolve().parents[1]
+ OWN_MESH_REF = "refs/stegverse/federation-mesh"
+ CANDIDATE_REF = "refs/stegverse/publish-candidate"
+ FRAME_PATH = re.compile(r"^frames\.d/[0-9a-f]{64}\.json$")
+-LEDGER_PERSISTENCE = "EXECUTION_SCOPED_PROPAGATE_TARGET_NULL"
++LEDGER_PERSISTENCE = "PUBLISHED_DESIGNATED_ORGANIZATION_LEDGER_REF"
+ REPORT_SCHEMA = "stegverse.organization-governance-decision-run/v1"
+ DECISION_AUTHORITY_PIN = "org-runtime/decision-authority.json"
+ EVALUATOR_NOT_PROVIDED = {
+@@ -68,6 +73,11 @@ def _module(name: str, relative: str):
+ 
+ 
+ kernel = _module("org_governance_decision_kernel", "org-kernel/kernel.py")
++
++
++def _organization_ledger():
++    """The organization ledger module, loaded with this repository's declaration (org-contract.json)."""
++    return _module("org_governance_decision_aggregate", "resident-runtime/aggregate_repo_transition.py")
+ binding = _module("mesh_source_binding", "resident-runtime/mesh_source_binding.py")
+ node_store = kernel.node_store_module
+ 
+@@ -275,16 +285,14 @@ def run_cycle(*, mesh: Path, node_state: Path, repo_ledger: Path,
+                       "set STEGVERSE_REPO_LEDGER_ROOT to the repository ledger root passed to the cycle")
+     if not os.environ.get("STEGVERSE_ORG_LEDGER_GIT_DIR"):
+         raise Refusal("ORGANIZATION_LEDGER_GIT_DIR_NOT_SUPPLIED", "STEGVERSE_ORG_LEDGER_GIT_DIR_absent",
+-                      "set STEGVERSE_ORG_LEDGER_GIT_DIR to a run-scoped bare repository")
+-    if os.environ.get("STEGVERSE_ORG_LEDGER_GIT_REMOTE"):
+-        raise Refusal("ORGANIZATION_LEDGER_REMOTE_FORBIDDEN", "STEGVERSE_ORG_LEDGER_GIT_REMOTE_set",
+-                      "propagate_target is null by approved declaration; set no remote")
++                      "set STEGVERSE_ORG_LEDGER_GIT_DIR to the git directory the ledger ref is materialized into")
+     _init_bare(Path(os.environ["STEGVERSE_ORG_LEDGER_GIT_DIR"]))
+-    aggregate = _module("org_governance_decision_aggregate", "resident-runtime/aggregate_repo_transition.py")
++    aggregate = _organization_ledger()
+     seen = {entry["frame_name"] for entry in materialization.get("already_answered") or []}
+     before = _mesh_keys(mesh)
+     try:
+         store = aggregate.organization_store()
++        _materialize_ledger(store)
+         results = kernel.consume_and_respond(ROOT, mesh_root=mesh, node_state_root=node_state,
+                                              repo_ledger_root=repo_ledger, org_ledger_root=store, seen=seen)
+     except (ValueError, KeyError, OSError) as exc:
+@@ -304,6 +312,66 @@ def run_cycle(*, mesh: Path, node_state: Path, repo_ledger: Path,
+             "new_frames": new_frames, "authority_effect": "NONE_EXECUTION_RECORD"}
+ 
+ 
++def _materialize_ledger(store: Any) -> dict[str, Any]:
++    """Seed the run's ledger ref from the designated published ref before anything is appended."""
++    if getattr(store, "remote", None) is None:
++        raise Refusal("ORGANIZATION_LEDGER_PUBLICATION_TARGET_NOT_DECLARED", "organization_ledger.propagate_target_absent",
++                      "declare the private-custody propagate_target of the organization ledger in org-contract.json")
++    seeded = store.materialize()
++    if seeded.get("disposition") != "MATERIALIZED":
++        raise Refusal("ORGANIZATION_LEDGER_NOT_MATERIALIZED",
++                      str(seeded.get("failed_predicate")) + ":" + str(seeded.get("detail") or "")[:200],
++                      str(seeded.get("required_evidence_or_repair") or "materialize the designated ledger ref and re-run"))
++    return seeded
++
++
++def publish_ledger() -> dict[str, Any]:
++    """Publish the run's appends to the designated ledger ref, after the mesh, fast-forward only."""
++    store = _organization_ledger().organization_store()
++    propagated = store.propagate()
++    if propagated.get("disposition") != "PROPAGATED":
++        raise Refusal("ORGANIZATION_LEDGER_PUBLICATION_FAILED",
++                      str(propagated.get("failed_predicate")) + ":" + str(propagated.get("detail") or "")[:200],
++                      str(propagated.get("required_evidence_or_repair") or "re-run; an appended receipt is published, never re-minted"))
++    return {"schema": "stegverse.organization-ledger-publication/v1", "ref": store.ref, "remote": store.remote,
++            "tip": propagated.get("local_tip"), "previous_remote_tip": propagated.get("remote_tip"),
++            "authority_effect": "NONE_CUSTODY_TRANSPORT_ONLY"}
++
++
++def read_back_ledger(*, own_url: str, work: Path) -> dict[str, Any]:
++    """The designated ledger ref from a fresh anonymous fetch: every receipt verified and linked."""
++    aggregate = _organization_ledger()
++    ref = aggregate.declared_ledger_locus()["ref"]
++    git_dir = work / "ledger-readback.git"
++    if git_dir.exists():
++        raise Refusal("ORGANIZATION_LEDGER_READBACK_NOT_FRESH", "readback_repository_exists:" + str(git_dir),
++                      "read the ledger back into a fresh repository")
++    if _anonymous_tip(own_url, ref) is None:
++        # Nothing has ever been appended and published: an empty chain, which
++        # the report refuses for any decision that claims a receipt.
++        return {"schema": "stegverse.organization-ledger-readback/v1", "ref": ref, "tip": None,
++                "head_receipt_sha256": None, "chain_length": 0, "chain": [], "verified": True,
++                "note": "NO_LEDGER_REF_PUBLISHED", "authority_effect": "NONE_READBACK_ONLY"}
++    tip = _anonymous_fetch(own_url, ref, git_dir)
++    store = aggregate.ledger_store.GitLedgerStore(git_dir, ref, custody=aggregate.ledger_store.PRIVATE_CUSTODY)
++    head = store.get(aggregate.ledger_store.HEAD_KEY) or {}
++    chain, cursor = [], head.get("receipt_sha256")
++    while cursor:
++        key = aggregate.ledger_store.receipt_key(cursor)
++        row = store.get(key)
++        body = dict(row) if isinstance(row, dict) else {}
++        claimed = body.pop("receipt_sha256", None)
++        if claimed != cursor or aggregate.sha(body) != cursor:
++            raise Refusal("ORGANIZATION_LEDGER_READBACK_MISMATCH", key + ":receipt_does_not_verify_against_its_body",
++                          "the published ledger must hold self-verifying receipts")
++        chain.append(cursor)
++        cursor = row.get("previous_receipt_sha256")
++    chain.reverse()
++    return {"schema": "stegverse.organization-ledger-readback/v1", "ref": ref, "tip": tip,
++            "head_receipt_sha256": head.get("receipt_sha256"), "chain_length": len(chain), "chain": chain,
++            "verified": True, "authority_effect": "NONE_READBACK_ONLY"}
++
++
+ def publish(*, mesh: Path, cycle: dict[str, Any], materialization: dict[str, Any], work: Path,
+             own_ref: str, remote: str, push_repo: Path | None = None) -> dict[str, Any]:
+     """One fast-forward commit of the cycle's new frames onto this organization's own mesh ref."""
+@@ -484,6 +552,7 @@ def build_report(evidence: Path, *, mesh_root: str) -> tuple[dict[str, Any], int
+     bound, materialized, cycle, published, readback = (
+         load("binding.json"), load("materialization.json"), load("cycle.json"),
+         load("publication.json"), load("readback.json"))
++    ledger_publication, ledger_readback = load("ledger_publication.json"), load("ledger_readback.json")
+     evaluator = load("evaluator.json")
+     installed = bool((evaluator or {}).get("installed"))
+     failure = load("fail_closed.json")
+@@ -540,6 +609,19 @@ def build_report(evidence: Path, *, mesh_root: str) -> tuple[dict[str, Any], int
+                     "fresh_ref_answer_not_bound_to_decision:" + str(item["request_packet_id"]),
+                     "publish and independently read back the exact decision packet, disposition and receipt binding")
+                 break
++    # The deciding organization's receipt is evidence only once it is on the
++    # published ledger, read back from a fresh fetch (StegVerse-SDK#465
++    # DECIDING_ORGANIZATION_RECEIPT_READ_BACK).
++    if failure is None and decisions:
++        on_chain = set((ledger_readback or {}).get("chain") or [])
++        unread = [str(item["request_packet_id"]) for item in decisions
++                  if (ledger_readback or {}).get("verified") is not True
++                  or item.get("organization_receipt_sha256") not in on_chain]
++        if unread:
++            failure = binding.fail_closed(
++                "ORGANIZATION_LEDGER_READBACK_NOT_VERIFIED",
++                "decision_receipt_not_on_published_ledger:" + ",".join(unread)[:500],
++                "publish the organization ledger ref after the mesh and read it back from a fresh fetch")
+     if failure is None and crossing_fail_closed:
+         failure = binding.fail_closed(
+             "ORGANIZATION_CROSSING_FAIL_CLOSED",
+@@ -560,9 +642,12 @@ def build_report(evidence: Path, *, mesh_root: str) -> tuple[dict[str, Any], int
+               "published": published,
+               "readback": readback,
+               "ledger_persistence": LEDGER_PERSISTENCE,
+-              "ledger_persistence_note": ("the repository and organization receipts are real appends to "
+-                                          "run-scoped ledgers; by the approved declaration "
+-                                          "(organization_ledger.propagate_target null) they are published nowhere"),
++              "ledger_persistence_note": ("organization receipts are appended to the designated "
++                                          "refs/stegverse/organization-ledger, published fast-forward after the "
++                                          "mesh and read back from a fresh fetch; repository receipts are retained "
++                                          "in it as source receipts"),
++              "ledger_publication": ledger_publication,
++              "ledger_readback": ledger_readback,
+               "organization_ledger": (cycle or {}).get("organization_ledger"),
+               "workflow_disposition": "FAIL_CLOSED" if failure else "COMPLETED",
+               "fail_closed": failure,
+@@ -599,6 +684,10 @@ def main(argv: list[str] | None = None) -> int:
+     r = sub.add_parser("readback")
+     r.add_argument("--work", type=Path, required=True)
+     r.add_argument("--own-url", required=True)
++    sub.add_parser("ledger-publish")
++    lr = sub.add_parser("ledger-readback")
++    lr.add_argument("--work", type=Path, required=True)
++    lr.add_argument("--own-url", required=True)
+     s = sub.add_parser("report")
+     s.add_argument("--mesh-root", required=True)
+     q = sub.add_parser("authority-requirements")
+@@ -639,6 +728,12 @@ def main(argv: list[str] | None = None) -> int:
+                                  publication=_read(evidence / "publication.json"),
+                                  materialization=_read(evidence / "materialization.json"), work=args.work)
+             name = "readback.json"
++        elif args.command == "ledger-publish":
++            document = publish_ledger()
++            name = "ledger_publication.json"
++        elif args.command == "ledger-readback":
++            document = read_back_ledger(own_url=args.own_url, work=args.work)
++            name = "ledger_readback.json"
+         else:
+             report, status = build_report(evidence, mesh_root=args.mesh_root)
+             _write(evidence / "report.json", report)
+diff --git a/tests/test_organization_git_ledger_store.py b/tests/test_organization_git_ledger_store.py
+index 2b19838f..1d003022 100644
+--- a/tests/test_organization_git_ledger_store.py
++++ b/tests/test_organization_git_ledger_store.py
+@@ -25,7 +25,7 @@ import aggregate_repo_transition as org  # noqa: E402
+ import organization_batch_custody as custody  # noqa: E402
+ 
+ store_module = org.ledger_store
+-REF = "refs/heads/organization-ledger/StegVerse-Labs"
++REF = "refs/stegverse/organization-ledger"
+ # A caller-held store is admitted only as the declared locus (#3012, OL-1b):
+ # these tests hold Git stores on the repository's own declared ref, so they
+ # run under the repository's declaration rather than the suite's POSIX one.
+@@ -153,10 +153,15 @@ def test_manifest_declared_locus_selects_the_git_store_and_readback_uses_it(tmp_
+ 
+ 
+ @pytest.mark.repository_ledger_locus
+-def test_repository_manifest_declares_the_private_git_locus_with_null_propagate_target():
++def test_repository_manifest_declares_the_designated_private_git_locus_and_its_publication_target():
++    # StegVerse-org's location structure: the organization ledger is the
++    # designated ref of the organization's own .github, published to it.
+     contract = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_text())
+     assert contract["organization_ledger"] == {
+-        "store": "git", "ref": REF, "custody": "PRIVATE", "propagate_target": None}
++        "store": "git", "ref": REF, "custody": "PRIVATE",
++        "propagate_target": {"custody": "PRIVATE", "remote": "https://github.com/StegVerse-Labs/.github"}}
++    assert (contract["organization_ledger_ref"], contract["organization_ledger_repository"]) == (
++        REF, "StegVerse-Labs/.github")
+     assert org.declared_ledger_locus() == contract["organization_ledger"]
+ 
+ 
+@@ -165,6 +170,7 @@ def test_null_propagate_target_is_a_non_gating_refusal_after_the_local_append(tm
+     for variable in ("STEGVERSE_ORG_LEDGER_STORE", "STEGVERSE_ORG_LEDGER_GIT_REF",
+                      "STEGVERSE_ORG_LEDGER_GIT_REMOTE", "STEGVERSE_ORG_LEDGER_GIT_CUSTODY"):
+         monkeypatch.delenv(variable, raising=False)
++    declare(monkeypatch, store="git", ref=REF, custody="PRIVATE", propagate_target=None)
+     monkeypatch.setenv("STEGVERSE_ORG_LEDGER_GIT_DIR", str(bare(tmp_path / "node.git")))
+     record = org.aggregate_transition(receipt("CLAIM"))
+     store = org.organization_store()
+diff --git a/tests/test_organization_governance_decision.py b/tests/test_organization_governance_decision.py
+index aaa0973f..498c7090 100644
+--- a/tests/test_organization_governance_decision.py
++++ b/tests/test_organization_governance_decision.py
+@@ -2,8 +2,9 @@
+ 
+ The source mesh is a local bare repository carrying a byte copy of the request
+ StegVerse-org published on its refs/stegverse/federation-mesh
+-(pkt-5efe4b0372bbffa4d2a356fe). This repository's own mesh ref is another
+-local bare repository. Nothing here fetches from or pushes to the network.
++(pkt-5efe4b0372bbffa4d2a356fe). This repository's own mesh ref, and its
++designated organization ledger ref, are on another local bare repository.
++Nothing here fetches from or pushes to the network.
+ """
+ from __future__ import annotations
+ 
+@@ -83,12 +84,32 @@ def _request_bytes() -> bytes:
+     return (FIXTURE / REQUEST_KEY).read_bytes()
+ 
+ 
++_DECLARED_LEDGER = decision._organization_ledger
++
++
++def _ledger_published_to(origin: Path):
++    """The repository's own declaration, with its publication target at the local `origin`.
++
++    In the workflow the target is this repository on GitHub; here it is the
++    same temporary repository that carries the own mesh ref, so nothing
++    leaves the machine.
++    """
++    def load():
++        module = _DECLARED_LEDGER()
++        declared = module.C["organization_ledger"]
++        module.C["organization_ledger"] = {**declared, "propagate_target": {
++            **declared["propagate_target"], "remote": str(origin)}}
++        return module
++    return load
++
++
+ def _run(tmp: Path, source: Path, origin: Path, monkeypatch, *, ledgers: Path | None = None) -> dict:
+     """One execution, as the workflow runs it: fresh work, mesh and node state."""
+     run = tmp / ("run-" + str(len(list(tmp.glob("run-*")))))
+     ledgers = ledgers or run
+     monkeypatch.setenv("STEGVERSE_REPO_LEDGER_ROOT", str(ledgers / "repo-ledger"))
+     monkeypatch.setenv("STEGVERSE_ORG_LEDGER_GIT_DIR", str(ledgers / "organization-ledger.git"))
++    monkeypatch.setattr(decision, "_organization_ledger", _ledger_published_to(origin))
+     materialization = decision.materialize(
+         source_url=str(source), source_ref=MESH_REF, own_url=str(origin), own_ref=MESH_REF,
+         work=run / "work", mesh=run / "mesh", emitting_organization="StegVerse-org")
+@@ -96,10 +117,13 @@ def _run(tmp: Path, source: Path, origin: Path, monkeypatch, *, ledgers: Path |
+                                repo_ledger=ledgers / "repo-ledger", materialization=materialization)
+     publication = decision.publish(mesh=run / "mesh", cycle=cycle, materialization=materialization,
+                                    work=run / "work", own_ref=MESH_REF, remote=str(origin))
++    ledger_publication = decision.publish_ledger()
+     readback = decision.read_back(own_url=str(origin), own_ref=MESH_REF, publication=publication,
+                                   materialization=materialization, work=run / "work")
++    ledger_readback = decision.read_back_ledger(own_url=str(origin), work=run / "work")
+     return {"run": run, "ledgers": ledgers, "materialization": materialization, "cycle": cycle,
+-            "publication": publication, "readback": readback}
++            "publication": publication, "readback": readback, "ledger_publication": ledger_publication,
++            "ledger_readback": ledger_readback}
+ 
+ 
+ def _own_frames(origin: Path) -> dict[str, bytes]:
+@@ -182,13 +206,13 @@ def test_end_to_end_answers_the_emitting_organization_recorded_at_both_levels(tm
+     application = item["application_result"]
+     assert application["disposition"] == "FAIL_CLOSED"
+     assert application["reason"] == "GOVERNANCE_RUNTIME_STEGCORE_UNAVAILABLE"
+-    assert out["cycle"]["organization_ledger"]["ref"] == "refs/heads/organization-ledger/StegVerse-Labs"
+-    assert out["cycle"]["organization_ledger"]["remote"] is None
++    assert out["cycle"]["organization_ledger"]["ref"] == "refs/stegverse/organization-ledger"
++    assert out["cycle"]["organization_ledger"]["remote"] == str(origin)
+ 
+     # Both levels: the decision's own receipts and the crossing's.
+     repository = ledger_store.PosixLedgerStore(out["ledgers"] / "repo-ledger")
+     organization = ledger_store.GitLedgerStore(out["ledgers"] / "organization-ledger.git",
+-                                               "refs/heads/organization-ledger/StegVerse-Labs")
++                                               "refs/stegverse/organization-ledger")
+     for receipts in (application, item["organization_record"]):
+         assert repository.exists(ledger_store.receipt_key(receipts["repository_receipt_sha256"]))
+         assert organization.exists(ledger_store.receipt_key(receipts["organization_receipt_sha256"]))
+@@ -205,6 +229,15 @@ def test_end_to_end_answers_the_emitting_organization_recorded_at_both_levels(tm
+     assert (read["disposition"], read["reason"]) == ("FAIL_CLOSED", "GOVERNANCE_RUNTIME_STEGCORE_UNAVAILABLE")
+     assert read["repository_receipt_sha256"] == application["repository_receipt_sha256"]
+ 
++    # The ledger is published to the designated ref after the mesh and read back fresh:
++    # the decision's and the crossing's organization receipts are both on the chain.
++    published = _git("--git-dir", str(origin), "rev-parse", "refs/stegverse/organization-ledger").decode().strip()
++    assert out["ledger_publication"]["tip"] == published == out["ledger_readback"]["tip"]
++    chain = out["ledger_readback"]["chain"]
++    assert out["ledger_readback"]["verified"] is True and len(chain) == out["ledger_readback"]["chain_length"]
++    for receipts in (application, item["organization_record"]):
++        assert receipts["organization_receipt_sha256"] in chain
++
+ 
+ def test_replay_is_a_write_once_no_op(tmp_path, monkeypatch):
+     source = _mesh_repo(tmp_path / "source.git", {REQUEST_KEY: _request_bytes()})
+@@ -216,7 +249,7 @@ def test_replay_is_a_write_once_no_op(tmp_path, monkeypatch):
+     own = _own_frames(origin)
+     repository_before = sorted(p.name for p in (ledgers / "repo-ledger").rglob("*.json"))
+     organization_before = _git("--git-dir", str(ledgers / "organization-ledger.git"), "rev-parse",
+-                               "refs/heads/organization-ledger/StegVerse-Labs")
++                               "refs/stegverse/organization-ledger")
+ 
+     second = _run(tmp_path, source, origin, monkeypatch, ledgers=ledgers)
+     assert second["materialization"]["already_answered"][0]["request"]["packet_id"] == REQUEST_PACKET_ID
+@@ -228,10 +261,12 @@ def test_replay_is_a_write_once_no_op(tmp_path, monkeypatch):
+     # No receipt added, so none conflicts.
+     assert sorted(p.name for p in (ledgers / "repo-ledger").rglob("*.json")) == repository_before
+     assert _git("--git-dir", str(ledgers / "organization-ledger.git"), "rev-parse",
+-                "refs/heads/organization-ledger/StegVerse-Labs") == organization_before
++                "refs/stegverse/organization-ledger") == organization_before
+     # The answer already published is still read back and recovered.
+     [read] = second["readback"]["answers"]
+     assert read["key"] == first["publication"]["frames"][0]["key"]
++    # Nothing new was appended, so the published ledger did not move.
++    assert second["ledger_readback"]["tip"] == first["ledger_readback"]["tip"]
+ 
+ 
+ def test_tampered_frame_is_refused_and_produces_no_answer(tmp_path, monkeypatch):
+@@ -400,6 +435,34 @@ def test_report_accepts_matching_verified_receiver_answer(tmp_path):
+             "organization_receipt_sha256": "sha256:org"
+         }]
+     }))
++    (evidence / "ledger_readback.json").write_text(json.dumps({
++        "verified": True, "chain": ["sha256:genesis", "sha256:org"]}))
+     report, status = decision.build_report(evidence, mesh_root="fixture")
+     assert status == 0
+     assert report["workflow_disposition"] == "COMPLETED"
++
++
++def test_report_refuses_a_decision_whose_receipt_is_not_on_the_published_ledger(tmp_path):
++    """The deciding receipt is evidence only once read back from the published ledger ref."""
++    evidence = tmp_path / "evidence"
++    evidence.mkdir()
++    (evidence / "materialization.json").write_text(json.dumps({
++        "addressed_to_organization": [REQUEST_KEY], "already_answered": []}))
++    (evidence / "cycle.json").write_text(json.dumps({"items": [{
++        "frame_key": REQUEST_KEY, "request_packet_id": REQUEST_PACKET_ID,
++        "application_result": {"disposition": "DENY", "repository_receipt_sha256": "sha256:repo",
++                               "organization_receipt_sha256": "sha256:org"}}]}))
++    (evidence / "readback.json").write_text(json.dumps({
++        "verified": True, "answers": [{"request_packet_id": REQUEST_PACKET_ID, "disposition": "DENY",
++                                       "repository_receipt_sha256": "sha256:repo",
++                                       "organization_receipt_sha256": "sha256:org"}]}))
++    for ledger in (None, {"verified": True, "chain": ["sha256:genesis"]}, {"verified": False, "chain": ["sha256:org"]}):
++        target = evidence / "ledger_readback.json"
++        if ledger is None:
++            target.unlink(missing_ok=True)
++        else:
++            target.write_text(json.dumps(ledger))
++        report, status = decision.build_report(evidence, mesh_root="fixture")
++        assert status == 1
++        assert report["fail_closed"]["failure_code"] == "ORGANIZATION_LEDGER_READBACK_NOT_VERIFIED"
++        assert REQUEST_PACKET_ID in report["fail_closed"]["failed_predicate"]
+diff --git a/tests/test_organization_ledger_explicit_root_guard.py b/tests/test_organization_ledger_explicit_root_guard.py
+index 8edfbe36..8e896ec7 100644
+--- a/tests/test_organization_ledger_explicit_root_guard.py
++++ b/tests/test_organization_ledger_explicit_root_guard.py
+@@ -35,7 +35,7 @@ import aggregate_repo_transition as org  # noqa: E402
+ import organization_batch_custody as batch_custody  # noqa: E402
+ from tests import test_org_claim_custody as claim  # noqa: E402
+ 
+-REF = "refs/heads/organization-ledger/StegVerse-Labs"
++REF = "refs/stegverse/organization-ledger"
+ KIND_MISMATCH = "ORGANIZATION_LEDGER_STORE_KIND_MISMATCH"
+ LOCUS_VARIABLES = ("STEGVERSE_ORG_LEDGER_STORE", "STEGVERSE_ORG_LEDGER_GIT_REF",
+                    "STEGVERSE_ORG_LEDGER_GIT_REMOTE", "STEGVERSE_ORG_LEDGER_GIT_CUSTODY")
+diff --git a/tests/test_organization_ledger_same_store_readback.py b/tests/test_organization_ledger_same_store_readback.py
+index aee23627..97c4b48b 100644
+--- a/tests/test_organization_ledger_same_store_readback.py
++++ b/tests/test_organization_ledger_same_store_readback.py
+@@ -26,7 +26,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / "workers"), str(ROOT / "resident-runtime")
+ import aggregate_repo_transition as org  # noqa: E402
+ import organization_batch_custody as custody  # noqa: E402
+ 
+-REF = "refs/heads/organization-ledger/StegVerse-Labs"
++REF = "refs/stegverse/organization-ledger"
+ LOCUS_VARIABLES = ("STEGVERSE_ORG_LEDGER_STORE", "STEGVERSE_ORG_LEDGER_GIT_REF",
+                    "STEGVERSE_ORG_LEDGER_GIT_REMOTE", "STEGVERSE_ORG_LEDGER_GIT_CUSTODY")
+ KIND_MISMATCH = "ORGANIZATION_LEDGER_STORE_KIND_MISMATCH"
+-- 
+2.43.0
+
