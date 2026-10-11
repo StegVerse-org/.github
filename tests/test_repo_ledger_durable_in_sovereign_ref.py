@@ -192,6 +192,34 @@ class RepositoryReadbackTests(_OneRef):
             readback.repository_readback(self.organization_location, NAMESPACE, result, ingress)
         self.assertEqual(refused.exception.failed_predicate, "INGRESS_REPOSITORY_RECEIPT_IS_IN_THE_REPOSITORY_LEDGER")
 
+    def test_a_request_answered_from_the_ledger_reads_back_through_the_receipt_already_recorded(self):
+        # organization-ledger-transition.yml answers a request whose manifest is
+        # already recorded without appending, and its result names only the
+        # organization receipt. The readback finds the repository receipt that
+        # receipt consumed (StegVerse-org/.github run 38108793289).
+        receipts = [self.repository_append(n) for n in (1, 2)]
+        consumed = [self.organization_consume(r) for r in receipts]
+        result = readback.readback(self.organization_location)
+        result["ingress_organization_receipt_sha256"] = consumed[0]["receipt_sha256"]
+        answered = {"disposition": "ALREADY_RECORDED",
+                    "organization_receipt_sha256": consumed[0]["receipt_sha256"]}
+        bound = readback.repository_readback(self.organization_location, NAMESPACE, result, answered)
+        self.assertEqual(bound["ingress_repository_receipt_sha256"], receipts[0]["receipt_sha256"])
+        self.assertEqual(bound["consumed_by_organization_receipt_sha256"], consumed[0]["receipt_sha256"])
+        # Only an already-recorded answer may omit the repository receipt.
+        with self.assertRaises(readback.ReadbackRefused) as refused:
+            readback.repository_readback(self.organization_location, NAMESPACE, result,
+                                         {"disposition": "ALLOW",
+                                          "organization_receipt_sha256": consumed[0]["receipt_sha256"]})
+        self.assertEqual(refused.exception.failed_predicate, "INGRESS_REPOSITORY_RECEIPT_IS_IN_THE_REPOSITORY_LEDGER")
+        # An organization receipt that consumed no receipt of this chain still fails closed.
+        result["ingress_organization_receipt_sha256"] = "sha256:" + "e" * 64
+        with self.assertRaises(readback.ReadbackRefused) as refused:
+            readback.repository_readback(self.organization_location, NAMESPACE, result,
+                                         {"disposition": "ALREADY_RECORDED",
+                                          "organization_receipt_sha256": "sha256:" + "e" * 64})
+        self.assertEqual(refused.exception.failed_predicate, "INGRESS_REPOSITORY_RECEIPT_IS_IN_THE_REPOSITORY_LEDGER")
+
     def test_an_empty_subtree_a_break_and_a_missing_retention_each_fail_closed(self):
         with self.assertRaises(readback.ReadbackRefused) as refused:
             readback.repository_readback(self.organization_location, NAMESPACE, {})
