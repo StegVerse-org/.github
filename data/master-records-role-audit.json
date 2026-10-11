@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 144,
+      "PROPER": 150,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 19,
-      "total": 182
+      "total": 188
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1335,6 +1335,48 @@
       "text": "\"StegVerse-org/StegVerse-SDK@8559c4700a076a733de048910344f99bedaae4ca:data/master-records-role-audit.json\"",
       "classification": "PROPER",
       "reason": "Evidence reference to the SDK's Master Records role audit file; a path only."
+    },
+    {
+      "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-004.json",
+      "line": 5,
+      "text": "\"purpose\": \"Successor governance-process transition (to -003, received and emitted under the pre-migration SDK e6785196, whose derived request still names MASTER_RECORDS as custody/replay reconstruction authority, and whose source_output_id",
+      "classification": "PROPER",
+      "reason": "States that the predecessor's pre-migration derivation named Master Records as custody authority and that this request names it the non-gating downstream recorder; describes the migration, grants Master Records no role."
+    },
+    {
+      "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-004.json",
+      "line": 46,
+      "text": "\"superseded_terminal_authority\": \"MASTER_RECORDS\",",
+      "classification": "PROPER",
+      "reason": "Governance candidate parameter naming Master Records as the terminal authority this transition asks the deciding organization to supersede; Master Records is not consulted or gated on."
+    },
+    {
+      "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-004.json",
+      "line": 47,
+      "text": "\"master_records_role\": \"DOWNSTREAM_NON_GATING\"",
+      "classification": "PROPER",
+      "reason": "Governance candidate parameter declaring the canonical downstream non-gating role of Master Records."
+    },
+    {
+      "file": ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-004.json",
+      "line": 55,
+      "text": "\"StegVerse-org/StegVerse-SDK@8559c4700a076a733de048910344f99bedaae4ca:data/master-records-role-audit.json\"",
+      "classification": "PROPER",
+      "reason": "Evidence reference to the SDK's Master Records role audit file; a path only."
+    },
+    {
+      "file": ".github/workflows/organization-ledger-transition.yml",
+      "line": 45,
+      "text": "# with ORGANIZATION_LEDGER as custody/replay authority and Master Records",
+      "classification": "PROPER",
+      "reason": "Workflow comment recording why the SDK pin moved: the pre-migration pin derived Master Records as custody authority; the current pin derives ORGANIZATION_LEDGER and Master Records only as the non-gating downstream recorder. Grants Master Records no role."
+    },
+    {
+      "file": ".github/workflows/organization-ledger-transition.yml",
+      "line": 47,
+      "text": "# still derived MASTER_RECORDS as custody authority. Every workflow here",
+      "classification": "PROPER",
+      "reason": "Workflow comment recording why the SDK pin moved: the pre-migration pin derived Master Records as custody authority; the current pin derives ORGANIZATION_LEDGER and Master Records only as the non-gating downstream recorder. Grants Master Records no role."
     }
   ]
 }

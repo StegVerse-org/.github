@@ -78,13 +78,15 @@ jobs:
           persist-credentials: false
 
       # The SDK derives the request and admits the returned decision. Pinned to
-      # the commit that admits a governance result recorded in organization
-      # records only (StegVerse-org/StegVerse-SDK#431).
+      # the post-migration SDK every workflow in this repository uses
+      # (StegVerse-SDK#452/#466): it admits a governance result recorded in
+      # organization records only and emits ORGANIZATION_LEDGER as the custody
+      # authority.
       - name: Checkout exact merged SDK manifest state-transition runtime
         uses: actions/checkout@v4
         with:
           repository: StegVerse-org/StegVerse-SDK
-          ref: 657576e6085c0db553390416451f02f824211283
+          ref: e8a34b6dc2e8de37b0b1fce9d40ad030111255ff
           path: sdk
           persist-credentials: false
 

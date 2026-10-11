@@ -21,6 +21,10 @@ on:
       peer_mesh:
         description: "The deciding organization's published git+repository#refs/... mesh locator"
         required: true
+      sdk_ref:
+        description: "Exact SDK commit to re-derive with: the one the request was received under; empty means this organization's current pin"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -41,14 +45,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Pinned to the SDK that reproduces the request recorded at ingress from
-      # the retained manifest and admits a governance result recorded in
-      # organization records only (as governance-inter-org-route-validation.yml).
+      # The return re-derives the request from the manifest retained at ingress
+      # and must reproduce the recorded request digest, so it runs on the SDK
+      # the request was received under. By default that is this organization's
+      # pin (the post-migration SDK every workflow here uses, which admits a
+      # governance result recorded in organization records only). A request
+      # received under an earlier pin names that exact commit; a commit that does
+      # not reproduce the request fails closed in the return
+      # (RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST).
+      - name: Bind the SDK commit the request was received under
+        env:
+          SDK_REF: ${{ github.event.inputs.sdk_ref }}
+        run: |
+          if [ -n "$SDK_REF" ] && ! printf '%s' "$SDK_REF" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"SDK_REF_INVALID","failed_predicate":"SDK_REF_IS_AN_EXACT_COMMIT","required_evidence_or_repair":"supply sdk_ref as a full 40-hex StegVerse-SDK commit, or leave it empty for the current pin","retry_entrypoint":".github/workflows/organization-governance-return.yml","owning_existing_goal":"SDK-MR-A-VALIDATION-CUSTODY-001","next_attempt":"re-dispatch with an exact commit"}'
+            exit 1
+          fi
+
       - name: Checkout exact merged SDK manifest state-transition runtime
         uses: actions/checkout@v4
         with:
           repository: StegVerse-org/StegVerse-SDK
-          ref: 657576e6085c0db553390416451f02f824211283
+          ref: ${{ github.event.inputs.sdk_ref || 'e8a34b6dc2e8de37b0b1fce9d40ad030111255ff' }}
           path: sdk
           persist-credentials: false
 

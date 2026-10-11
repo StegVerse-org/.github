@@ -41,11 +41,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      # The post-migration SDK (StegVerse-SDK#452/#466): a request is derived
+      # with ORGANIZATION_LEDGER as custody/replay authority and Master Records
+      # as the non-gating downstream recorder. The pin before it (e6785196)
+      # still derived MASTER_RECORDS as custody authority. Every workflow here
+      # pins the same commit, so a request is returned on the SDK it was
+      # received under (organization-governance-return.yml).
       - name: Checkout exact merged SDK manifest state-transition runtime
         uses: actions/checkout@v4
         with:
           repository: StegVerse-org/StegVerse-SDK
-          ref: e67851968fb6b45b0a02529152824770cbcf5f95
+          ref: e8a34b6dc2e8de37b0b1fce9d40ad030111255ff
           path: sdk
           persist-credentials: false
 
