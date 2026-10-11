@@ -18,6 +18,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
@@ -203,6 +204,150 @@ class PeerAnswerReturned(unittest.TestCase):
                 self.assertEqual(refused["failure_code"], "PEER_MESH_LOCATOR_INVALID")
                 for field in SIX_FIELDS:
                     self.assertTrue(refused.get(field), field)
+
+    # StegVerse-org/.github#98, census after #129/#131: the intake's git calls
+    # inherit no credential, refuse rather than raise, and tolerate a writer
+    # that placed the same frame between the presence check and the put.
+
+    def _git_calls(self, failing=None):
+        """Run the real git, recording each call's env; a call whose argv holds
+        `failing` is answered with a nonzero status instead of running."""
+        real, calls = subprocess.run, []
+
+        def run(args, **kwargs):
+            calls.append((list(args), kwargs.get("env")))
+            if failing and failing in args:
+                return subprocess.CompletedProcess(args, 128, stdout="", stderr="fatal: couldn't find remote ref (moved)\n")
+            return real(args, **kwargs)
+        return mock.patch.object(intake.subprocess, "run", side_effect=run), calls
+
+    def test_the_anonymous_read_inherits_no_git_variable_from_the_host(self):
+        self.answer_on_the_peer_mesh()
+        injected = {"GIT_ASKPASS": "/nonexistent/askpass", "GIT_SSH_COMMAND": "false",
+                    "GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "stegverse.injected", "GIT_CONFIG_VALUE_0": "1"}
+        patched, calls = self._git_calls()
+        with mock.patch.dict(os.environ, injected), patched:
+            taken = intake.intake(self.peer, own_mesh_root=self.own)
+        self.assertEqual(taken["disposition"], "ALLOW", taken)
+        remote = [(args, env) for args, env in calls if args[0] == "git" and ("ls-remote" in args or "fetch" in args)]
+        self.assertEqual(len(remote), 2, [a for a, _ in calls])
+        for args, env in remote:
+            self.assertIsNotNone(env, args)
+            self.assertEqual({k for k in env if k.startswith("GIT_")}, {"GIT_TERMINAL_PROMPT"}, args)
+            self.assertEqual(env["GIT_TERMINAL_PROMPT"], "0")
+            for name in injected:
+                self.assertNotIn(name, env)
+
+    def test_a_fetch_that_fails_after_listing_is_a_refusal_and_nothing_is_placed(self):
+        self.answer_on_the_peer_mesh()
+        before = set(self.frames(self.own))
+        patched, _ = self._git_calls(failing="fetch")
+        with patched:
+            refused = intake.intake(self.peer, own_mesh_root=self.own)
+        self.assertEqual(refused["disposition"], "FAIL_CLOSED", refused)
+        self.assertEqual(refused["failure_code"], "PEER_MESH_FETCH_FAILED")
+        for field in SIX_FIELDS:
+            self.assertTrue(refused.get(field), field)
+        self.assertIn("couldn't find remote ref", refused["detail"])
+        self.assertEqual((refused["taken"], refused["authority_effect"]), ([], "NONE_REFUSAL_ONLY"))
+        self.assertEqual(set(self.frames(self.own)), before)
+
+    def test_a_ref_that_does_not_resolve_after_fetching_is_a_refusal(self):
+        self.answer_on_the_peer_mesh()
+        patched, _ = self._git_calls(failing="rev-parse")
+        with patched:
+            refused = intake.intake(self.peer, own_mesh_root=self.own)
+        self.assertEqual(refused["failure_code"], "PEER_MESH_REF_RESOLUTION_FAILED")
+        for field in SIX_FIELDS:
+            self.assertTrue(refused.get(field), field)
+        self.assertEqual(refused["taken"], [])
+
+    def test_a_frame_placed_concurrently_under_its_own_key_is_already_present(self):
+        self.answer_on_the_peer_mesh()
+        store_class = type(kernel.mesh_store(self.own))
+        real, raised = store_class.put_once, []
+
+        def racing_put_once(store, key, value):
+            real(store, key, value)  # another writer placed the same frame first ...
+            if not raised:
+                raised.append(key)
+                raise kernel.node_store_module.WriteOnceCollision(key)  # ... and this put sees it
+            return key
+        with mock.patch.object(store_class, "put_once", racing_put_once):
+            taken = intake.intake(self.peer, own_mesh_root=self.own)
+        self.assertEqual(taken["disposition"], "ALLOW", taken)
+        self.assertEqual(taken["taken"], [])
+        self.assertEqual([row["key"] for row in taken["already_present"]], raised)
+        self.assertIsNotNone(self.frames(self.own).get(raised[0]))
+
+    def test_any_other_failure_of_the_put_is_not_swallowed(self):
+        self.answer_on_the_peer_mesh()
+        store_class = type(kernel.mesh_store(self.own))
+        with mock.patch.object(store_class, "put_once", side_effect=RuntimeError("mesh_git_ref_cas_retry_exhausted")):
+            with self.assertRaises(RuntimeError):
+                intake.intake(self.peer, own_mesh_root=self.own)
+
+
+class ReturnCycleCustodyRefusals(unittest.TestCase):
+    """governance_return_cycle refuses custody with the six fields federation_cycle uses."""
+
+    LEDGERS = ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_REPO_LEDGER_ROOT")
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.mesh = Path(self.temp.name) / "mesh"
+        self.mesh.mkdir()
+
+    def assert_six_fields(self, document):
+        self.assertEqual(document["disposition"], "FAIL_CLOSED", document)
+        for field in SIX_FIELDS:
+            self.assertTrue(document.get(field), field)
+        self.assertIs(document["consequence_committed"], False)
+        self.assertEqual(document["retry_entrypoint"], "resident-runtime/governance_return_cycle.py::run")
+        self.assertEqual((document["frames_seen"], document["governance_returns"]), (0, []))
+        self.assertEqual(document["authority_effect"], "NONE_REFUSAL_ONLY")
+
+    def test_without_a_mesh_location_the_cycle_refuses_with_six_fields_instead_of_exiting(self):
+        refused = cycle.run(mesh_root=None, node_state_root=Path(self.temp.name) / "node")
+        self.assert_six_fields(refused)
+        self.assertEqual(refused["failed_predicate"], "MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
+        # federation_cycle exits on the same input; its code is 1, as this cycle's main reports.
+        with self.assertRaises(SystemExit) as exited:
+            cycle.cycle.main(mesh_root=None, node_state_root=Path(self.temp.name) / "node")
+        self.assertEqual(exited.exception.code, "MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
+
+    def test_without_ledger_locations_the_cycle_refuses_as_federation_cycle_does(self):
+        cleared = {name: "" for name in self.LEDGERS}
+        with mock.patch.dict(os.environ, cleared):
+            for name in self.LEDGERS:
+                os.environ.pop(name)
+            refused = cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node")
+            with mock.patch.object(cycle.cycle.PR, "propagate_all", return_value={
+                    "repositories_declared": 0, "repositories_present": 0,
+                    "receipts_propagated": 0, "receipts_already_carried": 0}), \
+                    mock.patch("builtins.print"):
+                federation = cycle.cycle.main(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node-f")
+        self.assert_six_fields(refused)
+        self.assertEqual(refused["failed_predicate"], "LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER")
+        consumption = federation["consumption"]
+        self.assertEqual(consumption["disposition"], "FAIL_CLOSED")
+        for field in SIX_FIELDS + ("consequence_committed",):
+            if field != "retry_entrypoint":
+                self.assertEqual(refused[field], consumption[field], field)
+        self.assertEqual(consumption["retry_entrypoint"], "resident-runtime/federation_cycle.py::main")
+
+    def test_the_typed_refusal_from_the_kernel_is_the_same_document_and_exit_code_one(self):
+        typed = ValueError("ledger_location_required_from_materializer")
+        out = Path(self.temp.name) / "out.json"
+        with mock.patch.object(cycle.K, "consume_and_respond", side_effect=typed), mock.patch("builtins.print"):
+            status = cycle.main(["--mesh-root", str(self.mesh), "--node-state-root", str(Path(self.temp.name) / "node"),
+                                 "--out", str(out)])
+        self.assertEqual(status, 1)
+        self.assert_six_fields(json.loads(out.read_text()))
+        with mock.patch.object(cycle.K, "consume_and_respond", side_effect=ValueError("something_else")):
+            with self.assertRaises(ValueError):
+                cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node")
 
 
 class ReturnWorkflowShape(unittest.TestCase):

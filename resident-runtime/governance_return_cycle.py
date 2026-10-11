@@ -34,13 +34,28 @@ cycle = _module("governance_return_cycle_federation", "resident-runtime/federati
 K = cycle.K
 
 
+RETRY_ENTRYPOINT = "resident-runtime/governance_return_cycle.py::run"
+
+
+def _refused(refusal):
+    """A cycle that consumed nothing for want of custody: the frames stay on the mesh,
+    and the run says why with the six fields of a non-ALLOW rather than aborting."""
+    return {"schema": SCHEMA, "organization": K.load_registry(ROOT)["organization"], **refusal,
+            "frames_seen": 0, "frames": [], "governance_returns": [], "authority_effect": "NONE_REFUSAL_ONLY"}
+
+
 def run(*, mesh_root, node_state_root):
     if mesh_root is None:
-        raise SystemExit("MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
+        return _refused(cycle.mesh_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
     repo_ledger_root = cycle.supplied_ledger("STEGVERSE_REPO_LEDGER_ROOT")
     org_ledger_root = cycle.supplied_ledger("STEGVERSE_ORG_LEDGER_ROOT")
-    results = K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
-                                    repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root)
+    try:
+        results = K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
+                                        repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root)
+    except ValueError as exc:
+        if "ledger_location_required_from_materializer" not in str(exc):
+            raise
+        return _refused(cycle.ledger_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
     returns = cycle.returns_for_consumed(results, mesh_root=mesh_root)
     return {
         "schema": SCHEMA,
@@ -69,7 +84,7 @@ def main(argv=None):
         args.out.write_text(text + "\n")
     print(text)
     refused = [r for r in result["governance_returns"] if r.get("disposition") == "FAIL_CLOSED"]
-    return 1 if refused else 0
+    return 1 if refused or result.get("disposition") == "FAIL_CLOSED" else 0
 
 
 if __name__ == "__main__":

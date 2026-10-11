@@ -47,6 +47,31 @@ def returns_for_consumed(results, *, mesh_root):
               "deciding_organization_receipt_sha256","retry_entrypoint")})
     return out
 
+def ledger_location_refusal(*, retry_entrypoint):
+    """The consumption's own six-field disposition when the kernel refused custody for
+    want of a ledger location. Shared with resident-runtime/governance_return_cycle.py,
+    which consumes through the same kernel call."""
+    return {"disposition":"FAIL_CLOSED",
+            "failure_code":PR.organization_ledger.LOCATION_FAILURE_CODE,
+            "failed_predicate":"LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER",
+            "required_evidence_or_repair":"supply STEGVERSE_REPO_LEDGER_ROOT and STEGVERSE_ORG_LEDGER_ROOT",
+            "retry_entrypoint":retry_entrypoint,
+            "owning_existing_goal":PR.organization_ledger.LOCATION_OWNING_GOAL,
+            "next_attempt":PR.organization_ledger.location_next_attempt("STEGVERSE_REPO_LEDGER_ROOT and STEGVERSE_ORG_LEDGER_ROOT"),
+            "consequence_committed":False}
+
+def mesh_location_refusal(*, retry_entrypoint):
+    """The same six fields when no mesh location was supplied: the carrier is the
+    declared one, and nothing in the host environment selects another."""
+    return {"disposition":"FAIL_CLOSED",
+            "failure_code":"MESH_LOCATION_NOT_SUPPLIED",
+            "failed_predicate":"MESH_LOCATION_REQUIRED_FROM_MATERIALIZER",
+            "required_evidence_or_repair":"supply --mesh-root as the bound mesh locator (resident-runtime/mesh_locator_binding.py)",
+            "retry_entrypoint":retry_entrypoint,
+            "owning_existing_goal":PR.organization_ledger.LOCATION_OWNING_GOAL,
+            "next_attempt":PR.organization_ledger.location_next_attempt("the mesh locator"),
+            "consequence_committed":False}
+
 def supplied_ledger(variable):
     """A ledger location as this organization's materializer supplies it, or None.
 
@@ -78,14 +103,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
         if "ledger_location_required_from_materializer" not in str(exc):
             raise
         results=[]
-        consumption={"disposition":"FAIL_CLOSED",
-                     "failure_code":PR.organization_ledger.LOCATION_FAILURE_CODE,
-                     "failed_predicate":"LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER",
-                     "required_evidence_or_repair":"supply STEGVERSE_REPO_LEDGER_ROOT and STEGVERSE_ORG_LEDGER_ROOT",
-                     "retry_entrypoint":"resident-runtime/federation_cycle.py::main",
-                     "owning_existing_goal":PR.organization_ledger.LOCATION_OWNING_GOAL,
-                     "next_attempt":PR.organization_ledger.location_next_attempt("STEGVERSE_REPO_LEDGER_ROOT and STEGVERSE_ORG_LEDGER_ROOT"),
-                     "consequence_committed":False}
+        consumption=ledger_location_refusal(retry_entrypoint="resident-runtime/federation_cycle.py::main")
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
     governance_returns=returns_for_consumed(results, mesh_root=mesh_root)
