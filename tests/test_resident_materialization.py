@@ -76,16 +76,47 @@ class ResidentMaterializationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as work:
             mesh, state = Path(work) / "mesh", Path(work) / "state"
             mesh.mkdir()
+            # Every location the cycle's transitions need is supplied, so ALLOW
+            # here is the cycle's own outcome, not a summary over a refusal.
+            env = node_env(work, STEGVERSE_REPO_LEDGER_HOME=str(Path(work) / "repo-ledger-home"))
             completed = subprocess.run([sys.executable, "-B", str(EXECUTOR), "--mesh-root", str(mesh),
                                         "--node-state-root", str(state)],
-                                       capture_output=True, text=True, env=node_env(work), cwd=work, timeout=180)
+                                       capture_output=True, text=True, env=env, cwd=work, timeout=180)
             self.assertEqual(completed.returncode, 0, completed.stderr[-800:])
             record = json.loads(completed.stdout.strip().splitlines()[-1])
             self.assertEqual(record["materialization"], "ONE_CYCLE_PER_INVOCATION")
             self.assertEqual(record["disposition"], "ALLOW")
+            self.assertEqual(record["failed_transitions"], [])
+            self.assertIsNone(record["failed_predicate"])
             self.assertEqual(record["federation_cycle"]["transport"], "INTERLOCK_INTR_SUPPLIED_MESH")
             self.assertTrue((state / "resident-runtime/resident-executor.latest.json").is_file())
             self.assertFalse((ROOT / "resident-runtime/state/resident-executor.latest.json").exists())
+
+    def test_a_cycle_whose_transitions_fail_closed_is_not_reported_as_allowed(self):
+        # The cycle exits 0 after recording each transition's own disposition.
+        # Without the ledger locations both of its transitions fail closed, and
+        # the executor must say so rather than summarise the run as ALLOW.
+        with tempfile.TemporaryDirectory() as work:
+            mesh, state = Path(work) / "mesh", Path(work) / "state"
+            mesh.mkdir()
+            env = {k: v for k, v in node_env(work).items() if "LEDGER" not in k}
+            completed = subprocess.run([sys.executable, "-B", str(EXECUTOR), "--mesh-root", str(mesh),
+                                        "--node-state-root", str(state)],
+                                       capture_output=True, text=True, env=env, cwd=work, timeout=180)
+            record = json.loads(completed.stdout.strip().splitlines()[-1])
+            self.assertEqual(completed.returncode, 2, completed.stderr[-800:])
+            self.assertEqual(record["disposition"], "FAIL_CLOSED")
+            self.assertEqual(record["failed_predicate"], "FEDERATION_CYCLE_TRANSITION_NOT_ALLOWED")
+            self.assertIsNone(record["error"])
+            failed = {row["transition"]: row for row in record["failed_transitions"]}
+            self.assertEqual(set(failed), {"consumption", "repository_propagation"})
+            for row in failed.values():
+                self.assertEqual(row["disposition"], "FAIL_CLOSED")
+                self.assertEqual(row["failed_predicate"], "LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER")
+                self.assertTrue(row["retry_entrypoint"])
+            self.assertEqual(record["federation_cycle"]["consumption"]["disposition"], "FAIL_CLOSED")
+            written = json.loads((state / "resident-runtime/resident-executor.latest.json").read_text())
+            self.assertEqual(written["disposition"], "FAIL_CLOSED")
 
     def test_the_sv002_query_is_published_on_the_supplied_mesh_and_nothing_else_runs(self):
         with tempfile.TemporaryDirectory() as work:
