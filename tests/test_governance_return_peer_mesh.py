@@ -43,6 +43,7 @@ intake = _load("peer_return_intake", "resident-runtime/peer_mesh_intake.py")
 cycle = _load("peer_return_cycle", "resident-runtime/governance_return_cycle.py")
 readback = _load("peer_return_readback", "resident-runtime/organization_ledger_readback.py")
 egress = _load("peer_return_egress", "resident-runtime/organization_egress_boundary.py")
+acceptance = _load("peer_return_acceptance", "resident-runtime/governance_return_acceptance.py")
 kernel = intake.kernel
 NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").read_text())["repository_ledger_location"]["namespace"]
 
@@ -331,6 +332,52 @@ class PeerAnswerReturned(unittest.TestCase):
                 intake.intake(self.peer, own_mesh_root=self.own)
 
 
+    # End-to-end acceptance: resident-runtime/governance_return_acceptance.py wires
+    # the SDK verifier to a fresh-fetch readback of the deciding ledger. The deciding
+    # organization is played by a ledger this test controls, so an ALLOW below
+    # proves the wiring only, never a production decision.
+
+    def returned(self):
+        self.answer_on_the_peer_mesh()
+        intake.intake(self.peer, own_mesh_root=self.own)
+        result = self.return_cycle("node")
+        return {"schema": "stegverse.organization-governance-return-readback/v1",
+                "returns": result["governance_returns"]}
+
+    def test_a_return_whose_deciding_receipt_is_on_the_published_ledger_is_accepted(self):
+        document = self.returned()
+        sender = readback.readback(os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
+        [row] = document["returns"]
+        # Stand in for the deciding organization: a receipt on a ledger read back fresh.
+        row["deciding_organization_receipt_sha256"] = row["closure_organization_receipt_sha256"]
+        deciding = "git+" + str(self.ledger) + "#" + LEDGER_REF
+        result = acceptance.accept(deciding, return_readback=document, sender_readback=sender)
+        self.assertEqual(result["disposition"], "ALLOW", result)
+        [accepted] = result["acceptances"]
+        self.assertEqual((accepted["disposition"], accepted["end_to_end_acceptance"]), ("ALLOW", True), accepted)
+        self.assertEqual(result["end_to_end_acceptance"], [row["governance_request_packet_id"]])
+        self.assertTrue(result["verifier_source"].endswith("stegverse/governance_return_evidence.py"))
+        self.assertEqual(result["authority_effect"], "NONE_VERIFICATION_ONLY")
+
+    def test_an_unpublished_deciding_ledger_is_not_completion(self):
+        document = self.returned()
+        sender = readback.readback(os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
+        absent = "git+" + str(bare(Path(self.temp.name) / "deciding.git")) + "#" + LEDGER_REF
+        result = acceptance.accept(absent, return_readback=document, sender_readback=sender)
+        [accepted] = result["acceptances"]
+        self.assertEqual((result["deciding_tip"], accepted["disposition"]), (None, "FAIL_CLOSED"))
+        self.assertEqual(accepted["failed_predicate"], "DECIDING_ORGANIZATION_LEDGER_READBACK_PRESENT")
+        for field in SIX_FIELDS:
+            self.assertTrue(accepted[field], field)
+        self.assertEqual(result["end_to_end_acceptance"], [])
+
+    def test_a_malformed_deciding_ledger_locator_is_refused_with_six_fields(self):
+        result = acceptance.accept("not-a-locator", return_readback={}, sender_readback={})
+        self.assertEqual((result["disposition"], result["failure_code"]), ("FAIL_CLOSED", "DECIDING_LEDGER_LOCATOR_INVALID"))
+        for field in SIX_FIELDS:
+            self.assertTrue(result[field], field)
+
+
 class ReturnCycleCustodyRefusals(unittest.TestCase):
     """governance_return_cycle refuses custody with the six fields federation_cycle uses."""
 
@@ -416,6 +463,17 @@ class ReturnWorkflowShape(unittest.TestCase):
         self.assertEqual([self.steps.index(name) for name in order], sorted(self.steps.index(name) for name in order))
         self.assertIn("python resident-runtime/mesh_locator_binding.py", self.workflow)
         self.assertIn("group: organization-ledger", self.workflow)
+
+    def test_acceptance_is_verified_after_the_readback_on_a_pinned_sdk_and_never_gates_the_run(self):
+        order = ["Read the ledgers and the mesh back from a fresh fetch", "Checkout the SDK acceptance verifier",
+                 "Verify each return against the deciding organization's published ledger", "Retain the run's evidence"]
+        self.assertEqual([self.steps.index(name) for name in order], sorted(self.steps.index(name) for name in order))
+        checkout = self.workflow.split("- name: Checkout the SDK acceptance verifier")[1].split("- name:")[0]
+        self.assertRegex(checkout, r"ref: [0-9a-f]{40}\n")
+        self.assertIn("persist-credentials: false", checkout)
+        step = self.workflow.split("- name: Verify each return against the deciding organization's published ledger")[1].split("- name:")[0]
+        self.assertIn("continue-on-error: true", step)
+        self.assertIn('--sdk-path "$GITHUB_WORKSPACE/sdk-acceptance"', step)
 
     def test_the_sdk_is_the_one_the_governance_route_validates(self):
         # The default is the pin every workflow here uses; an explicit sdk_ref

@@ -25,6 +25,10 @@ on:
         description: "Exact SDK commit to re-derive with: the one the request was received under; empty means this organization's current pin"
         required: false
         default: ""
+      deciding_ledger:
+        description: "The deciding organization's published git+repository#refs/... ledger; when given, each return is verified for end-to-end acceptance"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -184,6 +188,35 @@ jobs:
                             "authority_effect": "NONE_READBACK_ONLY"}, indent=2, sort_keys=True))
           PY
           exit "${RETURN_CYCLE_STATUS:-0}"
+
+      # SDK-MR-A end-to-end acceptance (StegVerse-SDK#465) is judged by the SDK's
+      # verify_governance_decision_return against an independent fresh-fetch
+      # readback of the deciding organization's own ledger. The verifier comes
+      # from this exact SDK commit, separate from the re-derivation SDK above,
+      # and is evidence only: it never changes this run's disposition.
+      - name: Checkout the SDK acceptance verifier
+        if: ${{ always() && github.event.inputs.deciding_ledger != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: StegVerse-org/StegVerse-SDK
+          ref: d6873d84dddc91ef6b26774336b05c8e1f4042c0
+          path: sdk-acceptance
+          persist-credentials: false
+
+      - name: Verify each return against the deciding organization's published ledger
+        if: ${{ always() && github.event.inputs.deciding_ledger != '' }}
+        continue-on-error: true
+        env:
+          DECIDING_LEDGER: ${{ github.event.inputs.deciding_ledger }}
+        run: |
+          set -euo pipefail
+          results="$RUNNER_TEMP/results"
+          if [ ! -f "$results/return-readback.json" ] || [ ! -f "$results/readback.json" ]; then
+            echo "no return readback was produced; nothing to verify"; exit 0
+          fi
+          python resident-runtime/governance_return_acceptance.py --deciding-ledger "$DECIDING_LEDGER" \
+            --return-readback "$results/return-readback.json" --sender-readback "$results/readback.json" \
+            --sdk-path "$GITHUB_WORKSPACE/sdk-acceptance" --out "$results/acceptance.json" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Retain the run's evidence
         if: always()
