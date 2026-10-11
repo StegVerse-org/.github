@@ -1,4 +1,4 @@
-From 7f7837cbedee8b592226d89a046247c2b9f77582 Mon Sep 17 00:00:00 2001
+From 88313b7b439d26ac6830edfa12847db382c458a4 Mon Sep 17 00:00:00 2001
 From: StegVerse <210078727+StegVerse@users.noreply.github.com>
 Date: Sun, 11 Oct 2026 22:15:31 +0000
 Subject: [PATCH] Read StegCore only through TV/TVC
@@ -170,7 +170,7 @@ index 205e361f..35971aea 100644
    ]
  }
 diff --git a/resident-runtime/organization_governance_decision.py b/resident-runtime/organization_governance_decision.py
-index cd333991..148f57f9 100644
+index 8a0a2d98..e12bb25c 100644
 --- a/resident-runtime/organization_governance_decision.py
 +++ b/resident-runtime/organization_governance_decision.py
 @@ -59,10 +59,13 @@ FRAME_PATH = re.compile(r"^frames\.d/[0-9a-f]{64}\.json$")
@@ -239,7 +239,7 @@ index cd333991..148f57f9 100644
      from importlib import metadata
      try:
          importlib.import_module(pin["decision_authority"].rsplit(".", 1)[0])
-@@ -693,6 +732,8 @@ def main(argv: list[str] | None = None) -> int:
+@@ -696,6 +735,8 @@ def main(argv: list[str] | None = None) -> int:
      q = sub.add_parser("authority-requirements")
      q.add_argument("--source", type=Path, required=True)
      q.add_argument("--out", type=Path, required=True)
@@ -248,7 +248,7 @@ index cd333991..148f57f9 100644
      e = sub.add_parser("evaluator")
      e.add_argument("--installed", action="store_true")
      args = parser.parse_args(argv)
-@@ -703,7 +744,10 @@ def main(argv: list[str] | None = None) -> int:
+@@ -706,7 +747,10 @@ def main(argv: list[str] | None = None) -> int:
              args.out.write_text("\n".join(requirements) + "\n", encoding="utf-8")
              print("\n".join(requirements))
              return 0

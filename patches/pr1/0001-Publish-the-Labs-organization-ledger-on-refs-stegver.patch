@@ -1,4 +1,4 @@
-From 148200bc218c450f1e9260659bd21ac54259df00 Mon Sep 17 00:00:00 2001
+From 378ae5a68ef210572fd7a3e6e6eed8937a3b4667 Mon Sep 17 00:00:00 2001
 From: StegVerse <210078727+StegVerse@users.noreply.github.com>
 Date: Sun, 11 Oct 2026 22:09:19 +0000
 Subject: [PATCH 1/2] Publish the Labs organization ledger on
@@ -130,7 +130,7 @@ index f9c01e5d..8cfc0678 100644
              )
          self.git_dir = Path(git_dir).expanduser().resolve()
 diff --git a/resident-runtime/organization_governance_decision.py b/resident-runtime/organization_governance_decision.py
-index 3a8d6bb3..cd333991 100644
+index a5b38da5..8a0a2d98 100644
 --- a/resident-runtime/organization_governance_decision.py
 +++ b/resident-runtime/organization_governance_decision.py
 @@ -16,8 +16,9 @@ delivered: a materializer names that ref, and one execution
@@ -274,7 +274,7 @@ index 3a8d6bb3..cd333991 100644
      evaluator = load("evaluator.json")
      installed = bool((evaluator or {}).get("installed"))
      failure = load("fail_closed.json")
-@@ -540,6 +609,19 @@ def build_report(evidence: Path, *, mesh_root: str) -> tuple[dict[str, Any], int
+@@ -543,6 +612,19 @@ def build_report(evidence: Path, *, mesh_root: str) -> tuple[dict[str, Any], int
                      "fresh_ref_answer_not_bound_to_decision:" + str(item["request_packet_id"]),
                      "publish and independently read back the exact decision packet, disposition and receipt binding")
                  break
@@ -294,7 +294,7 @@ index 3a8d6bb3..cd333991 100644
      if failure is None and crossing_fail_closed:
          failure = binding.fail_closed(
              "ORGANIZATION_CROSSING_FAIL_CLOSED",
-@@ -560,9 +642,12 @@ def build_report(evidence: Path, *, mesh_root: str) -> tuple[dict[str, Any], int
+@@ -563,9 +645,12 @@ def build_report(evidence: Path, *, mesh_root: str) -> tuple[dict[str, Any], int
                "published": published,
                "readback": readback,
                "ledger_persistence": LEDGER_PERSISTENCE,
@@ -310,7 +310,7 @@ index 3a8d6bb3..cd333991 100644
                "organization_ledger": (cycle or {}).get("organization_ledger"),
                "workflow_disposition": "FAIL_CLOSED" if failure else "COMPLETED",
                "fail_closed": failure,
-@@ -599,6 +684,10 @@ def main(argv: list[str] | None = None) -> int:
+@@ -602,6 +687,10 @@ def main(argv: list[str] | None = None) -> int:
      r = sub.add_parser("readback")
      r.add_argument("--work", type=Path, required=True)
      r.add_argument("--own-url", required=True)
@@ -321,7 +321,7 @@ index 3a8d6bb3..cd333991 100644
      s = sub.add_parser("report")
      s.add_argument("--mesh-root", required=True)
      q = sub.add_parser("authority-requirements")
-@@ -639,6 +728,12 @@ def main(argv: list[str] | None = None) -> int:
+@@ -642,6 +731,12 @@ def main(argv: list[str] | None = None) -> int:
                                   publication=_read(evidence / "publication.json"),
                                   materialization=_read(evidence / "materialization.json"), work=args.work)
              name = "readback.json"
@@ -374,7 +374,7 @@ index 2b19838f..1d003022 100644
      record = org.aggregate_transition(receipt("CLAIM"))
      store = org.organization_store()
 diff --git a/tests/test_organization_governance_decision.py b/tests/test_organization_governance_decision.py
-index aaa0973f..498c7090 100644
+index fb795629..781c0932 100644
 --- a/tests/test_organization_governance_decision.py
 +++ b/tests/test_organization_governance_decision.py
 @@ -2,8 +2,9 @@
@@ -493,7 +493,7 @@ index aaa0973f..498c7090 100644
  
  
  def test_tampered_frame_is_refused_and_produces_no_answer(tmp_path, monkeypatch):
-@@ -400,6 +435,34 @@ def test_report_accepts_matching_verified_receiver_answer(tmp_path):
+@@ -400,6 +435,8 @@ def test_report_accepts_matching_verified_receiver_answer(tmp_path):
              "organization_receipt_sha256": "sha256:org"
          }]
      }))
@@ -502,6 +502,10 @@ index aaa0973f..498c7090 100644
      report, status = decision.build_report(evidence, mesh_root="fixture")
      assert status == 0
      assert report["workflow_disposition"] == "COMPLETED"
+@@ -429,3 +466,29 @@ def test_report_malformed_fresh_ref_answers_fail_closed(tmp_path):
+         for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                       "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+             assert failure[field]
 +
 +
 +def test_report_refuses_a_decision_whose_receipt_is_not_on_the_published_ledger(tmp_path):
