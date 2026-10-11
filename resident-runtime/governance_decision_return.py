@@ -173,6 +173,45 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
             "authority_effect": "NONE_RETURN_ONLY"}
 
 
+def recorded_closure(packet_id: str) -> dict[str, Any] | None:
+    """The closed crossing this organization already recorded for a packet, read off its own chains.
+
+    The repository closure receipt names the answer it closed on; the
+    organization receipt is the one that consumed it. None when no closure of
+    this packet is recorded.
+    """
+    wanted = egress.CLOSED_CLASS + ":" + packet_id
+    store = egress.ledger_store.open_store(egress.repository_ledger.lr())
+    cursor = (store.get(egress.ledger_store.HEAD_KEY) or {}).get("receipt_sha256")
+    repository = None
+    while cursor:
+        receipt = store.get(egress.ledger_store.receipt_key(cursor))
+        if receipt is None:
+            return None
+        if receipt.get("transition_class") == egress.CLOSED_CLASS and receipt.get("transition_id") == wanted:
+            repository = receipt
+            break
+        cursor = receipt.get("previous_receipt_sha256")
+    if repository is None:
+        return None
+    store = egress.ledger_store.open_store(egress.organization_ledger.ledger_root())
+    cursor = (store.get(egress.ledger_store.HEAD_KEY) or {}).get("receipt_sha256")
+    organization = None
+    while cursor:
+        receipt = store.get(egress.ledger_store.receipt_key(cursor))
+        if receipt is None:
+            break
+        if receipt.get("repo_receipt_sha256") == repository.get("receipt_sha256"):
+            organization = receipt
+            break
+        cursor = receipt.get("previous_receipt_sha256")
+    evidence = repository.get("evidence") if isinstance(repository.get("evidence"), Mapping) else {}
+    return {"closure_transition_class": egress.CLOSED_CLASS,
+            "closure_repository_receipt_sha256": repository.get("receipt_sha256"),
+            "closure_organization_receipt_sha256": (organization or {}).get("receipt_sha256"),
+            "recorded_response_packet_id": evidence.get("response_packet_id")}
+
+
 GOVERNANCE_COMMUNICATION_PREFIX = "governance:"
 INGRESS_TRANSITION_PREFIX = "ORGANIZATION-SDK-MANIFEST-INGRESS-"
 
@@ -230,6 +269,20 @@ def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path
                 "failed_predicate": "ANSWER_NAMES_THE_REQUEST_IT_ANSWERS",
                 "retry_entrypoint": RETRY_ENTRYPOINT, "authority_effect": "NONE_REFUSAL_ONLY"}
     manifest, failed, detail = retained_manifest(request_sha256)
+    if failed == "RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST":
+        # A re-dispatch consumes every answer on the mesh again. One whose
+        # crossing an earlier run already closed on this same answer was
+        # returned then, under the SDK the request was received under; this
+        # SDK not reproducing that request is not a new refusal. It is observed,
+        # and nothing is appended. Re-admitting it still needs that SDK.
+        recorded = recorded_closure(request_packet_id)
+        if recorded is not None and recorded["recorded_response_packet_id"] == response_packet.get("packet_id"):
+            return {**base, **{k: v for k, v in recorded.items() if k != "recorded_response_packet_id"},
+                    "disposition": "CLOSURE_ALREADY_RECORDED", "decision_returned": None,
+                    "observation_only": True, "replay_is_not_a_transition": True,
+                    "not_reproduced_under_this_sdk": detail,
+                    "readmission_requires": "dispatch with sdk_ref set to the SDK the request was received under",
+                    "authority_effect": "NONE_OBSERVATION_ONLY"}
     if manifest is None:
         return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,
                 "failed_predicate": failed, "detail": detail,

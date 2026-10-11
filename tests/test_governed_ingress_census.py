@@ -79,7 +79,10 @@ RUNTIME_MODULES = sorted(
     + [p for p in (ROOT / ".stegverse/transition-ledger").glob("*.py")])
 
 TRANSITION_DISPOSITIONS = {"ALLOW", "DENY", "FAIL_CLOSED"}
-OBSERVATION_DISPOSITIONS = {"PENDING", "NOTHING_PUBLISHED"}
+#: Observations, not transitions. CLOSURE_ALREADY_RECORDED is a returned answer
+#: consumed again under an SDK that no longer reproduces its request: the
+#: closure an earlier run recorded is reported, and nothing is appended.
+OBSERVATION_DISPOSITIONS = {"PENDING", "NOTHING_PUBLISHED", "CLOSURE_ALREADY_RECORDED"}
 #: The only environment variables a runtime module may read by name: each names
 #: a ledger location and confers nothing.
 LOCATION_VARIABLES = {"STEGVERSE_REPO_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_ROOT",
