@@ -24,6 +24,11 @@ on:
       - 'tests/fixtures/sdk-manifests/**'
       - 'docs/GOVERNANCE_INTER_ORG_ROUTE_MIRROR_HANDOFF.md'
       - 'docs/peer-patches/stegverse-labs.governance-endpoint.patch'
+      - 'resident-runtime/peer_mesh_intake.py'
+      - 'resident-runtime/governance_return_cycle.py'
+      - 'resident-runtime/mesh_locator_binding.py'
+      - 'tests/test_governance_return_peer_mesh.py'
+      - '.github/workflows/organization-governance-return.yml'
       - '.github/workflows/governance-inter-org-route-validation.yml'
   push:
     branches: [main]
@@ -48,6 +53,11 @@ on:
       - 'tests/fixtures/sdk-manifests/**'
       - 'docs/GOVERNANCE_INTER_ORG_ROUTE_MIRROR_HANDOFF.md'
       - 'docs/peer-patches/stegverse-labs.governance-endpoint.patch'
+      - 'resident-runtime/peer_mesh_intake.py'
+      - 'resident-runtime/governance_return_cycle.py'
+      - 'resident-runtime/mesh_locator_binding.py'
+      - 'tests/test_governance_return_peer_mesh.py'
+      - '.github/workflows/organization-governance-return.yml'
       - '.github/workflows/governance-inter-org-route-validation.yml'
   workflow_dispatch:
 
@@ -90,3 +100,6 @@ jobs:
       # recorded on both chains. Temporary repositories only.
       - name: A governance request leaves on a supplied git-ref mesh, and is refused on the ledger without one
         run: python -m unittest tests.test_governance_mesh_locator_readback -v
+
+      - name: A deciding organization's answer on its own mesh ref is taken in and returned, once
+        run: python -m unittest tests.test_governance_return_peer_mesh -v
