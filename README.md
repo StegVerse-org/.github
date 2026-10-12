@@ -184,3 +184,7 @@ are **CI_VALIDATED source complete**, with COSV `71000000100100`. The LLMA
 read-only declared-path transition is separately ledger-verified. See
 [data/llma-hcb-terminal-review.json](data/llma-hcb-terminal-review.json).
 Provider/Sandbox activation, release, and propagation are not inferred.
+
+## Governed DENY remediation return (source-only preflight)
+
+See [governed remediation return preflight](docs/GOVERNED_DENY_REMEDIATION_RETURN_PREFLIGHT.md) for the canonical parallel remediation fork, the existing merged SDK #478/#479 and Healer #109 contracts, and the non-authorizing organization preflight added in PR #142. An SDK DENY must remain evidence; neither a Healer classification nor a caller-supplied return mapping is authenticated organization authorization. Runtime fork, return, independent sovereign readback, and expected-head validation remain outstanding.
