@@ -36,3 +36,7 @@ one `git am patches/pr2/*.patch` (PR 2).
   HEAD is the pin and installs from that checkout before the cycle. The TV/TVC receipt
   inputs and step are removed. A failed fetch fails the run before any request is
   decided. Apply with `git am patches/pr5/*.patch` on a branch from main `468340ba`.
+- `patches/pr6/` (on StegVerse-Labs/.github main `b1a63a04`): Registry/COSV
+  reconciliation of `SDK-MR-A-VALIDATION-CUSTODY-001` to the verified decision
+  return (generation 313, COSV `71000000100110`, `end_to_end_complete` true,
+  `governance_disposition` DENY). Apply with `git am patches/pr6/*.patch`.
