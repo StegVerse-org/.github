@@ -105,6 +105,8 @@ jobs:
           cat "$RUNNER_TEMP/requests.txt"
 
       - name: Receive each request and append to the repository and organization ledgers
+        env:
+          INPUT_MESH_ROOT: ${{ github.event.inputs.mesh_root }}
         run: |
           set -euo pipefail
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
@@ -121,7 +123,7 @@ jobs:
           # itself (mesh_location_required_from_materializer), with all six
           # fields, recorded on both ledgers and read back below. The ledger
           # carries that disposition; this run does not stand in for it.
-          mesh_root='${{ github.event.inputs.mesh_root }}'
+          mesh_root="$INPUT_MESH_ROOT"
           mesh_args=()
           if [ -n "$mesh_root" ]; then
             # The designated locator names a repository and a ref. This run can
