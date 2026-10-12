@@ -52,6 +52,17 @@ class ReturnPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "REMEDIATION_WIRE_MANIFEST_DIGEST_MISMATCH"):
             module.inspect_governed_remediation_return(classification, request, "RE_MANIFEST")
 
+    def test_resubmit_cannot_bypass_remanifest_classification(self):
+        classification, request = fixture()
+        with self.assertRaisesRegex(ValueError, "REMEDIATION_ACTION_CLASSIFICATION_MISMATCH"):
+            module.inspect_governed_remediation_return(classification, request, "RESUBMIT")
+
+    def test_review_required_is_not_resubmit_authority(self):
+        classification, request = fixture()
+        classification["suggested_action"] = "GOVERNANCE_REVIEW_REQUIRED"
+        with self.assertRaisesRegex(ValueError, "REMEDIATION_ACTION_CLASSIFICATION_MISMATCH"):
+            module.inspect_governed_remediation_return(classification, request, "RESUBMIT")
+
     def test_preapproved_healer_rejected(self):
         classification, request = fixture()
         classification["governance_disposition"] = "ALLOW"
@@ -61,7 +72,7 @@ class ReturnPreflightTests(unittest.TestCase):
     def test_unclassified_remanifest_rejected(self):
         classification, request = fixture()
         classification["suggested_action"] = "GOVERNANCE_REVIEW_REQUIRED"
-        with self.assertRaisesRegex(ValueError, "REMANIFEST_NOT_CLASSIFIED"):
+        with self.assertRaisesRegex(ValueError, "REMEDIATION_ACTION_CLASSIFICATION_MISMATCH"):
             module.inspect_governed_remediation_return(classification, request, "RE_MANIFEST")
 
 
