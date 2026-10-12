@@ -37,7 +37,7 @@ class ReturnPreflightTests(unittest.TestCase):
     def test_request_substitution_rejected(self):
         classification, request = fixture()
         request["request_sha256"] = "b" * 64
-        with self.assertRaisesRegex(ValueError, "REMEDIATION_REQUEST_DOCUMENT_DIGEST_MISMATCH"):
+        with self.assertRaisesRegex(ValueError, "REMEDIATION_ORIGINAL_REQUEST_BINDING_MISMATCH"):
             module.inspect_governed_remediation_return(classification, request, "RE_MANIFEST")
 
     def test_request_document_digest_substitution_rejected(self):
