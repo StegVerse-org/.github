@@ -107,6 +107,12 @@ jobs:
             case "$INPUT_REQUEST" in
               *../*|*/../*|*' '*) echo "FAIL_CLOSED: DISPATCH_REQUEST_PATH_INVALID" >&2; exit 1 ;;
             esac
+            # Reject control characters, including newline and carriage return,
+            # without interpolating the input into shell source.
+            if ! INPUT_REQUEST="$INPUT_REQUEST" python -c 'import os,sys; p=os.environ["INPUT_REQUEST"]; sys.exit(0 if all(32 <= ord(c) <= 126 for c in p) else 1)'; then
+              echo "FAIL_CLOSED: DISPATCH_REQUEST_CONTROL_CHARACTER" >&2
+              exit 1
+            fi
             if ! git ls-files --error-unmatch -- "$INPUT_REQUEST" >/dev/null 2>&1 || [ ! -f "$INPUT_REQUEST" ]; then
               echo "FAIL_CLOSED: DISPATCH_REQUEST_NOT_COMMITTED" >&2
               exit 1
