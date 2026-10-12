@@ -4,6 +4,8 @@ This checks consistency of a proposed Healer classification and SDK request.
 It cannot authenticate organization custody, grant a return, or mint receipts.
 """
 from __future__ import annotations
+import hashlib
+import json
 from typing import Any, Mapping
 
 
@@ -25,6 +27,16 @@ def inspect_governed_remediation_return(
         raise ValueError("HEALER_EXECUTION_AUTHORITY_ESCALATION")
     if classification.get("original_request_sha256") != request.get("request_sha256"):
         raise ValueError("REMEDIATION_ORIGINAL_REQUEST_BINDING_MISMATCH")
+    for key in ("request_sha256", "wire_manifest_sha256"):
+        if not isinstance(request.get(key), str) or not request[key]:
+            raise ValueError(f"REMEDIATION_REQUEST_FIELD_REQUIRED:{key}")
+    complete_digest = hashlib.sha256(json.dumps(
+        dict(request), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")).hexdigest()
+    if classification.get("original_request_document_sha256") != complete_digest:
+        raise ValueError("REMEDIATION_REQUEST_DOCUMENT_DIGEST_MISMATCH")
+    if classification.get("original_wire_manifest_sha256") != request["wire_manifest_sha256"]:
+        raise ValueError("REMEDIATION_WIRE_MANIFEST_DIGEST_MISMATCH")
     if not isinstance(classification.get("source_disposition_ref"), str) or not classification["source_disposition_ref"]:
         raise ValueError("REMEDIATION_SOURCE_EVIDENCE_REQUIRED")
     if proposed_action not in ("RESUBMIT", "RE_MANIFEST"):
