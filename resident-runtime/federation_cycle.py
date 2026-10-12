@@ -104,6 +104,21 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
             raise
         results=[]
         consumption=ledger_location_refusal(retry_entrypoint="resident-runtime/federation_cycle.py::main")
+    # A frame the kernel refused without a DENY is recorded but left unmarked for
+    # the next pass; the consumption did not complete for it and is not ALLOW.
+    # A DENY is the frame's governed outcome, recorded and marked like any other.
+    failed_frames=[{"path":str(x.get("path")),
+                    "packet_id":(x.get("result") or {}).get("packet_id"),
+                    "disposition":(x.get("result") or {}).get("disposition"),
+                    "failed_predicate":(x.get("result") or {}).get("failed_predicate")}
+                   for x in results if (x.get("result") or {}).get("status")=="REFUSED"
+                   and (x.get("result") or {}).get("disposition")!="DENY"]
+    if consumption.get("disposition")=="ALLOW" and failed_frames:
+        consumption={"disposition":"FAIL_CLOSED",
+                     "failed_predicate":"FEDERATION_FRAME_CONSUMPTION_NOT_COMPLETED",
+                     "failed_frames":failed_frames,
+                     "retry_entrypoint":"resident-runtime/federation_cycle.py::main",
+                     "consequence_committed":False}
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
     governance_returns=returns_for_consumed(results, mesh_root=mesh_root)
@@ -113,6 +128,8 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
       "heartbeat_reference":K.hb_reference(),
       "frames_seen":len(results),
       "frames_consumed":consumed,
+      "frames_denied":sum(1 for x in results if (x.get("result") or {}).get("status")=="REFUSED"
+                          and (x.get("result") or {}).get("disposition")=="DENY"),
       "consumption":consumption,
       "organization_receipts_recorded":sum(1 for x in results if x.get("organization_record")),
       "responses_emitted":responses,
