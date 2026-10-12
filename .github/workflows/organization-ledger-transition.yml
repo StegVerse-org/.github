@@ -98,6 +98,20 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           if [ -n "$INPUT_REQUEST" ]; then
+            # A dispatch may select only an existing, committed transition
+            # request from the checked-out revision, never an arbitrary path.
+            case "$INPUT_REQUEST" in
+              .stegverse/transition-requests/*.json) ;;
+              *) echo "FAIL_CLOSED: DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS" >&2; exit 1 ;;
+            esac
+            case "$INPUT_REQUEST" in
+              *../*|*/../*|*' '*|*'
+'*) echo "FAIL_CLOSED: DISPATCH_REQUEST_PATH_INVALID" >&2; exit 1 ;;
+            esac
+            if ! git ls-files --error-unmatch -- "$INPUT_REQUEST" >/dev/null 2>&1 || [ ! -f "$INPUT_REQUEST" ]; then
+              echo "FAIL_CLOSED: DISPATCH_REQUEST_NOT_COMMITTED" >&2
+              exit 1
+            fi
             printf '%s\n' "$INPUT_REQUEST" > "$RUNNER_TEMP/requests.txt"
           else
             git diff --name-only --diff-filter=AM "$BEFORE" "$GITHUB_SHA" -- '.stegverse/transition-requests/*.json' > "$RUNNER_TEMP/requests.txt"
