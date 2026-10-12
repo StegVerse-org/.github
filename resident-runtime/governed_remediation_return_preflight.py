@@ -41,8 +41,10 @@ def inspect_governed_remediation_return(
         raise ValueError("REMEDIATION_SOURCE_EVIDENCE_REQUIRED")
     if proposed_action not in ("RESUBMIT", "RE_MANIFEST"):
         raise ValueError("REMEDIATION_ACTION_NOT_RECOGNIZED")
-    if proposed_action == "RE_MANIFEST" and classification.get("suggested_action") != "RE_MANIFEST":
-        raise ValueError("REMANIFEST_NOT_CLASSIFIED")
+    # The classification is evidence, never permission to switch action lanes.
+    # A correctable envelope DENY cannot be silently re-labelled RESUBMIT.
+    if classification.get("suggested_action") != proposed_action:
+        raise ValueError("REMEDIATION_ACTION_CLASSIFICATION_MISMATCH")
     return {
         "schema": "stegverse.organization.remediation-return-preflight/v1",
         "state": "AWAIT_AUTHENTIC_ORGANIZATION_GOVERNANCE",
