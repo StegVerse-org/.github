@@ -135,6 +135,15 @@ class WorkflowBinding(unittest.TestCase):
         self.assertRegex(inputs, r"mesh_root:\n\s+description: .*\n\s+required: true")
         self.assertNotIn("STEGVERSE_ORG_FEDERATION_ROOT", self.workflow)
 
+    def test_dispatch_selects_only_committed_transition_request_paths(self):
+        selection = self.workflow.split("Select committed transition requests")[1].split("- name:")[0]
+        self.assertIn('.stegverse/transition-requests/*.json)', selection)
+        self.assertIn('git ls-files --error-unmatch -- "$INPUT_REQUEST"', selection)
+        self.assertIn('DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS', selection)
+        self.assertIn('DISPATCH_REQUEST_NOT_COMMITTED', selection)
+        self.assertIn('DISPATCH_REQUEST_PATH_INVALID', selection)
+        self.assertIn('printf \'%s\\n\' "$INPUT_REQUEST"', selection)
+
     def test_dispatch_mesh_input_is_not_interpolated_into_shell_source(self):
         # GitHub input is data, never shell code; quotes and newlines in a
         # supplied locator must reach the binding validator without execution.
