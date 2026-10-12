@@ -1,4 +1,4 @@
-From fcd8bc8b86436ddf6ef1f611c7ed298107d0bd8b Mon Sep 17 00:00:00 2001
+From 66fe2222c08b14ee0c72e60df7536a83230483b1 Mon Sep 17 00:00:00 2001
 From: StegVerse <210078727+StegVerse@users.noreply.github.com>
 Date: Mon, 12 Oct 2026 00:41:19 +0000
 Subject: [PATCH] Fetch the public StegCore at the pin in every decision run
@@ -117,7 +117,7 @@ index 8d014ce0..5fddabd6 100644
          env:
            STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
 diff --git a/README.md b/README.md
-index 59389c3a..a9b97713 100644
+index 0af9f890..13687f50 100644
 --- a/README.md
 +++ b/README.md
 @@ -2158,12 +2158,12 @@ StegVerse-Labs decided the request FAIL_CLOSED

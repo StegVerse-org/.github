@@ -30,10 +30,9 @@ one `git am patches/pr2/*.patch` (PR 2).
   the pinned-HEAD check (given a checkout at that relative path) but pip
   installs the unrelated `stegcore` 2.0.11 from PyPI. Apply with
   `git am patches/pr4/*.patch` on a branch from main.
-- `patches/pr5/` **WITHDRAWN, do not apply**: it assumed StegCore stays public, which Claude wrongly recommended; StegCore is to be private. Original note: (stacked on pr4) StegCore is public (owner decision relayed on
-  StegVerse-org/StegVerse-SDK#465). Every decision run fetches the pinned commit
-  anonymously (`authority-fetch`), checks HEAD is the pin and installs from that
-  checkout before the cycle. The TV/TVC receipt inputs and step are removed. A
-  failed fetch fails the run before any request is decided. Apply pr4 then pr5
-  (`git am patches/pr4/*.patch patches/pr5/*.patch`) on a branch from
-  StegVerse-Labs/.github main `cfab7759`, as one PR.
+- `patches/pr5/` **ACTIVE** (on StegVerse-Labs/.github main `468340ba`, after #3150 = pr4):
+  the owner keeps StegCore public and confirmed this process (StegVerse-org/StegVerse-SDK#465).
+  Every decision run fetches the pinned commit anonymously (`authority-fetch`), checks
+  HEAD is the pin and installs from that checkout before the cycle. The TV/TVC receipt
+  inputs and step are removed. A failed fetch fails the run before any request is
+  decided. Apply with `git am patches/pr5/*.patch` on a branch from main `468340ba`.
