@@ -19,4 +19,14 @@ one `git am patches/pr2/*.patch` (PR 2).
   optional `runs_on` runner label for the decision workflow, so a run that decides
   with StegCore can execute on a runner on the TV/TVC host (option C on
   StegVerse-org/StegVerse-SDK#465). Apply with `git am patches/pr3/*.patch` on a
-  branch from #3143.
+  branch from #3143. **Withdrawn**: pr1 and pr2 merged as #3142 (`e3b93be4`) and
+  #3146 (`cfab7759`), and the receiving review declined a TV/TVC-host runner as an
+  external machine. Do not apply.
+- `patches/pr4/` (on StegVerse-Labs/.github main `cfab7759`): install StegCore
+  only from the verified checkout. The workflow resolves
+  `decision_authority_source` with `realpath -e`, a dirty pinned checkout is
+  refused, and `evaluator --installed --source` refuses an install whose
+  `direct_url.json` is not that checkout. Without it, a bare `stegcore` passes
+  the pinned-HEAD check (given a checkout at that relative path) but pip
+  installs the unrelated `stegcore` 2.0.11 from PyPI. Apply with
+  `git am patches/pr4/*.patch` on a branch from main.
