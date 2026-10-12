@@ -142,6 +142,8 @@ class WorkflowBinding(unittest.TestCase):
         self.assertIn('DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS', selection)
         self.assertIn('DISPATCH_REQUEST_NOT_COMMITTED', selection)
         self.assertIn('DISPATCH_REQUEST_PATH_INVALID', selection)
+        self.assertIn('DISPATCH_REQUEST_CONTROL_CHARACTER', selection)
+        self.assertIn('all(32 <= ord(c) <= 126 for c in p)', selection)
         self.assertNotIn("*'\\n'*)", selection)
         self.assertIn("*../*|*/../*|*' '*)", selection)
         self.assertIn('printf \'%s\\n\' "$INPUT_REQUEST"', selection)
