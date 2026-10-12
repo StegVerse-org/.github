@@ -135,6 +135,14 @@ class WorkflowBinding(unittest.TestCase):
         self.assertRegex(inputs, r"mesh_root:\n\s+description: .*\n\s+required: true")
         self.assertNotIn("STEGVERSE_ORG_FEDERATION_ROOT", self.workflow)
 
+    def test_dispatch_mesh_input_is_not_interpolated_into_shell_source(self):
+        # GitHub input is data, never shell code; quotes and newlines in a
+        # supplied locator must reach the binding validator without execution.
+        receive = self.workflow.split("Receive each request")[1].split("- name:")[0]
+        self.assertIn("INPUT_MESH_ROOT: ${{ github.event.inputs.mesh_root }}", receive)
+        self.assertIn('mesh_root="$INPUT_MESH_ROOT"', receive)
+        self.assertNotIn("mesh_root='${{ github.event.inputs.mesh_root }}'", receive)
+
     def test_the_receive_step_binds_the_locator_through_the_binding_module(self):
         self.assertIn("python resident-runtime/mesh_locator_binding.py", self.workflow)
         self.assertIn('--locator "$mesh_root" --repository "$GITHUB_REPOSITORY" --workspace "$GITHUB_WORKSPACE"', self.workflow)
