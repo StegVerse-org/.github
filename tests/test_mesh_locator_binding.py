@@ -142,6 +142,8 @@ class WorkflowBinding(unittest.TestCase):
         self.assertIn('DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS', selection)
         self.assertIn('DISPATCH_REQUEST_NOT_COMMITTED', selection)
         self.assertIn('DISPATCH_REQUEST_PATH_INVALID', selection)
+        self.assertNotIn("*'\\n'*)", selection)
+        self.assertIn("*../*|*/../*|*' '*)", selection)
         self.assertIn('printf \'%s\\n\' "$INPUT_REQUEST"', selection)
 
     def test_dispatch_mesh_input_is_not_interpolated_into_shell_source(self):
