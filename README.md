@@ -19,7 +19,7 @@ one `git am patches/pr2/*.patch` (PR 2).
   optional `runs_on` runner label for the decision workflow, so a run that decides
   with StegCore can execute on a runner on the TV/TVC host (option C on
   StegVerse-org/StegVerse-SDK#465). Apply with `git am patches/pr3/*.patch` on a
-  branch from #3143. **Withdrawn**: pr1 and pr2 merged as #3142 (`e3b93be4`) and
+  branch from #3143. **Withdrawn pending the owner's choice of C**: pr1 and pr2 merged as #3142 (`e3b93be4`) and
   #3146 (`cfab7759`), and the receiving review declined a TV/TVC-host runner as an
   external machine. Do not apply.
 - `patches/pr4/` (on StegVerse-Labs/.github main `cfab7759`): install StegCore
@@ -30,7 +30,7 @@ one `git am patches/pr2/*.patch` (PR 2).
   the pinned-HEAD check (given a checkout at that relative path) but pip
   installs the unrelated `stegcore` 2.0.11 from PyPI. Apply with
   `git am patches/pr4/*.patch` on a branch from main.
-- `patches/pr5/` (stacked on pr4): StegCore is public (owner decision relayed on
+- `patches/pr5/` **WITHDRAWN, do not apply**: it assumed StegCore stays public, which Claude wrongly recommended; StegCore is to be private. Original note: (stacked on pr4) StegCore is public (owner decision relayed on
   StegVerse-org/StegVerse-SDK#465). Every decision run fetches the pinned commit
   anonymously (`authority-fetch`), checks HEAD is the pin and installs from that
   checkout before the cycle. The TV/TVC receipt inputs and step are removed. A
