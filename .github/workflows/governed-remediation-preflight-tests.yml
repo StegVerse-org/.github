@@ -8,7 +8,7 @@ on:
       - '.github/workflows/governed-remediation-preflight-tests.yml'
   push:
     branches:
-      - 'repair/remediation-preflight-dual-hash-20261012'
+      - main
     paths:
       - 'resident-runtime/governed_remediation_return_preflight.py'
       - 'tests/test_governed_remediation_return_preflight.py'
