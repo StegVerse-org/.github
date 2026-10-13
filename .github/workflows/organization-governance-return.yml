@@ -221,6 +221,7 @@ jobs:
                                                                "closure_organization_receipt_sha256",
                                                                "deciding_organization_receipt_sha256",
                                                                "governance_request_packet_id", "response_packet_id",
+                                                               "request_sha256", "wire_manifest_sha256",
                                                                "failed_predicate")}
                                         for r in cycle.get("governance_returns", [])],
                             "authority_effect": "NONE_READBACK_ONLY"}, indent=2, sort_keys=True))

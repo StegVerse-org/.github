@@ -283,6 +283,17 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertIs(returned["master_records_organization_record_observed"], False)
         self.assertNotIn("master_records_closure_observed", returned)
 
+    def test_the_returned_decision_names_the_exact_manifest_it_decided(self):
+        """A consumer binds the read-back decision to the manifest by its wire digest."""
+        import hashlib
+        emitted = self.receive()
+        self.answer(emitted)
+        returned = self.return_decision(emitted)
+        self.assertEqual(returned["request_sha256"], emitted["request_sha256"])
+        wire = hashlib.sha256(json.dumps(manifest(), sort_keys=True, separators=(",", ":"),
+                                         ensure_ascii=False).encode()).hexdigest()
+        self.assertEqual(returned["wire_manifest_sha256"], wire)
+
     def test_every_transition_here_is_in_this_organizations_records(self):
         emitted = self.receive()
         self.answer(emitted)
