@@ -841,7 +841,7 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     try:
         admitted = admit_runtime_result(
             manifest, request, runtime_result(request, closures, organization_receipt,
-                           crossing.get("application_result")))
+                           crossing.get("application_result")), boundary())
     except ValueError as exc:
         return with_remediation_fork({
             "schema": RESULT_SCHEMA_ORG,
