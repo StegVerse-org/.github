@@ -47,14 +47,14 @@ jobs:
       # still derived MASTER_RECORDS as custody authority. Every workflow here
       # pins the same commit, so a request is returned on the SDK it was
       # received under (organization-governance-return.yml).
-      # This pin (StegVerse-SDK#502/#503) also carries the remediation fork of
+      # This pin (StegVerse-SDK#502/#503/#504) also carries the remediation fork of
       # every non-ALLOW, with its calculated route; a request received under
       # the previous pin (e8a34b6d) names it as sdk_ref on its return.
       - name: Checkout exact merged SDK manifest state-transition runtime
         uses: actions/checkout@v4
         with:
           repository: StegVerse-org/StegVerse-SDK
-          ref: 6e751932d103f1dfb23e1990a8e8c9a25c95e680
+          ref: b7a6d57d2e2e5346eabc641ff7f96098f37de7d0
           path: sdk
           persist-credentials: false
 
