@@ -596,7 +596,7 @@
     },
     {
       "file": "orchestration/task-registry.json",
-      "line": 502,
+      "line": 505,
       "text": "\"activation_condition\": \"met at CI_VALIDATED class per SV-LLM/.github#30; recorded under existing task MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002 (linked, not duplicated)\",",
       "classification": "PROPER",
       "reason": "Links the W8 continuation of SVORG-LLM-ORG-FOUNDATION-001 to the existing remediation task by identifier; consistent with the canonical downstream, non-gating recorder role."

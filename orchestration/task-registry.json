@@ -305,6 +305,7 @@
       "required_evidence": [
         "SV-LLM side: tests run under a stdlib runner with no pytest dependency (SV-LLM/.github#30)",
         "upstream StegVerse-Labs/StegBrowser tests converted off pytest and passing on their own workflow",
+        "no test framework dependency added in place of pytest",
         "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
       ],
       "outputs": [],
@@ -324,14 +325,14 @@
     {
       "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W02-BROWSER-ENGINE-DEPENDENCY-REVIEW",
       "issue": null,
-      "title": "W2 continuation of SVORG-LLM-ORG-FOUNDATION-001: review the Playwright/Chromium browser-engine dependency",
+      "title": "W2 continuation of SVORG-LLM-ORG-FOUNDATION-001: remove the Playwright/Chromium browser-engine dependency",
       "status": "proposed",
       "workstream": "llm-org-foundation",
       "depends_on": [
         "SVORG-LLM-ORG-FOUNDATION-001"
       ],
       "required_evidence": [
-        "a recorded disposition for the Playwright/Chromium browser-engine dependency (keep, replace or remove) with its reasons",
+        "the Playwright/Chromium browser-engine dependency removed from every SV-LLM surface, with no replacement dependency added",
         "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
       ],
       "outputs": [],
@@ -344,7 +345,7 @@
         74
       ],
       "unresolved_obligations": [
-        "REVIEW_PLAYWRIGHT_CHROMIUM_BROWSER_ENGINE_DEPENDENCY"
+        "REMOVE_PLAYWRIGHT_CHROMIUM_BROWSER_ENGINE_DEPENDENCY"
       ]
     },
     {
@@ -385,7 +386,8 @@
         "SVORG-LLM-ORG-FOUNDATION-001"
       ],
       "required_evidence": [
-        "a canonical runtime substrate on which the Sandbox runs, observed as SANDBOX_RUNTIME_OBSERVED",
+        "SANDBOX_RUNTIME_OBSERVED: runtime observation is native only as an organization receipt appended to refs/stegverse/organization-ledger by a manifest-directed transition (.stegverse/transition-requests/ -> Organization Ledger Transition); no external machine, receiver liveness, always-on listener or second device is a predicate",
+        "the canonical single-device-first substrate order is evaluated before any other substrate; no remote or external device is required",
         "SV-LLM-EXEMPTION-002 retired against that observation",
         "the federation-observation half is carried by existing task ORG-FED-SV-LLM-001 and linked, not duplicated here",
         "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
@@ -400,8 +402,7 @@
         74
       ],
       "unresolved_obligations": [
-        "ESTABLISH_CANONICAL_RUNTIME_SUBSTRATE",
-        "OBSERVE_SANDBOX_RUNTIME",
+        "APPEND_SANDBOX_TRANSITION_TO_ORGANIZATION_LEDGER_BY_MANIFEST",
         "RETIRE_SV-LLM-EXEMPTION-002"
       ]
     },
@@ -417,6 +418,7 @@
       ],
       "required_evidence": [
         "a TV/TVC-held invocation tool that invokes with real contribution content, not fixtures",
+        "each invocation is a manifest-bound attempted state transition; runtime observation is native only as an organization receipt appended to refs/stegverse/organization-ledger by a manifest-directed transition (.stegverse/transition-requests/ -> Organization Ledger Transition); no external machine, receiver liveness, always-on listener or second device is a predicate",
         "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
       ],
       "outputs": [],
@@ -469,7 +471,8 @@
       ],
       "required_evidence": [
         "Sandbox work-cycle source contract and tests",
-        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed"
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed",
+        "runtime class: runtime observation is native only as an organization receipt appended to refs/stegverse/organization-ledger by a manifest-directed transition (.stegverse/transition-requests/ -> Organization Ledger Transition); no external machine, receiver liveness, always-on listener or second device is a predicate"
       ],
       "outputs": [],
       "tag_allowed": false,
@@ -481,7 +484,7 @@
         74
       ],
       "unresolved_obligations": [
-        "RUNTIME_WORK_CYCLE_DEPENDS_ON_W4_AND_W5"
+        "APPEND_WORK_CYCLE_TRANSITION_TO_ORGANIZATION_LEDGER_BY_MANIFEST"
       ]
     },
     {
@@ -627,7 +630,7 @@
       "required_evidence": [
         "Ecosystem Chat Sandbox conformance-proposal check in source and tests",
         "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed",
-        "a work-cycle invocation of the check"
+        "a work-cycle invocation of the check, recorded as an organization receipt by manifest-directed transition"
       ],
       "outputs": [],
       "tag_allowed": false,
