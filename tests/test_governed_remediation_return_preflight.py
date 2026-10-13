@@ -39,6 +39,18 @@ class ReturnPreflightTests(unittest.TestCase):
         self.assertTrue(out["retry_entrypoint"])
         self.assertTrue(out["next_attempt"])
 
+    def test_actionable_refusal_does_not_grant_governance_authority(self):
+        classification, request = fixture()
+        for action in ("RE_MANIFEST", "RESUBMIT"):
+            classification["suggested_action"] = action
+            out = module.inspect_governed_remediation_return(classification, request, action)
+            self.assertEqual(out["disposition"], "FAIL_CLOSED")
+            self.assertEqual(out["authority_effect"], "NONE_PREFLIGHT_ONLY")
+            self.assertIs(out["execution_authority_granted"], False)
+            for key in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                        "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+                self.assertTrue(out.get(key), key)
+
     def test_request_substitution_rejected(self):
         classification, request = fixture()
         request["request_sha256"] = "b" * 64
