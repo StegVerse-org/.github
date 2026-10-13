@@ -227,9 +227,19 @@ jobs:
               "ingress", "resident-runtime/organization_manifest_ingress.py")
           ingress = importlib.util.module_from_spec(spec); spec.loader.exec_module(ingress)
 
+          # A refusal forks a remediation lane, which is its own transition on the
+          # same chain (tests/test_remediation_lane.py). This step counts the
+          # submissions' own receipts.
           def receipts(variable, schema):
-              return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
-                      if json.loads(p.read_text()).get("schema") == schema]
+              def load(level):
+                  return [json.loads(p.read_text()) for p in Path(os.environ[level]).rglob("*.json")]
+              lane = {r["receipt_sha256"] for r in load("STEGVERSE_REPO_LEDGER_ROOT")
+                      if r.get("schema") == "stegverse.repo-transition-receipt/v1" and (
+                          "remediation" in ((r.get("evidence") or {}).get("processing_capability"),
+                                            (r.get("evidence") or {}).get("submitted_processing_capability"))
+                          or str(r.get("transition_class", "")).startswith("ORGANIZATION_EGRESS_"))}
+              return [r for r in load(variable) if r.get("schema") == schema
+                      and r.get("receipt_sha256") not in lane and r.get("repo_receipt_sha256") not in lane]
 
           # A capability no organization service admits. Governance is admitted
           # now, so a governance manifest no longer exercises the refusal.
