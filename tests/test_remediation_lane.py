@@ -141,9 +141,6 @@ class RemediationLaneTests(_LaneFixture):
         self.assertEqual([s["service_id"] for s in served], ["stegverse-org.remediation"])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class RemediationClassificationReturnTests(_LaneFixture):
     """StegHealer's answer returns, its closure is recorded, and the classification goes to governance."""
@@ -234,3 +231,70 @@ class RemediationClassificationReturnTests(_LaneFixture):
         self.assertEqual(out["disposition"], "FAIL_CLOSED")
         self.assertTrue(out["failed_predicate"].startswith("REMEDIATION_PREFLIGHT_PASSES:"))
         self.assertEqual(len(self.frames_to("StegVerse-Labs")), 1)
+
+
+class IngressRefusalForkTests(_LaneFixture):
+    """A refusal at this ingress is a non-ALLOW recognized here, so it carries its remediation fork too."""
+
+    UNADMITTED = ROOT / "tests/fixtures/sdk-manifests/unadmitted-capability-to-llm-adapter.json"
+
+    def refuse(self):
+        return self.receive(json.loads(self.UNADMITTED.read_text()))
+
+    def test_the_refusal_forks_a_lane_recognized_here_that_leaves_over_intr(self):
+        out = self.refuse()
+        self.assertEqual(out["disposition"], "FAIL_CLOSED")
+        self.assertEqual(out["failure_code"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        self.assertIs(out["received"], False)
+        fork = out["remediation_fork"]
+        route = fork["remediation_route"]
+        self.assertEqual(route["recognized_at"]["node"], "ORGANIZATION")
+        self.assertEqual(route["recognized_at"]["organization"], "StegVerse-org")
+        self.assertEqual(route["entry_organization"], "StegVerse-org")
+        self.assertEqual([h["crossing"] for h in route["direct_route_to_steghealer"]],
+                         ["INTERLOCK_INTR_EGRESS", "INTERLOCK_INTR_INGRESS", "INTERNAL_ENDPOINT"])
+        non_allow = fork["remediation_manifest"]["extensions"]["stegverse_remediation_fork_request"]["non_allow"]
+        self.assertEqual(non_allow["failed_predicate"], out["failed_predicate"])
+        self.assertEqual(non_allow["refusal_organization_receipt_sha256"],
+                         out["refusal_organization_receipt_sha256"])
+        lane = out["remediation_lane"]
+        self.assertEqual(lane["disposition"], "ALLOW", lane)
+        self.assertEqual(lane["next_service"], "stegverse-labs.remediation")
+        self.assertEqual(len(self.frames_to("StegVerse-Labs")), 1)
+
+    def test_the_refusal_itself_is_unchanged_by_its_fork(self):
+        out = self.refuse()
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
+                      "owning_existing_goal", "next_attempt"):
+            self.assertTrue(out[field], field)
+        self.assertIs(out["organization_receipt_observed"], False)
+        self.assertEqual(out["authority_effect"], "NONE_REFUSAL_ONLY")
+
+    def test_one_refusal_is_one_lane(self):
+        first, again = self.refuse(), self.refuse()
+        self.assertEqual(first["remediation_fork"]["remediation_request_sha256"],
+                         again["remediation_fork"]["remediation_request_sha256"])
+        self.assertTrue(again["remediation_lane"]["transition_replayed"])
+
+    def test_a_refusal_with_no_derivable_request_carries_the_six_field_fork_refusal(self):
+        out = self.receive({"not": "a manifest"})
+        self.assertEqual(out["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
+        refusal = out["remediation_fork"]
+        self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
+                      "owning_existing_goal", "next_attempt"):
+            self.assertTrue(refusal[field], field)
+        self.assertNotIn("remediation_lane", out)
+
+    def test_a_remediation_lanes_own_refusal_forks_nothing(self):
+        manifest = copy.deepcopy(self.fork["remediation_manifest"])
+        manifest["extensions"]["stegverse_remediation_fork_request"]["remediation_route"][
+            "direct_route_to_steghealer"][-1]["to"] = "somewhere-else"
+        out = self.receive(manifest)
+        self.assertNotEqual(out["disposition"], "ALLOW")
+        self.assertNotIn("remediation_fork", out)
+        self.assertNotIn("remediation_lane", out)
+
+
+if __name__ == "__main__":
+    unittest.main()
