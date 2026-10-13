@@ -156,7 +156,7 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
         request, recorded["transition_closures"],
         {"receipt_sha256": closed["closure_organization_receipt_sha256"]}, decision)
     try:
-        admitted = admit_runtime_result(manifest, request, runtime)
+        admitted = admit_runtime_result(manifest, request, runtime, ingress.boundary())
     except ValueError as exc:
         return {**base, **closure, "disposition": "FAIL_CLOSED", "decision_returned": True,
                 "governance_disposition": decision.get("disposition"),
