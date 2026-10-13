@@ -47,6 +47,36 @@ def returns_for_consumed(results, *, mesh_root):
               "deciding_organization_receipt_sha256","retry_entrypoint")})
     return out
 
+def remediation_returns_for_consumed(results, *, mesh_root):
+    """Take each consumed StegHealer classification of a remediation lane into governance.
+
+    The consumed answer is the event. resident-runtime/remediation_classification_return.py
+    records the closure, runs the preflight and submits the governance request on the
+    existing governance route; nothing here waits or decides.
+    """
+    answers=[item for item in results
+             if (item.get("result") or {}).get("status")=="CONSUMED"
+             and str((((item["result"].get("packet") or {}).get("payload")) or {}).get("communication_id") or "").startswith("remediation:")]
+    if not answers:
+        return []
+    spec=importlib.util.spec_from_file_location("remediation_classification_return",ROOT/"resident-runtime"/"remediation_classification_return.py")
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    mesh=K.mesh_store(mesh_root)
+    registry=K.load_registry(ROOT)
+    out=[]
+    for item in answers:
+        frame=mesh.get(K.node_store_module.MESH_FRAME_PREFIX+K.node_store_module.frame_name(str(item["path"])))
+        epoch=((frame or {}).get("heartbeat_reference") or {}).get("epoch")
+        returned=module.return_on_consumption(item["result"]["packet"], registry=registry, mesh_root=mesh_root, hb_epoch=epoch)
+        if returned is not None:
+            out.append({key:returned.get(key) for key in (
+              "disposition","trigger","classification_returned","suggested_action","failed_predicate",
+              "remediation_packet_id","remediation_communication_id","response_packet_id",
+              "closure_transition_class","closure_organization_receipt_sha256",
+              "steghealer_organization_receipt_sha256","governance_request_sha256",
+              "governance_request_packet_id","retry_entrypoint")})
+    return out
+
 def ledger_location_refusal(*, retry_entrypoint):
     """The consumption's own six-field disposition when the kernel refused custody for
     want of a ledger location. Shared with resident-runtime/governance_return_cycle.py,

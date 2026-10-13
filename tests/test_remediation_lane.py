@@ -51,7 +51,7 @@ def _non_allow(request, **overrides):
     return deny
 
 
-class RemediationLaneTests(unittest.TestCase):
+class _LaneFixture(unittest.TestCase):
     LEDGER_ROOTS = ("STEGVERSE_REPO_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_ROOT")
 
     def setUp(self):
@@ -74,6 +74,9 @@ class RemediationLaneTests(unittest.TestCase):
         return ingress.receive(manifest, registry=REGISTRY, standing=GENESIS, packet_id="remediation-lane-test",
                                hb_epoch=41, mesh_root=self.mesh)
 
+
+
+class RemediationLaneTests(_LaneFixture):
     def test_the_route_enters_here_and_leaves_over_intr_for_steghealers_organization(self):
         route = self.fork["remediation_route"]
         self.assertEqual(route["entry_organization"], "StegVerse-org")
@@ -140,3 +143,94 @@ class RemediationLaneTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RemediationClassificationReturnTests(_LaneFixture):
+    """StegHealer's answer returns, its closure is recorded, and the classification goes to governance."""
+
+    def setUp(self):
+        super().setUp()
+        self.returning = _load("remediation_classification_return_under_test",
+                               "resident-runtime/remediation_classification_return.py")
+        self.emitted = self.receive(self.fork["remediation_manifest"])
+        self.lane_request = self.fork["remediation_manifest"]["extensions"]["stegverse_remediation_fork_request"]
+
+    def classification(self, action="RESUBMIT", **overrides):
+        original = self.lane_request["original_request"]
+        document = hashlib.sha256(json.dumps(original, sort_keys=True, separators=(",", ":"),
+                                             ensure_ascii=False).encode()).hexdigest()
+        row = {"schema": "stegverse.healer.sdk-deny-classification/v1", "state": "DETECTED",
+               "source_disposition_ref": "runtime-state/sdk-manifest-state-transition/dispositions/x.json",
+               "original_request_sha256": original["request_sha256"],
+               "original_request_document_sha256": document,
+               "original_wire_manifest_sha256": original["wire_manifest_sha256"],
+               "suggested_action": action, "governance_disposition": "NOT_EVALUATED",
+               "execution_authority_granted": False, "authority_effect": "NONE_CLASSIFICATION_ONLY"}
+        row.update(overrides)
+        return row
+
+    def answer(self, classification, **overrides):
+        kernel = self.returning.returning.egress.kernel
+        frame = self.frames_to("StegVerse-Labs")[0]
+        packet = kernel.recover_packet(frame)
+        body = packet["payload"]["body"]
+        chain, previous = [], None
+        for kind in self.returning.egress.FAR_SIDE_RECEIPT_KINDS:
+            receipt = kernel.receipt(kind, packet["packet_id"], packet["destination"]["service"],
+                                     previous, {"payload_hash": kernel.sha(packet["payload"])})
+            chain.append(receipt["receipt_id"])
+            previous = receipt["receipt_id"]
+        result = {"schema": "stegverse.org-remediation-classification/v1",
+                  "service_id": "stegverse-labs.remediation", "classifying_organization": "StegVerse-Labs",
+                  "remediation_request_sha256": body["remediation_request_sha256"],
+                  "classification_grants_authority": False, "disposition": "ALLOW",
+                  "state": "REMEDIATION_CLASSIFIED", "classification": classification,
+                  "organization_receipt_sha256": "sha256:" + "e" * 64}
+        result.update(overrides)
+        response = kernel.build_control_response(
+            packet, {"application_result": result, "reconstruction": {"terminal_receipt_id": chain[-1]}})
+        kernel.publish_packet(response, root=self.mesh)
+
+    def return_it(self):
+        return self.returning.return_classification(
+            self.fork["remediation_manifest"], packet_id=self.emitted["remediation_packet_id"],
+            communication_id=self.emitted["remediation_communication_id"], registry=REGISTRY,
+            mesh_root=self.mesh, hb_epoch=42)
+
+    def test_no_answer_is_an_observation_and_records_nothing(self):
+        out = self.return_it()
+        self.assertEqual(out["disposition"], "PENDING")
+        self.assertFalse(out["classification_returned"])
+
+    def test_a_classification_closes_the_crossing_and_goes_to_the_existing_governance_route(self):
+        self.answer(self.classification())
+        out = self.return_it()
+        self.assertTrue(out["classification_returned"], out)
+        self.assertEqual(out["suggested_action"], "RESUBMIT")
+        self.assertEqual(out["closure_transition_class"], "ORGANIZATION_EGRESS_CLOSED")
+        self.assertEqual(out["preflight"]["authority_effect"], "NONE_PREFLIGHT_ONLY")
+        submission = out["governance_submission"]
+        self.assertEqual(submission["disposition"], "ALLOW", out)
+        self.assertEqual(submission["governance_decision_state"], "REQUESTED_OF_DECIDING_ORGANIZATION")
+        self.assertEqual(submission["deciding_organization"], "StegVerse-Labs")
+        # The lane frame, then the governance request frame, both to StegVerse-Labs.
+        self.assertEqual(len(self.frames_to("StegVerse-Labs")), 2)
+
+    def test_an_answer_for_another_lane_or_claiming_authority_goes_nowhere(self):
+        for overrides, predicate in (({"remediation_request_sha256": "0" * 64},
+                                      "REMEDIATION_CLASSIFICATION_ANSWERS_A_DIFFERENT_LANE"),
+                                     ({"classification_grants_authority": True},
+                                      "REMEDIATION_CLASSIFICATION_AUTHORITY_ESCALATION")):
+            with self.subTest(predicate=predicate):
+                self.setUp()
+                self.answer(self.classification(), **overrides)
+                out = self.return_it()
+                self.assertEqual((out["disposition"], out["failed_predicate"]), ("FAIL_CLOSED", predicate))
+                self.assertEqual(len(self.frames_to("StegVerse-Labs")), 1)
+
+    def test_an_unmapped_classification_is_refused_by_the_preflight_and_the_non_allow_stands(self):
+        self.answer(self.classification(action="GOVERNANCE_REVIEW_REQUIRED"))
+        out = self.return_it()
+        self.assertEqual(out["disposition"], "FAIL_CLOSED")
+        self.assertTrue(out["failed_predicate"].startswith("REMEDIATION_PREFLIGHT_PASSES:"))
+        self.assertEqual(len(self.frames_to("StegVerse-Labs")), 1)
