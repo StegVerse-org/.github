@@ -250,7 +250,7 @@ jobs:
             echo "no frame placed on $MESH_PUBLISH_REF; nothing to publish"; exit 0
           fi
           if ! git push origin "$MESH_PUBLISH_REF:$MESH_PUBLISH_REF"; then
-            echo '{"disposition":"FAIL_CLOSED","failure_code":"MESH_REF_PUBLISH_RACE","failed_predicate":"PUBLISHED_MESH_REF_FAST_FORWARDS","required_evidence_or_repair":"another writer moved the mesh ref first; this run published no frame and no ledger receipt","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"SVORG-MESH-LOCATION-BINDING-001","next_attempt":"re-run the dispatch; the request is received again and its frame placed on the moved ref"}'
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"MESH_REF_PUBLISH_RACE","failed_predicate":"PUBLISHED_MESH_REF_FAST_FORWARDS","required_evidence_or_repair":"another writer moved the mesh ref first; this run published no frame and no ledger receipt","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"SVORG-MESH-LOCATION-BINDING-001","next_attempt":"commit a successor transition request; it is received again and its frame placed on the moved ref"}'
             exit 1
           fi
           echo "mesh ref published: $MESH_PUBLISH_REF $(git rev-parse "$MESH_PUBLISH_REF")"

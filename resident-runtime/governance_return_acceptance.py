@@ -9,7 +9,7 @@ organization's own receipt is on an independent fresh-fetch readback of the
 deciding organization's ledger.
 
 This runs after the return workflow's own readback. The deciding
-organization's ledger is named by the dispatcher as `git+<repository>#<ref>`
+organization's ledger is named by the committed return request as `git+<repository>#<ref>`
 and fetched anonymously into a fresh repository (no credential is used or
 inferred), then read back with `organization_ledger_readback.py`. The
 verifier is imported from the SDK checkout the caller names and the module's
@@ -34,7 +34,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "stegverse.organization-governance-return-acceptance-run/v1"
 OWNING_EXISTING_GOAL = "SDK-MR-A-VALIDATION-CUSTODY-001"
-RETRY_ENTRYPOINT = ".github/workflows/organization-governance-return.yml (workflow_dispatch: deciding_ledger)"
+RETRY_ENTRYPOINT = ".github/workflows/organization-governance-return.yml (push: .stegverse/governance-return-requests/*.json)"
 
 
 def _module(name, relative):
@@ -100,20 +100,20 @@ def accept(deciding_ledger, *, return_readback, sender_readback, sdk_path=None, 
     except ValueError as exc:
         return _refused("DECIDING_LEDGER_LOCATOR_INVALID", "DECIDING_LEDGER_IS_A_QUALIFIED_GIT_REF_OF_A_NAMED_REPOSITORY",
                         "supply deciding_ledger as git+<repository>#refs/<name>",
-                        "re-dispatch with a well-formed deciding_ledger", detail=str(exc))
+                        "commit a successor return request declaring a well-formed deciding_ledger", detail=str(exc))
     try:
         verify, source = verifier(sdk_path)
     except ImportError as exc:
         return _refused("SDK_ACCEPTANCE_VERIFIER_UNAVAILABLE", "SDK_ACCEPTANCE_VERIFIER_IMPORTS",
                         "check out the pinned SDK that carries stegverse/governance_return_evidence.py",
-                        "re-dispatch once the pinned SDK is available", detail=str(exc)[:300])
+                        "commit a successor return request once the pinned SDK is available", detail=str(exc)[:300])
     with tempfile.TemporaryDirectory(dir=work) as scratch:
         try:
             deciding, tip = deciding_readback(deciding_ledger, scratch)
         except OSError as exc:
             return _refused("DECIDING_LEDGER_NOT_READABLE", "DECIDING_LEDGER_IS_ANONYMOUSLY_READABLE",
                             "the deciding organization must publish its ledger on a readable ref; none is inferred here",
-                            "re-dispatch once the deciding ledger is published", detail=str(exc))
+                            "commit a successor return request once the deciding ledger is published", detail=str(exc))
     packets = sorted({str(row.get("governance_request_packet_id")) for row in (return_readback or {}).get("returns") or []
                       if isinstance(row, dict) and row.get("governance_request_packet_id")})
     acceptances = []
