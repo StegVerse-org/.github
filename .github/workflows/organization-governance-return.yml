@@ -12,7 +12,18 @@ name: Organization Governance Decision Return
 # ledger ref, and both are read back from a fresh fetch. The ledger is the
 # evidence; this run's success is not. An absent answer is an observation and
 # appends nothing.
+#
+# Action is by manifest: a return request committed under
+# .stegverse/governance-return-requests/ (schema
+# stegverse.organization-governance-return-request/v1) declares the locators
+# this run uses, and the push that lands it starts the run. A dispatch with the
+# same inputs is still accepted; none is required
+# (resident-runtime/manifest_directed_run_inputs.py).
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.stegverse/governance-return-requests/**'
   workflow_dispatch:
     inputs:
       mesh_root:
@@ -49,6 +60,33 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve this run's inputs from the committed return request or the dispatch
+        env:
+          DISPATCH_MESH_ROOT: ${{ github.event.inputs.mesh_root }}
+          DISPATCH_PEER_MESH: ${{ github.event.inputs.peer_mesh }}
+          DISPATCH_SDK_REF: ${{ github.event.inputs.sdk_ref }}
+          DISPATCH_DECIDING_LEDGER: ${{ github.event.inputs.deciding_ledger }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          : > "$RUNNER_TEMP/changed.txt"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            git diff --name-only --diff-filter=AM "$BEFORE" "$GITHUB_SHA" -- '.stegverse/governance-return-requests/*.json' > "$RUNNER_TEMP/changed.txt"
+          fi
+          if ! resolved=$(python resident-runtime/manifest_directed_run_inputs.py governance-return \
+              --dispatch-mesh-root "$DISPATCH_MESH_ROOT" --dispatch-peer-mesh "$DISPATCH_PEER_MESH" \
+              --dispatch-sdk-ref "$DISPATCH_SDK_REF" --dispatch-deciding-ledger "$DISPATCH_DECIDING_LEDGER" \
+              --changed "$RUNNER_TEMP/changed.txt"); then
+            echo "$resolved"; exit 1
+          fi
+          echo "$resolved"
+          python - "$resolved" >> "$GITHUB_ENV" <<'PY'
+          import json, sys
+          resolved = json.loads(sys.argv[1])
+          for name in ("mesh_root", "peer_mesh", "sdk_ref", "deciding_ledger"):
+              print("RETURN_" + name.upper() + "=" + resolved[name])
+          PY
+
       # The return re-derives the request from the manifest retained at ingress
       # and must reproduce the recorded request digest, so it runs on the SDK
       # the request was received under. By default that is this organization's
@@ -59,7 +97,7 @@ jobs:
       # (RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST).
       - name: Bind the SDK commit the request was received under
         env:
-          SDK_REF: ${{ github.event.inputs.sdk_ref }}
+          SDK_REF: ${{ env.RETURN_SDK_REF }}
         run: |
           if [ -n "$SDK_REF" ] && ! printf '%s' "$SDK_REF" | grep -Eq '^[0-9a-f]{40}$'; then
             echo '{"disposition":"FAIL_CLOSED","failure_code":"SDK_REF_INVALID","failed_predicate":"SDK_REF_IS_AN_EXACT_COMMIT","required_evidence_or_repair":"supply sdk_ref as a full 40-hex StegVerse-SDK commit, or leave it empty for the current pin","retry_entrypoint":".github/workflows/organization-governance-return.yml","owning_existing_goal":"SDK-MR-A-VALIDATION-CUSTODY-001","next_attempt":"re-dispatch with an exact commit"}'
@@ -70,7 +108,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: StegVerse-org/StegVerse-SDK
-          ref: ${{ github.event.inputs.sdk_ref || 'e8a34b6dc2e8de37b0b1fce9d40ad030111255ff' }}
+          ref: ${{ env.RETURN_SDK_REF || 'e8a34b6dc2e8de37b0b1fce9d40ad030111255ff' }}
           path: sdk
           persist-credentials: false
 
@@ -90,7 +128,7 @@ jobs:
 
       - name: Bind the designated mesh to this run
         env:
-          MESH_ROOT: ${{ github.event.inputs.mesh_root }}
+          MESH_ROOT: ${{ env.RETURN_MESH_ROOT }}
         run: |
           set -euo pipefail
           if ! binding=$(python resident-runtime/mesh_locator_binding.py \
@@ -108,7 +146,7 @@ jobs:
 
       - name: Take in the frames the deciding organization published for this organization
         env:
-          PEER_MESH: ${{ github.event.inputs.peer_mesh }}
+          PEER_MESH: ${{ env.RETURN_PEER_MESH }}
         run: |
           python resident-runtime/peer_mesh_intake.py --peer-mesh "$PEER_MESH" --own-mesh-root "$OWN_MESH" \
             --out "$RUNNER_TEMP/results/intake.json"
@@ -195,7 +233,7 @@ jobs:
       # from this exact SDK commit, separate from the re-derivation SDK above,
       # and is evidence only: it never changes this run's disposition.
       - name: Checkout the SDK acceptance verifier
-        if: ${{ always() && github.event.inputs.deciding_ledger != '' }}
+        if: ${{ always() && env.RETURN_DECIDING_LEDGER != '' }}
         uses: actions/checkout@v4
         with:
           repository: StegVerse-org/StegVerse-SDK
@@ -204,10 +242,10 @@ jobs:
           persist-credentials: false
 
       - name: Verify each return against the deciding organization's published ledger
-        if: ${{ always() && github.event.inputs.deciding_ledger != '' }}
+        if: ${{ always() && env.RETURN_DECIDING_LEDGER != '' }}
         continue-on-error: true
         env:
-          DECIDING_LEDGER: ${{ github.event.inputs.deciding_ledger }}
+          DECIDING_LEDGER: ${{ env.RETURN_DECIDING_LEDGER }}
         run: |
           set -euo pipefail
           results="$RUNNER_TEMP/results"

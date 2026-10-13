@@ -17,7 +17,7 @@ on:
         description: 'Path of a committed transition request'
         required: true
       mesh_root:
-        description: 'Authorized materializer-supplied git+repository#refs/... mesh locator'
+        description: 'git+repository#refs/... mesh locator (a committed request may declare mesh_root instead)'
         required: true
 
 permissions:
@@ -134,15 +134,24 @@ jobs:
           # repository_ledger_location; StegVerse-org/.github#118).
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           mkdir -p "$RUNNER_TEMP/results"
-          # A durable mesh locator is explicitly supplied by the materializer
-          # (workflow_dispatch input mesh_root); never infer it from environment,
-          # runner home, or sovereign ledger ref. A push-triggered run has none:
-          # the node is then materialized without a mesh, and a capability that
-          # must leave this organization is refused at egress by the ingress
-          # itself (mesh_location_required_from_materializer), with all six
-          # fields, recorded on both ledgers and read back below. The ledger
-          # carries that disposition; this run does not stand in for it.
+          # A durable mesh locator is supplied, never inferred from environment,
+          # runner home, or sovereign ledger ref. Action is by manifest: the
+          # committed request that directs this run declares it (mesh_root), and
+          # a dispatch input, when given, is used unchanged
+          # (resident-runtime/manifest_directed_run_inputs.py). A run whose
+          # requests declare none has none: the node is then materialized
+          # without a mesh, and a capability that must leave this organization
+          # is refused at egress by the ingress itself
+          # (mesh_location_required_from_materializer), with all six fields,
+          # recorded on both ledgers and read back below. The ledger carries
+          # that disposition; this run does not stand in for it.
           mesh_root="$INPUT_MESH_ROOT"
+          if ! resolved=$(python resident-runtime/manifest_directed_run_inputs.py transition-mesh \
+              --dispatch-mesh-root "$mesh_root" --requests "$RUNNER_TEMP/requests.txt"); then
+            echo "$resolved"; exit 1
+          fi
+          echo "$resolved"
+          mesh_root=$(python -c 'import json,sys; print(json.loads(sys.argv[1])["mesh_root"])' "$resolved")
           mesh_args=()
           if [ -n "$mesh_root" ]; then
             # The designated locator names a repository and a ref. This run can
@@ -165,20 +174,20 @@ jobs:
             fi
             echo "MESH_PUBLISH_REF=$mesh_ref" >> "$GITHUB_ENV"
             mesh_args=(--mesh-root "git+$GITHUB_WORKSPACE#$mesh_ref")
-            echo "mesh supplied by the materializer: $mesh_root -> ${mesh_args[1]}"
+            echo "mesh supplied: $mesh_root -> ${mesh_args[1]}"
           else
-            echo "no mesh supplied by the materializer; an emission is refused at egress and the refusal is recorded (SVORG-MESH-LOCATION-BINDING-001)"
+            echo "no mesh declared by the committed requests or dispatched; an emission is refused at egress and the refusal is recorded (SVORG-MESH-LOCATION-BINDING-001)"
           fi
           while IFS= read -r request; do
             [ -n "$request" ] || continue
             name=$(basename "$request" .json)
             # A request whose process the boundary binds to egress leaves this
-            # organization, and a run without a materializer-supplied mesh can
+            # organization, and a run without a supplied mesh can
             # only record its emission as refused. Recording it would also make
             # the manifest one already recorded, so a later dispatch with the
             # mesh would be answered from the ledger and never emit: the request
             # would be spent by the push that merged it. Without a mesh it is
-            # deferred to the dispatch that supplies one; nothing is received,
+            # deferred to the request or dispatch that supplies one; nothing is received,
             # recorded or spent here.
             if [ ${#mesh_args[@]} -eq 0 ] && python - "$request" <<'PY'
           import json, sys
@@ -188,7 +197,7 @@ jobs:
           sys.exit(0 if (request.get("build_manifest") or {}).get("process") in bound else 1)
           PY
             then
-              echo "deferred $name: its process leaves this organization; dispatch with request=$request and mesh_root to receive it"
+              echo "deferred $name: its process leaves this organization; commit a successor request declaring mesh_root, or dispatch with request=$request and mesh_root, to receive it"
               continue
             fi
             out="$RUNNER_TEMP/results/$name"
