@@ -30,7 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "stegverse.peer-mesh-intake/v1"
 OWNING_EXISTING_GOAL = "SDK-MR-A-VALIDATION-CUSTODY-001"
-RETRY_ENTRYPOINT = ".github/workflows/organization-governance-return.yml (workflow_dispatch: peer_mesh)"
+RETRY_ENTRYPOINT = ".github/workflows/organization-governance-return.yml (push: .stegverse/governance-return-requests/*.json)"
 
 
 def _module(name, relative):
@@ -76,7 +76,7 @@ def intake(peer_locator, *, own_mesh_root, organization=None):
     except ValueError as exc:
         return _refused("PEER_MESH_LOCATOR_INVALID", "PEER_MESH_LOCATOR_IS_A_QUALIFIED_GIT_REF_OF_A_NAMED_REPOSITORY",
                         "supply peer_mesh as git+<repository>#refs/<name>",
-                        "rerun the dispatch with a well-formed peer locator", detail=str(exc), peer=peer_locator)
+                        "commit a successor return request declaring a well-formed peer_mesh", detail=str(exc), peer=peer_locator)
     with tempfile.TemporaryDirectory() as tmp:
         peer_git = Path(tmp) / "peer.git"
         # Run outside any checkout, so no repository-local credential applies,

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Bind a materializer-supplied federation mesh locator to the repository a run can publish.
 
-`organization-ledger-transition.yml` receives the mesh location as the
-`workflow_dispatch` input `mesh_root`, in the form `git+<repository>#refs/<name>`
+`organization-ledger-transition.yml` takes the mesh location from the committed
+transition request that directs the run (`manifest_directed_run_inputs.py`), as
+`mesh_root` in the form `git+<repository>#refs/<name>`
 (StegVerse-org/.github#23, SVORG-MESH-LOCATION-BINDING-001). The kernel's
 `GitStateStore` writes frames on a ref of a *local* repository, and a run holds
 credentials for exactly one repository: its own checkout. So a locator that names
@@ -19,7 +20,7 @@ import sys
 from pathlib import Path
 
 OWNING_EXISTING_GOAL = "SVORG-MESH-LOCATION-BINDING-001"
-RETRY_ENTRYPOINT = ".github/workflows/organization-ledger-transition.yml (workflow_dispatch: mesh_root)"
+RETRY_ENTRYPOINT = ".github/workflows/organization-ledger-transition.yml (push: .stegverse/transition-requests/*.json)"
 SCHEMA = "stegverse.mesh-locator-binding/v1"
 
 
@@ -74,7 +75,7 @@ def bind(locator, *, repository_slug, workspace):
         return _refused(
             "MESH_LOCATOR_INVALID", "MESH_LOCATOR_IS_A_QUALIFIED_GIT_REF_OF_A_NAMED_REPOSITORY",
             "supply mesh_root as git+<repository>#refs/<name>",
-            "rerun the dispatch with a well-formed locator",
+            "commit a successor request declaring a well-formed mesh_root",
             detail=str(exc), locator=locator)
     if not _names_this_checkout(repository, repository_slug, workspace):
         return _refused(

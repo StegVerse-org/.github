@@ -270,7 +270,7 @@ def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path
                 "retry_entrypoint": RETRY_ENTRYPOINT, "authority_effect": "NONE_REFUSAL_ONLY"}
     manifest, failed, detail = retained_manifest(request_sha256)
     if failed == "RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST":
-        # A re-dispatch consumes every answer on the mesh again. One whose
+        # A further return run consumes every answer on the mesh again. One whose
         # crossing an earlier run already closed on this same answer was
         # returned then, under the SDK the request was received under; this
         # SDK not reproducing that request is not a new refusal. It is observed,
@@ -281,7 +281,7 @@ def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path
                     "disposition": "CLOSURE_ALREADY_RECORDED", "decision_returned": None,
                     "observation_only": True, "replay_is_not_a_transition": True,
                     "not_reproduced_under_this_sdk": detail,
-                    "readmission_requires": "dispatch with sdk_ref set to the SDK the request was received under",
+                    "readmission_requires": "a committed return request declaring sdk_ref as the SDK the request was received under",
                     "authority_effect": "NONE_OBSERVATION_ONLY"}
     if manifest is None:
         return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,
