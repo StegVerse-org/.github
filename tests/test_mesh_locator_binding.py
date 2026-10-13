@@ -190,5 +190,104 @@ class WorkflowBinding(unittest.TestCase):
         self.assertIn('"$fresh" "$MESH_PUBLISH_REF"', self.workflow)
 
 
+class ManifestDirectedRunInputs(unittest.TestCase):
+    """Every ACTION is by manifest: the committed request supplies the run's inputs; no dispatch is required."""
+
+    def setUp(self):
+        self.inputs = load("manifest_directed_run_inputs", "resident-runtime/manifest_directed_run_inputs.py")
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+
+    def _write(self, relative, document):
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(document if isinstance(document, str) else json.dumps(document))
+        return str(path)
+
+    def _six(self, result):
+        self.assertEqual(result["disposition"], "FAIL_CLOSED")
+        for field in SIX_FIELDS:
+            self.assertTrue(result[field], field)
+
+    def test_a_committed_request_supplies_the_mesh_without_a_dispatch(self):
+        request = self._write("r1.json", {"mesh_root": "git+StegVerse-org/.github#refs/stegverse/mesh"})
+        result = self.inputs.transition_mesh_root("", [request])
+        self.assertEqual(result["disposition"], "ALLOW")
+        self.assertEqual(result["mesh_root"], "git+StegVerse-org/.github#refs/stegverse/mesh")
+        self.assertEqual(result["source"], "COMMITTED_TRANSITION_REQUEST")
+
+    def test_a_request_declaring_no_mesh_leaves_it_empty_and_the_request_deferred(self):
+        result = self.inputs.transition_mesh_root("", [self._write("r1.json", {"request_id": "x"})])
+        self.assertEqual((result["disposition"], result["mesh_root"], result["source"]), ("ALLOW", "", "NONE_DECLARED"))
+
+    def test_a_dispatched_mesh_is_used_unchanged(self):
+        request = self._write("r1.json", {"mesh_root": "git+other#refs/x"})
+        result = self.inputs.transition_mesh_root("git+.#refs/stegverse/mesh", [request])
+        self.assertEqual((result["mesh_root"], result["source"]), ("git+.#refs/stegverse/mesh", "WORKFLOW_DISPATCH"))
+
+    def test_conflicting_declared_meshes_fail_closed(self):
+        a = self._write("a.json", {"mesh_root": "git+.#refs/a"})
+        b = self._write("b.json", {"mesh_root": "git+.#refs/b"})
+        self._six(self.inputs.transition_mesh_root("", [a, b]))
+
+    def test_a_declared_mesh_cannot_inject_an_environment_line(self):
+        self._six(self.inputs.transition_mesh_root("", [self._write("a.json", {"mesh_root": "git+.#refs/a\nX=1"})]))
+        self._six(self.inputs.transition_mesh_root("", [self._write("b.json", {"mesh_root": 7})]))
+
+    def _return_request(self, **overrides):
+        document = {"schema": self.inputs.RETURN_REQUEST_SCHEMA, "owning_existing_goal": "SDK-MR-A-VALIDATION-CUSTODY-001",
+                    "mesh_root": "git+.#refs/stegverse/mesh", "peer_mesh": "git+StegVerse-Labs/.github#refs/stegverse/mesh"}
+        document.update(overrides)
+        return self._write(".stegverse/governance-return-requests/R1.json", document)
+
+    def test_a_committed_return_request_supplies_every_return_input(self):
+        path = self._return_request(sdk_ref="e" * 40)
+        relative = os.path.relpath(path, self.root)
+        cwd = os.getcwd()
+        os.chdir(self.root)
+        try:
+            result = self.inputs.governance_return_inputs({}, [relative])
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(result["disposition"], "ALLOW")
+        self.assertEqual(result["peer_mesh"], "git+StegVerse-Labs/.github#refs/stegverse/mesh")
+        self.assertEqual(result["sdk_ref"], "e" * 40)
+        self.assertEqual(result["deciding_ledger"], "")
+        self.assertTrue(result["source"].startswith("COMMITTED_RETURN_REQUEST:"))
+
+    def _resolve(self, path, dispatch=None):
+        cwd = os.getcwd()
+        os.chdir(self.root)
+        try:
+            return self.inputs.governance_return_inputs(dispatch or {}, [os.path.relpath(path, self.root)] if path else [])
+        finally:
+            os.chdir(cwd)
+
+    def test_a_return_needs_exactly_one_committed_request_or_a_dispatch(self):
+        self._six(self._resolve(None))
+        dispatched = self._resolve(None, {"mesh_root": "git+.#refs/m", "peer_mesh": "git+p#refs/m"})
+        self.assertEqual((dispatched["disposition"], dispatched["source"]), ("ALLOW", "WORKFLOW_DISPATCH"))
+
+    def test_an_invalid_return_request_fails_closed(self):
+        self._six(self._resolve(self._return_request(schema="other")))
+        self._six(self._resolve(self._return_request(peer_mesh="")))
+        self._six(self._resolve(self._return_request(sdk_ref="main")))
+        self._six(self._resolve(self._return_request(deciding_ledger="git+x#refs/l\nX=1")))
+
+    def test_both_runtime_workflows_resolve_their_inputs_through_the_committed_request(self):
+        transition = WORKFLOW.read_text()
+        receive = transition.split("Receive each request")[1].split("- name:")[0]
+        self.assertIn("manifest_directed_run_inputs.py transition-mesh", receive)
+        self.assertLess(receive.index("transition-mesh"), receive.index("mesh_locator_binding.py"))
+        ret = (ROOT / ".github/workflows/organization-governance-return.yml").read_text()
+        trigger = ret.split("on:")[1].split("permissions:")[0]
+        self.assertIn(".stegverse/governance-return-requests/**", trigger)
+        steps = re.findall(r"- name: (.+)", ret)
+        self.assertLess(steps.index("Resolve this run's inputs from the committed return request or the dispatch"),
+                        steps.index("Bind the designated mesh to this run"))
+        self.assertNotIn("${{ github.event.inputs.mesh_root }}\n", ret.split("Bind the designated mesh to this run")[1])
+
+
 if __name__ == "__main__":
     unittest.main()

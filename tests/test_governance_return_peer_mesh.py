@@ -478,7 +478,7 @@ class ReturnWorkflowShape(unittest.TestCase):
     def test_the_sdk_is_the_one_the_governance_route_validates(self):
         # The default is the pin every workflow here uses; an explicit sdk_ref
         # names the exact commit an earlier request was received under.
-        pin = re.findall(r"repository: StegVerse-org/StegVerse-SDK\n\s+ref: \$\{\{ github.event.inputs.sdk_ref \|\| '([0-9a-f]{40})' \}\}",
+        pin = re.findall(r"repository: StegVerse-org/StegVerse-SDK\n\s+ref: \$\{\{ env.RETURN_SDK_REF \|\| '([0-9a-f]{40})' \}\}",
                          self.workflow)
         # The workflows that receive a request (and validate that path) pin the
         # SDK the return defaults to, so a request is returned on the SDK it was
