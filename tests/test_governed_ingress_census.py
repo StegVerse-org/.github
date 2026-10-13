@@ -54,6 +54,7 @@ SURFACES = {
     "resident-runtime/organization_manifest_ingress.py": ("receive",),
     "resident-runtime/sdk_manifest_crossing.py": ("cross",),
     "resident-runtime/governance_endpoint.py": ("main",),
+    "resident-runtime/remediation_endpoint.py": ("main", "bind"),
     "resident-runtime/task_registry_disclosure_endpoint.py": ("disclosure",),
     "resident-runtime/workspace_resource_consumer_adapter.py": ("main",),
     "resident-runtime/sdk_self_characterization_response.py": ("main",),
@@ -136,7 +137,20 @@ def adapter_rows():
 def envelope(row, processing):
     """An ingress envelope addressed to `row`, declaring `processing` everywhere an adapter reads it."""
     manifest = {"processing": processing,
-                "extensions": {"stegverse_governance_request": {"candidate": {"action": "census"}}}}
+                "extensions": {"stegverse_governance_request": {"candidate": {"action": "census"}},
+                               # A calculated remediation route entering here, crossing to
+                               # StegHealer's organization over InTr egress and ingress.
+                               "stegverse_remediation_fork_request": {"remediation_route": {
+                                   "entry_organization": "StegVerse-org", "route_sha256": "census",
+                                   "steghealer": {"organization": "StegVerse-Labs",
+                                                  "service_id": "stegverse-labs.remediation"},
+                                   "direct_route_to_steghealer": [
+                                       {"from": "StegVerse-org", "to": "StegVerse-Labs",
+                                        "crossing": "INTERLOCK_INTR_EGRESS"},
+                                       {"from": "StegVerse-org", "to": "StegVerse-Labs",
+                                        "crossing": "INTERLOCK_INTR_INGRESS"},
+                                       {"from": "StegVerse-Labs", "to": "stegverse-labs.remediation",
+                                        "crossing": "INTERNAL_ENDPOINT"}]}}}}
     return {"schema_version": "stegverse.intr.org-boundary.v1", "packet_id": "census-" + row["service_id"],
             "direction": "INGRESS", "origin": {"org": "StegVerse-org", "service": "stegverse-org.census"},
             "destination": {"org": REGISTRY["organization"], "service": row["service_id"]},

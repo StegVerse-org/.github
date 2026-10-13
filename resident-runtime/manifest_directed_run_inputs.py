@@ -147,14 +147,15 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
     transition = sub.add_parser("transition-mesh")
     transition.add_argument("--dispatch-mesh-root", default="")
-    transition.add_argument("--requests", required=True, type=Path, help="file listing this run's request paths")
+    transition.add_argument("--requests", dest="request_list", required=True, type=Path,
+                            help="file listing this run's request paths")
     ret = sub.add_parser("governance-return")
     for name in ("mesh-root", "peer-mesh", "sdk-ref", "deciding-ledger"):
         ret.add_argument("--dispatch-" + name, default="")
     ret.add_argument("--changed", required=True, type=Path, help="file listing the paths this push changed")
     args = parser.parse_args(argv)
     if args.command == "transition-mesh":
-        paths = [line for line in args.requests.read_text().splitlines() if line]
+        paths = [line for line in args.request_list.read_text().splitlines() if line]
         result = transition_mesh_root(args.dispatch_mesh_root, paths)
     else:
         changed = [line for line in args.changed.read_text().splitlines() if line]

@@ -93,6 +93,8 @@ OPERATION = "SUBMIT_MANIFEST"
 RESULT_SCHEMA_ORG = "stegverse.organization-manifest-ingress-result/v1"
 REFUSAL_SCHEMA = "stegverse.organization-manifest-ingress-refusal-record/v1"
 GOVERNANCE_REQUEST_SCHEMA = "stegverse.org-governance-decision-request/v1"
+REMEDIATION_REQUEST_SCHEMA = "stegverse.org-remediation-classification-request/v1"
+REMEDIATION_OWNING_GOAL = "STEGHEALTH-ECOSYSTEM-FAILURE-REMEDIATION-001"
 
 #: The intended action every submission carries, whatever its disposition.
 #:
@@ -549,6 +551,110 @@ def request_governance_decision(request: Mapping[str, Any], crossing: Mapping[st
             "authority_effect": "NONE_RECEIVING_OPERATION_ONLY"}
 
 
+def request_remediation_classification(request: Mapping[str, Any], crossing: Mapping[str, Any],
+                                      receiving: Mapping[str, Any], *, transition_id: str,
+                                      repository_receipt: Mapping[str, Any],
+                                      organization_receipt: Mapping[str, Any],
+                                      standing: Mapping[str, Any], mesh_root: Path | None,
+                                      hb_epoch: int | None, replayed: bool = False) -> dict[str, Any]:
+    """Emit a remediation lane to the next hop of its calculated route, and record the emission.
+
+    The lane entered here through this organization's InTr ingress (the
+    transition above). Its route, calculated by the SDK from where remediation
+    was recognized, the manifested path and the direct route to StegHealer,
+    names the next organization; the lane leaves through this organization's
+    InTr egress and arrives through that organization's InTr ingress. Nothing
+    waits, classifies or decides here.
+    """
+    bound = crossing.get("application_result") or {}
+    base = {
+        "schema": RESULT_SCHEMA_ORG,
+        "organization": "StegVerse-org",
+        "receiving_operation": OPERATION_ID,
+        "received": True,
+        "owner_repository": OWNER_REPOSITORY,
+        "resolved_service_id": crossing["resolved_service_id"],
+        "receiving_operation_declared": dict(receiving),
+        "request_sha256": request["request_sha256"],
+        "canonical_manifest_sha256": request["canonical_manifest_sha256"],
+        "processing_capability": request["processing_capability"],
+        "route_id": request["route_id"],
+        "intr_admission_observed": True,
+        "organization_receipt_observed": True,
+        "organization_receipt_sha256": organization_receipt["receipt_sha256"],
+        "organization_transition_id": transition_id,
+        "transition_replayed": replayed,
+        "repository_receipt_observed": True,
+        "repository_receipt_sha256": repository_receipt["receipt_sha256"],
+        "records_authority": "ORGANIZATION_RECORDS_ONLY",
+    }
+    fork_request = (request.get("state_graph") or {}).get("request") or {}
+    if (bound.get("schema") != REMEDIATION_REQUEST_SCHEMA
+            or bound.get("remediation_request_sha256") != request_digest(bound.get("remediation_request"))
+            or bound.get("remediation_request") != fork_request):
+        return {**base, "disposition": "FAIL_CLOSED",
+                "failure_code": "REMEDIATION_REQUEST_UNBOUND",
+                "failed_predicate": "REMEDIATION_REQUEST_IS_BOUND_TO_THE_SUBMITTED_MANIFEST",
+                "required_evidence_or_repair": "a remediation endpoint result carrying the fork request "
+                                               "this manifest's derived request carries",
+                "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
+                "owning_existing_goal": REMEDIATION_OWNING_GOAL,
+                "next_attempt": "resubmit the same remediation manifest; nothing was emitted",
+                "authority_effect": "NONE_REFUSAL_ONLY"}
+    payload = {
+        "communication_id": "remediation:" + request["request_sha256"],
+        "message_class": "ecosystem.work.request",
+        "subject": "remediation.classification",
+        "requested_action": "CLASSIFY_NON_ALLOW_FOR_GOVERNED_REMEDIATION",
+        "audience": "TARGET",
+        "target_organization": bound["next_organization"],
+        "target_count": 1,
+        "processing": {"capability": request["processing_capability"], "route_id": request["route_id"]},
+        "body": {
+            "schema": REMEDIATION_REQUEST_SCHEMA,
+            "origin_organization": "StegVerse-org",
+            "sdk_request_sha256": request["request_sha256"],
+            "canonical_manifest_sha256": request["canonical_manifest_sha256"],
+            "ingress_transition_id": transition_id,
+            "remediation_request": bound["remediation_request"],
+            "remediation_request_sha256": bound["remediation_request_sha256"],
+            "remediation_route_sha256": bound["remediation_route_sha256"],
+        },
+    }
+    egress = _module("organization_egress_boundary", "resident-runtime/organization_egress_boundary.py")
+    emitted = egress.emit(bound["next_organization"], payload, standing=dict(standing),
+                          capability="remediation",
+                          transition_reference="ecosystem.transition.remediation.v1",
+                          mesh_root=mesh_root, hb_epoch=hb_epoch)
+    emission = {key: emitted.get(key) for key in (
+        "emission_transition_class", "emission_repository_receipt_sha256",
+        "emission_organization_receipt_sha256")}
+    if emitted["disposition"] != "ALLOW":
+        return {**base, **emission, "disposition": "FAIL_CLOSED",
+                "failure_code": "REMEDIATION_LANE_NOT_EMITTED",
+                "failed_predicate": emitted.get("failed_predicate"),
+                "detail": emitted.get("detail"),
+                "required_evidence_or_repair": egress.refusal_repair(
+                    emitted.get("failed_predicate"), emitted.get("detail")),
+                "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
+                "owning_existing_goal": REMEDIATION_OWNING_GOAL,
+                "next_attempt": "resubmit the same remediation manifest once the repair is in place; "
+                                "the ingress transition is recorded and the lane did not leave",
+                "authority_effect": "NONE_REFUSAL_ONLY"}
+    return {**base, **emission,
+            "disposition": "ALLOW",
+            "classification_state": "REQUESTED_OF_STEGHEALER",
+            "next_organization": emitted["destination_organization"],
+            "next_service": emitted["destination_service"],
+            "steghealer_repository": bound["steghealer_repository"],
+            "remediation_route_sha256": bound["remediation_route_sha256"],
+            "remediation_packet_id": emitted["packet_id"],
+            "remediation_communication_id": emitted["communication_id"],
+            "awaits_the_classification": False,
+            "classification_grants_authority": False,
+            "authority_effect": "NONE_RECEIVING_OPERATION_ONLY"}
+
+
 def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standing: Mapping[str, Any] | None = None,
             packet_id: str = "organization-sdk-manifest-ingress",
             hb_epoch: int | None = None, mesh_root: Path | None = None) -> dict[str, Any]:
@@ -665,6 +771,14 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
             standing=crossing_module.manifest_standing(manifest, standing),
             mesh_root=mesh_root, hb_epoch=hb_epoch, replayed=replayed)
 
+    # A remediation lane leaves for the next hop of its calculated route.
+    if request.get("processing_capability") == "remediation":
+        return request_remediation_classification(
+            request, crossing, receiving, transition_id=transition_id,
+            repository_receipt=repository_receipt, organization_receipt=organization_receipt,
+            standing=crossing_module.manifest_standing(manifest, standing),
+            mesh_root=mesh_root, hb_epoch=hb_epoch, replayed=replayed)
+
     # The SDK decides whether this closes the transition. Its refusal is the
     # answer, returned as it was given.
     try:
@@ -690,7 +804,19 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
             "authority_effect": "NONE_REFUSAL_ONLY",
         }
 
+    # A non-ALLOW the SDK admitted carries its remediation fork. When its
+    # calculated route enters at this organization, the lane is received here,
+    # through this same InTr ingress, as its own transition; the main packet's
+    # result below is unchanged by it.
+    lane = None
+    fork = admitted.get("remediation_fork") if isinstance(admitted, Mapping) else None
+    if isinstance(fork, Mapping) and isinstance(fork.get("remediation_manifest"), Mapping):
+        if (fork.get("remediation_route") or {}).get("entry_organization") == "StegVerse-org":
+            lane = receive(fork["remediation_manifest"], registry=registry, standing=standing,
+                           packet_id=packet_id + ":remediation", hb_epoch=hb_epoch, mesh_root=mesh_root)
+
     return {
+        **({"remediation_lane": lane} if lane is not None else {}),
         "schema": RESULT_SCHEMA_ORG,
         "organization": "StegVerse-org",
         "receiving_operation": OPERATION_ID,
