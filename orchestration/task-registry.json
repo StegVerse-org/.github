@@ -292,6 +292,358 @@
         "StegVerse-org/LLM-adapter"
       ],
       "unresolved_obligations": []
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W01-PYTEST-REMOVAL",
+      "issue": null,
+      "title": "W1 continuation of SVORG-LLM-ORG-FOUNDATION-001: remove the pytest dependency",
+      "status": "in_progress",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "SV-LLM side: tests run under a stdlib runner with no pytest dependency (SV-LLM/.github#30)",
+        "upstream StegVerse-Labs/StegBrowser tests converted off pytest and passing on their own workflow",
+        "no test framework dependency added in place of pytest",
+        "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "continuation recorded in SV-LLM/.github#30; SV-LLM half met, upstream StegBrowser conversion in progress",
+      "destinations": [
+        "SV-LLM/.github",
+        "StegVerse-Labs/StegBrowser"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "CONVERT_UPSTREAM_STEGBROWSER_TESTS_OFF_PYTEST"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W02-BROWSER-ENGINE-DEPENDENCY-REVIEW",
+      "issue": null,
+      "title": "W2 continuation of SVORG-LLM-ORG-FOUNDATION-001: remove the Playwright/Chromium browser-engine dependency",
+      "status": "proposed",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "the Playwright/Chromium browser-engine dependency removed from every SV-LLM surface, with no replacement dependency added",
+        "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "continuation recorded in SV-LLM/.github#30; open",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "REMOVE_PLAYWRIGHT_CHROMIUM_BROWSER_ENGINE_DEPENDENCY"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W03-PROVIDER-TERMS-BINDING",
+      "issue": null,
+      "title": "W3 continuation of SVORG-LLM-ORG-FOUNDATION-001: bind provider terms pages",
+      "status": "proposed",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "every provider terms page bound from a retained copy with its source URL and retrieval date",
+        "three providers' terms pages return 403 bot challenges to automated fetch; human-saved copies are bound for those",
+        "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "continuation recorded in SV-LLM/.github#30; open until human-saved copies of the bot-challenged pages exist",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "OBTAIN_HUMAN_SAVED_COPIES_FOR_THREE_BOT_CHALLENGED_TERMS_PAGES",
+        "BIND_PROVIDER_TERMS_PAGES"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W04-CANONICAL-RUNTIME-SUBSTRATE",
+      "issue": null,
+      "title": "W4 continuation of SVORG-LLM-ORG-FOUNDATION-001: establish the canonical runtime substrate and retire SV-LLM-EXEMPTION-002",
+      "status": "proposed",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "SANDBOX_RUNTIME_OBSERVED: runtime observation is native only as an organization receipt appended to refs/stegverse/organization-ledger by a manifest-directed transition (.stegverse/transition-requests/ -> Organization Ledger Transition); no external machine, receiver liveness, always-on listener or second device is a predicate",
+        "the canonical single-device-first substrate order is evaluated before any other substrate; no remote or external device is required",
+        "SV-LLM-EXEMPTION-002 retired against that observation",
+        "the federation-observation half is carried by existing task ORG-FED-SV-LLM-001 and linked, not duplicated here",
+        "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "continuation recorded in SV-LLM/.github#30; federation-observation half linked to ORG-FED-SV-LLM-001; open",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "APPEND_SANDBOX_TRANSITION_TO_ORGANIZATION_LEDGER_BY_MANIFEST",
+        "RETIRE_SV-LLM-EXEMPTION-002"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W05-TV-TVC-HELD-INVOCATION-TOOL",
+      "issue": null,
+      "title": "W5 continuation of SVORG-LLM-ORG-FOUNDATION-001: TV/TVC-held invocation tool carrying real contribution content",
+      "status": "blocked",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001",
+        "SVORG-LLM-ORG-FOUNDATION-001-W04-CANONICAL-RUNTIME-SUBSTRATE"
+      ],
+      "required_evidence": [
+        "a TV/TVC-held invocation tool that invokes with real contribution content, not fixtures",
+        "each invocation is a manifest-bound attempted state transition; runtime observation is native only as an organization receipt appended to refs/stegverse/organization-ledger by a manifest-directed transition (.stegverse/transition-requests/ -> Organization Ledger Transition); no external machine, receiver liveness, always-on listener or second device is a predicate",
+        "Evidence class at most SOURCE_IMPLEMENTED per SV-LLM/.github#30; not met; no runtime observation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "W4 establishes the canonical runtime substrate the tool runs on; continuation recorded in SV-LLM/.github#30",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "BUILD_TV_TVC_HELD_INVOCATION_TOOL"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W06-PROVIDER-CAPABILITY-DECLARATIONS-BOUND",
+      "issue": null,
+      "title": "W6 continuation of SVORG-LLM-ORG-FOUNDATION-001: bind capability declarations in the SV-LLM organization tree for all 18 providers",
+      "status": "validating",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "capability declarations for all 18 providers bound in the SV-LLM organization tree",
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "met at CI_VALIDATED class per SV-LLM/.github#30; runtime-observed class not claimed",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "RUNTIME_OBSERVATION_NOT_CLAIMED"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W07-SANDBOX-WORK-CYCLE",
+      "issue": null,
+      "title": "W7 continuation of SVORG-LLM-ORG-FOUNDATION-001: Sandbox work cycle",
+      "status": "validating",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "Sandbox work-cycle source contract and tests",
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed",
+        "runtime class: runtime observation is native only as an organization receipt appended to refs/stegverse/organization-ledger by a manifest-directed transition (.stegverse/transition-requests/ -> Organization Ledger Transition); no external machine, receiver liveness, always-on listener or second device is a predicate"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "met at CI_VALIDATED class per SV-LLM/.github#30; runtime depends on W4 and W5",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "APPEND_WORK_CYCLE_TRANSITION_TO_ORGANIZATION_LEDGER_BY_MANIFEST"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W08-DOWNSTREAM-RECORDER-ROLE",
+      "issue": null,
+      "title": "W8 continuation of SVORG-LLM-ORG-FOUNDATION-001: downstream recorder role",
+      "status": "validating",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "the downstream, non-gating recorder role held in source and tests",
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "met at CI_VALIDATED class per SV-LLM/.github#30; recorded under existing task MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002 (linked, not duplicated)",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "RUNTIME_OBSERVATION_NOT_CLAIMED"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W09-CONTINUATION-W9",
+      "issue": null,
+      "title": "W9 continuation of SVORG-LLM-ORG-FOUNDATION-001: workstream W9 as recorded in SV-LLM/.github#30",
+      "status": "validating",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "W9 source and tests as recorded in SV-LLM/.github#30",
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "met at CI_VALIDATED class per SV-LLM/.github#30",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "RUNTIME_OBSERVATION_NOT_CLAIMED"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W10-CONTINUATION-W10",
+      "issue": null,
+      "title": "W10 continuation of SVORG-LLM-ORG-FOUNDATION-001: workstream W10 as recorded in SV-LLM/.github#30",
+      "status": "validating",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "W10 source and tests as recorded in SV-LLM/.github#30",
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "met at CI_VALIDATED class per SV-LLM/.github#30",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "RUNTIME_OBSERVATION_NOT_CLAIMED"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W11-PROVIDER-CAPABILITY-OPERATIONS",
+      "issue": null,
+      "title": "W11 continuation of SVORG-LLM-ORG-FOUNDATION-001: provider capability declarations with operations documented from fetched official pages",
+      "status": "validating",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "19 operations DOCUMENTED from fetched official provider pages",
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed",
+        "44 operations remain UNVERIFIED"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "met at CI_VALIDATED class for 19 operations per SV-LLM/.github#30; 44 UNVERIFIED",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "VERIFY_44_UNVERIFIED_OPERATIONS"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W12-PROVIDER-CAPABILITY-VALIDATOR",
+      "issue": null,
+      "title": "W12 continuation of SVORG-LLM-ORG-FOUNDATION-001: provider capability validator with schema parity, vendored to 18 providers",
+      "status": "validating",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "provider capability validator holds schema parity and is vendored to all 18 providers",
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "met at CI_VALIDATED class per SV-LLM/.github#30",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "RUNTIME_OBSERVATION_NOT_CLAIMED"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-ORG-FOUNDATION-001-W13-ECOSYSTEM-CHAT-CONFORMANCE-CHECK",
+      "issue": null,
+      "title": "W13 continuation of SVORG-LLM-ORG-FOUNDATION-001: Ecosystem Chat Sandbox conformance-proposal check",
+      "status": "validating",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "Ecosystem Chat Sandbox conformance-proposal check in source and tests",
+        "Evidence class CI_VALIDATED (source scope) per SV-LLM/.github#30; no runtime observation, activation, release or propagation claimed",
+        "a work-cycle invocation of the check, recorded as an organization receipt by manifest-directed transition"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "met at CI_VALIDATED class per SV-LLM/.github#30; work-cycle invocation pending",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "issue_refs": [
+        74
+      ],
+      "unresolved_obligations": [
+        "WORK_CYCLE_INVOCATION_PENDING"
+      ]
     }
   ]
 }

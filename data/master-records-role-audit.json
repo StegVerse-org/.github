@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 150,
+      "PROPER": 151,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 19,
-      "total": 188
+      "total": 189
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -593,6 +593,13 @@
       "text": "\"no execution or completion path is gated on Master Records\",",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "orchestration/task-registry.json",
+      "line": 505,
+      "text": "\"activation_condition\": \"met at CI_VALIDATED class per SV-LLM/.github#30; recorded under existing task MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002 (linked, not duplicated)\",",
+      "classification": "PROPER",
+      "reason": "Links the W8 continuation of SVORG-LLM-ORG-FOUNDATION-001 to the existing remediation task by identifier; consistent with the canonical downstream, non-gating recorder role."
     },
     {
       "file": "org-boundary/registry/federation.json",
