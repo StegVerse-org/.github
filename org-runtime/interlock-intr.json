@@ -202,6 +202,29 @@
         "always_on_receiver_required": false,
         "awaits_the_decision": false,
         "authority_effect": "NONE_BINDING_ONLY"
+      },
+      {
+        "profile_id": "remediation",
+        "capability": "remediation",
+        "route_id": "stegverse.route.governed-remediation.v1",
+        "destination_organization": "StegVerse-Labs",
+        "destination_repository": "StegVerse-Labs/.github",
+        "destination_service": "stegverse-labs.remediation",
+        "classification_authority": "StegVerse-Labs/StegVerse-Healer:app/manifest_remediation_intake.py::classify_sdk_deny",
+        "classifier_imported_in_this_organization": false,
+        "route_source": "MANIFEST_CALCULATED_REMEDIATION_ROUTE",
+        "route_must_agree_with_this_binding": true,
+        "request_message_class": "ecosystem.work.request",
+        "request_schema": "stegverse.org-remediation-classification-request/v1",
+        "emitting_operation": "resident-runtime/organization_manifest_ingress.py::receive",
+        "emission": "resident-runtime/organization_egress_boundary.py::emit",
+        "closure": "resident-runtime/organization_egress_boundary.py::close",
+        "transport": "INTERLOCK_INTR",
+        "records_authority": "ORGANIZATION_RECORDS_ONLY",
+        "always_on_receiver_required": false,
+        "awaits_the_classification": false,
+        "classification_grants_authority": false,
+        "authority_effect": "NONE_BINDING_ONLY"
       }
     ]
   },

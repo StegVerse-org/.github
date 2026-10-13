@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: StegVerse-org/StegVerse-SDK
-          ref: e8a34b6dc2e8de37b0b1fce9d40ad030111255ff
+          ref: 6e751932d103f1dfb23e1990a8e8c9a25c95e680
           path: sdk
           persist-credentials: false
 
