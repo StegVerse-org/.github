@@ -111,6 +111,9 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
     binding = governance_binding()
     base = {"schema": RESULT_SCHEMA, "operation": OPERATION_ID,
             "request_sha256": request["request_sha256"],
+            # The decided manifest's own identity, so a consumer can bind the
+            # read-back decision to the exact manifest it decided.
+            "wire_manifest_sha256": request.get("wire_manifest_sha256"),
             "governance_request_packet_id": packet_id,
             "governance_communication_id": communication_id,
             "deciding_organization": binding["destination_organization"],
