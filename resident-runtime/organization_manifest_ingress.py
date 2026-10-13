@@ -68,7 +68,6 @@ has not seen.
 from __future__ import annotations
 
 import argparse
-import functools
 import hashlib
 import importlib.util
 import json
@@ -655,6 +654,54 @@ def request_remediation_classification(request: Mapping[str, Any], crossing: Map
             "authority_effect": "NONE_RECEIVING_OPERATION_ONLY"}
 
 
+def _receive_lane(fork: Any, *, registry: Mapping[str, Any], standing: Mapping[str, Any] | None,
+                  packet_id: str, hb_epoch: int | None, mesh_root: Path | None) -> dict[str, Any] | None:
+    """Receive a fork's lane through this same InTr ingress when its calculated route enters here."""
+    if not (isinstance(fork, Mapping) and isinstance(fork.get("remediation_manifest"), Mapping)):
+        return None
+    if (fork.get("remediation_route") or {}).get("entry_organization") != "StegVerse-org":
+        return None
+    return receive(fork["remediation_manifest"], registry=registry, standing=standing,
+                   packet_id=packet_id + ":remediation", hb_epoch=hb_epoch, mesh_root=mesh_root)
+
+
+def with_remediation_fork(result: Mapping[str, Any], request: Mapping[str, Any] | None, *, manifest: Any,
+                          registry: Mapping[str, Any], standing: Mapping[str, Any] | None, packet_id: str,
+                          hb_epoch: int | None, mesh_root: Path | None) -> dict[str, Any]:
+    """A non-ALLOW this organization recognized, with the remediation fork it carries.
+
+    The SDK's Manifest Builder builds the fork (`stegverse.remediation_fork`); its
+    route is calculated from this organization as the recognition location, the
+    request's manifested path and the direct route to StegHealer. The lane is
+    received here as its own transition and leaves over InTr. The refusal itself
+    is returned unchanged: the fork adds a lane, it rewrites nothing. A refusal
+    with no derivable request carries the SDK's six-field fork refusal instead.
+    A remediation lane's own refusal forks nothing.
+    """
+    from stegverse.remediation_fork import REMEDIATION_CAPABILITY, build_remediation_fork, fork_refusal
+
+    result = dict(result)
+    declared = submitted_capability(manifest)["submitted_processing_capability"]
+    if REMEDIATION_CAPABILITY in (declared, (request or {}).get("processing_capability")):
+        return result
+    if request is None:
+        return {**result, "remediation_fork": fork_refusal("REMEDIATION_FORK_ORIGINAL_REQUEST_NOT_DERIVED")}
+    non_allow = {key: result.get(key) for key in (
+        "disposition", "failure_code", "failed_predicate", "detail",
+        "refusal_organization_receipt_sha256", "organization_receipt_sha256") if result.get(key) is not None}
+    non_allow.update({"organization": "StegVerse-org", "evaluation_boundary": OPERATION_ID,
+                      "request_sha256": request.get("request_sha256")})
+    try:
+        fork = build_remediation_fork(request, non_allow, boundary())
+    except ValueError as exc:
+        return {**result, "remediation_fork": fork_refusal(str(exc))}
+    if fork is None:
+        return result
+    lane = _receive_lane(fork, registry=registry, standing=standing, packet_id=packet_id,
+                         hb_epoch=hb_epoch, mesh_root=mesh_root)
+    return {**result, "remediation_fork": fork, **({"remediation_lane": lane} if lane is not None else {})}
+
+
 def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standing: Mapping[str, Any] | None = None,
             packet_id: str = "organization-sdk-manifest-ingress",
             hb_epoch: int | None = None, mesh_root: Path | None = None) -> dict[str, Any]:
@@ -663,7 +710,17 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     `mesh_root` is the federation mesh the node was materialized with. Only a
     capability another organization decides needs it: the request leaves on it.
     """
-    refused = functools.partial(_refused, manifest=manifest, hb_epoch=hb_epoch)
+    request: dict[str, Any] | None = None
+    submitted_epoch = hb_epoch
+
+    def refused(failed_predicate: str, detail: str, **extra: Any) -> dict[str, Any]:
+        # A refusal here is a non-ALLOW recognized at this organization, so it
+        # carries its remediation fork like any other (NODE_INGRESS §8).
+        return with_remediation_fork(
+            _refused(failed_predicate, detail, manifest=manifest, hb_epoch=submitted_epoch, **extra), request,
+            manifest=manifest, registry=registry, standing=standing, packet_id=packet_id,
+            hb_epoch=submitted_epoch, mesh_root=mesh_root)
+
     try:
         request = derive_execution_request(manifest, boundary())
     except ValueError as exc:
@@ -786,7 +843,7 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
             manifest, request, runtime_result(request, closures, organization_receipt,
                            crossing.get("application_result")))
     except ValueError as exc:
-        return {
+        return with_remediation_fork({
             "schema": RESULT_SCHEMA_ORG,
             "organization": "StegVerse-org",
             "receiving_operation": OPERATION_ID,
@@ -802,18 +859,16 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
             "repository_receipt_sha256": repository_receipt["receipt_sha256"],
             "request_sha256": request["request_sha256"],
             "authority_effect": "NONE_REFUSAL_ONLY",
-        }
+        }, request, manifest=manifest, registry=registry, standing=standing, packet_id=packet_id,
+            hb_epoch=hb_epoch, mesh_root=mesh_root)
 
     # A non-ALLOW the SDK admitted carries its remediation fork. When its
     # calculated route enters at this organization, the lane is received here,
     # through this same InTr ingress, as its own transition; the main packet's
     # result below is unchanged by it.
-    lane = None
     fork = admitted.get("remediation_fork") if isinstance(admitted, Mapping) else None
-    if isinstance(fork, Mapping) and isinstance(fork.get("remediation_manifest"), Mapping):
-        if (fork.get("remediation_route") or {}).get("entry_organization") == "StegVerse-org":
-            lane = receive(fork["remediation_manifest"], registry=registry, standing=standing,
-                           packet_id=packet_id + ":remediation", hb_epoch=hb_epoch, mesh_root=mesh_root)
+    lane = _receive_lane(fork, registry=registry, standing=standing, packet_id=packet_id,
+                         hb_epoch=hb_epoch, mesh_root=mesh_root)
 
     return {
         **({"remediation_lane": lane} if lane is not None else {}),
