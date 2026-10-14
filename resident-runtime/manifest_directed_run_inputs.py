@@ -10,6 +10,12 @@ used unchanged; it is no longer required.
 - `organization-ledger-transition.yml`: a pushed transition request may declare
   `mesh_root`. Every request of one run that declares one must declare the same
   locator, because a run binds one mesh.
+- `organization-ledger-transition.yml`: a pushed transition request carries its
+  manifest either as `build_manifest` arguments, built by the pinned SDK in the
+  run, or as the exact already-built `manifest` together with its
+  `expected_canonical_manifest_sha256`. A manifest prepared and frozen
+  elsewhere is then submitted unchanged: the run refuses it unless it
+  reproduces that canonical digest exactly (`committed_manifest`).
 - `organization-governance-return.yml`: a pushed return request under
   `.stegverse/governance-return-requests/` declares `mesh_root` and `peer_mesh`,
   and optionally `sdk_ref` and `deciding_ledger`. One run returns for exactly
@@ -30,6 +36,7 @@ RETURN_REQUEST_SCHEMA = "stegverse.organization-governance-return-request/v1"
 RETURN_REQUEST_DIR = ".stegverse/governance-return-requests/"
 OWNING_EXISTING_GOAL = "SVORG-MESH-LOCATION-BINDING-001"
 _SDK_REF = re.compile(r"^[0-9a-f]{40}$")
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _refused(failure_code, failed_predicate, repair, retry_entrypoint, next_attempt, **detail):
@@ -97,6 +104,60 @@ def transition_mesh_root(dispatch_mesh_root, request_paths):
     return {"schema": SCHEMA, "disposition": "ALLOW", "mesh_root": locators[0] if locators else "",
             "source": "COMMITTED_TRANSITION_REQUEST" if locators else "NONE_DECLARED",
             "declared_by": sorted(declared), "authority_effect": "NONE_INPUT_RESOLUTION_ONLY"}
+
+
+def request_process(request):
+    """The processing capability a committed transition request declares, or None."""
+    if isinstance(request.get("build_manifest"), dict):
+        return request["build_manifest"].get("process")
+    manifest = request.get("manifest")
+    processing = manifest.get("processing") if isinstance(manifest, dict) else None
+    return processing.get("capability") if isinstance(processing, dict) else None
+
+
+def committed_manifest(request, *, build, canonical_of):
+    """The manifest one committed transition request submits.
+
+    `build` is the SDK Manifest Builder and `canonical_of` the canonical
+    manifest digest the ingress derives; both come from the pinned SDK. A
+    request carries exactly one form. An exact manifest is submitted unchanged,
+    and only when it reproduces the digest the request names.
+    """
+    entrypoint = ".github/workflows/organization-ledger-transition.yml (push: .stegverse/transition-requests/*.json)"
+    has_build, has_manifest = "build_manifest" in request, "manifest" in request
+    if has_build == has_manifest:
+        return _refused("TRANSITION_REQUEST_MANIFEST_FORM_INVALID", "REQUEST_CARRIES_EXACTLY_ONE_MANIFEST_FORM",
+                        "declare either build_manifest arguments or an exact manifest, not both or neither",
+                        entrypoint, "commit a corrected successor request", request_id=request.get("request_id"))
+    if has_build:
+        try:
+            manifest = build(**request["build_manifest"])
+        except (TypeError, ValueError) as exc:
+            return _refused("TRANSITION_REQUEST_NOT_BUILDABLE", "BUILD_MANIFEST_ARGUMENTS_BUILD_A_MANIFEST",
+                            "build_manifest arguments the pinned SDK Manifest Builder accepts", entrypoint,
+                            "commit a corrected successor request", request_id=request.get("request_id"),
+                            detail=str(exc)[:300])
+        return {"schema": SCHEMA, "disposition": "ALLOW", "manifest": manifest, "canonical_manifest_sha256": canonical_of(manifest),
+                "source": "BUILT_BY_PINNED_SDK", "authority_effect": "NONE_INPUT_RESOLUTION_ONLY"}
+    manifest, expected = request["manifest"], request.get("expected_canonical_manifest_sha256")
+    if not isinstance(manifest, dict) or not (isinstance(expected, str) and _SHA256.match(expected)):
+        return _refused("EXACT_MANIFEST_UNBOUND", "EXACT_MANIFEST_NAMES_ITS_CANONICAL_DIGEST",
+                        "an exact manifest object with expected_canonical_manifest_sha256 (64 lowercase hex)",
+                        entrypoint, "commit a corrected successor request", request_id=request.get("request_id"))
+    try:
+        canonical = canonical_of(manifest)
+    except (TypeError, ValueError) as exc:
+        return _refused("EXACT_MANIFEST_NOT_ADMISSIBLE", "EXACT_MANIFEST_IS_A_VALID_INGRESS_MANIFEST",
+                        "a manifest the pinned SDK admits at ingress", entrypoint,
+                        "commit a corrected successor request", request_id=request.get("request_id"),
+                        detail=str(exc)[:300])
+    if canonical != expected:
+        return _refused("EXACT_MANIFEST_DIGEST_MISMATCH", "EXACT_MANIFEST_REPRODUCES_ITS_CANONICAL_DIGEST",
+                        "the unchanged manifest whose canonical digest is " + expected, entrypoint,
+                        "commit the exact frozen manifest unchanged", request_id=request.get("request_id"),
+                        observed=canonical)
+    return {"schema": SCHEMA, "disposition": "ALLOW", "manifest": manifest, "canonical_manifest_sha256": canonical,
+            "source": "EXACT_COMMITTED_MANIFEST", "authority_effect": "NONE_INPUT_RESOLUTION_ONLY"}
 
 
 def governance_return_inputs(dispatch, changed_paths):
