@@ -176,7 +176,7 @@ class WorkflowBinding(unittest.TestCase):
         receive = self.workflow.split("Receive each request")[1].split("- name:")[0]
         defer = receive.split("[ ${#mesh_args[@]} -eq 0 ]")[1].split("continue")[0]
         self.assertIn("capability_destination_bindings", defer)
-        self.assertIn('build_manifest") or {}).get("process") in bound', defer)
+        self.assertIn("inputs.request_process(request) in bound", defer)
         self.assertIn("deferred $name", defer)
         self.assertLess(receive.index("deferred $name"), receive.index("organization_manifest_ingress.py"))
 
@@ -287,6 +287,80 @@ class ManifestDirectedRunInputs(unittest.TestCase):
         self.assertLess(steps.index("Resolve this run's inputs from the committed return request or the dispatch"),
                         steps.index("Bind the designated mesh to this run"))
         self.assertNotIn("${{ github.event.inputs.mesh_root }}\n", ret.split("Bind the designated mesh to this run")[1])
+
+
+class CommittedTransitionManifest(unittest.TestCase):
+    """A committed request submits build_manifest arguments or an exact, already-built manifest."""
+
+    def setUp(self):
+        from stegverse.manifest_builder import build_manifest
+        from stegverse.manifest_contract import validate_ingress_manifest
+        self.inputs = load("manifest_directed_run_inputs_manifest", "resident-runtime/manifest_directed_run_inputs.py")
+        self.ingress = load("organization_manifest_ingress_for_inputs", "resident-runtime/organization_manifest_ingress.py")
+        self.build = build_manifest
+        self.validate = validate_ingress_manifest
+        # A committed governance request's own arguments, as the run builds them.
+        committed = json.loads((ROOT / ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-004.json").read_text())
+        self.arguments = dict(committed["build_manifest"])
+
+    def canonical_of(self, manifest):
+        self.validate(manifest)
+        return self.ingress.derive_execution_request(manifest, self.ingress.boundary())["canonical_manifest_sha256"]
+
+    def resolve(self, request):
+        return self.inputs.committed_manifest(request, build=self.build, canonical_of=self.canonical_of)
+
+    def _six(self, result, predicate):
+        self.assertEqual((result["disposition"], result["failed_predicate"]), ("FAIL_CLOSED", predicate))
+        for field in SIX_FIELDS:
+            self.assertTrue(result[field], field)
+
+    def test_build_manifest_arguments_are_built_by_the_pinned_sdk(self):
+        result = self.resolve({"request_id": "r", "build_manifest": self.arguments})
+        self.assertEqual((result["disposition"], result["source"]), ("ALLOW", "BUILT_BY_PINNED_SDK"))
+        self.assertEqual(self.inputs.request_process({"build_manifest": self.arguments}), "governance")
+
+    def test_an_exact_manifest_is_submitted_unchanged_when_it_reproduces_its_digest(self):
+        manifest = self.build(**self.arguments)
+        expected = self.canonical_of(manifest)
+        result = self.resolve({"request_id": "r", "manifest": manifest, "expected_canonical_manifest_sha256": expected})
+        self.assertEqual((result["disposition"], result["source"]), ("ALLOW", "EXACT_COMMITTED_MANIFEST"))
+        self.assertEqual(result["manifest"], manifest)
+        self.assertEqual(result["canonical_manifest_sha256"], expected)
+        self.assertEqual(self.inputs.request_process({"manifest": manifest}), "governance")
+
+    def test_an_exact_manifest_that_does_not_reproduce_its_digest_is_refused(self):
+        manifest = self.build(**self.arguments)
+        self._six(self.resolve({"request_id": "r", "manifest": manifest, "expected_canonical_manifest_sha256": "0" * 64}),
+                  "EXACT_MANIFEST_REPRODUCES_ITS_CANONICAL_DIGEST")
+
+    def test_an_exact_manifest_must_name_its_digest(self):
+        manifest = self.build(**self.arguments)
+        for expected in (None, "sha256:" + "0" * 64, "A" * 64):
+            with self.subTest(expected=expected):
+                self._six(self.resolve({"request_id": "r", "manifest": manifest,
+                                        "expected_canonical_manifest_sha256": expected}),
+                          "EXACT_MANIFEST_NAMES_ITS_CANONICAL_DIGEST")
+
+    def test_an_altered_exact_manifest_is_refused(self):
+        manifest = self.build(**self.arguments)
+        expected = self.canonical_of(manifest)
+        manifest["declared_intent"] = "something else"
+        result = self.resolve({"request_id": "r", "manifest": manifest, "expected_canonical_manifest_sha256": expected})
+        self.assertEqual(result["disposition"], "FAIL_CLOSED")
+
+    def test_a_request_carries_exactly_one_manifest_form(self):
+        manifest = self.build(**self.arguments)
+        for request in ({"request_id": "r"},
+                        {"request_id": "r", "build_manifest": self.arguments, "manifest": manifest}):
+            with self.subTest(keys=sorted(request)):
+                self._six(self.resolve(request), "REQUEST_CARRIES_EXACTLY_ONE_MANIFEST_FORM")
+
+    def test_the_ledger_transition_run_resolves_its_manifest_here(self):
+        workflow = (ROOT / ".github/workflows/organization-ledger-transition.yml").read_text()
+        self.assertIn("inputs.committed_manifest(request, build=build_manifest, canonical_of=canonical_of)", workflow)
+        self.assertIn("inputs.request_process(request) in bound", workflow)
+        self.assertNotIn('request["build_manifest"] and request["standing"]', workflow)
 
 
 if __name__ == "__main__":

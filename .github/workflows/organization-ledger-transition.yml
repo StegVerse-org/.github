@@ -78,7 +78,10 @@ jobs:
           assert location["new_ledger_root"] is False and location["namespace"]
           for path in Path(".stegverse/transition-requests").glob("*.json"):
               request = json.loads(path.read_text())
-              assert request["owning_existing_goal"] and request["build_manifest"] and request["standing"]
+              assert request["owning_existing_goal"] and request["standing"]
+              # Exactly one manifest form: build_manifest arguments, or the exact
+              # already-built manifest with its canonical digest.
+              assert ("build_manifest" in request) != ("manifest" in request), path
           PY
 
       - name: Bind the designated organization ledger ref and the repository ledger subtree within it
@@ -193,11 +196,13 @@ jobs:
             # deferred to the request or dispatch that supplies one; nothing is received,
             # recorded or spent here.
             if [ ${#mesh_args[@]} -eq 0 ] && python - "$request" <<'PY'
-          import json, sys
+          import importlib.util, json, sys
+          spec = importlib.util.spec_from_file_location("inputs", "resident-runtime/manifest_directed_run_inputs.py")
+          inputs = importlib.util.module_from_spec(spec); spec.loader.exec_module(inputs)
           request = json.load(open(sys.argv[1]))
           egress = json.load(open("org-runtime/interlock-intr.json")).get("egress") or {}
           bound = {b.get("profile_id") for b in egress.get("capability_destination_bindings") or [] if isinstance(b, dict)}
-          sys.exit(0 if (request.get("build_manifest") or {}).get("process") in bound else 1)
+          sys.exit(0 if inputs.request_process(request) in bound else 1)
           PY
             then
               echo "deferred $name: its process leaves this organization; commit a successor request declaring mesh_root, or dispatch with request=$request and mesh_root, to receive it"
@@ -212,11 +217,18 @@ jobs:
           from stegverse.manifest_contract import validate_ingress_manifest
           request = json.loads(Path(sys.argv[1]).read_text())
           out = Path(sys.argv[2])
-          manifest = build_manifest(**request["build_manifest"])
-          validate_ingress_manifest(manifest)
           spec = importlib.util.spec_from_file_location("ingress", "resident-runtime/organization_manifest_ingress.py")
           ingress = importlib.util.module_from_spec(spec); spec.loader.exec_module(ingress)
-          canonical = ingress.derive_execution_request(manifest, ingress.boundary())["canonical_manifest_sha256"]
+          spec = importlib.util.spec_from_file_location("inputs", "resident-runtime/manifest_directed_run_inputs.py")
+          inputs = importlib.util.module_from_spec(spec); spec.loader.exec_module(inputs)
+          def canonical_of(manifest):
+              validate_ingress_manifest(manifest)
+              return ingress.derive_execution_request(manifest, ingress.boundary())["canonical_manifest_sha256"]
+          resolved = inputs.committed_manifest(request, build=build_manifest, canonical_of=canonical_of)
+          if resolved["disposition"] != "ALLOW":
+              print(json.dumps(resolved, sort_keys=True))
+              sys.exit(1)
+          manifest, canonical = resolved["manifest"], resolved["canonical_manifest_sha256"]
           (out / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
           (out / "standing.json").write_text(json.dumps(request["standing"], indent=2, sort_keys=True) + "\n")
           (out / "canonical_manifest_sha256").write_text(canonical)
