@@ -34,7 +34,7 @@ def returns_for_consumed(results, *, mesh_root):
     for item in answers:
         # The closure is stamped with the epoch of the answer frame it observes,
         # as the kernel stamps an answer with the epoch of the frame it answers:
-        # consuming the same answer again (a fresh node state, a re-dispatch)
+        # consuming the same answer again (a fresh node state, a further run)
         # then returns the closure already recorded instead of minting another.
         frame=mesh.get(K.node_store_module.MESH_FRAME_PREFIX+K.node_store_module.frame_name(str(item["path"])))
         epoch=((frame or {}).get("heartbeat_reference") or {}).get("epoch")

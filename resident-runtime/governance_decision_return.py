@@ -111,6 +111,9 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
     binding = governance_binding()
     base = {"schema": RESULT_SCHEMA, "operation": OPERATION_ID,
             "request_sha256": request["request_sha256"],
+            # The decided manifest's own identity, so a consumer can bind the
+            # read-back decision to the exact manifest it decided.
+            "wire_manifest_sha256": request.get("wire_manifest_sha256"),
             "governance_request_packet_id": packet_id,
             "governance_communication_id": communication_id,
             "deciding_organization": binding["destination_organization"],
@@ -156,7 +159,7 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
         request, recorded["transition_closures"],
         {"receipt_sha256": closed["closure_organization_receipt_sha256"]}, decision)
     try:
-        admitted = admit_runtime_result(manifest, request, runtime)
+        admitted = admit_runtime_result(manifest, request, runtime, ingress.boundary())
     except ValueError as exc:
         return {**base, **closure, "disposition": "FAIL_CLOSED", "decision_returned": True,
                 "governance_disposition": decision.get("disposition"),
@@ -270,7 +273,7 @@ def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path
                 "retry_entrypoint": RETRY_ENTRYPOINT, "authority_effect": "NONE_REFUSAL_ONLY"}
     manifest, failed, detail = retained_manifest(request_sha256)
     if failed == "RETAINED_MANIFEST_REPRODUCES_THE_RECORDED_REQUEST":
-        # A re-dispatch consumes every answer on the mesh again. One whose
+        # A further return run consumes every answer on the mesh again. One whose
         # crossing an earlier run already closed on this same answer was
         # returned then, under the SDK the request was received under; this
         # SDK not reproducing that request is not a new refusal. It is observed,
@@ -281,7 +284,7 @@ def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path
                     "disposition": "CLOSURE_ALREADY_RECORDED", "decision_returned": None,
                     "observation_only": True, "replay_is_not_a_transition": True,
                     "not_reproduced_under_this_sdk": detail,
-                    "readmission_requires": "dispatch with sdk_ref set to the SDK the request was received under",
+                    "readmission_requires": "a committed return request declaring sdk_ref as the SDK the request was received under",
                     "authority_effect": "NONE_OBSERVATION_ONLY"}
     if manifest is None:
         return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,

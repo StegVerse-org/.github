@@ -100,7 +100,7 @@ jobs:
           SDK_REF: ${{ env.RETURN_SDK_REF }}
         run: |
           if [ -n "$SDK_REF" ] && ! printf '%s' "$SDK_REF" | grep -Eq '^[0-9a-f]{40}$'; then
-            echo '{"disposition":"FAIL_CLOSED","failure_code":"SDK_REF_INVALID","failed_predicate":"SDK_REF_IS_AN_EXACT_COMMIT","required_evidence_or_repair":"supply sdk_ref as a full 40-hex StegVerse-SDK commit, or leave it empty for the current pin","retry_entrypoint":".github/workflows/organization-governance-return.yml","owning_existing_goal":"SDK-MR-A-VALIDATION-CUSTODY-001","next_attempt":"re-dispatch with an exact commit"}'
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"SDK_REF_INVALID","failed_predicate":"SDK_REF_IS_AN_EXACT_COMMIT","required_evidence_or_repair":"declare sdk_ref as a full 40-hex StegVerse-SDK commit, or omit it for the current pin","retry_entrypoint":".github/workflows/organization-governance-return.yml","owning_existing_goal":"SDK-MR-A-VALIDATION-CUSTODY-001","next_attempt":"commit a successor return request with an exact commit"}'
             exit 1
           fi
 
@@ -170,7 +170,7 @@ jobs:
             echo "no frame on $MESH_PUBLISH_REF; nothing to publish"; exit 0
           fi
           if ! git push origin "$MESH_PUBLISH_REF:$MESH_PUBLISH_REF"; then
-            echo '{"disposition":"FAIL_CLOSED","failure_code":"MESH_REF_PUBLISH_RACE","failed_predicate":"PUBLISHED_MESH_REF_FAST_FORWARDS","required_evidence_or_repair":"another writer moved the mesh ref first; this run published no frame and no ledger receipt","retry_entrypoint":".github/workflows/organization-governance-return.yml","owning_existing_goal":"SDK-MR-A-VALIDATION-CUSTODY-001","next_attempt":"re-run the dispatch; the answer is taken in again and the return is answered from the ledger"}'
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"MESH_REF_PUBLISH_RACE","failed_predicate":"PUBLISHED_MESH_REF_FAST_FORWARDS","required_evidence_or_repair":"another writer moved the mesh ref first; this run published no frame and no ledger receipt","retry_entrypoint":".github/workflows/organization-governance-return.yml","owning_existing_goal":"SDK-MR-A-VALIDATION-CUSTODY-001","next_attempt":"commit a successor return request; the answer is taken in again and the return is answered from the ledger"}'
             exit 1
           fi
           echo "mesh ref published: $MESH_PUBLISH_REF $(git rev-parse "$MESH_PUBLISH_REF")"
@@ -221,6 +221,7 @@ jobs:
                                                                "closure_organization_receipt_sha256",
                                                                "deciding_organization_receipt_sha256",
                                                                "governance_request_packet_id", "response_packet_id",
+                                                               "request_sha256", "wire_manifest_sha256",
                                                                "failed_predicate")}
                                         for r in cycle.get("governance_returns", [])],
                             "authority_effect": "NONE_READBACK_ONLY"}, indent=2, sort_keys=True))
