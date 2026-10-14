@@ -109,6 +109,26 @@ class ReturnPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "REMEDIATION_WIRE_MANIFEST_DIGEST_MISMATCH"):
             module.inspect_governed_remediation_return(classification, request, "RE_MANIFEST")
 
+    def test_pre_323_legacy_identity_never_grants_remediation_authority(self):
+        canonical = {"payload": {"goal_task_id": "MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003"}}
+        request = {"request_sha256": "a" * 64, "canonical_manifest": canonical}
+        classification, _ = fixture()
+        classification["original_request_document_sha256"] = hashlib.sha256(json.dumps(
+            request, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")).hexdigest()
+        classification["original_wire_manifest_sha256"] = hashlib.sha256(json.dumps(
+            canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")).hexdigest()
+        for action in ("RE_MANIFEST", "RESUBMIT"):
+            classification["suggested_action"] = action
+            result = module.inspect_governed_remediation_return(classification, request, action)
+            self.assertEqual(result["disposition"], "FAIL_CLOSED")
+            self.assertEqual(result["authority_effect"], "NONE_PREFLIGHT_ONLY")
+            self.assertIs(result["execution_authority_granted"], False)
+            for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                          "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+                self.assertTrue(result.get(field), field)
+
     def test_request_without_any_wire_identity_fails_closed(self):
         classification, _ = fixture()
         with self.assertRaisesRegex(ValueError, "REMEDIATION_REQUEST_FIELD_REQUIRED:wire_manifest_sha256"):
