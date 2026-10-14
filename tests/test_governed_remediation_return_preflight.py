@@ -129,6 +129,19 @@ class ReturnPreflightTests(unittest.TestCase):
                           "retry_entrypoint", "owning_existing_goal", "next_attempt"):
                 self.assertTrue(result.get(field), field)
 
+    def test_legacy_identity_action_switch_is_rejected(self):
+        canonical = {"payload": {"goal_task_id": "MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003"}}
+        request = {"request_sha256": "a" * 64, "canonical_manifest": canonical}
+        classification, _ = fixture()
+        classification["original_request_document_sha256"] = hashlib.sha256(json.dumps(
+            request, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")).hexdigest()
+        classification["original_wire_manifest_sha256"] = hashlib.sha256(json.dumps(
+            canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")).hexdigest()
+        with self.assertRaisesRegex(ValueError, "REMEDIATION_ACTION_CLASSIFICATION_MISMATCH"):
+            module.inspect_governed_remediation_return(classification, request, "RESUBMIT")
+
     def test_request_without_any_wire_identity_fails_closed(self):
         classification, _ = fixture()
         with self.assertRaisesRegex(ValueError, "REMEDIATION_REQUEST_FIELD_REQUIRED:wire_manifest_sha256"):
