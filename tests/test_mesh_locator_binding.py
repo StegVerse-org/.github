@@ -8,6 +8,7 @@ the checkout, fetched before the transition and published (fast-forward only)
 before the ledger ref. No mesh is designated here and nothing is written to any
 real ref: temporary repositories only.
 """
+import hashlib
 import importlib.util
 import json
 import os
@@ -290,22 +291,30 @@ class ManifestDirectedRunInputs(unittest.TestCase):
 
 
 class CommittedTransitionManifest(unittest.TestCase):
-    """A committed request submits build_manifest arguments or an exact, already-built manifest."""
+    """A committed request submits build_manifest arguments or an exact, already-built manifest.
+
+    The SDK Manifest Builder and the ingress-derived canonical digest are passed
+    in by the run; here stdlib stand-ins with the same contract are passed, so
+    this boundary test needs no SDK checkout.
+    """
 
     def setUp(self):
-        from stegverse.manifest_builder import build_manifest
-        from stegverse.manifest_contract import validate_ingress_manifest
         self.inputs = load("manifest_directed_run_inputs_manifest", "resident-runtime/manifest_directed_run_inputs.py")
-        self.ingress = load("organization_manifest_ingress_for_inputs", "resident-runtime/organization_manifest_ingress.py")
-        self.build = build_manifest
-        self.validate = validate_ingress_manifest
-        # A committed governance request's own arguments, as the run builds them.
-        committed = json.loads((ROOT / ".stegverse/transition-requests/SDK-MR-A-ORGANIZATION-LEDGER-RECEIPT-004.json").read_text())
-        self.arguments = dict(committed["build_manifest"])
+        self.arguments = {"process": "governance", "data": {"x": 1}, "processor_request": {"candidate": {}},
+                          "source_framework": "committed-manifest-test", "source_output_id": "committed-1"}
 
-    def canonical_of(self, manifest):
-        self.validate(manifest)
-        return self.ingress.derive_execution_request(manifest, self.ingress.boundary())["canonical_manifest_sha256"]
+    @staticmethod
+    def build(**arguments):
+        if "process" not in arguments:
+            raise TypeError("process is required")
+        return {"processing": {"capability": arguments["process"]},
+                "payload": arguments.get("data"), "source_output_id": arguments.get("source_output_id")}
+
+    @staticmethod
+    def canonical_of(manifest):
+        if not isinstance(manifest.get("processing"), dict):
+            raise ValueError("manifest has no processing")
+        return hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
     def resolve(self, request):
         return self.inputs.committed_manifest(request, build=self.build, canonical_of=self.canonical_of)
