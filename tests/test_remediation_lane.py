@@ -233,6 +233,57 @@ class RemediationClassificationReturnTests(_LaneFixture):
         self.assertEqual(len(self.frames_to("StegVerse-Labs")), 1)
 
 
+class Pre323RequestGovernanceTests(_LaneFixture):
+    """A request derived before StegVerse-SDK#323 carries no wire_manifest_sha256 (the original
+    Experiment 3 request among them). This organization's preflight and the SDK's remediation
+    governance manifest must take the same wire identity for it: the canonical_manifest digest."""
+
+    def setUp(self):
+        super().setUp()
+        from stegverse.route_resolution import canonical_sha256
+        self.preflight = _load("governed_remediation_return_preflight_pre323",
+                               "resident-runtime/governed_remediation_return_preflight.py")
+        historical = copy.deepcopy(self.original)
+        for key in ("wire_manifest_sha256", "canonical_manifest_projection", "request_sha256"):
+            historical.pop(key, None)
+        historical["request_sha256"] = canonical_sha256(historical)
+        self.historical = historical
+        self.deny = _non_allow(historical, evaluation_boundary="SDK_MANIFEST_PROFILE",
+                               failed_predicate="canonical_manifest_sha256_binding_mismatch",
+                               source_disposition_ref="runtime-state/sdk-manifest-state-transition/dispositions/x.json")
+        self.classification = {
+            "schema": "stegverse.healer.sdk-deny-classification/v1", "state": "DETECTED",
+            "source_disposition_ref": self.deny["source_disposition_ref"],
+            "original_request_sha256": historical["request_sha256"],
+            "original_request_document_sha256": _sha(historical),
+            "original_wire_manifest_sha256": canonical_sha256(historical["canonical_manifest"]),
+            "suggested_action": "RE_MANIFEST", "governance_disposition": "NOT_EVALUATED",
+            "execution_authority_granted": False, "authority_effect": "NONE_CLASSIFICATION_ONLY"}
+
+    def test_preflight_and_sdk_governance_manifest_agree_on_the_wire_identity(self):
+        from stegverse.governed_remediation import remediation_candidate, remediation_governance_manifest
+        preflight = self.preflight.inspect_governed_remediation_return(
+            self.classification, self.historical, "RE_MANIFEST")
+        self.assertEqual(preflight["proposed_action"], "RE_MANIFEST")
+        candidate = remediation_candidate(self.classification, self.historical, self.deny)
+        self.assertEqual(candidate["parameters"]["original_wire_manifest_sha256"],
+                         self.classification["original_wire_manifest_sha256"])
+        governance = remediation_governance_manifest(
+            self.classification, self.historical, self.deny, preflight=preflight,
+            evidence_refs=["sha256:" + "e" * 64], organization_boundary=ingress.boundary())
+        request = derive_execution_request(governance, ingress.boundary())
+        self.assertEqual(request["processing_capability"], "governance")
+        self.assertEqual(governance["candidate"], candidate)
+
+    def test_a_pre323_request_with_another_wire_identity_is_refused_by_both(self):
+        from stegverse.governed_remediation import remediation_candidate
+        self.classification["original_wire_manifest_sha256"] = "f" * 64
+        with self.assertRaisesRegex(ValueError, "REMEDIATION_WIRE_MANIFEST_DIGEST_MISMATCH"):
+            self.preflight.inspect_governed_remediation_return(self.classification, self.historical, "RE_MANIFEST")
+        with self.assertRaisesRegex(ValueError, "original_wire_manifest_sha256"):
+            remediation_candidate(self.classification, self.historical, self.deny)
+
+
 class IngressRefusalForkTests(_LaneFixture):
     """A refusal at this ingress is a non-ALLOW recognized here, so it carries its remediation fork too."""
 

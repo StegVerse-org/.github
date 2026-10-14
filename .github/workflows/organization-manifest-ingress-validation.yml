@@ -17,6 +17,10 @@ on:
       - 'org-boundary/registry/services.json'
       - 'tests/test_organization_manifest_ingress.py'
       - 'tests/test_manifest_ingress_idempotent.py'
+      - 'tests/test_remediation_lane.py'
+      - 'resident-runtime/remediation_classification_return.py'
+      - 'resident-runtime/remediation_endpoint.py'
+      - 'resident-runtime/governed_remediation_return_preflight.py'
       - 'resident-runtime/organization_egress_boundary.py'
       - 'org-kernel/kernel.py'
       - 'tests/fixtures/sdk-manifests/**'
@@ -39,6 +43,10 @@ on:
       - 'org-boundary/registry/services.json'
       - 'tests/test_organization_manifest_ingress.py'
       - 'tests/test_manifest_ingress_idempotent.py'
+      - 'tests/test_remediation_lane.py'
+      - 'resident-runtime/remediation_classification_return.py'
+      - 'resident-runtime/remediation_endpoint.py'
+      - 'resident-runtime/governed_remediation_return_preflight.py'
       - 'resident-runtime/organization_egress_boundary.py'
       - 'org-kernel/kernel.py'
       - 'tests/fixtures/sdk-manifests/**'
@@ -88,6 +96,15 @@ jobs:
           STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/idempotent-repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/idempotent-org-ledger
         run: python -m unittest tests.test_manifest_ingress_idempotent -v
+
+      # The remediation lane of every non-ALLOW: its fork, StegHealer's
+      # classification return, and the governance manifest the SDK builds from it
+      # (pre-StegVerse-SDK#323 requests included).
+      - name: Fork, classify and take a non-ALLOW's remediation into governance
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/remediation-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/remediation-org-ledger
+        run: python -m unittest tests.test_remediation_lane -v
 
       - name: Receive a submitted manifest end-to-end and emit the organization receipt
         env:
