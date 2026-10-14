@@ -27,6 +27,24 @@
     "A_RECEIVER_IS_NOT_ALWAYS_ON",
     "AN_AUTHENTIC_OBSERVER_HAS_NOT_YET_LOOKED"
   ],
-  "exemptions": [],
+  "exemptions": [
+    {
+      "surface": "StegVerse-org/LLM-adapter:llm_adapter/s1_lease_provider_call.py::build_s1_provider_call (S1_CHATGPT / S1_CLAUDE governed provider path)",
+      "owning_existing_goal": "ECOSYSTEM-ECONOMIC-WHITEPAPER-GATED-ROADMAP-001",
+      "failure_code": "ORGANIZATION_ROLE_CONFORMANCE_NOT_DECLARED",
+      "failed_predicate": "INTR_INGRESS_AND_EGRESS_DECISIONS_ARE_ORGANIZATION_LEDGER_TRANSITIONS",
+      "why_manifest_bound_state_transition_is_not_yet_possible": "The S1 benchmark acceptance (exact_external_intr_ingress_allow, exact_external_intr_egress_allow) defines the InTr ingress disposition and egress decision as inputs supplied to the provider call, so build_s1_provider_call takes them from its caller. Rebinding them to this organization's own InTr ingress/egress transitions read back from its ledger changes the benchmark's acceptance predicates, which is the benchmark owner's decision (StegVerse-Labs/.github#3107, review query Q2).",
+      "required_evidence_or_repair": "Benchmark-owner decision on StegVerse-Labs/.github#3107 Q2; then rebind the provider path's ingress disposition and egress decision to organization-ledger read-back, as StegVerse-org/LLM-adapter#406 did for governed publication, with negative tests for caller-supplied decisions.",
+      "retry_entrypoint": "StegVerse-org/LLM-adapter:llm_adapter/s1_lease_provider_call.py::build_s1_provider_call",
+      "next_attempt": "repair once #3107 Q2 is decided, and remove this exemption in the same change",
+      "expires_or_review_on": "2026-11-14",
+      "tracking": [
+        "https://github.com/StegVerse-Labs/.github/issues/3107#issuecomment-6168514509",
+        "https://github.com/StegVerse-Labs/.github/issues/3183#issuecomment-6168627967"
+      ],
+      "registered_on": "2026-10-14",
+      "authority_effect": "NONE_REGISTER_ONLY"
+    }
+  ],
   "authority_effect": "NONE_REGISTER_ONLY"
 }
