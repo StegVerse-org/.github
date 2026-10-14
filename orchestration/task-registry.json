@@ -177,6 +177,7 @@
       "workstream": "icv-release-propagation",
       "depends_on": [],
       "required_evidence": [
+        "Completion evidence contract v1: evidence class SOURCE_IMPLEMENTED (source comparison of the ICV v1.0.0 release against StegVerse-Labs/Site main yielding NO_PROPAGATION_REQUIRED; no served-body verification); refs: Infrastructure-Continuity-Ventures/.github@9b691cfaac076b565153c5a1c0f6c4072b8b044e, StegVerse-Labs/Site/docs/ICV_PUBLIC_COMMERCIAL_CATALOG_MIRROR_HANDOFF.md; legacy status `complete` retained only because the vendored registry schema cannot carry the class (StegVerse-org/.github#150); not a runtime-complete claim",
         "Infrastructure-Continuity-Ventures/.github v1.0.0 resolves exact commit 9b691cfaac076b565153c5a1c0f6c4072b8b044e",
         "released public-facing ICV catalog/request semantics compared against StegVerse-Labs/Site mirror",
         "NO_PROPAGATION_REQUIRED evidence or exact-head Site propagation and served-body verification",
@@ -231,6 +232,7 @@
       "workstream": "llm-org-foundation",
       "depends_on": [],
       "required_evidence": [
+        "Completion evidence contract v1: evidence class CI_VALIDATED (source scope); refs: StegVerse-org/.github#112, #114, #115, #116, data/llma-hcb-terminal-review.json; legacy status `complete` retained only because the vendored registry schema cannot carry the class (StegVerse-org/.github#150); not a runtime-complete claim",
         "docs/LLM_ORG_FOUNDATION_MIRROR_HANDOFF.md defines non-duplicative ownership and completion predicates",
         "data/llm-org-foundation.json defines work-context, Sandbox, Ecosystem AI evidence-matching, and disposition-complete Inference Window contracts",
         "tests prove participating LLM/AI entities acquire no governance authority",
@@ -261,6 +263,7 @@
       "workstream": "llm-adapter-declared-path-conformance",
       "depends_on": [],
       "required_evidence": [
+        "Completion evidence contract v1: evidence class CI_VALIDATED (source scope); refs: data/llma-hcb-terminal-review.json, PR #116, Organization Ledger Transition runs 38020580790 and 38031123470 (ledger receipts are recorded; no stronger class is inferred from them); legacy status `complete` retained only because the vendored registry schema cannot carry the class (StegVerse-org/.github#150); not a runtime-complete claim",
         "StegVerse-org/LLM-adapter#368 comment 6084397140 findings F1-F14 are each repaired or carry the disposition that comment assigns",
         "LLM-adapter #369 merged as 2319ba4 (F1, F2, F3, F9, F11; F14 SDK-only processing remains open)",
         "LLM-adapter #370 merged as 650eb7e (F6, F7; VA and activation verifier follow-ups remain open)",
@@ -300,7 +303,8 @@
       "status": "in_progress",
       "workstream": "llm-org-foundation",
       "depends_on": [
-        "SVORG-LLM-ORG-FOUNDATION-001"
+        "SVORG-LLM-ORG-FOUNDATION-001",
+        "SVORG-SV-LLM-DOT-REPOSITORY-REACH-001"
       ],
       "required_evidence": [
         "SV-LLM side: tests run under a stdlib runner with no pytest dependency (SV-LLM/.github#30)",
@@ -329,7 +333,8 @@
       "status": "proposed",
       "workstream": "llm-org-foundation",
       "depends_on": [
-        "SVORG-LLM-ORG-FOUNDATION-001"
+        "SVORG-LLM-ORG-FOUNDATION-001",
+        "SVORG-SV-LLM-DOT-REPOSITORY-REACH-001"
       ],
       "required_evidence": [
         "the Playwright/Chromium browser-engine dependency removed from every SV-LLM surface, with no replacement dependency added",
@@ -355,7 +360,9 @@
       "status": "proposed",
       "workstream": "llm-org-foundation",
       "depends_on": [
-        "SVORG-LLM-ORG-FOUNDATION-001"
+        "SVORG-LLM-ORG-FOUNDATION-001",
+        "SVORG-SV-LLM-DOT-REPOSITORY-REACH-001",
+        "SVORG-LLM-W03-TERMS-PAGE-COPIES-001"
       ],
       "required_evidence": [
         "every provider terms page bound from a retained copy with its source URL and retrieval date",
@@ -383,7 +390,8 @@
       "status": "proposed",
       "workstream": "llm-org-foundation",
       "depends_on": [
-        "SVORG-LLM-ORG-FOUNDATION-001"
+        "SVORG-LLM-ORG-FOUNDATION-001",
+        "SVORG-SV-LLM-DOT-REPOSITORY-REACH-001"
       ],
       "required_evidence": [
         "SANDBOX_RUNTIME_OBSERVED: runtime observation is native only as an organization receipt appended to refs/stegverse/organization-ledger by a manifest-directed transition (.stegverse/transition-requests/ -> Organization Ledger Transition); no external machine, receiver liveness, always-on listener or second device is a predicate",
@@ -414,7 +422,8 @@
       "workstream": "llm-org-foundation",
       "depends_on": [
         "SVORG-LLM-ORG-FOUNDATION-001",
-        "SVORG-LLM-ORG-FOUNDATION-001-W04-CANONICAL-RUNTIME-SUBSTRATE"
+        "SVORG-LLM-ORG-FOUNDATION-001-W04-CANONICAL-RUNTIME-SUBSTRATE",
+        "SVORG-SV-LLM-DOT-REPOSITORY-REACH-001"
       ],
       "required_evidence": [
         "a TV/TVC-held invocation tool that invokes with real contribution content, not fixtures",
@@ -625,7 +634,8 @@
       "status": "validating",
       "workstream": "llm-org-foundation",
       "depends_on": [
-        "SVORG-LLM-ORG-FOUNDATION-001"
+        "SVORG-LLM-ORG-FOUNDATION-001",
+        "SVORG-SV-LLM-DOT-REPOSITORY-REACH-001"
       ],
       "required_evidence": [
         "Ecosystem Chat Sandbox conformance-proposal check in source and tests",
@@ -643,6 +653,81 @@
       ],
       "unresolved_obligations": [
         "WORK_CYCLE_INVOCATION_PENDING"
+      ]
+    },
+    {
+      "task_id": "SVORG-TASK-REGISTRY-EVIDENCE-CLASS-001",
+      "issue": 150,
+      "title": "Carry the completion evidence class in the task registry schema and re-qualify legacy complete tasks",
+      "status": "proposed",
+      "workstream": "task-registry-completion-evidence",
+      "depends_on": [],
+      "required_evidence": [
+        "StegVerse-Labs/repo-standards schemas/task-registry.schema.json defines a completion evidence class field (or qualified statuses) from the canonical completion_evidence_classes",
+        "orchestration/schemas/task-registry.schema.json re-vendored byte-identical with PROVENANCE.json updated",
+        "SVORG-LLM-ORG-FOUNDATION-001, LLMA-DECLARED-PATH-CONFORMANCE-368 and ICV-V1-SITE-PROPAGATION-VERIFICATION-001 carry the class in that field and their COSV vectors are re-encoded",
+        "until then tests/test_task_registry.py holds every complete/merged/archived task to a 'Completion evidence contract v1' required_evidence entry naming a canonical class"
+      ],
+      "outputs": [
+        "orchestration/schemas/task-registry.schema.json",
+        "orchestration/schemas/PROVENANCE.json",
+        "orchestration/task-registry.json"
+      ],
+      "tag_allowed": false,
+      "activation_condition": "the owner of StegVerse-Labs/repo-standards (private, another organization) changes the canonical schema; this repository cannot edit its vendored copy first",
+      "destinations": [
+        "StegVerse-Labs/repo-standards"
+      ],
+      "unresolved_obligations": [
+        "CANONICAL_SCHEMA_EVIDENCE_CLASS_FIELD",
+        "REVENDOR_SCHEMA",
+        "REENCODE_COSV_VECTORS"
+      ]
+    },
+    {
+      "task_id": "SVORG-SV-LLM-DOT-REPOSITORY-REACH-001",
+      "issue": 151,
+      "title": "Make SV-LLM/.github continuation work reachable from a session (dot-name repository)",
+      "status": "proposed",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "SV-LLM/.github#30 continuation items are held in a repository a session can attach, or are run from a session whose source is SV-LLM/.github",
+        "each continuation action is a manifest-bound attempted state transition; no external machine or second device is a predicate"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "owner decision: rename SV-LLM/.github, mirror #30's items into a non-dot SV-LLM repository, or run them from a session started on SV-LLM/.github",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "unresolved_obligations": [
+        "OWNER_DECISION_ON_DOT_REPOSITORY_REACH"
+      ]
+    },
+    {
+      "task_id": "SVORG-LLM-W03-TERMS-PAGE-COPIES-001",
+      "issue": 152,
+      "title": "Supply owner-saved copies of the three bot-challenged provider terms pages for W3",
+      "status": "proposed",
+      "workstream": "llm-org-foundation",
+      "depends_on": [
+        "SVORG-LLM-ORG-FOUNDATION-001"
+      ],
+      "required_evidence": [
+        "three owner-saved terms page copies committed with source URL, retrieval date and sha256",
+        "no scraping or headless-browser dependency added to obtain them"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "owner-supplied evidence; until it exists W3 carries a recorded non-ALLOW disposition with StegVerse-org/.github#152 as its retry entrypoint, and nothing waits on it",
+      "destinations": [
+        "SV-LLM/.github"
+      ],
+      "unresolved_obligations": [
+        "OWNER_SAVED_TERMS_PAGE_COPIES"
       ]
     }
   ]

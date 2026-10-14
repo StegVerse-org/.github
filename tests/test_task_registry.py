@@ -184,6 +184,37 @@ class CoherenceTests(unittest.TestCase):
                                 "open task with no required_evidence")
 
 
+class CompletionEvidenceClassTests(unittest.TestCase):
+    """A terminal status must say which evidence class it proves.
+
+    StegVerse-Labs/.github `data/task-registry-global-invariants.json` prohibits
+    unqualified complete status (NO_UNQUALIFIED_COMPLETE_OR_COMPLETED_STATUS) and
+    requires completion contract v1 with an explicit evidence class. The
+    vendored schema has no field for the class (StegVerse-org/.github#150), so
+    until it does the class is carried as the first `required_evidence` entry of
+    every terminal task, and this case refuses a terminal task without it.
+    """
+
+    #: `completion_evidence_classes` in the invariants file, weakest first.
+    CLASSES = ("SOURCE_IMPLEMENTED", "MERGED", "CI_VALIDATED",
+               "SANDBOX_RUNTIME_OBSERVED", "EXTERNAL_PROVIDER_OBSERVED",
+               "MASTER_RECORDS_RECONSTRUCTED", "END_TO_END")
+    PREFIX = "Completion evidence contract v1: evidence class "
+
+    def test_every_terminal_task_names_its_evidence_class(self):
+        for task in TASKS:
+            if task["status"] not in {"complete", "merged", "archived"}:
+                continue
+            with self.subTest(task=task["task_id"]):
+                qualified = [e for e in task.get("required_evidence") or []
+                             if e.startswith(self.PREFIX)]
+                self.assertEqual(len(qualified), 1,
+                                 "a terminal task needs exactly one contract v1 evidence-class entry")
+                named = qualified[0][len(self.PREFIX):].split()[0].rstrip(";")
+                self.assertIn(named, self.CLASSES)
+                self.assertIn("refs:", qualified[0], "a completion claim needs evidence refs")
+
+
 class EntityNeutralityTests(unittest.TestCase):
     """Any entity must be able to review any task. None of them owns one here."""
 

@@ -23,8 +23,8 @@
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
-      "NAMING_ONLY": 19,
-      "total": 189
+      "NAMING_ONLY": 20,
+      "total": 190
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -596,7 +596,7 @@
     },
     {
       "file": "orchestration/task-registry.json",
-      "line": 505,
+      "line": 514,
       "text": "\"activation_condition\": \"met at CI_VALIDATED class per SV-LLM/.github#30; recorded under existing task MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002 (linked, not duplicated)\",",
       "classification": "PROPER",
       "reason": "Links the W8 continuation of SVORG-LLM-ORG-FOUNDATION-001 to the existing remediation task by identifier; consistent with the canonical downstream, non-gating recorder role."
@@ -1384,6 +1384,13 @@
       "text": "# still derived MASTER_RECORDS as custody authority. Every workflow here",
       "classification": "PROPER",
       "reason": "Workflow comment recording why the SDK pin moved: the pre-migration pin derived Master Records as custody authority; the current pin derives ORGANIZATION_LEDGER and Master Records only as the non-gating downstream recorder. Grants Master Records no role."
+    },
+    {
+      "file": "tests/test_task_registry.py",
+      "line": 201,
+      "text": "\"MASTER_RECORDS_RECONSTRUCTED\", \"END_TO_END\")",
+      "classification": "NAMING_ONLY",
+      "reason": "Registry-wide completion evidence class, named so terminal tasks can be held to it; renaming it is a registry-wide vocabulary migration requiring its own registration. Classified, not renamed."
     }
   ]
 }
