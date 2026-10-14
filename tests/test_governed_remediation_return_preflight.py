@@ -92,6 +92,28 @@ class ReturnPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "REMEDIATION_ACTION_CLASSIFICATION_MISMATCH"):
             module.inspect_governed_remediation_return(classification, request, "RE_MANIFEST")
 
+    def test_pre_323_request_uses_canonical_manifest_wire_identity(self):
+        # The original Experiment 3 request predates StegVerse-SDK#323 and has
+        # no wire_manifest_sha256 field.
+        canonical = {"payload": {"goal_task_id": "MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003"}}
+        request = {"request_sha256": "a" * 64, "canonical_manifest": canonical}
+        wire = hashlib.sha256(json.dumps(canonical, sort_keys=True, separators=(",", ":"),
+                                         ensure_ascii=False).encode("utf-8")).hexdigest()
+        classification, _ = fixture()
+        classification["original_request_document_sha256"] = hashlib.sha256(json.dumps(
+            request, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+        classification["original_wire_manifest_sha256"] = wire
+        out = module.inspect_governed_remediation_return(classification, request, "RE_MANIFEST")
+        self.assertEqual(out["disposition"], "FAIL_CLOSED")
+        classification["original_wire_manifest_sha256"] = "f" * 64
+        with self.assertRaisesRegex(ValueError, "REMEDIATION_WIRE_MANIFEST_DIGEST_MISMATCH"):
+            module.inspect_governed_remediation_return(classification, request, "RE_MANIFEST")
+
+    def test_request_without_any_wire_identity_fails_closed(self):
+        classification, _ = fixture()
+        with self.assertRaisesRegex(ValueError, "REMEDIATION_REQUEST_FIELD_REQUIRED:wire_manifest_sha256"):
+            module.inspect_governed_remediation_return(classification, {"request_sha256": "a" * 64}, "RE_MANIFEST")
+
 
 if __name__ == "__main__":
     unittest.main()
