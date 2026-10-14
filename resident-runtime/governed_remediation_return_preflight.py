@@ -70,7 +70,12 @@ def inspect_governed_remediation_return(
         "proposed_action": proposed_action,
         "original_request_sha256": request["request_sha256"],
         "source_disposition_ref": classification["source_disposition_ref"],
+        "failure_code": "REMEDIATION_GOVERNANCE_AUTHORITY_NOT_YET_EVALUATED",
+        "failed_predicate": "AUTHENTIC_GOVERNED_RETURN_AND_SOVEREIGN_LEDGER_READBACK",
         "required_evidence_or_repair": "AUTHENTIC_GOVERNED_RETURN_AND_SOVEREIGN_LEDGER_READBACK",
+        "retry_entrypoint": "resident-runtime/remediation_classification_return.py::return_on_consumption",
+        "owning_existing_goal": "STEGHEALTH-ECOSYSTEM-FAILURE-REMEDIATION-001",
+        "next_attempt": "submit the manifest-bound classification to existing governance and evaluate its authenticated ledger-backed decision",
         "authority_effect": "NONE_PREFLIGHT_ONLY",
         "execution_authority_granted": False,
     }
