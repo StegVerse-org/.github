@@ -68,7 +68,7 @@ Register: `data/organization-role-exemption-register.json` (`stegverse.organizat
 
 An exemption is an actionable non-ALLOW disposition for a named surface, not permission to be non-conforming: it carries `surface`, `owning_existing_goal`, `failure_code`, `failed_predicate`, `why_manifest_bound_state_transition_is_not_yet_possible`, `required_evidence_or_repair`, `retry_entrypoint`, `next_attempt` and `expires_or_review_on`. It grants no authority and may not satisfy a terminal predicate.
 
-The register refuses the justifications the standard already forbids — an external machine must be running, a second device is required, a remote computer is unavailable, evidence reachability is pending, a receiver is not always on, an authentic observer has not yet looked. The register opens empty: no surface in this organization has claimed an exemption.
+The register refuses the justifications the standard already forbids — an external machine must be running, a second device is required, a remote computer is unavailable, evidence reachability is pending, a receiver is not always on, an authentic observer has not yet looked. The register opened empty on this declaration. Each exemption registered since names its surface, its actionable non-ALLOW disposition and its review date in the register itself; the first is the S1 governed provider path (2026-10-14, StegVerse-Labs/.github#3107).
 
 ## Superseded prose
 

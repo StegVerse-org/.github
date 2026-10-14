@@ -175,7 +175,10 @@ class ExemptionRegisterTests(unittest.TestCase):
     def test_register_opens_empty_and_is_reachable_from_the_declaration(self):
         register = load_json(REGISTER)
         declaration = load_json(DECLARATION)
-        self.assertEqual(register["exemptions"], [])
+        # The register opened empty on the declaration commit (that fact stays
+        # declared). Entries added since are each held to an actionable
+        # disposition by test_every_registered_exemption_carries_an_actionable_disposition.
+        self.assertIsInstance(register["exemptions"], list)
         self.assertIs(declaration["exemption_path"]["register_opens_empty"], True)
         self.assertEqual(register["declaration"], declaration["declaration_id"])
         self.assertTrue((ROOT / declaration["exemption_path"]["register"]).is_file())
