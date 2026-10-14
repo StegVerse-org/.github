@@ -9,6 +9,22 @@ import json
 from typing import Any, Mapping
 
 
+def _wire_manifest_sha256(request: Mapping[str, Any]) -> str | None:
+    """The request's wire identity. Requests derived before StegVerse-SDK#323
+    (the original Experiment 3 request among them) carry no
+    wire_manifest_sha256; their wire identity is the digest of the
+    canonical_manifest they hold, as the SDK (53a6749) and Healer use it."""
+    declared = request.get("wire_manifest_sha256")
+    if isinstance(declared, str) and declared:
+        return declared
+    original = request.get("canonical_manifest")
+    if isinstance(original, Mapping):
+        return hashlib.sha256(json.dumps(
+            dict(original), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")).hexdigest()
+    return None
+
+
 def inspect_governed_remediation_return(
     classification: Mapping[str, Any],
     request: Mapping[str, Any],
@@ -27,15 +43,17 @@ def inspect_governed_remediation_return(
         raise ValueError("HEALER_EXECUTION_AUTHORITY_ESCALATION")
     if classification.get("original_request_sha256") != request.get("request_sha256"):
         raise ValueError("REMEDIATION_ORIGINAL_REQUEST_BINDING_MISMATCH")
-    for key in ("request_sha256", "wire_manifest_sha256"):
-        if not isinstance(request.get(key), str) or not request[key]:
-            raise ValueError(f"REMEDIATION_REQUEST_FIELD_REQUIRED:{key}")
+    if not isinstance(request.get("request_sha256"), str) or not request["request_sha256"]:
+        raise ValueError("REMEDIATION_REQUEST_FIELD_REQUIRED:request_sha256")
+    wire = _wire_manifest_sha256(request)
+    if not wire:
+        raise ValueError("REMEDIATION_REQUEST_FIELD_REQUIRED:wire_manifest_sha256")
     complete_digest = hashlib.sha256(json.dumps(
         dict(request), sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode("utf-8")).hexdigest()
     if classification.get("original_request_document_sha256") != complete_digest:
         raise ValueError("REMEDIATION_REQUEST_DOCUMENT_DIGEST_MISMATCH")
-    if classification.get("original_wire_manifest_sha256") != request["wire_manifest_sha256"]:
+    if classification.get("original_wire_manifest_sha256") != wire:
         raise ValueError("REMEDIATION_WIRE_MANIFEST_DIGEST_MISMATCH")
     if not isinstance(classification.get("source_disposition_ref"), str) or not classification["source_disposition_ref"]:
         raise ValueError("REMEDIATION_SOURCE_EVIDENCE_REQUIRED")
