@@ -1,0 +1,40 @@
+{
+  "schema": "stegverse.governed-deny-trial-preparation/v1",
+  "authority_effect": "NONE_PREPARATION_ONLY",
+  "owner_authorization": "2026-10-14 deliberate unadmitted-capability governed-DENY trial, including permanent sovereign refusal receipts",
+  "source_checkpoint": "9ca2b17686020b132fe4e675e441a04f3152e29c",
+  "triggering_request_directory": ".stegverse/transition-requests/",
+  "triggering_workflow": ".github/workflows/organization-ledger-transition.yml",
+  "return_request_directory": ".stegverse/governance-return-requests/",
+  "return_workflow": ".github/workflows/organization-governance-return.yml",
+  "ledger": {
+    "repository": "StegVerse-org/.github",
+    "ref": "refs/stegverse/organization-ledger",
+    "repository_namespace": "repository-ledger/StegVerse-org/.github",
+    "source": ".stegverse/transition-ledger/{org-contract.json,contract.json}"
+  },
+  "mesh_root_candidate": "git+StegVerse-org/.github#refs/stegverse/organization-mesh",
+  "mesh_root_candidate_status": "UNVERIFIED_NOT_DESIGNATED_BY_CANONICAL_CONTRACT_DO_NOT_SUBMIT",
+  "governance_destination": {
+    "organization": "StegVerse-Labs",
+    "repository": "StegVerse-Labs/.github",
+    "source": "org-runtime/interlock-intr.json"
+  },
+  "trial_request": {
+    "status": "NOT_COMMITTED",
+    "reason": "No verified registry/COSV admission for STEGHEALTH-ECOSYSTEM-FAILURE-REMEDIATION-001 and no canonically designated mesh ref or concrete capability binding for the deliberate refusal. Committing a triggering request without these could permanently spend its identity."
+  },
+  "required_before_trigger": [
+    "Resolve canonical Task Registry/COSV goal admission for trial or an existing authorized task owner",
+    "Resolve designated organization mesh ref from approved registry/contract; do not adopt candidate",
+    "Resolve actual unadmitted capability manifest using pinned SDK and standing",
+    "Commit one request on owner-approved main lane and observe workflow; then resolve peer mesh/deciding ledger and commit return request"
+  ],
+  "disposition": "FAIL_CLOSED",
+  "failure_code": "TRIAL_MANIFEST_AUTHORITY_AND_MESH_BINDINGS_UNRESOLVED",
+  "failed_predicate": "CANONICAL_TASK_REGISTRY_ADMITS_TRIAL_AND_MESH_LOCATOR_IS_DESIGNATED",
+  "required_evidence_or_repair": "Canonical Registry/COSV entry and designated mesh ref plus SDK-buildable deliberate-DENY request",
+  "retry_entrypoint": ".github/workflows/organization-ledger-transition.yml (push main .stegverse/transition-requests/*.json)",
+  "owning_existing_goal": "STEGHEALTH-ECOSYSTEM-FAILURE-REMEDIATION-001 (issue label only; registry admission unverified)",
+  "next_attempt": "Resolve exact canonical task and mesh designation before committing the triggering request; run exact-head checks and owner-protected merge"
+}
