@@ -33,6 +33,10 @@ class ReturnPreflightTests(unittest.TestCase):
         self.assertEqual(out["disposition"], "FAIL_CLOSED")
         self.assertEqual(out["authority_effect"], "NONE_PREFLIGHT_ONLY")
         self.assertFalse(out["execution_authority_granted"])
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                      "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+            self.assertTrue(out.get(field), field)
+        self.assertEqual(out["failure_code"], "REMEDIATION_GOVERNANCE_AUTHORITY_NOT_YET_EVALUATED")
 
     def test_request_substitution_rejected(self):
         classification, request = fixture()
