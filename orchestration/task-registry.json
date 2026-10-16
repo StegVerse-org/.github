@@ -729,6 +729,40 @@
       "unresolved_obligations": [
         "OWNER_SAVED_TERMS_PAGE_COPIES"
       ]
+    },
+    {
+      "task_id": "STEGHEALTH-ECOSYSTEM-FAILURE-REMEDIATION-001",
+      "issue": 98,
+      "title": "Register the remediation goal already named by the organization ingress and remediation preflight",
+      "status": "proposed",
+      "workstream": "governed-remediation",
+      "depends_on": [],
+      "required_evidence": [
+        "resident-runtime/organization_manifest_ingress.py REMEDIATION_OWNING_GOAL equals this task_id",
+        "resident-runtime/governed_remediation_return_preflight.py owning_existing_goal equals this task_id",
+        "tests/test_remediation_lane.py"
+      ],
+      "outputs": [],
+      "tag_allowed": false,
+      "activation_condition": "owner approval of this registry row; registration names the goal the source already reports and grants no claim, fence, COSV, capability or ALLOW",
+      "repository_artifact_history": [
+        {
+          "pull_request": 171,
+          "state": "MERGED",
+          "role": "SIX_FIELD_PREFLIGHT_SOURCE_REPAIR"
+        },
+        {
+          "pull_request": 172,
+          "state": "MERGED",
+          "role": "GOVERNED_DENY_TRIAL_PREFLIGHT_DOCUMENTATION"
+        }
+      ],
+      "unresolved_obligations": [
+        "COSV_ASSIGNMENT_BY_EXISTING_MECHANISM",
+        "DESIGNATED_MESH_AND_PEER_MESH_FOR_GOVERNANCE_RETURN",
+        "SDK_BUILDABLE_DELIBERATE_UNADMITTED_CAPABILITY_REQUEST",
+        "AUTHENTICATED_READBACK_OF_BOTH_ORGANIZATION_LEDGERS"
+      ]
     }
   ]
 }
