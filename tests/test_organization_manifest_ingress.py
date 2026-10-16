@@ -70,23 +70,12 @@ class ReceivingOperationTests(unittest.TestCase):
                 os.environ[name] = previous
         self._ledger.cleanup()
 
-    def ledger_receipts(self, variable, schema, *, remediation_lane=False):
-        """The receipts at one level; the remediation lanes refusals fork are left out by default.
-
-        A refusal here is a non-ALLOW, so it forks a remediation lane, and the lane
-        is its own transition on the same chain (tests/test_remediation_lane.py).
-        These tests are about the submission's own transition.
-        """
-        def load(level):
-            root = Path(os.environ[level])
-            return [json.loads(path.read_text(encoding="utf-8")) for path in root.rglob("*.json")]
-        lane = {r["receipt_sha256"] for r in load("STEGVERSE_REPO_LEDGER_ROOT")
-                if r.get("schema") == "stegverse.repo-transition-receipt/v1" and (
-                    "remediation" in ((r.get("evidence") or {}).get("processing_capability"),
-                                      (r.get("evidence") or {}).get("submitted_processing_capability"))
-                    or str(r.get("transition_class", "")).startswith("ORGANIZATION_EGRESS_"))}
-        return [r for r in load(variable) if r.get("schema") == schema and remediation_lane == (
-            r.get("receipt_sha256") in lane or r.get("repo_receipt_sha256") in lane)]
+    def ledger_receipts(self, variable, schema):
+        """The receipts at one level for this submission's own transition."""
+        root = Path(os.environ[variable])
+        return [json.loads(path.read_text(encoding="utf-8"))
+                for path in root.rglob("*.json")
+                if json.loads(path.read_text(encoding="utf-8")).get("schema") == schema]
 
     def receive(self, **overrides):
         payload = {"registry": CAPABILITY_REGISTRY, "standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}

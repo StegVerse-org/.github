@@ -734,18 +734,17 @@
       "task_id": "STEGHEALTH-ECOSYSTEM-FAILURE-REMEDIATION-001",
       "issue": 98,
       "title": "Register the remediation goal already named by the organization ingress and remediation preflight",
-      "status": "proposed",
+      "status": "archived",
       "workstream": "governed-remediation",
       "depends_on": [],
       "required_evidence": [
-        "resident-runtime/organization_manifest_ingress.py REMEDIATION_OWNING_GOAL equals this task_id",
-        "resident-runtime/governed_remediation_return_preflight.py owning_existing_goal equals this task_id",
-        "tests/test_remediation_lane.py",
+        "Completion evidence contract v1: evidence class SOURCE_IMPLEMENTED (the organization row is archived: StegVerse-org records NON-ALLOW receipts and does not request remediation); refs: StegVerse-Labs/.github#3183, StegVerse-org/.github#98; not a runtime, receipt, safety, compliance or authority claim",
+        "tests/test_remediation_lane.py records a non-ALLOW as a receipt on both ledgers",
         "StegVerse-Labs/.github@08935df825fc28104835d07539002b425d19eb5b:data/canonical-task-records/STEGHEALTH-ECOSYSTEM-FAILURE-REMEDIATION-001.json is the canonical record (owner StegVerse-Labs/StegHealth#51, COSV task.v1 10100000100000); this row is an organization projection and allocates no second ID or COSV"
       ],
       "outputs": [],
       "tag_allowed": false,
-      "activation_condition": "owner approval of this registry row; registration names the goal the source already reports and grants no claim, fence, COSV, capability or ALLOW",
+      "activation_condition": "archived: this organization does not request remediation; an org-owned goal for the DENY-receipt trial is pending owner allocation",
       "repository_artifact_history": [
         {
           "pull_request": 171,
@@ -759,6 +758,7 @@
         }
       ],
       "unresolved_obligations": [
+        "ORG_OWNED_GOAL_FOR_THE_DENY_RECEIPT_TRIAL_PENDING_OWNER_ALLOCATION",
         "OWNER_DECISION_ON_ORGANIZATION_ROW_STATUS_BEYOND_PROPOSED",
         "DESIGNATED_MESH_AND_PEER_MESH_FOR_GOVERNANCE_RETURN",
         "SDK_BUILDABLE_DELIBERATE_UNADMITTED_CAPABILITY_REQUEST",

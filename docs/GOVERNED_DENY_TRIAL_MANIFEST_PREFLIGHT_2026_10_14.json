@@ -1,4 +1,6 @@
 {
+  "superseded": true,
+  "supersession_note": "Superseded. This document is history. The trial is now: one deliberately unadmitted, non-egress request; an authentic DENY receipt on both organization ledgers; StegHealer readback. No mesh is needed.",
   "schema": "stegverse.governed-deny-trial-preparation/v1",
   "authority_effect": "NONE_PREPARATION_ONLY",
   "owner_authorization": "2026-10-14 deliberate unadmitted-capability governed-DENY trial, including permanent sovereign refusal receipts",

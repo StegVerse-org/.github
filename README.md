@@ -185,6 +185,6 @@ read-only declared-path transition is separately ledger-verified. See
 [data/llma-hcb-terminal-review.json](data/llma-hcb-terminal-review.json).
 Provider/Sandbox activation, release, and propagation are not inferred.
 
-## Governed DENY remediation return (source-only preflight)
+## NON-ALLOW receipts
 
-See [governed remediation return preflight](docs/GOVERNED_DENY_REMEDIATION_RETURN_PREFLIGHT.md) for the canonical parallel remediation fork, the existing merged SDK #478/#479 and Healer #109 contracts, and the non-authorizing organization preflight added in PR #142. An SDK DENY must remain evidence; neither a Healer classification nor a caller-supplied return mapping is authenticated organization authorization. Runtime fork, return, independent sovereign readback, and expected-head validation remain outstanding.
+StegVerse-org records each NON-ALLOW (`DENY` or `FAIL_CLOSED`) as a six-field receipt on its repository ledger and its organization ledger. Those receipts are exposed through the existing ledger refs. StegHealer observes them. This organization does not request remediation and has no mechanism for deciding what needs it. See [NON-ALLOW receipts](docs/GOVERNED_DENY_REMEDIATION_RETURN_PREFLIGHT.md).
