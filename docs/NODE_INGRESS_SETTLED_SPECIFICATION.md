@@ -157,18 +157,32 @@ The SDK already behaves this way: a correctable DENY is repaired and
 re-manifested once, producing a new handoff with its own distinct hash, never a
 replay of the identical request.
 
-Remediation is a **remediation manifest carried on the packet**. Its job is to
-recognize patterns that indicate errors or failures. On recognizing one it
-releases from the main packet and goes to `StegVerse-Labs/StegHealer`, while
-the main packet proceeds to its own destination simultaneously. Two lanes, one
-fork, each with its own receipts.
+Remediation is a **route-related NON-ALLOW pushed on the manifest route**. A
+route-related NON-ALLOW is a state transition recorded once, in the
+organization where it happened: the repository ledger covers its own
+repository, and the organization ledger covers receipt chains within the
+organization. The manifest requires every route-related NON-ALLOW to be pushed
+to StegHealer (`stegverse-labs.remediation`) over InTr on the best route the
+manifest derives (`remediation_route`). The main packet keeps its disposition
+and lineage unchanged.
 
-Its classification mints `REMEDIATION_CLASSIFIED` into the chain it judged, so
-the judgement sits inside the evidence it rests on.
+The originating organization requests no classification, consumes no return,
+and makes no remediation decision. StegHealer maps the error or failure
+against all known errors and failures and decides whether to trigger a
+remediation task, or returns the manifest and data packet to the SDK for
+further processing. Those outcomes are recorded in StegHealer's organization,
+not in the originating chain.
+
+Only the InTr crossing is recorded in two ledgers: the egress receipt in the
+initiating organization and the matching Org/.GitHub ingress receipt in the
+destination organization.
+
+This section records a receipt chain over manifest constraints. It claims no
+safety, compliance or authority.
 
 **Open, and deliberately not set here:** the threshold at which a pattern
-becomes a signal. That belongs to whoever owns remediation; a number in this
-document would make it a second authority.
+becomes a signal. That belongs to StegHealer; a number in this document would
+make it a second authority.
 
 ## 9. Order of work
 
