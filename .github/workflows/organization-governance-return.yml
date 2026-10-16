@@ -108,7 +108,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: StegVerse-org/StegVerse-SDK
-          ref: ${{ env.RETURN_SDK_REF || '20a918e41f9e7d64a865e45088bbfa67b52dc04d' }}
+          ref: ${{ env.RETURN_SDK_REF || '74d9b473aa415b06a9d550c28b2779a691b4ba32' }}
           path: sdk
           persist-credentials: false
 
