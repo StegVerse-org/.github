@@ -180,7 +180,14 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         self.assertEqual(first["refusal_organization_receipt_sha256"],
                          second["refusal_organization_receipt_sha256"])
         self.assertEqual(len(self.receipts(REPO, ingress.REFUSED_CLASS)), 1)
-        self.assertEqual(len(self.receipts(ORG)), 1)
+        consumed = [receipt for receipt in self.receipts(ORG)
+                    if (receipt.get("boundary_evidence") or {}).get("receiving_operation")
+                    == ingress.OPERATION_ID]
+        self.assertEqual(len(consumed), 1)
+        # No mesh is supplied here, so the disposition delivery is refused at
+        # egress and that refusal is recorded once, not consumed as a return.
+        self.assertEqual(len(self.receipts(REPO, "ORGANIZATION_EGRESS_REFUSED")), 1)
+        self.assertEqual(len(self.receipts(REPO, "ORGANIZATION_EGRESS_CLOSED")), 0)
 
 
 class ConcurrentAppendTests(unittest.TestCase):

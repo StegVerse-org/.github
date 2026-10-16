@@ -185,6 +185,6 @@ read-only declared-path transition is separately ledger-verified. See
 [data/llma-hcb-terminal-review.json](data/llma-hcb-terminal-review.json).
 Provider/Sandbox activation, release, and propagation are not inferred.
 
-## NON-ALLOW receipts
+## NON-ALLOW dispositions
 
-StegVerse-org records each NON-ALLOW (`DENY` or `FAIL_CLOSED`) as a six-field receipt on its repository ledger and its organization ledger. Those receipts are exposed through the existing ledger refs. StegHealer observes them. This organization does not request remediation and has no mechanism for deciding what needs it. See [NON-ALLOW receipts](docs/GOVERNED_DENY_REMEDIATION_RETURN_PREFLIGHT.md).
+StegVerse-org records each NON-ALLOW (`DENY` or `FAIL_CLOSED`) as a six-field receipt on its repository ledger and its organization ledger. A route-related NON-ALLOW, one whose manifest derives an execution request, is delivered to StegHealer over InTr on the manifest-calculated route. The delivery is the six-field receipt and the manifest's packet reference. It is a disposition, not a remediation decision and not a classification request, and this organization consumes no return. A NON-ALLOW with no derivable request stays the receipt and is not emitted. See [NON-ALLOW dispositions](docs/GOVERNED_DENY_REMEDIATION_RETURN_PREFLIGHT.md).

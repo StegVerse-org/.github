@@ -91,9 +91,10 @@ jobs:
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/idempotent-org-ledger
         run: python -m unittest tests.test_manifest_ingress_idempotent -v
 
-      # A NON-ALLOW is a six-field receipt on both ledgers. This organization
-      # does not request remediation.
-      - name: Record a non-ALLOW as a receipt on both ledgers
+      # A route-related NON-ALLOW is a six-field receipt on both ledgers and a
+      # disposition delivery on the manifest-calculated InTr route. A non-route
+      # NON-ALLOW is the receipt only. No classification is consumed.
+      - name: Record a non-ALLOW and deliver a route-related disposition
         env:
           STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/remediation-repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/remediation-org-ledger
@@ -237,10 +238,15 @@ jobs:
               "ingress", "resident-runtime/organization_manifest_ingress.py")
           ingress = importlib.util.module_from_spec(spec); spec.loader.exec_module(ingress)
 
-          # Each refused submission is one receipt at each ledger level.
-          def receipts(variable, schema):
-              return [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
-                      if json.loads(p.read_text()).get("schema") == schema]
+          # Each refused submission is one refusal receipt at each ledger level.
+          # A route-related refusal also records its disposition delivery, so
+          # the count below is the submission's own refusal, not every receipt.
+          def receipts(variable, schema, transition_class=None):
+              found = [json.loads(p.read_text()) for p in Path(os.environ[variable]).rglob("*.json")
+                       if json.loads(p.read_text()).get("schema") == schema]
+              if transition_class is not None:
+                  found = [r for r in found if r.get("transition_class") == transition_class]
+              return found
 
           # A capability no organization service admits. Governance is admitted
           # now, so a governance manifest no longer exercises the refusal.
@@ -278,9 +284,12 @@ jobs:
           # Two refusals, recorded at both levels, the organization consuming the
           # repository receipt rather than authoring its own.
           repository = receipts("STEGVERSE_REPO_LEDGER_ROOT",
-                                "stegverse.repo-transition-receipt/v1")
-          organization = receipts("STEGVERSE_ORG_LEDGER_ROOT",
-                                  "stegverse.organization-transition-receipt/v1")
+                                "stegverse.repo-transition-receipt/v1",
+                                "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+          organization = [r for r in receipts("STEGVERSE_ORG_LEDGER_ROOT",
+                                              "stegverse.organization-transition-receipt/v1")
+                          if (r.get("boundary_evidence") or {}).get("receiving_operation")
+                          == "ORGANIZATION_SDK_MANIFEST_INGRESS"]
           assert len(repository) == 2, len(repository)
           assert len(organization) == 2, len(organization)
           assert all(r["transition_class"] == "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED"

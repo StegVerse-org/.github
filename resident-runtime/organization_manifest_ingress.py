@@ -61,9 +61,15 @@ reading one as the other would treat a refused submission as a completed
 transition. The refusal's own digests are returned under their own names.
 
 A NON-ALLOW is that receipt, on both ledgers, exposed through the existing
-ledger refs. This organization does not request remediation, does not fork a
-lane, and does not decide whether remediation is triggered. StegHealer
-observes the receipts.
+ledger refs. When the manifest derived an execution request, the receipt is
+also a disposition this organization delivers to StegHealer. The route is the
+manifest-calculated one (`stegverse.remediation_fork.remediation_route`):
+where the NON-ALLOW was recognized, the manifested path, and the direct InTr
+leg. The delivery carries the six-field receipt and the manifest's packet
+reference. It is not a remediation decision and not a classification request.
+This organization does not consume a classification or a return. A NON-ALLOW
+whose manifest derives no request has no route, so it stays the receipt and
+is not emitted.
 
 Nothing here grants authority. The organization appends its own receipt, which
 is its own runtime reality; it publishes its organization records to Master
@@ -97,6 +103,10 @@ OPERATION = "SUBMIT_MANIFEST"
 RESULT_SCHEMA_ORG = "stegverse.organization-manifest-ingress-result/v1"
 REFUSAL_SCHEMA = "stegverse.organization-manifest-ingress-refusal-record/v1"
 GOVERNANCE_REQUEST_SCHEMA = "stegverse.org-governance-decision-request/v1"
+#: What a route-related NON-ALLOW carries outbound. A disposition, not a
+#: classification request and not a remediation decision.
+DISPOSITION_SCHEMA = "stegverse.org-non-allow-disposition/v1"
+DISPOSITION_BINDING_ROLE = "NON_ALLOW_DISPOSITION_DELIVERY"
 
 #: The intended action every submission carries, whatever its disposition.
 #:
@@ -553,21 +563,166 @@ def request_governance_decision(request: Mapping[str, Any], crossing: Mapping[st
             "authority_effect": "NONE_RECEIVING_OPERATION_ONLY"}
 
 
+def _disposition_binding() -> dict[str, Any]:
+    """The overlay binding that carries a NON-ALLOW disposition, not a decision."""
+    matches = [entry for entry in boundary()["egress"]["capability_destination_bindings"]
+               if isinstance(entry, dict)
+               and entry.get("binding_role") == DISPOSITION_BINDING_ROLE
+               and str(entry.get("route_source") or "").startswith("MANIFEST_CALCULATED")]
+    if len(matches) != 1:
+        raise ValueError("NON_ALLOW_DISPOSITION_BINDING_ABSENT")
+    return matches[0]
+
+
+def _deliver_non_allow_disposition(result: Mapping[str, Any], request: Mapping[str, Any], *,
+                                   manifest: Any, standing: Mapping[str, Any] | None,
+                                   mesh_root: Path | None, hb_epoch: int | None,
+                                   packet_id: str) -> dict[str, Any]:
+    """Deliver a route-related NON-ALLOW on the route the manifest calculates.
+
+    `remediation_route` is that calculation: the recognition location, the
+    manifested path, and the direct InTr leg to StegHealer. This organization
+    emits the egress hop that route names. It does not choose a destination,
+    decide remediation, or read a classification back.
+    """
+    from stegverse.remediation_fork import remediation_route
+
+    recorded = dict(result)
+    recorded["classification_consumed"] = False
+    recorded["expects_a_classification"] = False
+    recorded["remediation_decision_made_here"] = False
+    destination = request.get("manifest_declared_destination")
+    if not isinstance(destination, Mapping):
+        return {**recorded, "disposition_delivered": False,
+                "disposition_delivery": "NO_MANIFESTED_DESTINATION"}
+    non_allow = {
+        "disposition": recorded["disposition"],
+        "organization": recorded["organization"],
+        "evaluation_boundary": OPERATION_ID,
+        "request_sha256": request.get("request_sha256"),
+        "failure_code": recorded.get("failure_code"),
+        "failed_predicate": recorded.get("failed_predicate"),
+    }
+    try:
+        route = remediation_route(
+            non_allow,
+            original_route_id=str(request.get("route_id") or ""),
+            original_processing_capability=str(request.get("processing_capability") or ""),
+            original_destination=destination)
+        binding = _disposition_binding()
+    except ValueError as exc:
+        return {**recorded, "disposition_delivered": False,
+                "disposition_delivery": str(exc)}
+    hops = route.get("direct_route_to_steghealer") or []
+    egress_hops = [hop for hop in hops
+                   if hop.get("crossing") == "INTERLOCK_INTR_EGRESS"
+                   and hop.get("from") == recorded["organization"]]
+    internal = [hop for hop in hops if hop.get("crossing") == "INTERNAL_ENDPOINT"]
+    if len(egress_hops) != 1 or len(internal) != 1:
+        return {**recorded, "disposition_delivered": False,
+                "disposition_route_sha256": route.get("route_sha256"),
+                "disposition_delivery": "CALCULATED_ROUTE_HAS_NO_EGRESS_FROM_HERE"}
+    next_organization = egress_hops[0]["to"]
+    route_service = internal[0]["to"]
+    if internal[0].get("from") != next_organization:
+        return {**recorded, "disposition_delivered": False,
+                "disposition_route_sha256": route.get("route_sha256"),
+                "disposition_delivery": "CALCULATED_ROUTE_HAS_NO_EGRESS_FROM_HERE"}
+    egress = _module("organization_egress_boundary", "resident-runtime/organization_egress_boundary.py")
+    addressed = egress.peer_capability_service(next_organization, binding.get("profile_id"))
+    agrees = (binding.get("route_must_agree_with_this_binding") is True
+              and binding.get("destination_organization") == next_organization
+              and binding.get("destination_service") == route_service
+              and addressed == route_service
+              and binding.get("request_schema") == DISPOSITION_SCHEMA
+              and binding.get("expects_a_classification") is False
+              and binding.get("consumes_a_return") is False)
+    if not agrees:
+        return {**recorded, "disposition_delivered": False,
+                "disposition_route_sha256": route.get("route_sha256"),
+                "disposition_delivery": "CALCULATED_ROUTE_DOES_NOT_AGREE_WITH_THE_BINDING"}
+    payload = {
+        "communication_id": "non-allow-disposition:" + str(request.get("request_sha256")),
+        "message_class": binding.get("request_message_class"),
+        "subject": "non-allow.disposition",
+        "requested_action": "DELIVER_NON_ALLOW_DISPOSITION",
+        "audience": "TARGET",
+        "target_organization": next_organization,
+        "target_count": 1,
+        "body": {
+            "schema": DISPOSITION_SCHEMA,
+            "origin_organization": recorded["organization"],
+            "delivery": "NON_ALLOW_DISPOSITION",
+            "disposition": recorded.get("disposition"),
+            "failure_code": recorded.get("failure_code"),
+            "failed_predicate": recorded.get("failed_predicate"),
+            "required_evidence_or_repair": recorded.get("required_evidence_or_repair"),
+            "retry_entrypoint": recorded.get("retry_entrypoint"),
+            "owning_existing_goal": recorded.get("owning_existing_goal"),
+            "next_attempt": recorded.get("next_attempt"),
+            "receipt": {
+                "repository_receipt_sha256": recorded.get("refusal_repository_receipt_sha256"),
+                "organization_receipt_sha256": recorded.get("refusal_organization_receipt_sha256"),
+            },
+            "manifest_reference": {
+                "submitted_manifest_sha256": "sha256:" + sha(
+                    dict(manifest) if isinstance(manifest, Mapping) else manifest),
+                "request_sha256": request.get("request_sha256"),
+                "wire_manifest_sha256": request.get("wire_manifest_sha256"),
+                "canonical_manifest_sha256": request.get("canonical_manifest_sha256"),
+                "data_packet_id": packet_id,
+            },
+            "route": route,
+            "route_sha256": route.get("route_sha256"),
+            "route_source": binding.get("route_source"),
+            "classification_requested": False,
+            "expects_a_classification": False,
+            "remediation_decision_made_here": False,
+        },
+    }
+    emitted = egress.emit(next_organization, payload,
+                          standing=dict(standing) if isinstance(standing, Mapping) else standing,
+                          capability=binding.get("profile_id"),
+                          transition_reference="ecosystem.transition.non-allow-disposition.v1",
+                          mesh_root=mesh_root, hb_epoch=hb_epoch)
+    emission = {key: emitted.get(key) for key in (
+        "emission_transition_class", "emission_repository_receipt_sha256",
+        "emission_organization_receipt_sha256")}
+    return {**recorded, **emission,
+            "disposition_delivered": emitted.get("disposition") == "ALLOW",
+            "disposition_route_sha256": route.get("route_sha256"),
+            "disposition_destination_organization": emitted.get("destination_organization"),
+            "disposition_destination_service": emitted.get("destination_service"),
+            "disposition_packet_id": emitted.get("packet_id"),
+            "disposition_communication_id": emitted.get("communication_id"),
+            "classification_consumed": False}
+
+
 def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standing: Mapping[str, Any] | None = None,
             packet_id: str = "organization-sdk-manifest-ingress",
             hb_epoch: int | None = None, mesh_root: Path | None = None) -> dict[str, Any]:
     """Receive a submitted manifest on this organization's ingress operation.
 
     `mesh_root` is the federation mesh the node was materialized with. A
-    governance request leaves on it. A NON-ALLOW is recorded here and does not.
+    governance request leaves on it. A route-related NON-ALLOW leaves on it
+    too, as a disposition delivery on the manifest-calculated route. A
+    NON-ALLOW with no derivable request is recorded here and is not emitted.
     """
     request: dict[str, Any] | None = None
     submitted_epoch = hb_epoch
 
     def refused(failed_predicate: str, detail: str, **extra: Any) -> dict[str, Any]:
-        # A NON-ALLOW is recorded as a six-field receipt on both ledgers.
-        # This organization does not request remediation.
-        return _refused(failed_predicate, detail, manifest=manifest, hb_epoch=submitted_epoch, **extra)
+        # Every NON-ALLOW is a six-field receipt on both ledgers. A route-related
+        # one, a manifest that derived a request, is then delivered on the
+        # route that request calculates. No request means no route, and the
+        # receipt is the whole record.
+        recorded = _refused(failed_predicate, detail, manifest=manifest,
+                            hb_epoch=submitted_epoch, **extra)
+        if request is None:
+            return recorded
+        return _deliver_non_allow_disposition(
+            recorded, request, manifest=manifest, standing=standing,
+            mesh_root=mesh_root, hb_epoch=submitted_epoch, packet_id=packet_id)
 
     try:
         request = derive_execution_request(manifest, boundary())

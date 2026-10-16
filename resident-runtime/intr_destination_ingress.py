@@ -3,10 +3,10 @@
 
 ``intr-destination`` is the capability every organization can advertise so a
 peer can address it without a purpose-specific route. Governance stays a
-purpose route, bound to the organization that owns the decider. This
-organization does not bind a remediation route: a NON-ALLOW is a receipt on
-both organization ledgers, and StegHealer observes that receipt. This
-operation is the mesh primitive underneath purpose routes: a diagnostic
+purpose route, bound to the organization that owns the decider. A
+route-related NON-ALLOW is a disposition delivered on the manifest-calculated
+InTr route, not a classification request and not a route this diagnostic
+binds. This operation is the mesh primitive underneath purpose routes: a diagnostic
 crossing arrives, both ledger levels record the disposition, and nothing is
 granted.
 
