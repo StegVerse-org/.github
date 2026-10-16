@@ -52,6 +52,7 @@ SURFACES = {
     "org-boundary/runtime/node_standing.py": ("require",),
     "org-boundary/runtime/capability_ingress.py": ("receive",),
     "resident-runtime/organization_manifest_ingress.py": ("receive",),
+    "resident-runtime/intr_destination_ingress.py": ("receive",),
     "resident-runtime/sdk_manifest_crossing.py": ("cross",),
     "resident-runtime/governance_endpoint.py": ("main",),
     "resident-runtime/remediation_endpoint.py": ("main", "bind"),

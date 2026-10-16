@@ -85,7 +85,8 @@ class AddressIsDeclaredTests(unittest.TestCase):
     """The declaration half, which is what was missing."""
 
     def test_the_bound_receiving_operation_has_a_registered_address(self):
-        binding, = BOUNDARY["ingress"]["capability_endpoint_bindings"]
+        binding = next(entry for entry in BOUNDARY["ingress"]["capability_endpoint_bindings"]
+                       if entry["profile_id"] == PROFILE_ID)
         receiving = binding["receiving_operation"]
         self.assertEqual(receiving["addressed_service"], ADDRESS)
         self.assertIn(ADDRESS, SERVICE_IDS)
@@ -138,7 +139,9 @@ class OverlayIsTheAuthorityTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, root, True)
         (root / "org-runtime").mkdir(parents=True)
         document = json.loads(json.dumps(BOUNDARY))
-        receiving = document["ingress"]["capability_endpoint_bindings"][0]["receiving_operation"]
+        receiving = next(entry["receiving_operation"]
+                         for entry in document["ingress"]["capability_endpoint_bindings"]
+                         if entry["profile_id"] == PROFILE_ID)
         receiving["operation"] = "../outside.py"
         (root / "org-runtime/interlock-intr.json").write_text(json.dumps(document))
         with self.assertRaises(SystemExit) as refused:

@@ -72,6 +72,18 @@ ADDRESSED_SERVICE_FIELD = "addressed_service"
 OPERATION_FIELD = "operation"
 MANIFEST_FIELD = "manifest"
 MANIFEST_DIGEST_FIELD = "manifest_sha256"
+SUBMISSION_READER_FIELD = "submission_reader"
+
+#: How a binding says its submission is read. The manifest reader is the one
+#: this resolver had when the only bound capability was a manifest. A second
+#: capability that is not a manifest names its own reader on the binding, so
+#: the address still cannot decide what arrives: the overlay does.
+MANIFEST_READER = "MANIFEST"
+COMMUNICATION_READER = "ECOSYSTEM_COMMUNICATION"
+SUBMISSION_READERS = (MANIFEST_READER, COMMUNICATION_READER)
+COMMUNICATION_CLASS = "ecosystem.communication"
+COMMUNICATION_ID_FIELD = "communication_id"
+BODY_FIELD = "body"
 
 #: What this surface did and did not do, recorded with the result.
 PROCESSOR_SELECTION = "NO_PROCESSOR_SELECTED_AT_THE_CAPABILITY_ADDRESS"
@@ -171,10 +183,60 @@ def load_operation(resolved: Mapping[str, Any]):
     return module
 
 
+def submission_reader(binding: Mapping[str, Any]) -> Any:
+    """The reader the overlay names, with the manifest reader implied for SUBMIT_MANIFEST.
+
+    A binding that predates readers does not carry the field. The only such
+    operation is ``SUBMIT_MANIFEST``, and implying the reader it has always had
+    keeps that binding unchanged. Any other operation must name its reader:
+    inheriting the manifest reader would treat a communication as a manifest
+    and refuse it for the wrong reason.
+    """
+    declared = binding.get(SUBMISSION_READER_FIELD)
+    if declared is None and binding.get("operation") == "SUBMIT_MANIFEST":
+        return MANIFEST_READER
+    return declared
+
+
+def declared_communication(binding: Mapping[str, Any], payload: Any) -> dict[str, Any]:
+    """The ecosystem communication this payload submits, or a refusal.
+
+    Closable crossings are ``ecosystem.communication`` payloads that carry a
+    ``communication_id``. The diagnostic body is what the bound payload schema
+    names. A payload missing either is not a submission under this reader, and
+    nothing is reconstructed from the rest of it.
+    """
+    if not isinstance(payload, Mapping):
+        raise _refuse("SUBMISSION_IS_AN_ECOSYSTEM_COMMUNICATION", "payload is not an object")
+    if payload.get("message_class") != COMMUNICATION_CLASS:
+        raise _refuse("SUBMISSION_DECLARES_A_RESPONDED_REQUEST_CLASS",
+                      str(payload.get("message_class")))
+    identifier = payload.get(COMMUNICATION_ID_FIELD)
+    if not isinstance(identifier, str) or not identifier.strip():
+        raise _refuse("SUBMISSION_CARRIES_THE_COMMUNICATION_ID_CLOSURE_CORRELATES_ON",
+                      repr(identifier))
+    body = payload.get(BODY_FIELD)
+    schema = binding.get("payload_schema")
+    if not isinstance(body, Mapping) or body.get("schema") != schema:
+        raise _refuse("SUBMISSION_BODY_DECLARES_THE_BOUND_PAYLOAD_SCHEMA",
+                      str(body.get("schema") if isinstance(body, Mapping) else body))
+    return dict(payload)
+
+
+def submission_for(binding: Mapping[str, Any], payload: Any) -> dict[str, Any]:
+    """Read the submission the way the binding's reader says, or refuse."""
+    reader = submission_reader(binding)
+    if reader == MANIFEST_READER:
+        return declared_manifest(payload)
+    if reader == COMMUNICATION_READER:
+        return declared_communication(binding, payload)
+    raise _refuse("SUBMISSION_READER_IS_ONE_THIS_RESOLVER_IMPLEMENTS", str(reader))
+
+
 def declared_manifest(payload: Any) -> dict[str, Any]:
     """The manifest this payload submits, or a refusal.
 
-    A payload carrying no manifest is not a submission under this capability,
+    A payload carrying no manifest is not a submission under this reader,
     and nothing is reconstructed from the rest of the payload on its behalf. A
     carried digest is checked when present, because a payload whose digest and
     manifest disagree has no single thing it submitted.
@@ -202,9 +264,14 @@ def receive(root: Path, service: Mapping[str, Any], packet: Mapping[str, Any], *
     not retried into an admission.
     """
     resolved = resolve(root, service)
+    # The overlay says how this capability's submission is read. A payload the
+    # binding does not admit is refused before the operation is loaded, so a
+    # communication is not forced through the manifest reader and a manifest is
+    # not forced through the communication reader.
+    binding = binding_for_service(root, service.get("service_id"))
+    submission = submission_for(binding, packet.get("payload"))
     module = load_operation(resolved)
-    manifest = declared_manifest(packet.get("payload"))
-    result = module.receive(manifest, registry=registry, standing=packet.get("standing"),
+    result = module.receive(submission, registry=registry, standing=packet.get("standing"),
                             packet_id=str(packet.get("packet_id") or resolved["receiving_operation_id"]),
                             mesh_root=mesh_root)
     return {

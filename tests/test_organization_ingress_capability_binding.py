@@ -82,7 +82,9 @@ class OrganizationIngressCapabilityBindingTests(unittest.TestCase):
 
     def test_the_receiving_operation_is_owned_here_and_is_not_a_host(self):
         """A URL here would put back the host dependency the deployment removed."""
-        receiving = boundary()["ingress"]["capability_endpoint_bindings"][0]["receiving_operation"]
+        receiving = next(entry["receiving_operation"]
+                         for entry in boundary()["ingress"]["capability_endpoint_bindings"]
+                         if entry["profile_id"] == "sdk-manifest-ingress")
         self.assertEqual(receiving["owner_repository"], OWNER)
         self.assertEqual(receiving["address_form"],
                          "REPOSITORY_OWNED_OPERATION_NOT_HOST_OR_URL")
