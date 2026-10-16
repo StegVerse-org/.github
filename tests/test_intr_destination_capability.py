@@ -1,8 +1,9 @@
 """``intr-destination`` is a universal ingress capability, not a purpose route.
 
-Governance and remediation stay bound to the organization that owns the
-decider. This capability is the mesh primitive underneath those: every
-organization can advertise it, a peer address is derived as
+Governance stays bound to the organization that owns the decider. This
+organization does not bind a remediation route. This capability is the mesh
+primitive underneath purpose routes: every organization can advertise it, a
+peer address is derived as
 ``organization_slug + "." + "intr-destination"``, and a purpose-neutral
 diagnostic can be emitted and closed. Peer installation is not proven at
 resolution. A closure can show that something at the addressed service ran
@@ -154,10 +155,11 @@ class DeclarationTests(unittest.TestCase):
             for key in ("org_control_service", "addressed_service"):
                 self.assertNotIn(PROFILE_ID, str(entry.get(key) or ""))
 
-    def test_governance_and_remediation_destination_bindings_are_unchanged(self):
+    def test_governance_remains_and_remediation_is_not_a_destination_binding(self):
         destinations = [entry["profile_id"]
                         for entry in BOUNDARY["egress"]["capability_destination_bindings"]]
-        self.assertEqual(destinations, ["governance", "remediation"])
+        self.assertEqual(destinations, ["governance"])
+        self.assertNotIn("remediation", destinations)
         self.assertNotIn(PROFILE_ID, destinations)
 
 

@@ -2,9 +2,11 @@
 """``ORGANIZATION_INTR_DESTINATION_INGRESS`` -- acknowledge a purpose-neutral diagnostic.
 
 ``intr-destination`` is the capability every organization can advertise so a
-peer can address it without a purpose-specific route. Governance and
-remediation stay purpose routes, bound to the organization that owns the
-decider. This operation is the mesh primitive underneath those: a diagnostic
+peer can address it without a purpose-specific route. Governance stays a
+purpose route, bound to the organization that owns the decider. This
+organization does not bind a remediation route: a NON-ALLOW is a receipt on
+both organization ledgers, and StegHealer observes that receipt. This
+operation is the mesh primitive underneath purpose routes: a diagnostic
 crossing arrives, both ledger levels record the disposition, and nothing is
 granted.
 

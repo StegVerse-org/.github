@@ -41,7 +41,7 @@ def _refused(refusal):
     """A cycle that consumed nothing for want of custody: the frames stay on the mesh,
     and the run says why with the six fields of a non-ALLOW rather than aborting."""
     return {"schema": SCHEMA, "organization": K.load_registry(ROOT)["organization"], **refusal,
-            "frames_seen": 0, "frames": [], "governance_returns": [], "remediation_returns": [],
+            "frames_seen": 0, "frames": [], "governance_returns": [],
             "authority_effect": "NONE_REFUSAL_ONLY"}
 
 
@@ -58,7 +58,6 @@ def run(*, mesh_root, node_state_root):
             raise
         return _refused(cycle.ledger_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
     returns = cycle.returns_for_consumed(results, mesh_root=mesh_root)
-    remediation = cycle.remediation_returns_for_consumed(results, mesh_root=mesh_root)
     return {
         "schema": SCHEMA,
         "organization": K.load_registry(ROOT)["organization"],
@@ -69,7 +68,6 @@ def run(*, mesh_root, node_state_root):
                     "packet_id": ((item.get("result") or {}).get("packet") or {}).get("packet_id"),
                     "organization_record": item.get("organization_record")} for item in results],
         "governance_returns": returns,
-        "remediation_returns": remediation,
         "authority_effect": "NONE_CARRIER_ONLY",
     }
 
