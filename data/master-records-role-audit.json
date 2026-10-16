@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 151,
+      "PROPER": 152,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 20,
-      "total": 190
+      "total": 191
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -624,10 +624,17 @@
     },
     {
       "file": "org-runtime/interlock-intr.json",
-      "line": 200,
+      "line": 240,
       "text": "\"master_records_in_path\": false,",
       "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+      "reason": "The governance destination binding declares Master Records is not in that path: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "org-runtime/interlock-intr.json",
+      "line": 262,
+      "text": "\"master_records_in_path\": false,",
+      "classification": "PROPER",
+      "reason": "The NON-ALLOW disposition binding declares Master Records is not in the delivery to StegHealer: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/governance_decision_return.py",
