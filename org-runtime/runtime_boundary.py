@@ -198,7 +198,23 @@ def capability_addresses_resolve(t:dict[str,Any])->bool:
         if not isinstance(operation,str) or not (ROOT/operation).is_file(): return False
         resolution=receiving.get("address_resolution")
         if not isinstance(resolution,str) or not (ROOT/resolution.split("::",1)[0]).is_file(): return False
+        # The reader is the overlay's. SUBMIT_MANIFEST keeps the manifest reader
+        # it had before the field existed. Any other operation must name a
+        # reader this resolver implements, and must not inherit the manifest
+        # reader: that would refuse a communication for not being a manifest.
+        reader=b.get("submission_reader")
+        known=submission_readers()
+        if b.get("operation")=="SUBMIT_MANIFEST":
+            if reader not in (None,"MANIFEST"): return False
+            if reader is not None and reader not in known: return False
+        elif not isinstance(reader,str) or reader not in known or reader=="MANIFEST":
+            return False
     return True
+def submission_readers()->set[str]:
+    """Read from the resolver rather than restated, so a binding cannot name a reader nothing implements."""
+    spec=importlib.util.spec_from_file_location("capability_ingress",ROOT/"org-boundary/runtime/capability_ingress.py")
+    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return set(module.SUBMISSION_READERS)
 def peer_capability_addresses_derive(t:dict[str,Any])->bool:
     """A peer's capability address is derived, and what that does not prove is said.
 
@@ -219,10 +235,24 @@ def peer_capability_addresses_derive(t:dict[str,Any])->bool:
     if r.get("peer_declares_its_capability_services_in_the_peer_directory") is not False: return False
     if r.get("unserved_capability_address_is_observable_as_an_unclosed_crossing") is not True: return False
     if r.get("default_without_a_declared_capability")!="ORG_CONTROL_SERVICE": return False
-    # The address it says it is proven on must actually be served here.
+    # Every capability address this organization serves, and only those. A
+    # string still names the one address a single-capability organization
+    # serves. Two or more are a list, because a string can name only one and
+    # naming one of several would understate what is served here. A peer
+    # address in the list is refused: this field is not a peer map.
+    served=[(b.get("receiving_operation") or {}).get("addressed_service") for b in capability_bindings(t)]
+    if not served or any(not isinstance(item,str) or not item for item in served): return False
+    if len(set(served))!=len(served): return False
     proven=r.get("proven_on_this_organization")
+    if isinstance(proven,str):
+        named=[proven]
+    elif isinstance(proven,list) and proven and all(isinstance(item,str) and item for item in proven):
+        named=list(proven)
+    else:
+        return False
+    if len(set(named))!=len(named) or set(named)!=set(served): return False
     rows={row.get("service_id") for row in load(REGISTRY).get("services",[]) if isinstance(row,dict)}
-    return isinstance(proven,str) and proven in rows
+    return all(item in rows for item in named)
 ATTESTATION_MODULE=ROOT/"org-boundary/runtime/origin_attestation.py"
 def origin_attestation_is_bound(t:dict[str,Any])->bool:
     """Origin is attested by the credential authority, and the limit is declared.
