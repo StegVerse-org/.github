@@ -242,6 +242,29 @@
         "always_on_receiver_required": false,
         "awaits_the_decision": false,
         "authority_effect": "NONE_BINDING_ONLY"
+      },
+      {
+        "profile_id": "remediation",
+        "capability": "remediation",
+        "binding_role": "NON_ALLOW_DISPOSITION_DELIVERY",
+        "destination_organization": "StegVerse-Labs",
+        "destination_repository": "StegVerse-Labs/.github",
+        "destination_service": "stegverse-labs.remediation",
+        "steghealer_repository": "StegVerse-Labs/StegVerse-Healer",
+        "route_source": "MANIFEST_CALCULATED_REMEDIATION_ROUTE",
+        "route_must_agree_with_this_binding": true,
+        "request_message_class": "ecosystem.work.request",
+        "request_schema": "stegverse.org-non-allow-disposition/v1",
+        "emitting_operation": "resident-runtime/organization_manifest_ingress.py::receive",
+        "emission": "resident-runtime/organization_egress_boundary.py::emit",
+        "transport": "INTERLOCK_INTR",
+        "records_authority": "ORGANIZATION_RECORDS_ONLY",
+        "master_records_in_path": false,
+        "always_on_receiver_required": false,
+        "expects_a_classification": false,
+        "consumes_a_return": false,
+        "remediation_decision_made_here": false,
+        "authority_effect": "NONE_BINDING_ONLY"
       }
     ]
   },

@@ -11,9 +11,9 @@
 
 A peer could be addressed at a purpose route — governance — or at
 `org-control`. Neither is a universal destination. Governance is decided by the
-organization that owns StegCore. This organization does not bind a remediation
-route: a NON-ALLOW is a receipt on both organization ledgers, and StegHealer
-observes that receipt. `org-control` answers a control message. A diagnostic
+organization that owns StegCore. A route-related NON-ALLOW is delivered to
+StegHealer on the manifest-calculated InTr route as a disposition, not as a
+classification request. `org-control` answers a control message. A diagnostic
 that only asks whether an organization is reachable as an InTr destination had
 to borrow one of those, and a borrowed purpose route reads as that purpose.
 
@@ -95,8 +95,9 @@ The unit test's far side is this repository's `kernel.receipt` and
 a fabricated answer in a temporary mesh. It is not a live peer, and it is not
 an authentic production receipt.
 
-The governance `capability_destination_binding` remains. This organization
-does not bind a remediation route.
+The governance `capability_destination_binding` remains. The NON-ALLOW
+disposition binding is separate: its route source is manifest-calculated, its
+schema describes a disposition, and it does not consume a classification.
 
 ## Verified
 

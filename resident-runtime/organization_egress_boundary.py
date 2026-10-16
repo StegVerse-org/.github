@@ -92,7 +92,9 @@ CAPABILITY_ADDRESS_FORM = "ORGANIZATION_SLUG_DOT_CAPABILITY_PROFILE_ID"
 ADDRESSED_SERVICE_FIELD = "addressed_service"
 CREDENTIAL_AUTHORITY = "TV/TVC"
 #: Where the overlay binds a capability this organization sends out to the
-#: organization that owns it, e.g. governance to StegVerse-Labs, which owns StegCore.
+#: organization that owns it. Governance goes to StegVerse-Labs, which owns
+#: StegCore. A route-related NON-ALLOW disposition goes to StegHealer on the
+#: manifest-calculated route.
 DESTINATION_BINDINGS_FIELD = "capability_destination_bindings"
 
 #: The intended action each half of an outbound crossing carries.
@@ -172,8 +174,9 @@ def destination_bindings(root: Path | None = None) -> dict[str, dict[str, Any]]:
     """Capabilities this organization sends out, each bound to the organization that owns it.
 
     Declared on the egress side of the overlay, because they are not received
-    here: governance is decided by StegVerse-Labs, which owns StegCore, and this
-    organization only emits the request to it.
+    here. Governance is decided by StegVerse-Labs, which owns StegCore, and
+    this organization emits that request to it. A route-related NON-ALLOW
+    disposition is emitted the same way, on the route the manifest calculates.
     """
     boundary = json.loads((Path(root or ROOT) / BOUNDARY_RELATIVE).read_text())
     declared = (boundary.get("egress") or {}).get(DESTINATION_BINDINGS_FIELD) or []

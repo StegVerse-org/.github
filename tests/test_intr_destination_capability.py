@@ -1,7 +1,9 @@
 """``intr-destination`` is a universal ingress capability, not a purpose route.
 
-Governance stays bound to the organization that owns the decider. This
-organization does not bind a remediation route. This capability is the mesh
+Governance stays bound to the organization that owns the decider. A
+route-related NON-ALLOW disposition is a separate outbound binding, delivered
+on the manifest-calculated route, and it is not a classification request.
+This capability is the mesh
 primitive underneath purpose routes: every organization can advertise it, a
 peer address is derived as
 ``organization_slug + "." + "intr-destination"``, and a purpose-neutral
@@ -155,11 +157,17 @@ class DeclarationTests(unittest.TestCase):
             for key in ("org_control_service", "addressed_service"):
                 self.assertNotIn(PROFILE_ID, str(entry.get(key) or ""))
 
-    def test_governance_remains_and_remediation_is_not_a_destination_binding(self):
-        destinations = [entry["profile_id"]
-                        for entry in BOUNDARY["egress"]["capability_destination_bindings"]]
-        self.assertEqual(destinations, ["governance"])
-        self.assertNotIn("remediation", destinations)
+    def test_governance_remains_and_the_disposition_binding_is_not_this_capability(self):
+        destinations = {entry["profile_id"]: entry
+                        for entry in BOUNDARY["egress"]["capability_destination_bindings"]}
+        self.assertIn("governance", destinations)
+        disposition = destinations["remediation"]
+        self.assertEqual(disposition["binding_role"], "NON_ALLOW_DISPOSITION_DELIVERY")
+        self.assertTrue(str(disposition["route_source"]).startswith("MANIFEST_CALCULATED"))
+        self.assertNotEqual(disposition["request_schema"],
+                            "stegverse.org-remediation-classification-request/v1")
+        self.assertIs(disposition["expects_a_classification"], False)
+        self.assertIs(disposition["consumes_a_return"], False)
         self.assertNotIn(PROFILE_ID, destinations)
 
 

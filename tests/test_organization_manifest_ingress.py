@@ -70,12 +70,16 @@ class ReceivingOperationTests(unittest.TestCase):
                 os.environ[name] = previous
         self._ledger.cleanup()
 
-    def ledger_receipts(self, variable, schema):
+    def ledger_receipts(self, variable, schema, transition_class=None):
         """The receipts at one level for this submission's own transition."""
         root = Path(os.environ[variable])
-        return [json.loads(path.read_text(encoding="utf-8"))
-                for path in root.rglob("*.json")
-                if json.loads(path.read_text(encoding="utf-8")).get("schema") == schema]
+        found = [json.loads(path.read_text(encoding="utf-8"))
+                 for path in root.rglob("*.json")
+                 if json.loads(path.read_text(encoding="utf-8")).get("schema") == schema]
+        if transition_class is not None:
+            found = [receipt for receipt in found
+                     if receipt.get("transition_class") == transition_class]
+        return found
 
     def receive(self, **overrides):
         payload = {"registry": CAPABILITY_REGISTRY, "standing": standing(), "packet_id": "org-ingress-test", "hb_epoch": 32}
@@ -227,9 +231,12 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertEqual(result["refusal_intended_action"],
                          "RECEIVE_A_SUBMITTED_SDK_MANIFEST")
         repository, = self.ledger_receipts(
-            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
-        organization, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
+            "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        organization, = [receipt for receipt in self.ledger_receipts(
             "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1")
+            if (receipt.get("boundary_evidence") or {}).get("receiving_operation")
+            == "ORGANIZATION_SDK_MANIFEST_INGRESS"]
         self.assertEqual(repository["transition_class"],
                          "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         self.assertEqual(repository["receipt_sha256"],
@@ -241,9 +248,12 @@ class ReceivingOperationTests(unittest.TestCase):
         """A refusal is not an exception to the layering the replay rule requires."""
         self.refuse()
         repository, = self.ledger_receipts(
-            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
-        organization, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
+            "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        organization, = [receipt for receipt in self.ledger_receipts(
             "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1")
+            if (receipt.get("boundary_evidence") or {}).get("receiving_operation")
+            == "ORGANIZATION_SDK_MANIFEST_INGRESS"]
         self.assertEqual(organization["source_repository"], "StegVerse-org/.github")
         self.assertEqual(organization["repo_receipt_sha256"], repository["receipt_sha256"])
         self.assertEqual(organization["org_transition_class"], "REPO_STATE_PROPAGATION")
@@ -251,7 +261,8 @@ class ReceivingOperationTests(unittest.TestCase):
     def test_the_refusal_record_carries_the_disposition_and_nothing_it_did_not_produce(self):
         self.refuse()
         repository, = self.ledger_receipts(
-            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
+            "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         record = repository["evidence"]
         self.assertEqual(record["disposition"], "DENY")
         self.assertEqual(record["intended_action"], "RECEIVE_A_SUBMITTED_SDK_MANIFEST")
@@ -288,7 +299,8 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertIs(result["refusal_recorded"], True)
         self.assertIn("CROSSING_REQUIRES_DECLARED_STANDING", result["detail"])
         repository, = self.ledger_receipts(
-            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
+            "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         self.assertEqual(repository["transition_class"],
                          "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
 
@@ -297,7 +309,8 @@ class ReceivingOperationTests(unittest.TestCase):
         self.refuse(manifest=self.unadmitted("first-attempt"))
         self.refuse(manifest=self.unadmitted("second-attempt"))
         repository = self.ledger_receipts(
-            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1")
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
+            "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         self.assertEqual(len(repository), 2)
         self.assertEqual(len({r["receipt_sha256"] for r in repository}), 2)
 
