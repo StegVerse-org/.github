@@ -324,13 +324,18 @@ jobs:
           assert carried == {r["receipt_sha256"] for r in repository}
           assert all(o["source_repository"] == "StegVerse-org/.github" for o in organization)
           assert all(o["org_transition_class"] == "REPO_STATE_PROPAGATION" for o in organization)
-          # The disposition is keyed on failure_code: D7 is FAIL_CLOSED, the
-          # submission defect is DENY, each stored as it was returned.
-          stored = {r["evidence"]["failure_code"]: r["evidence"]["disposition"] for r in repository}
-          assert stored == {"PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE": "FAIL_CLOSED",
-                            "CROSSING_REQUIRES_DECLARED_STANDING": "DENY"}, stored
-          assert stored["CROSSING_REQUIRES_DECLARED_STANDING"] == raised["disposition"]
-          assert stored["PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE"] == out["disposition"]
+          # The disposition is keyed on (failure_code, failed_predicate): D7 is
+          # FAIL_CLOSED, the submission defect is DENY, each stored as returned.
+          stored = {(r["evidence"]["failure_code"], r["evidence"]["failed_predicate"]): r["evidence"]["disposition"]
+                    for r in repository}
+          d7 = ("PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE",
+                "CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE")
+          standing_gap = ("CROSSING_REQUIRES_DECLARED_STANDING",
+                          "CROSSING_STANDING_IS_DERIVED_FROM_THE_MANIFEST_OR_DECLARED")
+          assert stored == {d7: "FAIL_CLOSED", standing_gap: "DENY"}, stored
+          assert stored == {pair: ingress.REFUSAL_DISPOSITIONS[pair] for pair in stored}, stored
+          assert stored[standing_gap] == raised["disposition"]
+          assert stored[d7] == out["disposition"]
           for r in repository:
               record = r["evidence"]
               assert record["intended_action"] == "RECEIVE_A_SUBMITTED_SDK_MANIFEST"

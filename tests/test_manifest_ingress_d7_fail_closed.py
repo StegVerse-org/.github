@@ -5,9 +5,10 @@ When the manifest's published route binds
 `admits_processing` names the declared {capability, route_id}, the ingress
 refuses it before the crossing could fall back to the `completion.egress`
 surface. It is FAIL_CLOSED, stored and returned alike, because the gap is this
-organization's missing configuration. Everything else keeps the fallback and
-the dispositions it had: routes bound to another runtime, manifests that only
-target the completion return, and the DENY of submission defects.
+organization's missing configuration. Routes bound to another runtime and
+manifests that only target the completion return keep the fallback. Every
+refusal's disposition is the (failure_code, failed_predicate) row of
+REFUSAL_DISPOSITIONS, the same value stored and returned.
 
 The crossing's six fields are passed through by the ingress rather than being
 overwritten with its generic predicate.
@@ -178,37 +179,84 @@ class D7IngressTests(unittest.TestCase):
         registry = d6.registry_for("installed-adapter-refuses")
         self.assertIsNone(ingress.processing_service_precheck(manifest(), registry))
 
-    def test_the_disposition_table_is_keyed_on_failure_code(self):
+    def test_the_disposition_table_is_keyed_on_the_code_and_predicate_pair(self):
         """The shared table (d6-predicate-table): DENY for submission defects, FAIL_CLOSED otherwise."""
+        generic = ingress.REFUSED_CLASS
         expected = {
-            "PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE": "FAIL_CLOSED",
-            "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION": "FAIL_CLOSED",
-            "BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY": "FAIL_CLOSED",
-            "CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP": "FAIL_CLOSED",
-            "ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE": "FAIL_CLOSED",
-            "TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY": "FAIL_CLOSED",
-            "PROCESSING_AMBIGUOUS_IN_REGISTRY": "FAIL_CLOSED",
-            "HB_EPOCH_NOT_SUPPLIED": "FAIL_CLOSED",
-            "HB_EPOCH_INVALID": "FAIL_CLOSED",
-            "FAR_SIDE_RECEIVER_UNAVAILABLE": "FAIL_CLOSED",
-            "FAR_SIDE_REFUSED_THE_CROSSING": "FAIL_CLOSED",
-            "CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION": "DENY",
-            "ONE_TRANSITION_ID_BINDS_ONE_MANIFEST": "DENY",
-            "MANIFEST_DECLARES_NO_EGRESS": "DENY",
-            "MANIFEST_DECLARES_NO_TRANSITION_SURFACE": "DENY",
-            "MANIFEST_DECLARES_NON_INTR_TRANSPORT": "DENY",
-            "MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT": "DENY",
-            "CROSSING_REQUIRES_DECLARED_STANDING": "DENY",
-            "CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY": "DENY",
-            "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED": "DENY",
+            (D7_CODE, D7_PREDICATE): "FAIL_CLOSED",
+            (generic, "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION"): "FAIL_CLOSED",
+            (generic, "BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY"): "FAIL_CLOSED",
+            ("CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP", "CROSSING_IS_GIVEN_A_MATERIALIZED_CAPABILITY_MAP"): "FAIL_CLOSED",
+            ("ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE", "DECLARED_SURFACE_RESOLVES_TO_EXACTLY_ONE_SERVICE"): "FAIL_CLOSED",
+            ("TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY", "DECLARED_SURFACE_RESOLVES_TO_EXACTLY_ONE_SERVICE"): "FAIL_CLOSED",
+            ("PROCESSING_AMBIGUOUS_IN_REGISTRY", "DECLARED_PROCESSING_PAIR_IS_ADMITTED_BY_AT_MOST_ONE_SERVICE"): "FAIL_CLOSED",
+            ("HB_EPOCH_NOT_SUPPLIED", "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"): "FAIL_CLOSED",
+            ("HB_EPOCH_INVALID", "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"): "FAIL_CLOSED",
+            ("FAR_SIDE_RECEIVER_UNAVAILABLE", "RESOLVED_SERVICE_HAS_AN_INSTALLED_ENDPOINT_ADAPTER"): "FAIL_CLOSED",
+            ("FAR_SIDE_REFUSED_THE_CROSSING", "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT"): "FAIL_CLOSED",
+            (generic, "CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION"): "DENY",
+            (generic, "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED"): "DENY",
+            (generic, "ONE_TRANSITION_ID_BINDS_ONE_MANIFEST"): "DENY",
+            ("MANIFEST_DECLARES_NO_EGRESS", "MANIFEST_DECLARES_COMPLETION_EGRESS"): "DENY",
+            ("MANIFEST_DECLARES_NO_TRANSITION_SURFACE", "MANIFEST_DECLARES_A_FINAL_TRANSITION_SURFACE"): "DENY",
+            ("MANIFEST_DECLARES_NON_INTR_TRANSPORT", "MANIFEST_DECLARES_INTERLOCK_INTR_TRANSPORT"): "DENY",
+            ("MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT", "MANIFEST_DECLARES_FAR_SIDE_TRANSITION_REQUIREMENT"): "DENY",
+            ("CROSSING_REQUIRES_DECLARED_STANDING", "CROSSING_STANDING_IS_DERIVED_FROM_THE_MANIFEST_OR_DECLARED"): "DENY",
+            ("CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY", "CROSSING_STANDING_DECLARES_THE_PREDECESSOR_KEY"): "DENY",
         }
         self.assertEqual(ingress.REFUSAL_DISPOSITIONS, expected)
-        # Two crossing codes share one predicate, which is why the key is the code.
+        # Neither half is unique alone: the generic code spans DENY and
+        # FAIL_CLOSED rows, and two crossing codes share one predicate.
+        self.assertEqual({v for (code, _), v in expected.items() if code == generic}, {"DENY", "FAIL_CLOSED"})
         refusals = ingress.crossing_module.REFUSALS
         self.assertEqual(refusals["ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE"][0],
                          refusals["TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY"][0])
-        self.assertTrue(set(refusals) <= set(expected))
-        self.assertEqual(ingress.refusal_disposition("AN_UNLISTED_CODE"), "FAIL_CLOSED")
+        # Every crossing refusal has its own row, under its own predicate.
+        for code, (predicate, *_rest) in refusals.items():
+            self.assertIn((code, predicate), expected, code)
+
+    def test_an_undeclared_pair_is_refused_fail_closed_under_its_own_code(self):
+        fields = {"failure_code": "MANIFEST_DECLARES_NO_EGRESS", "failed_predicate": "SOME_OTHER_PREDICATE",
+                  "required_evidence_or_repair": "repair", "retry_entrypoint": "entry",
+                  "owning_existing_goal": "goal", "next_attempt": "next"}
+        self.assertIsNone(ingress.refusal_disposition("MANIFEST_DECLARES_NO_EGRESS", "SOME_OTHER_PREDICATE"))
+        disposition, out = ingress.declared_refusal(fields)
+        self.assertEqual(disposition, "FAIL_CLOSED")
+        self.assertEqual(out["failure_code"], "REFUSAL_DISPOSITION_NOT_DECLARED")
+        self.assertEqual(out["failed_predicate"], "SOME_OTHER_PREDICATE")
+        self.assertEqual(out["undeclared_refusal_failure_code"], "MANIFEST_DECLARES_NO_EGRESS")
+        self.assertEqual(out["undeclared_refusal_failed_predicate"], "SOME_OTHER_PREDICATE")
+        # Through the ingress: stored and returned alike, with the six fields.
+        result = ingress._refused("SOME_OTHER_PREDICATE", "detail", manifest={"not": "a manifest"},
+                                  hb_epoch=43, six_fields=fields)
+        self.assertEqual(result["disposition"], "FAIL_CLOSED")
+        self.assertEqual(result["refusal_stored_disposition"], "FAIL_CLOSED")
+        self.assertEqual(result["failure_code"], "REFUSAL_DISPOSITION_NOT_DECLARED")
+        repository, _organization = self.refusal_pair()
+        self.assertEqual(repository["evidence"]["disposition"], "FAIL_CLOSED")
+        self.assertEqual(repository["evidence"]["failure_code"], "REFUSAL_DISPOSITION_NOT_DECLARED")
+        self.assertEqual(repository["evidence"]["undeclared_refusal_failure_code"], "MANIFEST_DECLARES_NO_EGRESS")
+
+    def test_an_unresolvable_route_skips_the_precheck_and_the_derivation_refusal_fires(self):
+        """Negative D7: no resolvable consumer route, so D7 is not claimed; the SDK derivation refusal stands."""
+        value = manifest()
+        del value["extensions"][route_resolution.ROUTE_DECLARATION_EXTENSION]
+        self.assertIsNone(ingress.processing_service_precheck(value, REGISTRY))
+        out = self.receive(value)
+        self.assertEqual(out["failure_code"], ingress.REFUSED_CLASS)
+        self.assertEqual(out["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
+        self.assertNotEqual(out["failed_predicate"], D7_PREDICATE)
+        self.assertEqual(out["disposition"], "FAIL_CLOSED")
+        self.assertEqual(out["refusal_stored_disposition"], "FAIL_CLOSED")
+        for field in SIX_FIELDS:
+            self.assertTrue(isinstance(out.get(field), str) and out[field].strip(), field)
+        self.assertEqual(out["retry_entrypoint"], "resident-runtime/organization_manifest_ingress.py::receive")
+        self.assertIn("ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION", out["required_evidence_or_repair"])
+        self.assertNotIn("crossing", out)
+        repository, organization = self.refusal_pair()
+        self.assertEqual(repository["evidence"]["disposition"], "FAIL_CLOSED")
+        self.assertEqual(repository["evidence"]["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
+        self.assertEqual(organization["boundary_evidence"]["disposition"], "FAIL_CLOSED")
 
 
 if __name__ == "__main__":

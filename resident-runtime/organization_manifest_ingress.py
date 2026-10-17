@@ -149,38 +149,42 @@ STATE_TRANSITION_RUNTIME_BINDING = "stegverse.manifest_state_transition_runtime.
 PROCESSING_NOT_DECLARED_CODE = "PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE"
 PROCESSING_NOT_DECLARED_PREDICATE = "CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE"
 INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
-#: The refusal disposition table, keyed on `failure_code` (two crossing codes
-#: share one predicate). The value is both what the refusal record stores and
-#: what `receive` returns. DENY is a defect of the submission; FAIL_CLOSED is an
-#: organization-side gap, an epoch that was not supplied or is invalid, or a far
-#: side that did not complete. A refusal raised by this operation itself carries
-#: its predicate as its failure_code. A code missing from the table fails closed.
-#: Shared with StegVerse-Labs/.github's ingress (one table in each ingress).
+#: The refusal disposition table, keyed on the composite (failure_code,
+#: failed_predicate). Neither half is unique alone: two crossing codes share one
+#: predicate, and every refusal raised by this operation itself carries the one
+#: code ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED. The value is both what the
+#: refusal record stores and what `receive` returns. DENY is a defect of the
+#: submission; FAIL_CLOSED is an organization-side gap, an append that did not
+#: commit, an epoch that was not supplied or is invalid, or a far side that did
+#: not complete. A pair with no row is refused FAIL_CLOSED under
+#: REFUSAL_DISPOSITION_NOT_DECLARED. The same table is in both forks' ingress
+#: (StegVerse-org/.github and StegVerse-Labs/.github).
+REFUSAL_DISPOSITION_NOT_DECLARED = "REFUSAL_DISPOSITION_NOT_DECLARED"
 REFUSAL_DISPOSITIONS = {
     # organization-side configuration gaps
-    PROCESSING_NOT_DECLARED_CODE: "FAIL_CLOSED",
-    "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION": "FAIL_CLOSED",
-    "BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY": "FAIL_CLOSED",
-    "CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP": "FAIL_CLOSED",
-    "ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE": "FAIL_CLOSED",
-    "TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY": "FAIL_CLOSED",
-    "PROCESSING_AMBIGUOUS_IN_REGISTRY": "FAIL_CLOSED",
+    (PROCESSING_NOT_DECLARED_CODE, PROCESSING_NOT_DECLARED_PREDICATE): "FAIL_CLOSED",
+    (REFUSED_CLASS, "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION"): "FAIL_CLOSED",
+    (REFUSED_CLASS, "BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY"): "FAIL_CLOSED",
+    ("CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP", "CROSSING_IS_GIVEN_A_MATERIALIZED_CAPABILITY_MAP"): "FAIL_CLOSED",
+    ("ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE", "DECLARED_SURFACE_RESOLVES_TO_EXACTLY_ONE_SERVICE"): "FAIL_CLOSED",
+    ("TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY", "DECLARED_SURFACE_RESOLVES_TO_EXACTLY_ONE_SERVICE"): "FAIL_CLOSED",
+    ("PROCESSING_AMBIGUOUS_IN_REGISTRY", "DECLARED_PROCESSING_PAIR_IS_ADMITTED_BY_AT_MOST_ONE_SERVICE"): "FAIL_CLOSED",
     # the supplied epoch (the shared HB_EPOCH codes; raised by PR-1b, not here)
-    "HB_EPOCH_NOT_SUPPLIED": "FAIL_CLOSED",
-    "HB_EPOCH_INVALID": "FAIL_CLOSED",
+    ("HB_EPOCH_NOT_SUPPLIED", "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"): "FAIL_CLOSED",
+    ("HB_EPOCH_INVALID", "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"): "FAIL_CLOSED",
     # a far side that did not complete
-    "FAR_SIDE_RECEIVER_UNAVAILABLE": "FAIL_CLOSED",
-    "FAR_SIDE_REFUSED_THE_CROSSING": "FAIL_CLOSED",
+    ("FAR_SIDE_RECEIVER_UNAVAILABLE", "RESOLVED_SERVICE_HAS_AN_INSTALLED_ENDPOINT_ADAPTER"): "FAIL_CLOSED",
+    ("FAR_SIDE_REFUSED_THE_CROSSING", "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT"): "FAIL_CLOSED",
     # defects of the submission
-    "CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION": "DENY",
-    "ONE_TRANSITION_ID_BINDS_ONE_MANIFEST": "DENY",
-    "MANIFEST_DECLARES_NO_EGRESS": "DENY",
-    "MANIFEST_DECLARES_NO_TRANSITION_SURFACE": "DENY",
-    "MANIFEST_DECLARES_NON_INTR_TRANSPORT": "DENY",
-    "MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT": "DENY",
-    "CROSSING_REQUIRES_DECLARED_STANDING": "DENY",
-    "CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY": "DENY",
-    "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED": "DENY",
+    (REFUSED_CLASS, "CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION"): "DENY",
+    (REFUSED_CLASS, "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED"): "DENY",
+    (REFUSED_CLASS, "ONE_TRANSITION_ID_BINDS_ONE_MANIFEST"): "DENY",
+    ("MANIFEST_DECLARES_NO_EGRESS", "MANIFEST_DECLARES_COMPLETION_EGRESS"): "DENY",
+    ("MANIFEST_DECLARES_NO_TRANSITION_SURFACE", "MANIFEST_DECLARES_A_FINAL_TRANSITION_SURFACE"): "DENY",
+    ("MANIFEST_DECLARES_NON_INTR_TRANSPORT", "MANIFEST_DECLARES_INTERLOCK_INTR_TRANSPORT"): "DENY",
+    ("MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT", "MANIFEST_DECLARES_FAR_SIDE_TRANSITION_REQUIREMENT"): "DENY",
+    ("CROSSING_REQUIRES_DECLARED_STANDING", "CROSSING_STANDING_IS_DERIVED_FROM_THE_MANIFEST_OR_DECLARED"): "DENY",
+    ("CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY", "CROSSING_STANDING_DECLARES_THE_PREDECESSOR_KEY"): "DENY",
 }
 
 
@@ -228,7 +232,8 @@ def submitted_capability(manifest: Any) -> dict[str, Any]:
 
 
 def refusal_record(failed_predicate: str, detail: str,
-                   manifest: Any, six_fields: Mapping[str, Any] | None = None) -> dict[str, Any]:
+                   manifest: Any, six_fields: Mapping[str, Any] | None = None,
+                   *, disposition: str | None = None) -> dict[str, Any]:
     """What a refused submission records.
 
     The manifest reaches the chain by digest only. Nothing an admitted crossing
@@ -246,7 +251,8 @@ def refusal_record(failed_predicate: str, detail: str,
     put it in a population measured for target and scope fields it correctly
     lacks.
 
-    The disposition is set per failure_code (`REFUSAL_DISPOSITIONS`). Six
+    The disposition is set per (failure_code, failed_predicate) pair
+    (`REFUSAL_DISPOSITIONS`, via `declared_refusal`). Six
     fields passed through from the refusing step are stored with the record, so
     what is stored and what is returned name the same repair.
     """
@@ -257,8 +263,9 @@ def refusal_record(failed_predicate: str, detail: str,
         "operation": OPERATION,
         **submitted_capability(manifest),
         "intended_action": INTENDED_ACTION,
-        "disposition": refusal_disposition(
-            six_fields["failure_code"] if six_fields else failed_predicate),
+        "disposition": disposition if disposition is not None else (
+            declared_refusal(six_fields)[0] if six_fields
+            else refusal_disposition(REFUSED_CLASS, failed_predicate) or "FAIL_CLOSED"),
         "transition_is_the_disposition_of_the_intended_action": True,
         "failed_predicate": failed_predicate,
         "detail": detail,
@@ -270,13 +277,37 @@ def refusal_record(failed_predicate: str, detail: str,
         "authority_effect": "NONE_REFUSAL_RECORD_ONLY",
     }
     if six_fields:
-        record.update({field: six_fields[field] for field in SIX_FIELDS})
+        record.update(dict(six_fields))
     return record
 
 
-def refusal_disposition(failure_code: str) -> str:
-    """The table's disposition for a refusal's failure_code; an unlisted code fails closed."""
-    return REFUSAL_DISPOSITIONS.get(failure_code, "FAIL_CLOSED")
+def refusal_disposition(failure_code: Any, failed_predicate: Any) -> str | None:
+    """The table's disposition for a (failure_code, failed_predicate) pair, or None when no row declares it."""
+    return REFUSAL_DISPOSITIONS.get((failure_code, failed_predicate))
+
+
+def declared_refusal(fields: Mapping[str, Any]) -> tuple[str, dict[str, Any]]:
+    """The disposition of a six-field refusal, and the six fields it is stored and returned with.
+
+    A pair the table declares keeps its fields as given. A pair it does not
+    declare is refused FAIL_CLOSED under REFUSAL_DISPOSITION_NOT_DECLARED; the
+    pair it arrived with is kept under `undeclared_refusal_*`, so the refusal is
+    not renamed silently.
+    """
+    fields = {field: fields[field] for field in SIX_FIELDS}
+    disposition = refusal_disposition(fields["failure_code"], fields["failed_predicate"])
+    if disposition is not None:
+        return disposition, fields
+    return "FAIL_CLOSED", {
+        **fields,
+        "failure_code": REFUSAL_DISPOSITION_NOT_DECLARED,
+        "required_evidence_or_repair": (
+            "declare a REFUSAL_DISPOSITIONS row for (" + str(fields["failure_code"]) + ", "
+            + str(fields["failed_predicate"]) + "); the refusal it names: "
+            + str(fields["required_evidence_or_repair"])),
+        "undeclared_refusal_failure_code": fields["failure_code"],
+        "undeclared_refusal_failed_predicate": fields["failed_predicate"],
+    }
 
 
 def passed_through(source: Any) -> dict[str, Any] | None:
@@ -369,10 +400,8 @@ def _refused(failed_predicate: str, detail: str, *, manifest: Any,
     `six_fields`, when the refusing step carried them, are passed through as
     they were given rather than replaced by this operation's generic ones.
     """
-    record = refusal_record(failed_predicate, detail, manifest, six_fields)
-    appended = _record_refusal(record, hb_epoch)
     generic = {
-        "failure_code": failed_predicate,
+        "failure_code": REFUSED_CLASS,
         "failed_predicate": failed_predicate,
         "required_evidence_or_repair": "satisfy the failed predicate (" + failed_predicate + ": " + detail
                                        + ") and resubmit the manifest",
@@ -381,7 +410,13 @@ def _refused(failed_predicate: str, detail: str, *, manifest: Any,
         "next_attempt": "resubmit the same manifest once the predicate is satisfied; the refusal is "
                         "recorded and nothing was admitted",
     }
-    fields = {field: six_fields[field] for field in SIX_FIELDS} if six_fields else generic
+    disposition, fields = declared_refusal(six_fields if six_fields else generic)
+    # A step's own six fields, and any refusal whose pair is not declared, are
+    # stored with the record; a declared generic refusal is stored as before.
+    stored_fields = fields if (six_fields or fields["failure_code"] != REFUSED_CLASS) else None
+    record = refusal_record(failed_predicate, detail, manifest, stored_fields,
+                            disposition=disposition)
+    appended = _record_refusal(record, hb_epoch)
     return {
         "schema": RESULT_SCHEMA_ORG,
         "organization": "StegVerse-org",

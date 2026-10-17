@@ -229,7 +229,7 @@ class NonAllowReceiptTests(unittest.TestCase):
         out = self.receive({"not": "a manifest"})
         self.assertEqual(out["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
         self.assert_receipt_on_both_ledgers(
-            out, stored="FAIL_CLOSED", failure_code="ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
+            out, stored="FAIL_CLOSED", failure_code="ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         self.assertNotIn("disposition_delivered", out)
         self.assertNotIn("disposition_packet_id", out)
         self.assertEqual(self.frames(), [])

@@ -299,11 +299,11 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertIn("admits_processing", result["required_evidence_or_repair"])
         self.assertEqual(result["refusal_transition_class"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
 
-    def test_a_refusal_raised_here_carries_its_predicate_as_its_failure_code(self):
-        """This operation's own refusal: failure_code is its predicate, keyed in the table."""
+    def test_a_refusal_raised_here_is_keyed_on_its_code_and_predicate(self):
+        """This operation's own refusal keeps its code; the (code, predicate) pair sets the disposition."""
         result = self.refuse(manifest={"not": "a manifest"})
         self.assertEqual(result["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
-        self.assertEqual(result["failure_code"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
+        self.assertEqual(result["failure_code"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         self.assertEqual(result["owning_existing_goal"], "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001")
         self.assertIn(result["failed_predicate"], result["required_evidence_or_repair"])
         # An organization-side gap in the table: FAIL_CLOSED, stored and returned.
