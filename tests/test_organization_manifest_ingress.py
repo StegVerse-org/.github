@@ -291,6 +291,52 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertEqual(result["owning_existing_goal"], "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001")
         self.assertIn(result["failed_predicate"], result["required_evidence_or_repair"])
 
+    def readback_module(self):
+        spec = importlib.util.spec_from_file_location(
+            "organization_ledger_readback", ROOT / "resident-runtime/organization_ledger_readback.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_a_refused_manifest_carrying_non_ascii_text_is_bound_at_readback(self):
+        """The readback hashes a refused manifest the way ingress recorded it (H27).
+
+        Ingress hashes the submitted manifest with the default ensure_ascii=True;
+        the readback used ensure_ascii=False, so a refused manifest carrying
+        non-ASCII text could not be bound to its refusal receipt.
+        """
+        readback = self.readback_module()
+        submitted = self.unadmitted(source_output_id="refused-caf\u00e9-\u2713")
+        self.assertNotEqual(json.dumps(submitted, ensure_ascii=False), json.dumps(submitted))
+        result = self.refuse(manifest=submitted)
+        self.assertIs(result["refusal_recorded"], True)
+        repository, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
+            "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        recorded = repository["evidence"]["submitted_manifest_sha256"]
+        self.assertEqual(readback.submitted_manifest_sha(submitted), recorded)
+        # The receipt-body encoding is a different digest for this manifest.
+        self.assertNotEqual(readback.sha(submitted), recorded)
+        bound = readback.readback(os.environ["STEGVERSE_ORG_LEDGER_ROOT"], result, submitted)
+        self.assertIs(bound["ingress_refused"], True)
+        self.assertIs(bound["ingress_receipt_bound_to_manifest"], True)
+        self.assertEqual(bound["ingress_organization_receipt_sha256"],
+                         result["refusal_organization_receipt_sha256"])
+
+    def test_a_refused_manifest_that_does_not_match_its_recorded_digest_fails_closed(self):
+        readback = self.readback_module()
+        submitted = self.unadmitted(source_output_id="refused-caf\u00e9-\u2713")
+        result = self.refuse(manifest=submitted)
+        self.assertIs(result["refusal_recorded"], True)
+        location = os.environ["STEGVERSE_ORG_LEDGER_ROOT"]
+        for other in (self.unadmitted(source_output_id="refused-cafe-\u2713"),
+                      {**submitted, "label": "\u2713"}, None):
+            with self.subTest(other=other):
+                with self.assertRaises(readback.ReadbackRefused) as refused:
+                    readback.readback(location, result, other)
+                self.assertEqual(refused.exception.failed_predicate,
+                                 "RECEIPT_IS_BOUND_TO_THE_SUBMITTED_MANIFEST")
+
     def test_a_manifest_the_crossing_cannot_drive_is_recorded_rather_than_raised(self):
         """No declared standing used to leave the operation by exception."""
         result = self.refuse(standing=None)
