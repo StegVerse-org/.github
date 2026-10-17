@@ -49,6 +49,118 @@ SELECTION_FIELDS = ("processing_selection", "declared_capability", "declared_rou
                     "declared_capability_processed", "route_admissibility",
                     "identity_selected_by")
 
+# Every non-ALLOW this module produces carries these six fields, so a caller can
+# repair and retry without reading prose (D6; the conformance standard's rule 5
+# in docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md). They are data on the
+# refusal, never an authority: a refusal grants nothing.
+SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+              "retry_entrypoint", "owning_existing_goal", "next_attempt")
+OWNING_EXISTING_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
+RETRY_ENTRYPOINT = "resident-runtime/sdk_manifest_crossing.py::cross"
+#: The protocol's own answer to a receiver that is not there. Nothing waits on
+#: it, polls for it or reports its absence as a blocker.
+RECEIVER_UNAVAILABLE_DISPOSITION = "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION"
+
+#: Each code-only refusal: the predicate it failed and the repair that clears it.
+REFUSALS = {
+    "CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP": (
+        "CROSSING_IS_GIVEN_A_MATERIALIZED_CAPABILITY_MAP",
+        "supply the organization's materialized capability map "
+        "(org-boundary/registry/services.json) as a JSON object"),
+    "MANIFEST_DECLARES_NO_EGRESS": (
+        "MANIFEST_DECLARES_COMPLETION_EGRESS",
+        "declare completion.egress as an object in the manifest"),
+    "MANIFEST_DECLARES_NO_TRANSITION_SURFACE": (
+        "MANIFEST_DECLARES_A_FINAL_TRANSITION_SURFACE",
+        "declare completion.egress.final_stegverse_transition_surface as a non-empty string"),
+    "MANIFEST_DECLARES_NON_INTR_TRANSPORT": (
+        "MANIFEST_DECLARES_INTERLOCK_INTR_TRANSPORT",
+        "declare completion.egress.transport as INTERLOCK_INTR"),
+    "MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT": (
+        "MANIFEST_DECLARES_FAR_SIDE_TRANSITION_REQUIREMENT",
+        "declare completion.egress.far_side_transition_required as a boolean"),
+    "ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE": (
+        "DECLARED_SURFACE_RESOLVES_TO_EXACTLY_ONE_SERVICE",
+        "declare a transition surface this organization registers, or register the "
+        "service in org-boundary/registry/services.json"),
+    "TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY": (
+        "DECLARED_SURFACE_RESOLVES_TO_EXACTLY_ONE_SERVICE",
+        "leave exactly one service in org-boundary/registry/services.json whose id "
+        "matches the declared surface"),
+    "PROCESSING_AMBIGUOUS_IN_REGISTRY": (
+        "DECLARED_PROCESSING_PAIR_IS_ADMITTED_BY_AT_MOST_ONE_SERVICE",
+        "leave exactly one admits_processing row for the declared {capability, route_id} "
+        "in org-boundary/registry/services.json"),
+    "CROSSING_REQUIRES_DECLARED_STANDING": (
+        "CROSSING_STANDING_IS_DERIVED_FROM_THE_MANIFEST_OR_DECLARED",
+        "declare the crossing standing (mode, node_ref and the predecessor key), or submit a "
+        "manifest that carries its own generation and predecessor"),
+    "CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY": (
+        "CROSSING_STANDING_DECLARES_THE_PREDECESSOR_KEY",
+        "declare the standing as an object carrying the predecessor key (null is explicit genesis)"),
+}
+
+
+def refusal_fields(code, detail=""):
+    """The six fields of a code-only refusal, built from the code it was raised with."""
+    failed_predicate, repair = REFUSALS[code]
+    return {
+        "failure_code": code,
+        "failed_predicate": failed_predicate,
+        "required_evidence_or_repair": repair + (" (" + detail + ")" if detail else ""),
+        "retry_entrypoint": RETRY_ENTRYPOINT,
+        "owning_existing_goal": OWNING_EXISTING_GOAL,
+        "next_attempt": "resubmit the same manifest once the repair is in place; "
+                        "nothing crossed and nothing was dispatched",
+    }
+
+
+class CrossingRefused(SystemExit):
+    """A refusal that is still a `SystemExit`, now carrying the six fields.
+
+    It stays a `SystemExit` so the CLI exits as it did and every caller that
+    catches `SystemExit` keeps working; `str()` is the message it always had.
+    The six fields ride on `.refusal` for a caller that passes them through.
+    """
+
+    def __init__(self, code, detail=""):
+        super().__init__(code + (":" + detail if detail else ""))
+        self.code = code
+        self.refusal = refusal_fields(code, detail)
+
+
+def far_side_fields(service, disposition):
+    """The six fields of a crossing the far side did not complete.
+
+    A service with no installed endpoint adapter is an unavailable receiver:
+    the protocol answers it with RECEIVER_UNAVAILABLE_DISPOSITION and nothing
+    waits or polls. An installed adapter that refused is the far side's own
+    refusal, stated as it was given.
+    """
+    if not service.get("endpoint_adapter"):
+        return {
+            "failure_code": "FAR_SIDE_RECEIVER_UNAVAILABLE",
+            "failed_predicate": "RESOLVED_SERVICE_HAS_AN_INSTALLED_ENDPOINT_ADAPTER",
+            "required_evidence_or_repair": "install the endpoint adapter for "
+                                           + str(service.get("service_id"))
+                                           + " (" + disposition + ")",
+            "retry_entrypoint": RETRY_ENTRYPOINT,
+            "owning_existing_goal": OWNING_EXISTING_GOAL,
+            "next_attempt": RECEIVER_UNAVAILABLE_DISPOSITION
+                            + ": the crossing is re-driven when the receiver is materialized "
+                              "by the next event; nothing waits or polls",
+        }
+    return {
+        "failure_code": "FAR_SIDE_REFUSED_THE_CROSSING",
+        "failed_predicate": "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT",
+        "required_evidence_or_repair": "satisfy the far side's refusal at "
+                                       + str(service.get("service_id")) + " (" + disposition + ")",
+        "retry_entrypoint": RETRY_ENTRYPOINT,
+        "owning_existing_goal": OWNING_EXISTING_GOAL,
+        "next_attempt": "resubmit the same manifest once the far side admits it; "
+                        "the far side's refusal is returned verbatim",
+    }
+
 
 def load(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -68,19 +180,19 @@ def declared_destination(manifest):
     """
     egress = (manifest.get("completion") or {}).get("egress")
     if not isinstance(egress, dict):
-        raise SystemExit("MANIFEST_DECLARES_NO_EGRESS")
+        raise CrossingRefused("MANIFEST_DECLARES_NO_EGRESS")
     surface = egress.get("final_stegverse_transition_surface")
     if not isinstance(surface, str) or not surface.strip():
-        raise SystemExit("MANIFEST_DECLARES_NO_TRANSITION_SURFACE")
+        raise CrossingRefused("MANIFEST_DECLARES_NO_TRANSITION_SURFACE")
     # Read the transport, never assume it. Defaulting an absent transport to
     # InTr would carry a manifest over a crossing its author never declared --
     # the same defaulting this module's own docstring refuses.
     transport = egress.get("transport")
     if transport != INTR_TRANSPORT:
-        raise SystemExit("MANIFEST_DECLARES_NON_INTR_TRANSPORT:" + str(transport))
+        raise CrossingRefused("MANIFEST_DECLARES_NON_INTR_TRANSPORT", str(transport))
     required = egress.get("far_side_transition_required")
     if not isinstance(required, bool):
-        raise SystemExit("MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT")
+        raise CrossingRefused("MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT")
     return {"surface": surface.strip(), "transport": transport,
             "far_side_transition_required": required}
 
@@ -97,9 +209,9 @@ def resolve_surface(surface, registry):
     matches = [service for service in registry.get("services", [])
                if str(service.get("service_id", "")).split(".", 1)[-1] == normalized]
     if not matches:
-        raise SystemExit("ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE:" + surface)
+        raise CrossingRefused("ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE", surface)
     if len(matches) > 1:
-        raise SystemExit("TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY:" + surface)
+        raise CrossingRefused("TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY", surface)
     return matches[0]
 
 
@@ -120,11 +232,11 @@ def manifest_standing(manifest, declared=None):
                 "node_ref": source or str(manifest.get("source_framework") or "unknown"),
                 "generation": generation, "predecessor": predecessor}
     if declared is None:
-        raise SystemExit("CROSSING_REQUIRES_DECLARED_STANDING:"
-                         "this manifest declares no chain position, so one must be supplied")
+        raise CrossingRefused("CROSSING_REQUIRES_DECLARED_STANDING",
+                              "this manifest declares no chain position, so one must be supplied")
     if not isinstance(declared, dict) or "predecessor" not in declared:
-        raise SystemExit("CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY:"
-                         "null is explicit genesis; an absent key fails closed")
+        raise CrossingRefused("CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY",
+                              "null is explicit genesis; an absent key fails closed")
     return declared
 
 
@@ -161,14 +273,14 @@ def processing_service(manifest, registry):
     matches = [service for service in registry.get("services", [])
                if declared in (service.get("admits_processing") or [])]
     if len(matches) > 1:
-        raise SystemExit("PROCESSING_AMBIGUOUS_IN_REGISTRY:" + str(declared["capability"]))
+        raise CrossingRefused("PROCESSING_AMBIGUOUS_IN_REGISTRY", str(declared["capability"]))
     return matches[0] if matches else None
 
 
 def cross(manifest, *, registry, origin=None, packet_id="sdk-manifest-crossing", standing=None):
     """Drive the manifest's declared crossing and return what it produced."""
     if not isinstance(registry, dict):
-        raise SystemExit("CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP")
+        raise CrossingRefused("CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP")
     destination = declared_destination(manifest)
     service = processing_service(manifest, registry) or resolve_surface(destination["surface"], registry)
     origin = origin or {"org": "StegVerse-org", "service": "stegverse-org.stegverse-sdk"}
@@ -195,16 +307,21 @@ def cross(manifest, *, registry, origin=None, packet_id="sdk-manifest-crossing",
             # The far side refused or could not be reached. Say which, and say
             # it as a disposition rather than as a crossing that happened.
             detail = (completed.stderr or completed.stdout or "").strip().splitlines()
+            far_side_disposition = detail[-1] if detail else "FAR_SIDE_UNREACHABLE"
             return {
                 "schema": "stegverse.sdk-manifest-crossing-result/v1",
                 "declared_transition_surface": destination["surface"],
                 "resolved_service_id": service["service_id"],
                 "crossing_completed": False,
                 "manifest_sha256": ingress["payload"]["manifest_sha256"],
-                "far_side_disposition": detail[-1] if detail else "FAR_SIDE_UNREACHABLE",
+                "far_side_disposition": far_side_disposition,
                 "profile_status": service.get("profile_status"),
                 "endpoint_adapter_installed": bool(service.get("endpoint_adapter")),
                 "ingress_packet_id": ingress["packet_id"],
+                "disposition": "FAIL_CLOSED",
+                **far_side_fields(service, far_side_disposition),
+                "receiver_unavailable_disposition": RECEIVER_UNAVAILABLE_DISPOSITION,
+                "awaits_the_receiver": False,
                 "authority_effect": "NONE_CROSSING_ATTEMPT_ONLY",
             }
         result = json.loads(execution.read_text())

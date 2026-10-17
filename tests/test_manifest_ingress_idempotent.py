@@ -167,7 +167,9 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         ingress.derive_execution_request = same_id_other_manifest
         self.addCleanup(setattr, ingress, "derive_execution_request", original)
         refused = self.receive(packet_id="org-ingress-collision")
-        self.assertEqual(refused["disposition"], "FAIL_CLOSED")
+        # A colliding id is a defect of the submission: DENY, returned as stored.
+        self.assertEqual(refused["disposition"], "DENY")
+        self.assertEqual(refused["refusal_stored_disposition"], "DENY")
         self.assertEqual(refused["failed_predicate"], "ONE_TRANSITION_ID_BINDS_ONE_MANIFEST")
         self.assertEqual(len(self.receipts(REPO, ingress.OPERATION_ID)), 1)
 
