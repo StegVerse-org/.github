@@ -131,7 +131,7 @@ class D7IngressTests(unittest.TestCase):
         self.assertEqual(len(frames), 1)
 
     def test_an_admitted_pair_far_side_refusal_passes_the_crossing_six_fields_through(self):
-        """D6 through the ingress: the crossing's fields, and the DENY it was stored with before."""
+        """D6 through the ingress: the crossing's fields; a far side that did not complete is FAIL_CLOSED."""
         for case, expected in d6.fixture()["cases"].items():
             with self.subTest(case=case):
                 self.setUp()
@@ -141,10 +141,11 @@ class D7IngressTests(unittest.TestCase):
                 self.assertEqual(out["retry_entrypoint"], "resident-runtime/sdk_manifest_crossing.py::cross")
                 for field in SIX_FIELDS:
                     self.assertEqual(out[field], out["crossing"][field], field)
-                self.assertEqual(out["refusal_stored_disposition"], "DENY")
+                self.assertEqual(out["disposition"], "FAIL_CLOSED")
+                self.assertEqual(out["refusal_stored_disposition"], "FAIL_CLOSED")
                 repository, organization = self.refusal_pair()
-                self.assertEqual(repository["evidence"]["disposition"], "DENY")
-                self.assertEqual(organization["boundary_evidence"]["disposition"], "DENY")
+                self.assertEqual(repository["evidence"]["disposition"], "FAIL_CLOSED")
+                self.assertEqual(organization["boundary_evidence"]["disposition"], "FAIL_CLOSED")
                 for field in SIX_FIELDS:
                     self.assertEqual(repository["evidence"][field], out[field], field)
 
@@ -177,10 +178,37 @@ class D7IngressTests(unittest.TestCase):
         registry = d6.registry_for("installed-adapter-refuses")
         self.assertIsNone(ingress.processing_service_precheck(manifest(), registry))
 
-    def test_only_d7_is_in_the_fail_closed_predicate_set(self):
-        self.assertEqual(ingress.FAIL_CLOSED_PREDICATES, frozenset({D7_PREDICATE}))
-        self.assertEqual(ingress.stored_disposition("ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT"), "DENY")
-        self.assertEqual(ingress.stored_disposition(D7_PREDICATE), "FAIL_CLOSED")
+    def test_the_disposition_table_is_keyed_on_failure_code(self):
+        """The shared table (d6-predicate-table): DENY for submission defects, FAIL_CLOSED otherwise."""
+        expected = {
+            "PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE": "FAIL_CLOSED",
+            "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION": "FAIL_CLOSED",
+            "BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY": "FAIL_CLOSED",
+            "CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP": "FAIL_CLOSED",
+            "ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE": "FAIL_CLOSED",
+            "TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY": "FAIL_CLOSED",
+            "PROCESSING_AMBIGUOUS_IN_REGISTRY": "FAIL_CLOSED",
+            "HB_EPOCH_NOT_SUPPLIED": "FAIL_CLOSED",
+            "HB_EPOCH_INVALID": "FAIL_CLOSED",
+            "FAR_SIDE_RECEIVER_UNAVAILABLE": "FAIL_CLOSED",
+            "FAR_SIDE_REFUSED_THE_CROSSING": "FAIL_CLOSED",
+            "CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION": "DENY",
+            "ONE_TRANSITION_ID_BINDS_ONE_MANIFEST": "DENY",
+            "MANIFEST_DECLARES_NO_EGRESS": "DENY",
+            "MANIFEST_DECLARES_NO_TRANSITION_SURFACE": "DENY",
+            "MANIFEST_DECLARES_NON_INTR_TRANSPORT": "DENY",
+            "MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT": "DENY",
+            "CROSSING_REQUIRES_DECLARED_STANDING": "DENY",
+            "CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY": "DENY",
+            "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED": "DENY",
+        }
+        self.assertEqual(ingress.REFUSAL_DISPOSITIONS, expected)
+        # Two crossing codes share one predicate, which is why the key is the code.
+        refusals = ingress.crossing_module.REFUSALS
+        self.assertEqual(refusals["ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE"][0],
+                         refusals["TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY"][0])
+        self.assertTrue(set(refusals) <= set(expected))
+        self.assertEqual(ingress.refusal_disposition("AN_UNLISTED_CODE"), "FAIL_CLOSED")
 
 
 if __name__ == "__main__":

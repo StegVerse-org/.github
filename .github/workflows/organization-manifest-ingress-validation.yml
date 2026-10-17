@@ -302,6 +302,8 @@ jobs:
           assert raised["failed_predicate"] == "CROSSING_STANDING_IS_DERIVED_FROM_THE_MANIFEST_OR_DECLARED", raised
           assert raised["failure_code"] == "CROSSING_REQUIRES_DECLARED_STANDING", raised
           assert raised["retry_entrypoint"] == "resident-runtime/sdk_manifest_crossing.py::cross", raised
+          # A defect of the submission: DENY, and the returned disposition is the stored one.
+          assert raised["disposition"] == "DENY", raised
           assert raised["refusal_stored_disposition"] == "DENY", raised
           assert raised["refusal_recorded"] is True
 
@@ -322,11 +324,13 @@ jobs:
           assert carried == {r["receipt_sha256"] for r in repository}
           assert all(o["source_repository"] == "StegVerse-org/.github" for o in organization)
           assert all(o["org_transition_class"] == "REPO_STATE_PROPAGATION" for o in organization)
-          # The stored disposition is per predicate: D7 is FAIL_CLOSED, the
-          # submission defect stays DENY.
-          stored = {r["evidence"]["failed_predicate"]: r["evidence"]["disposition"] for r in repository}
-          assert stored == {"CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE": "FAIL_CLOSED",
-                            "CROSSING_STANDING_IS_DERIVED_FROM_THE_MANIFEST_OR_DECLARED": "DENY"}, stored
+          # The disposition is keyed on failure_code: D7 is FAIL_CLOSED, the
+          # submission defect is DENY, each stored as it was returned.
+          stored = {r["evidence"]["failure_code"]: r["evidence"]["disposition"] for r in repository}
+          assert stored == {"PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE": "FAIL_CLOSED",
+                            "CROSSING_REQUIRES_DECLARED_STANDING": "DENY"}, stored
+          assert stored["CROSSING_REQUIRES_DECLARED_STANDING"] == raised["disposition"]
+          assert stored["PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE"] == out["disposition"]
           for r in repository:
               record = r["evidence"]
               assert record["intended_action"] == "RECEIVE_A_SUBMITTED_SDK_MANIFEST"

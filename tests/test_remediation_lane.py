@@ -83,11 +83,11 @@ class NonAllowReceiptTests(unittest.TestCase):
         self.assertEqual(len(organization), 1)
         return repository[0], organization[0]
 
-    def assert_receipt_on_both_ledgers(self, out, *, stored="DENY",
-                                       failure_code="ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED",
+    def assert_receipt_on_both_ledgers(self, out, *, stored, failure_code,
                                        owning_goal="ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001",
                                        retry="resident-runtime/organization_manifest_ingress.py::receive"):
-        self.assertEqual(out["disposition"], "FAIL_CLOSED")
+        # The returned disposition is the stored one (REFUSAL_DISPOSITIONS).
+        self.assertEqual(out["disposition"], stored)
         self.assertIs(out["received"], False)
         self.assertIs(out["refusal_recorded"], True)
         self.assertIs(out["organization_receipt_observed"], False)
@@ -228,7 +228,8 @@ class NonAllowReceiptTests(unittest.TestCase):
         """
         out = self.receive({"not": "a manifest"})
         self.assertEqual(out["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
-        self.assert_receipt_on_both_ledgers(out)
+        self.assert_receipt_on_both_ledgers(
+            out, stored="FAIL_CLOSED", failure_code="ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
         self.assertNotIn("disposition_delivered", out)
         self.assertNotIn("disposition_packet_id", out)
         self.assertEqual(self.frames(), [])

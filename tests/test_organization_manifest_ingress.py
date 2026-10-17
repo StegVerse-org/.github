@@ -299,18 +299,20 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertIn("admits_processing", result["required_evidence_or_repair"])
         self.assertEqual(result["refusal_transition_class"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
 
-    def test_a_generic_refusal_keeps_this_operations_six_fields_and_stored_deny(self):
-        """A refusal no step carried six fields for keeps the generic ones, and DENY."""
+    def test_a_refusal_raised_here_carries_its_predicate_as_its_failure_code(self):
+        """This operation's own refusal: failure_code is its predicate, keyed in the table."""
         result = self.refuse(manifest={"not": "a manifest"})
         self.assertEqual(result["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
-        self.assertEqual(result["failure_code"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        self.assertEqual(result["failure_code"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
         self.assertEqual(result["owning_existing_goal"], "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001")
         self.assertIn(result["failed_predicate"], result["required_evidence_or_repair"])
-        self.assertEqual(result["refusal_stored_disposition"], "DENY")
+        # An organization-side gap in the table: FAIL_CLOSED, stored and returned.
+        self.assertEqual(result["disposition"], "FAIL_CLOSED")
+        self.assertEqual(result["refusal_stored_disposition"], "FAIL_CLOSED")
         repository, = self.ledger_receipts(
             "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
             "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
-        self.assertEqual(repository["evidence"]["disposition"], "DENY")
+        self.assertEqual(repository["evidence"]["disposition"], "FAIL_CLOSED")
 
     def test_a_manifest_the_crossing_cannot_drive_is_recorded_rather_than_raised(self):
         """No declared standing used to leave the operation by exception.
@@ -327,6 +329,8 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertEqual(result["owning_existing_goal"], "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001")
         self.assertIs(result["refusal_recorded"], True)
         self.assertIn("CROSSING_REQUIRES_DECLARED_STANDING", result["detail"])
+        # A defect of the submission: DENY, returned as stored.
+        self.assertEqual(result["disposition"], "DENY")
         self.assertEqual(result["refusal_stored_disposition"], "DENY")
         repository, = self.ledger_receipts(
             "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",

@@ -46,7 +46,7 @@ naming its own predicate, rather than being retried into a success.
 
 A refusal is also recorded. A state transition is the disposition of an intended
 action, not only a successful one: a submission that arrived and was refused is
-a transition whose disposition is DENY, and `organization_scope_rule` makes no
+a transition whose disposition is DENY or FAIL_CLOSED, and `organization_scope_rule` makes no
 exception for it. Every refusal path through `receive` -- an unresolvable
 destination, a capability bound elsewhere, a crossing this manifest cannot
 drive, a far side that refused, a boundary chain that does not reconstruct --
@@ -55,10 +55,11 @@ under `ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED`. Before this they returned a
 refusal and wrote nothing, which made a held or retried submission
 indistinguishable from one that never arrived.
 
-The stored disposition is set per predicate. A submission defect is DENY. A
-state-transition route that no service in this organization admits (D7) is
-FAIL_CLOSED, stored and returned alike, because the missing configuration is
-this organization's. The six fields a refusing step carried -- the crossing's
+The disposition is set per failure_code (`REFUSAL_DISPOSITIONS`) and is the
+same value stored and returned: DENY for a defect of the submission, FAIL_CLOSED
+for an organization-side gap -- such as a state-transition route no service here
+admits (D7) -- an epoch not supplied or invalid, or a far side that did not
+complete. The six fields a refusing step carried -- the crossing's
 own -- are passed through rather than overwritten.
 
 `organization_receipt_observed` stays false on a refusal regardless. It means an
@@ -148,10 +149,39 @@ STATE_TRANSITION_RUNTIME_BINDING = "stegverse.manifest_state_transition_runtime.
 PROCESSING_NOT_DECLARED_CODE = "PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE"
 PROCESSING_NOT_DECLARED_PREDICATE = "CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE"
 INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
-#: Predicates whose refusal is stored as FAIL_CLOSED rather than DENY: the gap is
-#: this organization's own missing configuration, not a defect of the
-#: submission. Every other refusal keeps the DENY it was stored with before.
-FAIL_CLOSED_PREDICATES = frozenset({PROCESSING_NOT_DECLARED_PREDICATE})
+#: The refusal disposition table, keyed on `failure_code` (two crossing codes
+#: share one predicate). The value is both what the refusal record stores and
+#: what `receive` returns. DENY is a defect of the submission; FAIL_CLOSED is an
+#: organization-side gap, an epoch that was not supplied or is invalid, or a far
+#: side that did not complete. A refusal raised by this operation itself carries
+#: its predicate as its failure_code. A code missing from the table fails closed.
+#: Shared with StegVerse-Labs/.github's ingress (one table in each ingress).
+REFUSAL_DISPOSITIONS = {
+    # organization-side configuration gaps
+    PROCESSING_NOT_DECLARED_CODE: "FAIL_CLOSED",
+    "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION": "FAIL_CLOSED",
+    "BOUNDARY_RECEIPT_CHAIN_RECONSTRUCTS_INDEPENDENTLY": "FAIL_CLOSED",
+    "CROSSING_REQUIRES_MATERIALIZED_CAPABILITY_MAP": "FAIL_CLOSED",
+    "ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE": "FAIL_CLOSED",
+    "TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY": "FAIL_CLOSED",
+    "PROCESSING_AMBIGUOUS_IN_REGISTRY": "FAIL_CLOSED",
+    # the supplied epoch (the shared HB_EPOCH codes; raised by PR-1b, not here)
+    "HB_EPOCH_NOT_SUPPLIED": "FAIL_CLOSED",
+    "HB_EPOCH_INVALID": "FAIL_CLOSED",
+    # a far side that did not complete
+    "FAR_SIDE_RECEIVER_UNAVAILABLE": "FAIL_CLOSED",
+    "FAR_SIDE_REFUSED_THE_CROSSING": "FAIL_CLOSED",
+    # defects of the submission
+    "CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION": "DENY",
+    "ONE_TRANSITION_ID_BINDS_ONE_MANIFEST": "DENY",
+    "MANIFEST_DECLARES_NO_EGRESS": "DENY",
+    "MANIFEST_DECLARES_NO_TRANSITION_SURFACE": "DENY",
+    "MANIFEST_DECLARES_NON_INTR_TRANSPORT": "DENY",
+    "MANIFEST_DECLARES_NO_FAR_SIDE_REQUIREMENT": "DENY",
+    "CROSSING_REQUIRES_DECLARED_STANDING": "DENY",
+    "CROSSING_STANDING_MUST_DECLARE_THE_PREDECESSOR_KEY": "DENY",
+    "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED": "DENY",
+}
 
 
 def _module(name: str, relative: str):
@@ -216,7 +246,7 @@ def refusal_record(failed_predicate: str, detail: str,
     put it in a population measured for target and scope fields it correctly
     lacks.
 
-    The stored disposition is set per predicate (`FAIL_CLOSED_PREDICATES`). Six
+    The disposition is set per failure_code (`REFUSAL_DISPOSITIONS`). Six
     fields passed through from the refusing step are stored with the record, so
     what is stored and what is returned name the same repair.
     """
@@ -227,7 +257,8 @@ def refusal_record(failed_predicate: str, detail: str,
         "operation": OPERATION,
         **submitted_capability(manifest),
         "intended_action": INTENDED_ACTION,
-        "disposition": stored_disposition(failed_predicate),
+        "disposition": refusal_disposition(
+            six_fields["failure_code"] if six_fields else failed_predicate),
         "transition_is_the_disposition_of_the_intended_action": True,
         "failed_predicate": failed_predicate,
         "detail": detail,
@@ -243,9 +274,9 @@ def refusal_record(failed_predicate: str, detail: str,
     return record
 
 
-def stored_disposition(failed_predicate: str) -> str:
-    """DENY for a submission defect; FAIL_CLOSED where the standard fails closed."""
-    return "FAIL_CLOSED" if failed_predicate in FAIL_CLOSED_PREDICATES else "DENY"
+def refusal_disposition(failure_code: str) -> str:
+    """The table's disposition for a refusal's failure_code; an unlisted code fails closed."""
+    return REFUSAL_DISPOSITIONS.get(failure_code, "FAIL_CLOSED")
 
 
 def passed_through(source: Any) -> dict[str, Any] | None:
@@ -341,7 +372,7 @@ def _refused(failed_predicate: str, detail: str, *, manifest: Any,
     record = refusal_record(failed_predicate, detail, manifest, six_fields)
     appended = _record_refusal(record, hb_epoch)
     generic = {
-        "failure_code": REFUSED_CLASS,
+        "failure_code": failed_predicate,
         "failed_predicate": failed_predicate,
         "required_evidence_or_repair": "satisfy the failed predicate (" + failed_predicate + ": " + detail
                                        + ") and resubmit the manifest",
@@ -355,7 +386,8 @@ def _refused(failed_predicate: str, detail: str, *, manifest: Any,
         "schema": RESULT_SCHEMA_ORG,
         "organization": "StegVerse-org",
         "receiving_operation": OPERATION_ID,
-        "disposition": "FAIL_CLOSED",
+        # The returned disposition is the stored one (REFUSAL_DISPOSITIONS).
+        "disposition": record["disposition"],
         "received": False,
         # Every non-ALLOW carries the six fields a caller needs to repair and
         # retry (docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md).
