@@ -21,6 +21,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -633,6 +634,169 @@ class LedgerWriterSelfClosureModeTests(unittest.TestCase):
         text = self.step("Select committed transition requests")
         self.assertIn("DISPATCH_REQUEST_REQUIRED", text)
         self.assertIn("DISPATCH_REQUEST_NOT_COMMITTED", text)
+
+
+class LedgerWriterNonAllowMessageTests(unittest.TestCase):
+    """Every FAIL_CLOSED/DENY message of the ledger writer carries the six fields.
+
+    This reads the workflow text and runs individual step scripts in a scratch
+    directory. It does not dispatch the workflow and writes no ledger ref.
+    """
+
+    SIX = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+           "retry_entrypoint", "owning_existing_goal", "next_attempt")
+    GOAL = "StegVerse-org/.github#162 P0-runtime-and-custody"
+    RETRY = ".github/workflows/organization-ledger-transition.yml"
+    # Messages that already carried all six fields keep their own owning goal.
+    EARLIER_GOALS = {
+        "MESH_REF_PUBLISH_RACE": "SVORG-MESH-LOCATION-BINDING-001",
+        "ORGANIZATION_LEDGER_PUBLISH_RACE": "LLMA-DECLARED-PATH-CONFORMANCE-368",
+        "AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE": "LLMA-DECLARED-PATH-CONFORMANCE-368",
+    }
+
+    def text(self):
+        return (ROOT / ".github/workflows/organization-ledger-transition.yml").read_text(encoding="utf-8")
+
+    def script(self, name):
+        import textwrap
+        step = self.text().split("      - name: " + name + "\n")[1].split("      - name:")[0]
+        return textwrap.dedent(step.split("        run: |\n", 1)[1])
+
+    def assert_six(self, message):
+        self.assertIn(message["disposition"], ("FAIL_CLOSED", "DENY"), message)
+        for field in self.SIX:
+            self.assertIsInstance(message.get(field), str, (field, message))
+            self.assertTrue(message[field].strip(), (field, message))
+        self.assertTrue(message["retry_entrypoint"].startswith(self.RETRY), message)
+        self.assertEqual(message["owning_existing_goal"],
+                         self.EARLIER_GOALS.get(message["failure_code"], self.GOAL), message)
+
+    def test_every_fail_closed_or_deny_message_in_the_workflow_carries_the_six_fields(self):
+        import re
+        text = self.text()
+        literals = re.findall(r"""echo '(\{"disposition":"(?:FAIL_CLOSED|DENY)".*?\})'""", text)
+        # The ERR-trap form quotes the same one-line message inside the trap string.
+        literals += re.findall(r"""trap 'echo '"'"'(\{"disposition":"(?:FAIL_CLOSED|DENY)".*?\})'"'"' >&2' ERR""", text)
+        codes = set()
+        for literal in literals:
+            message = json.loads(literal)
+            self.assert_six(message)
+            codes.add(message["failure_code"])
+        self.assertEqual(codes, {
+            "ORGANIZATION_LEDGER_CONTRACT_OR_REQUEST_INVALID", "ORGANIZATION_LEDGER_REF_BINDING_FAILED",
+            "DISPATCH_REQUEST_REQUIRED", "DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS",
+            "DISPATCH_REQUEST_PATH_INVALID", "DISPATCH_REQUEST_CONTROL_CHARACTER",
+            "DISPATCH_REQUEST_NOT_COMMITTED", "DISPATCH_HB_EPOCH_INVALID", "SELF_CLOSURE_RESULT_ABSENT",
+            "MESH_REF_PUBLISH_RACE", "ORGANIZATION_LEDGER_PUBLISH_RACE",
+            "AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE"})
+        # No refusal is a bare "FAIL_CLOSED: CODE" line any more.
+        self.assertNotRegex(text, r"FAIL_CLOSED: [A-Z_]+")
+        for line in text.splitlines():
+            if re.search(r'"disposition":"(FAIL_CLOSED|DENY)"', line):
+                for field in self.SIX:
+                    self.assertIn('"%s"' % field, line)
+        # The mesh readback's failing exit prints a six-field message first.
+        mesh = self.script("Read the designated mesh ref back from a fresh fetch")
+        block = mesh[mesh.index("if emitted and not frames:"):]
+        import ast
+        message = ast.literal_eval(block.split("print(json.dumps(", 1)[1].split(", sort_keys=True)", 1)[0])
+        self.assertEqual(message["failure_code"], "EMISSION_RECORDED_WITHOUT_A_MESH_FRAME")
+        self.assert_six(message)
+        # Every explicit failing exit follows a six-field message, either this
+        # workflow's own or the one the called runtime prints (resolved, binding).
+        lines = text.splitlines()
+        for index, line in enumerate(lines):
+            if re.search(r"\bexit 1\b|sys\.exit\(1\)|raise SystemExit\(", line):
+                window = "\n".join(lines[max(0, index - 12):index + 1])
+                self.assertTrue(
+                    "owning_existing_goal" in window or 'echo "$resolved"; exit 1' in line
+                    or 'echo "$binding"; exit 1' in line or "print(json.dumps(resolved" in window,
+                    "line %d: %s" % (index + 1, line.strip()))
+        for name in ("Validate committed request and readback implementation before any append",
+                     "Bind the designated organization ledger ref and the repository ledger subtree within it"):
+            self.assertTrue(self.script(name).startswith("trap '"), name)
+
+    def run_step(self, name, cwd, env, script=None):
+        bin_dir = Path(cwd) / ".bin"
+        bin_dir.mkdir(exist_ok=True)
+        if not (bin_dir / "python").exists():
+            (bin_dir / "python").symlink_to(sys.executable)
+        environment = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ.get("PATH", ""),
+                           RUNNER_TEMP=str(Path(cwd) / ".runner"), **env)
+        Path(environment["RUNNER_TEMP"]).mkdir(exist_ok=True)
+        return subprocess.run(["bash", "-e", "-c", script or self.script(name)], cwd=cwd, env=environment,
+                              capture_output=True, text=True)
+
+    def last_message(self, run):
+        lines = [line[line.index('{"disposition"'):] for line in (run.stdout + "\n" + run.stderr).splitlines()
+                 if '{"disposition"' in line]
+        self.assertTrue(lines, run.stdout + run.stderr)
+        return json.loads(lines[-1])
+
+    def test_request_mode_and_self_closure_refusals_resolve_with_the_six_fields(self):
+        select = "Select committed transition requests"
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "-q"], cwd=tmp, check=True)
+            requests = Path(tmp, ".stegverse", "transition-requests")
+            requests.mkdir(parents=True)
+            (requests / "committed.json").write_text("{}", encoding="utf-8")
+            (requests / "uncommitted.json").write_text("{}", encoding="utf-8")
+            subprocess.run(["git", "add", ".stegverse/transition-requests/committed.json"], cwd=tmp, check=True)
+            cases = [
+                ("", "DISPATCH_REQUEST_REQUIRED"),
+                ("elsewhere/request.json", "DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS"),
+                (".stegverse/transition-requests/../committed.json", "DISPATCH_REQUEST_PATH_INVALID"),
+                (".stegverse/transition-requests/a\x01b.json", "DISPATCH_REQUEST_CONTROL_CHARACTER"),
+                (".stegverse/transition-requests/uncommitted.json", "DISPATCH_REQUEST_NOT_COMMITTED"),
+            ]
+            for request, code in cases:
+                run = self.run_step(select, tmp, {"GITHUB_EVENT_NAME": "workflow_dispatch", "INPUT_REQUEST": request,
+                                                  "BEFORE": "", "GITHUB_SHA": ""})
+                self.assertEqual(run.returncode, 1, (request, run.stderr))
+                message = self.last_message(run)
+                self.assertEqual(message["failure_code"], code)
+                self.assert_six(message)
+            run = self.run_step(select, tmp, {"GITHUB_EVENT_NAME": "workflow_dispatch", "BEFORE": "", "GITHUB_SHA": "",
+                                              "INPUT_REQUEST": ".stegverse/transition-requests/committed.json"})
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertNotIn("failure_code", run.stdout + run.stderr)
+
+        close = "Close an intr-destination diagnostic against this organization"
+        for writes, epoch, code in ((False, "", "DISPATCH_HB_EPOCH_INVALID"),
+                                    (False, "7x", "DISPATCH_HB_EPOCH_INVALID"),
+                                    (False, "7", "SELF_CLOSURE_RESULT_ABSENT"),
+                                    (True, "7", None)):
+            with tempfile.TemporaryDirectory() as tmp:
+                runtime = Path(tmp, "resident-runtime")
+                runtime.mkdir()
+                body = ("import json, sys\nout = sys.argv[sys.argv.index('--out') + 1]\n"
+                        "json.dump({'disposition': 'ALLOW', 'communication_id': 'c'}, open(out, 'w'))\n"
+                        if writes else "raise SystemExit(1)\n")
+                (runtime / "intr_destination_ingress.py").write_text(body, encoding="utf-8")
+                run = self.run_step(close, tmp, {"HB_EPOCH": epoch, "INPUT_COMMUNICATION_ID": "c",
+                                                 "INPUT_PACKET_ID": "p", "GITHUB_RUN_ID": "1",
+                                                 "LEDGER_REF": "refs/stegverse/organization-ledger",
+                                                 "REPO_LEDGER_NAMESPACE": "n", "GITHUB_WORKSPACE": tmp})
+                if code is None:
+                    self.assertEqual(run.returncode, 0, run.stderr)
+                    self.assertNotIn("failure_code", run.stdout + run.stderr)
+                    continue
+                self.assertEqual(run.returncode, 1, (epoch, run.stderr))
+                message = self.last_message(run)
+                self.assertEqual(message["failure_code"], code)
+                self.assert_six(message)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, code in (("Validate committed request and readback implementation before any append",
+                                "ORGANIZATION_LEDGER_CONTRACT_OR_REQUEST_INVALID"),
+                               ("Bind the designated organization ledger ref and the repository ledger subtree within it",
+                                "ORGANIZATION_LEDGER_REF_BINDING_FAILED")):
+                run = self.run_step(name, tmp, {"LEDGER_REF": "refs/stegverse/organization-ledger",
+                                                "GITHUB_ENV": str(Path(tmp, "github-env"))})
+                self.assertNotEqual(run.returncode, 0, name)
+                message = self.last_message(run)
+                self.assertEqual(message["failure_code"], code)
+                self.assert_six(message)
 
 
 if __name__ == "__main__":
