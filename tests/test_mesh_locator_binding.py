@@ -131,9 +131,13 @@ class WorkflowBinding(unittest.TestCase):
     def setUp(self):
         self.workflow = WORKFLOW.read_text()
 
-    def test_mesh_root_is_a_required_dispatch_input_and_never_inferred(self):
+    def test_mesh_root_is_a_request_mode_dispatch_input_and_never_inferred(self):
+        # mode=self-closure does not leave this organization, so mesh_root is
+        # an input of the committed-request mode. That mode takes it from the
+        # dispatch or from the committed request, never from the runner.
         inputs = self.workflow.split("workflow_dispatch:")[1].split("permissions:")[0]
-        self.assertRegex(inputs, r"mesh_root:\n\s+description: .*\n\s+required: true")
+        self.assertRegex(inputs, r"mesh_root:\n\s+description: '[^\n]*mode=request[^\n]*'\n")
+        self.assertIn('--dispatch-mesh-root "$mesh_root"', self.workflow)
         self.assertNotIn("STEGVERSE_ORG_FEDERATION_ROOT", self.workflow)
 
     def test_dispatch_selects_only_committed_transition_request_paths(self):
