@@ -115,6 +115,24 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertIs(admitted["terminal_state"]["records_only"], True)
         self.assertIs(admitted["terminal_state"]["continued_authority"], False)
 
+    def test_an_sdk_refused_runtime_result_is_fail_closed_with_six_fields(self):
+        """(SDK_REFUSED_ORGANIZATION_RUNTIME_RESULT, SDK_ADMITS_THE_ORGANIZATION_RUNTIME_RESULT) = FAIL_CLOSED."""
+        def refuse(*_args, **_kwargs):
+            raise ValueError("SDK_RESULT_NOT_ADMITTED_FOR_TEST")
+        original = ingress.admit_runtime_result
+        ingress.admit_runtime_result = refuse
+        self.addCleanup(setattr, ingress, "admit_runtime_result", original)
+        result = self.receive()
+        pair = ("SDK_REFUSED_ORGANIZATION_RUNTIME_RESULT", "SDK_ADMITS_THE_ORGANIZATION_RUNTIME_RESULT")
+        self.assertEqual(ingress.REFUSAL_DISPOSITIONS[pair], "FAIL_CLOSED")
+        self.assertEqual((result["failure_code"], result["failed_predicate"]), pair)
+        self.assertEqual(result["disposition"], ingress.refusal_disposition(*pair))
+        self.assertEqual(result["disposition"], "FAIL_CLOSED")
+        for field in ingress.SIX_FIELDS:
+            self.assertTrue(result.get(field), field)
+        self.assertIn("SDK_RESULT_NOT_ADMITTED_FOR_TEST", result["required_evidence_or_repair"])
+        self.assertIs(result["organization_receipt_observed"], True)
+
     def test_the_organization_consumes_a_repository_receipt_it_did_not_author(self):
         """The organization ledger's job is to consume the level below, not to write it.
 

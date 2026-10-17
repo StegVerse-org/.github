@@ -113,6 +113,14 @@ LEDGER_COMPONENT_PATH_INVALID = "LEDGER_COMPONENT_PATH_INVALID"
 CONSUMER_ROOT_PATH_INVALID = "CONSUMER_ROOT_PATH_INVALID"
 LEDGER_COMPONENT_FILES = (".stegverse/transition-ledger/emit.py",
                           "resident-runtime/aggregate_repo_transition.py")
+#: The flat layout of the shared ledger component (as in
+#: org-kernel/organization-ledger/): the same two writers as siblings. Either
+#: layout is accepted for --ledger-component.
+LEDGER_COMPONENT_FLAT_FILES = ("emit.py", "aggregate_repo_transition.py")
+SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+              "retry_entrypoint", "owning_existing_goal", "next_attempt")
+LEDGER_COMPONENT_LAYOUTS = (" and ".join(LEDGER_COMPONENT_FILES)
+                            + ", or as siblings " + " and ".join(LEDGER_COMPONENT_FLAT_FILES),)
 CONSUMER_ROOT_FILES = (".stegverse/transition-ledger/contract.json",
                        ".stegverse/transition-ledger/org-contract.json")
 
@@ -141,6 +149,41 @@ def _ledger_path_refusal(code: str, predicate: str, option: str, path: Any,
     })
 
 
+def ledger_refusal_fields(exc: BaseException, entrypoint: str, goal: str) -> dict[str, Any] | None:
+    """The six fields of a ledger writer's own refusal (its LedgerRefusal), or None.
+
+    The shared ledger component raises a refusal that carries its six fields
+    (for example HB_EPOCH_NOT_SUPPLIED). They are taken as carried -- from
+    `.refusal`, `.record`, `.fields`, `.as_dict()` or a mapping argument -- and
+    a LedgerRefusal that carries only its code is given the six fields here,
+    FAIL_CLOSED. Any other exception is not a ledger refusal (None).
+    """
+    candidates = [getattr(exc, name, None) for name in ("refusal", "record", "fields", "six_fields")]
+    as_dict = getattr(exc, "as_dict", None)
+    if callable(as_dict):
+        try:
+            candidates.append(as_dict())
+        except Exception:  # noqa: BLE001 -- not a usable carrier
+            pass
+    candidates.extend(exc.args)
+    for value in candidates:
+        if isinstance(value, Mapping) and all(field in value for field in SIX_FIELDS):
+            return {"disposition": value.get("disposition", "FAIL_CLOSED"), **dict(value)}
+    if type(exc).__name__ != "LedgerRefusal":
+        return None
+    code = getattr(exc, "failure_code", None) or (str(exc).split(":", 1)[0].strip() or "LEDGER_REFUSAL")
+    return {
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": getattr(exc, "failed_predicate", None) or "LEDGER_WRITER_ADMITS_THE_APPEND",
+        "detail": str(exc),
+        "required_evidence_or_repair": "repair what the ledger writer refused (" + str(exc) + ") and run again",
+        "retry_entrypoint": entrypoint,
+        "owning_existing_goal": goal,
+        "next_attempt": "run again once the ledger writer's refusal is repaired; nothing was written",
+    }
+
+
 def bind_ledger_writers(ledger_component: Path | str | None = None,
                         consumer_root: Path | str | None = None) -> dict[str, Any]:
     """Load the ledger writers from `ledger_component`, their contracts from `consumer_root`.
@@ -152,9 +195,14 @@ def bind_ledger_writers(ledger_component: Path | str | None = None,
     entrypoint = "resident-runtime/intr_destination_ingress.py (--ledger-component, --consumer-root)"
     component = Path(ledger_component).expanduser().resolve() if ledger_component is not None else None
     consumer = Path(consumer_root).expanduser().resolve() if consumer_root is not None else None
-    if component is not None and not all((component / name).is_file() for name in LEDGER_COMPONENT_FILES):
+    layout = (None if component is None
+              else LEDGER_COMPONENT_FILES if all((component / name).is_file() for name in LEDGER_COMPONENT_FILES)
+              else LEDGER_COMPONENT_FLAT_FILES
+              if all((component / name).is_file() for name in LEDGER_COMPONENT_FLAT_FILES)
+              else ())
+    if component is not None and not layout:
         raise _ledger_path_refusal(LEDGER_COMPONENT_PATH_INVALID, "LEDGER_COMPONENT_PATH_HOLDS_THE_LEDGER_WRITERS",
-                                   "--ledger-component", ledger_component, LEDGER_COMPONENT_FILES,
+                                   "--ledger-component", ledger_component, LEDGER_COMPONENT_LAYOUTS,
                                    entrypoint, INTR_PROTOCOL_GOAL)
     if consumer is not None and not all((consumer / name).is_file() for name in CONSUMER_ROOT_FILES):
         raise _ledger_path_refusal(CONSUMER_ROOT_PATH_INVALID, "CONSUMER_ROOT_PATH_HOLDS_THE_LEDGER_CONTRACTS",
@@ -168,14 +216,16 @@ def bind_ledger_writers(ledger_component: Path | str | None = None,
                                    "--consumer-root", str(consumer_root) + " (" + str(exc) + ")",
                                    CONSUMER_ROOT_FILES, entrypoint, INTR_PROTOCOL_GOAL) from None
     base = component if component is not None else ROOT
-    repository = _module_at("repo_transition_emit_bound", base / LEDGER_COMPONENT_FILES[0])
-    organization = _module_at("aggregate_repo_transition_bound", base / LEDGER_COMPONENT_FILES[1])
+    files = layout or LEDGER_COMPONENT_FILES
+    repository = _module_at("repo_transition_emit_bound", base / files[0])
+    organization = _module_at("aggregate_repo_transition_bound", base / files[1])
     if contracts is not None:
         repository.ROOT, repository.C = consumer, contracts[CONSUMER_ROOT_FILES[0]]
         organization.ROOT, organization.C = consumer, contracts[CONSUMER_ROOT_FILES[1]]
     repository_ledger, organization_ledger = repository, organization
     return {"ledger_component": str(base), "consumer_root": str(consumer if consumer is not None else ROOT),
             "ledger_component_is_this_checkout": component is None,
+            "ledger_component_layout": "FLAT" if files == LEDGER_COMPONENT_FLAT_FILES else "NESTED",
             "consumer_root_is_this_checkout": consumer is None}
 
 
@@ -627,6 +677,17 @@ def main() -> int:
     except SelfClosureRefused as exc:
         result = closure_refusal(exc, args.location)
         code = 1
+    except Exception as exc:  # noqa: BLE001 -- only a ledger writer's refusal is handled
+        refusal = ledger_refusal_fields(
+            exc, "resident-runtime/intr_destination_ingress.py (--self-close, --hb-epoch)", INTR_PROTOCOL_GOAL)
+        if refusal is None:
+            raise
+        # The ledger writer refused (e.g. HB_EPOCH_NOT_SUPPLIED): its six fields
+        # go to stdout, nothing is written (no --out), and the exit is 1.
+        print(json.dumps({"schema": CLOSURE_SCHEMA, **refusal, "appended": False,
+                          "refusal_source": "LEDGER_WRITER", "authority_effect": "NONE_REFUSAL_ONLY"},
+                         sort_keys=True))
+        return 1
     _emit(result, args.out)
     return code
 

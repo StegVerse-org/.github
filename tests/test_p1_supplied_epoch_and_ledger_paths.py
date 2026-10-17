@@ -16,7 +16,9 @@ Ledger roots and the mesh are temporary per test; no secret is read.
 """
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import inspect
 import json
 import os
 import shutil
@@ -93,7 +95,7 @@ class EgressSuppliedEpochTests(TemporaryLedgers):
         self.assertEqual(self.written(), [])
 
     def test_an_invalid_epoch_is_refused_the_same_way(self):
-        for value in (31, True, "32", -1):
+        for value in (31, True, "+33", " 33", "3_3", -1):
             with self.subTest(value=value):
                 out = self.emit(hb_epoch=value)
                 self.assert_six_fields(out, "HB_EPOCH_INVALID")
@@ -106,6 +108,12 @@ class EgressSuppliedEpochTests(TemporaryLedgers):
         epochs = {r["hb_reference"]["epoch"] for r in receipts if "hb_reference" in r}
         self.assertEqual(epochs, {41})
 
+    def test_a_digit_string_epoch_with_leading_zeros_appends_at_its_value(self):
+        out = self.emit(hb_epoch="0041")
+        self.assertEqual(out["disposition"], "ALLOW")
+        receipts = [json.loads(p.read_text()) for p in self.written()]
+        self.assertEqual({r["hb_reference"]["epoch"] for r in receipts if "hb_reference" in r}, {41})
+
     def test_no_clock_is_read_on_the_refusal(self):
         original = kernel.hb_reference
         def no_clock(*args, **kwargs):  # pragma: no cover - asserted not called
@@ -113,6 +121,52 @@ class EgressSuppliedEpochTests(TemporaryLedgers):
         egress.kernel.hb_reference = no_clock
         self.addCleanup(setattr, egress.kernel, "hb_reference", original)
         self.assert_six_fields(self.emit(hb_epoch=None), "HB_EPOCH_NOT_SUPPLIED")
+
+
+#: sha256 of `supplied_epoch_failure`'s source text. The same pin is asserted in
+#: StegVerse-org/.github#185 and StegVerse-Labs/.github#3212 / #3213, so the
+#: validator is byte-identical across the three.
+SHARED_VALIDATOR_SHA256 = "7f36f0e697cadc91acd27af121eee3fc460b887ec67cfa258727bfccec0ca5f8"
+#: Not ASCII [0-9]+ (or below 32): each is refused, never coerced to an epoch.
+COERCED_EPOCHS = ("+33", " 33", "33 ", "3_3", "33.0", "33\n", "", "\u0663\u0663", "0x21",
+                  True, False, 33.0, 31, "31", -33, "-33", [33])
+
+
+class SharedEpochValidatorTests(unittest.TestCase):
+    """One supplied-epoch rule at the egress boundary and the capability resolver."""
+
+    def test_one_validator_text_everywhere(self):
+        for module in (egress, capability):
+            source = inspect.getsource(module.supplied_epoch_failure)
+            self.assertEqual(hashlib.sha256(source.encode()).hexdigest(), SHARED_VALIDATOR_SHA256,
+                             module.__name__)
+
+    def test_coerced_epochs_are_refused_invalid_at_both_boundaries(self):
+        for value in COERCED_EPOCHS:
+            with self.subTest(value=value):
+                for refusal in (egress.epoch_refusal(value, "entrypoint"), capability.epoch_refusal(value)):
+                    self.assertEqual(refusal["failure_code"], "HB_EPOCH_INVALID")
+                    self.assertEqual(refusal["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
+
+    def test_ascii_digits_are_supplied_leading_zeros_included(self):
+        # As TVC#517 require_hb_epoch: [0-9]+ fullmatch, then int() >= 32.
+        for value in (32, 33, "32", "33", "0033", "032", 10 ** 12):
+            with self.subTest(value=value):
+                self.assertIsNone(egress.epoch_refusal(value, "entrypoint"))
+                self.assertIsNone(capability.epoch_refusal(value))
+
+    def test_absent_is_not_supplied(self):
+        self.assertEqual(egress.epoch_refusal(None, "entrypoint")["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+        self.assertEqual(capability.epoch_refusal(None)["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+
+    def test_a_carried_derived_from_clock_must_be_exactly_false(self):
+        rule = egress.supplied_epoch_failure
+        self.assertIsNone(rule(33, {"derived_from_clock": False}))
+        self.assertIsNone(rule(33, {}))
+        for value in (True, None, 0, "false"):
+            with self.subTest(derived_from_clock=value):
+                self.assertEqual(rule(33, {"derived_from_clock": value})[0], "HB_EPOCH_INVALID")
+        self.assertEqual(rule(33, "HB:33")[0], "HB_EPOCH_INVALID")
 
 
 class CapabilityIngressEpochTests(TemporaryLedgers):
@@ -252,6 +306,129 @@ class LedgerPathTests(TemporaryLedgers):
             and "\n" not in refused.stdout.strip() else json.loads(refused.stdout)
         self.assert_six_fields(out, "CONSUMER_ROOT_PATH_INVALID")
         self.assertEqual(self.written(), [])
+
+
+def _cli_env() -> dict:
+    return dict(os.environ)
+
+
+REFUSING_WRITER = '''"""A ledger writer that refuses every use with its six fields (test stub)."""
+class LedgerRefusal(Exception):
+    def __init__(self, refusal):
+        super().__init__(refusal["failure_code"])
+        self.refusal = refusal
+
+REFUSAL = {"disposition": "FAIL_CLOSED", "failure_code": "HB_EPOCH_NOT_SUPPLIED",
+           "failed_predicate": "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+           "required_evidence_or_repair": "supply hb_epoch; the ledger writer reads no clock",
+           "retry_entrypoint": "emit.py::append", "owning_existing_goal": "StegVerse-org/.github#163",
+           "next_attempt": "append again with a supplied epoch"}
+
+def __getattr__(name):
+    raise LedgerRefusal(dict(REFUSAL))
+'''
+
+
+def _flat_component(path: Path, source: str | None = None) -> Path:
+    """The flat layout: emit.py and aggregate_repo_transition.py as siblings."""
+    path.mkdir(parents=True)
+    for name in ("emit.py", "aggregate_repo_transition.py"):
+        (path / name).write_text(source if source is not None else "ROOT = None\nC = None\n")
+    return path
+
+
+class LedgerComponentLayoutTests(TemporaryLedgers):
+    """--ledger-component accepts the nested and the flat layout, and refuses anything else."""
+    MODULES = (("resident-runtime/organization_manifest_ingress.py", "org_ingress_p1_layouts"),
+               ("resident-runtime/intr_destination_ingress.py", "intr_destination_p1_layouts"))
+
+    def consumer(self):
+        consumer = self.work / "consumer"
+        if not consumer.exists():
+            shutil.copytree(ROOT / ".stegverse/transition-ledger", consumer / ".stegverse/transition-ledger",
+                            ignore=shutil.ignore_patterns("__pycache__", "*.py"))
+        return consumer
+
+    def test_the_nested_layout_is_accepted(self):
+        component = _copy_component(self.work / "nested")
+        for relative, name in self.MODULES:
+            with self.subTest(module=relative):
+                module = _load(name, relative)
+                bound = module.bind_ledger_writers(component, self.consumer())
+                self.assertEqual(bound["ledger_component_layout"], "NESTED")
+                self.assertEqual(Path(module.repository_ledger.__file__).resolve(),
+                                 (component / ".stegverse/transition-ledger/emit.py").resolve())
+
+    def test_the_flat_layout_is_accepted(self):
+        component = _flat_component(self.work / "flat")
+        for relative, name in self.MODULES:
+            with self.subTest(module=relative):
+                module = _load(name, relative)
+                bound = module.bind_ledger_writers(component, self.consumer())
+                self.assertEqual(bound["ledger_component_layout"], "FLAT")
+                self.assertEqual(Path(module.repository_ledger.__file__).resolve(),
+                                 (component / "emit.py").resolve())
+                self.assertEqual(Path(module.organization_ledger.__file__).resolve(),
+                                 (component / "aggregate_repo_transition.py").resolve())
+                self.assertEqual(Path(module.organization_ledger.ROOT), self.consumer().resolve())
+
+    def test_a_path_in_neither_layout_is_refused(self):
+        half = self.work / "half"
+        half.mkdir()
+        (half / "emit.py").write_text("ROOT = None\n")
+        for relative, name in self.MODULES:
+            module = _load(name, relative)
+            before = (module.repository_ledger, module.organization_ledger)
+            for path in (half, self.work / "missing"):
+                with self.subTest(module=relative, path=path.name):
+                    with self.assertRaises(module.LedgerPathRefused) as refused:
+                        module.bind_ledger_writers(path)
+                    self.assert_six_fields(refused.exception.refusal, "LEDGER_COMPONENT_PATH_INVALID")
+                    self.assertIn("as siblings", refused.exception.refusal["detail"])
+                    self.assertEqual((module.repository_ledger, module.organization_ledger), before)
+
+
+class LedgerWriterRefusalTests(TemporaryLedgers):
+    """The C7/C8 CLIs print a ledger writer's LedgerRefusal, write nothing and exit 1."""
+
+    def run_cli(self, relative, *args):
+        return subprocess.run([sys.executable, str(ROOT / relative), *args], cwd=ROOT,
+                              env=_cli_env(), capture_output=True, text=True, check=False)
+
+    def assert_refused(self, completed, out):
+        self.assertEqual(completed.returncode, 1, completed.stdout[-2000:] + completed.stderr[-2000:])
+        printed = json.loads(completed.stdout.strip().splitlines()[-1])
+        self.assert_six_fields(printed, "HB_EPOCH_NOT_SUPPLIED")
+        self.assertEqual(printed["refusal_source"], "LEDGER_WRITER")
+        self.assertFalse(out.exists(), "a refused run wrote --out")
+        self.assertEqual(self.written(), [])
+
+    def test_the_ingress_cli_prints_the_ledger_refusal(self):
+        component = _flat_component(self.work / "refusing", REFUSING_WRITER)
+        out = self.work / "ingress-out.json"
+        completed = self.run_cli(
+            "resident-runtime/organization_manifest_ingress.py",
+            "--registry", str(ROOT / "org-boundary/registry/services.json"), "--manifest", str(MANIFEST),
+            "--standing", str(GENESIS_PATH), "--packet-id", "p1-ledger-refusal", "--hb-epoch", "32",
+            "--ledger-component", str(component), "--out", str(out))
+        self.assert_refused(completed, out)
+
+    def test_the_self_close_cli_prints_the_ledger_refusal(self):
+        component = _flat_component(self.work / "refusing", REFUSING_WRITER)
+        out = self.work / "self-close-out.json"
+        completed = self.run_cli(
+            "resident-runtime/intr_destination_ingress.py", "--self-close",
+            "--registry", str(ROOT / "org-boundary/registry/services.json"),
+            "--communication-id", "p1-ledger-refusal", "--packet-id", "p1-ledger-refusal",
+            "--hb-epoch", "32", "--ledger-component", str(component), "--out", str(out))
+        self.assert_refused(completed, out)
+
+    def test_a_code_only_ledger_refusal_is_given_six_fields_and_others_are_not_refusals(self):
+        module = _load("org_ingress_p1_refusal_fields", "resident-runtime/organization_manifest_ingress.py")
+        LedgerRefusal = type("LedgerRefusal", (Exception,), {})
+        fields = module.ledger_refusal_fields(LedgerRefusal("HB_EPOCH_NOT_SUPPLIED: no epoch"), "entry", "goal")
+        self.assert_six_fields(fields, "HB_EPOCH_NOT_SUPPLIED")
+        self.assertIsNone(module.ledger_refusal_fields(RuntimeError("boom"), "entry", "goal"))
 
 
 if __name__ == "__main__":
