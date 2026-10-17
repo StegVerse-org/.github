@@ -925,7 +925,9 @@ def main() -> int:
     parser.add_argument("--standing", required=True,
                         help="JSON file declaring mode, node_ref and the predecessor key")
     parser.add_argument("--transition-reference", default="ecosystem.transition.interorg.v1")
-    parser.add_argument("--hb-epoch", type=int, default=None)
+    parser.add_argument("--hb-epoch", type=str, default=None,
+                        help="carrier heartbeat epoch as ASCII digits; the shared "
+                             "validator sees the raw text")
     parser.add_argument("--close", action="store_true",
                         help="observe the far side's closure of --packet-id instead of emitting")
     parser.add_argument("--packet-id")

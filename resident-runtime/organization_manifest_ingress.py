@@ -89,6 +89,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Mapping
@@ -255,38 +256,64 @@ def _ledger_path_refusal(code: str, predicate: str, option: str, path: Any,
     })
 
 
-def ledger_refusal_fields(exc: BaseException, entrypoint: str, goal: str) -> dict[str, Any] | None:
-    """The six fields of a ledger writer's own refusal (its LedgerRefusal), or None.
+def ledger_writer_refusal(exc: SystemExit, entrypoint: str,
+                          goal: str) -> tuple[dict[str, Any], bool] | None:
+    """A ledger writer's refusal and whether it carried its own record, or None.
 
-    The shared ledger component raises a refusal that carries its six fields
-    (for example HB_EPOCH_NOT_SUPPLIED). They are taken as carried -- from
-    `.refusal`, `.record`, `.fields`, `.as_dict()` or a mapping argument -- and
-    a LedgerRefusal that carries only its code is given the six fields here,
-    FAIL_CLOSED. Any other exception is not a ledger refusal (None).
+    The ledger component's LedgerRefusal (ledger_common.py, flat next to
+    emit.py) subclasses SystemExit and carries its refusal as `.refusal`, a
+    dict: that is returned as given, (refusal, True), and printed unchanged.
+    An old-layout writer raises a plain SystemExit(message): the message is
+    given the six fields here, FAIL_CLOSED, (fields, False). A SystemExit
+    whose code is not a message (an int or None) is an ordinary exit (None).
     """
-    candidates = [getattr(exc, name, None) for name in ("refusal", "record", "fields", "six_fields")]
-    as_dict = getattr(exc, "as_dict", None)
-    if callable(as_dict):
-        try:
-            candidates.append(as_dict())
-        except Exception:  # noqa: BLE001 -- not a usable carrier
-            pass
-    candidates.extend(exc.args)
-    for value in candidates:
-        if isinstance(value, Mapping) and all(field in value for field in SIX_FIELDS):
-            return {"disposition": value.get("disposition", "FAIL_CLOSED"), **dict(value)}
-    if type(exc).__name__ != "LedgerRefusal":
+    refusal = getattr(exc, "refusal", None)
+    if isinstance(refusal, dict):
+        return refusal, True
+    if not isinstance(exc.code, str):
         return None
-    code = getattr(exc, "failure_code", None) or (str(exc).split(":", 1)[0].strip() or "LEDGER_REFUSAL")
+    message = exc.code
+    head = message.split(":", 1)[0].strip()
+    code = head if re.fullmatch(r"[A-Z][A-Z0-9_]*", head) else "LEDGER_WRITER_REFUSED"
     return {
         "disposition": "FAIL_CLOSED",
         "failure_code": code,
-        "failed_predicate": getattr(exc, "failed_predicate", None) or "LEDGER_WRITER_ADMITS_THE_APPEND",
-        "detail": str(exc),
-        "required_evidence_or_repair": "repair what the ledger writer refused (" + str(exc) + ") and run again",
+        "failed_predicate": "LEDGER_WRITER_ADMITS_THE_APPEND",
+        "detail": message,
+        "required_evidence_or_repair": "repair what the ledger writer refused (" + message + ") and run again",
         "retry_entrypoint": entrypoint,
         "owning_existing_goal": goal,
         "next_attempt": "run again once the ledger writer's refusal is repaired; nothing was written",
+    }, False
+
+
+def cli_hb_epoch(text: str | None, entrypoint: str,
+                 goal: str) -> tuple[int | None, dict[str, Any] | None]:
+    """--hb-epoch as typed, checked by the shared rule: (epoch, None) or (None, refusal).
+
+    argparse hands over the raw text (type=str), so the shared validator
+    (supplied_epoch_failure, the egress boundary's copy) sees it uncoerced:
+    '+33', ' 33' and '3_3' are HB_EPOCH_INVALID, and '0033' is 33. An absent
+    --hb-epoch stays None, as before.
+    """
+    if text is None:
+        return None, None
+    rule = _module("organization_egress_boundary_cli_epoch",
+                   "resident-runtime/organization_egress_boundary.py").supplied_epoch_failure
+    failure = rule(text)
+    if failure is None:
+        return int(text), None  # admitted as ASCII digits
+    code, detail = failure
+    return None, {
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+        "detail": detail,
+        "required_evidence_or_repair": ("pass --hb-epoch as the carrier supplied it: ASCII digits "
+                                        "with value >= 32"),
+        "retry_entrypoint": entrypoint,
+        "owning_existing_goal": goal,
+        "next_attempt": "run again with the supplied epoch; nothing was received or appended",
     }
 
 
@@ -1249,7 +1276,7 @@ def main() -> int:
                         help="JSON declaring mode, node_ref and the predecessor key; "
                              "required unless the manifest declares its own chain position")
     parser.add_argument("--packet-id", default="organization-sdk-manifest-ingress")
-    parser.add_argument("--hb-epoch", type=int, default=None,
+    parser.add_argument("--hb-epoch", type=str, default=None,
                         help="heartbeat epoch; derived from the host clock, and marked as "
                              "derived, when absent")
     parser.add_argument("--mesh-root", type=Path, default=None,
@@ -1263,6 +1290,13 @@ def main() -> int:
                         help="root the ledger contracts resolve from (.stegverse/transition-ledger/"
                              "contract.json, org-contract.json); default: this checkout")
     args = parser.parse_args()
+    hb_epoch, epoch_refused = cli_hb_epoch(args.hb_epoch, "resident-runtime/organization_manifest_ingress.py (--hb-epoch)", INTR_PROTOCOL_GOAL)
+    if epoch_refused is not None:
+        # Nothing is received, appended or written (no --out); the exit is 1.
+        print(json.dumps({"schema": RESULT_SCHEMA_ORG, "receiving_operation": OPERATION_ID,
+                          "received": False, **epoch_refused, "refusal_recorded": False,
+                          "authority_effect": "NONE_REFUSAL_ONLY"}, sort_keys=True))
+        return 1
 
     if args.ledger_component is not None or args.consumer_root is not None:
         try:
@@ -1282,18 +1316,20 @@ def main() -> int:
             registry=json.loads(args.registry.read_text(encoding="utf-8")),
             standing=(json.loads(args.standing.read_text(encoding="utf-8"))
                       if args.standing else None),
-            packet_id=args.packet_id, hb_epoch=args.hb_epoch, mesh_root=args.mesh_root)
-    except Exception as exc:  # noqa: BLE001 -- only a ledger writer's refusal is handled
-        refusal = ledger_refusal_fields(
+            packet_id=args.packet_id, hb_epoch=hb_epoch, mesh_root=args.mesh_root)
+    except SystemExit as exc:
+        refused = ledger_writer_refusal(
             exc, "resident-runtime/organization_manifest_ingress.py (--hb-epoch)", INTR_PROTOCOL_GOAL)
-        if refusal is None:
+        if refused is None:
             raise
-        # The ledger writer refused (e.g. HB_EPOCH_NOT_SUPPLIED): its six fields
-        # go to stdout, nothing is written (no --out), and the exit is 1.
-        print(json.dumps({"schema": RESULT_SCHEMA_ORG, "receiving_operation": OPERATION_ID,
-                          "received": False, **refusal, "refusal_recorded": False,
-                          "refusal_source": "LEDGER_WRITER", "authority_effect": "NONE_REFUSAL_ONLY"},
-                         sort_keys=True))
+        refusal, carried = refused
+        # The ledger writer refused (e.g. HB_EPOCH_NOT_SUPPLIED). A carried
+        # refusal is printed exactly as given; an old-layout message gets the
+        # six fields. Nothing is written (no --out), and the exit is 1.
+        print(json.dumps(refusal) if carried else json.dumps(
+            {"schema": RESULT_SCHEMA_ORG, "receiving_operation": OPERATION_ID, "received": False,
+             **refusal, "refusal_recorded": False, "refusal_source": "LEDGER_WRITER",
+             "authority_effect": "NONE_REFUSAL_ONLY"}, sort_keys=True))
         return 1
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.out:

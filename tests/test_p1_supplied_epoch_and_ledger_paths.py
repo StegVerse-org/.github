@@ -312,25 +312,36 @@ def _cli_env() -> dict:
     return dict(os.environ)
 
 
-REFUSING_WRITER = '''"""A ledger writer that refuses every use with its six fields (test stub)."""
-class LedgerRefusal(Exception):
-    def __init__(self, refusal):
-        super().__init__(refusal["failure_code"])
-        self.refusal = refusal
+REFUSING_WRITER = '''"""A ledger writer that refuses every use as ledger_common.LedgerRefusal does (test stub)."""
+import json
 
-REFUSAL = {"disposition": "FAIL_CLOSED", "failure_code": "HB_EPOCH_NOT_SUPPLIED",
+REFUSAL = {"schema": "stegverse.organization-ledger-append-refusal/v1",
+           "disposition": "FAIL_CLOSED", "failure_code": "HB_EPOCH_NOT_SUPPLIED",
            "failed_predicate": "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+           "detail": "no hb_epoch was supplied; the ledger writer reads no clock",
            "required_evidence_or_repair": "supply hb_epoch; the ledger writer reads no clock",
            "retry_entrypoint": "emit.py::append", "owning_existing_goal": "StegVerse-org/.github#163",
-           "next_attempt": "append again with a supplied epoch"}
+           "next_attempt": "append again with a supplied epoch",
+           "consequence_committed": False, "authority_effect": "NONE"}
+
+class LedgerRefusal(SystemExit):
+    """As the writer's: a SystemExit carrying .refusal, .failure_code, .failed_predicate and .code."""
+    def __init__(self, refusal):
+        super().__init__(json.dumps(refusal, sort_keys=True))
+        self.refusal = refusal
+        self.failure_code = refusal["failure_code"]
+        self.failed_predicate = refusal["failed_predicate"]
+
+def _refuse():
+    raise LedgerRefusal(dict(REFUSAL))
 
 class _RefusingContract(dict):
     """A contract every read of which is the writer's refusal."""
     def __getitem__(self, key):
-        raise LedgerRefusal(dict(REFUSAL))
+        _refuse()
 
     def get(self, key, default=None):
-        raise LedgerRefusal(dict(REFUSAL))
+        _refuse()
 
 ROOT = None
 C = _RefusingContract()
@@ -339,8 +350,13 @@ def __getattr__(name):
     # Introspection (a test harness's locus hook) is not a ledger use.
     if name.startswith("__") or name == "declared_ledger_locus":
         raise AttributeError(name)
-    raise LedgerRefusal(dict(REFUSAL))
+    _refuse()
 '''
+
+#: An old-layout writer: a plain SystemExit(message), no .refusal.
+OLD_LAYOUT_WRITER = REFUSING_WRITER.replace(
+    "def _refuse():\n    raise LedgerRefusal(dict(REFUSAL))",
+    "def _refuse():\n    raise SystemExit(\"HB_EPOCH_NOT_SUPPLIED: no hb_epoch was supplied; no clock is read\")")
 
 
 def _flat_component(path: Path, source: str | None = None) -> Path:
@@ -403,46 +419,179 @@ class LedgerComponentLayoutTests(TemporaryLedgers):
 
 
 class LedgerWriterRefusalTests(TemporaryLedgers):
-    """The C7/C8 CLIs print a ledger writer's LedgerRefusal, write nothing and exit 1."""
+    """The C7/C8 CLIs print a ledger writer's refusal, write nothing and exit 1."""
 
     def run_cli(self, relative, *args):
         return subprocess.run([sys.executable, str(ROOT / relative), *args], cwd=ROOT,
                               env=_cli_env(), capture_output=True, text=True, check=False)
 
-    def assert_refused(self, completed, out):
+    def writer(self):
+        namespace = {}
+        exec(compile(REFUSING_WRITER, "refusing_writer", "exec"), namespace)
+        return namespace
+
+    def assert_nothing_written(self, completed, out):
         self.assertEqual(completed.returncode, 1, completed.stdout[-2000:] + completed.stderr[-2000:])
-        printed = json.loads(completed.stdout.strip().splitlines()[-1])
-        self.assert_six_fields(printed, "HB_EPOCH_NOT_SUPPLIED")
-        self.assertEqual(printed["refusal_source"], "LEDGER_WRITER")
         self.assertFalse(out.exists(), "a refused run wrote --out")
         self.assertEqual(self.written(), [])
 
-    def test_the_ingress_cli_prints_the_ledger_refusal(self):
-        component = _flat_component(self.work / "refusing", REFUSING_WRITER)
-        out = self.work / "ingress-out.json"
-        completed = self.run_cli(
+    def assert_carried(self, completed, out):
+        # The writer's .refusal is printed exactly as given, not rebuilt.
+        self.assert_nothing_written(completed, out)
+        refusal = self.writer()["REFUSAL"]
+        self.assertEqual(completed.stdout.strip().splitlines()[-1], json.dumps(refusal))
+        self.assertEqual(json.loads(completed.stdout.strip().splitlines()[-1]), refusal)
+
+    def assert_built(self, completed, out):
+        # A plain SystemExit(message) gets the six fields built from its message.
+        self.assert_nothing_written(completed, out)
+        printed = json.loads(completed.stdout.strip().splitlines()[-1])
+        self.assert_six_fields(printed, "HB_EPOCH_NOT_SUPPLIED")
+        self.assertEqual(printed["refusal_source"], "LEDGER_WRITER")
+        self.assertIn("no clock is read", printed["detail"])
+
+    def ingress(self, source, name):
+        component = _flat_component(self.work / name, source)
+        out = self.work / (name + "-ingress-out.json")
+        return self.run_cli(
             "resident-runtime/organization_manifest_ingress.py",
             "--registry", str(ROOT / "org-boundary/registry/services.json"), "--manifest", str(MANIFEST),
             "--standing", str(GENESIS_PATH), "--packet-id", "p1-ledger-refusal", "--hb-epoch", "32",
-            "--ledger-component", str(component), "--out", str(out))
-        self.assert_refused(completed, out)
+            "--ledger-component", str(component), "--out", str(out)), out
 
-    def test_the_self_close_cli_prints_the_ledger_refusal(self):
-        component = _flat_component(self.work / "refusing", REFUSING_WRITER)
-        out = self.work / "self-close-out.json"
-        completed = self.run_cli(
+    def self_close(self, source, name):
+        component = _flat_component(self.work / name, source)
+        out = self.work / (name + "-self-close-out.json")
+        return self.run_cli(
             "resident-runtime/intr_destination_ingress.py", "--self-close",
             "--registry", str(ROOT / "org-boundary/registry/services.json"),
             "--communication-id", "p1-ledger-refusal", "--packet-id", "p1-ledger-refusal",
-            "--hb-epoch", "32", "--ledger-component", str(component), "--out", str(out))
-        self.assert_refused(completed, out)
+            "--hb-epoch", "32", "--ledger-component", str(component), "--out", str(out)), out
 
-    def test_a_code_only_ledger_refusal_is_given_six_fields_and_others_are_not_refusals(self):
-        module = _load("org_ingress_p1_refusal_fields", "resident-runtime/organization_manifest_ingress.py")
-        LedgerRefusal = type("LedgerRefusal", (Exception,), {})
-        fields = module.ledger_refusal_fields(LedgerRefusal("HB_EPOCH_NOT_SUPPLIED: no epoch"), "entry", "goal")
-        self.assert_six_fields(fields, "HB_EPOCH_NOT_SUPPLIED")
-        self.assertIsNone(module.ledger_refusal_fields(RuntimeError("boom"), "entry", "goal"))
+    def test_the_ingress_cli_prints_the_writers_refusal_as_given(self):
+        self.assert_carried(*self.ingress(REFUSING_WRITER, "refusing"))
+
+    def test_the_self_close_cli_prints_the_writers_refusal_as_given(self):
+        self.assert_carried(*self.self_close(REFUSING_WRITER, "refusing"))
+
+    def test_the_ingress_cli_builds_six_fields_for_an_old_layout_writer(self):
+        self.assert_built(*self.ingress(OLD_LAYOUT_WRITER, "old-layout"))
+
+    def test_the_self_close_cli_builds_six_fields_for_an_old_layout_writer(self):
+        self.assert_built(*self.self_close(OLD_LAYOUT_WRITER, "old-layout"))
+
+    def test_the_refusal_is_read_from_the_systemexit_only(self):
+        writer = self.writer()
+        refusal = writer["LedgerRefusal"](dict(writer["REFUSAL"]))
+        self.assertIsInstance(refusal, SystemExit)
+        self.assertNotIsInstance(refusal, Exception)
+        self.assertEqual((refusal.failure_code, refusal.failed_predicate),
+                         ("HB_EPOCH_NOT_SUPPLIED", "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"))
+        self.assertEqual(json.loads(refusal.code), writer["REFUSAL"])
+        for relative, name in (("resident-runtime/organization_manifest_ingress.py", "org_ingress_p1_refusal"),
+                               ("resident-runtime/intr_destination_ingress.py", "intr_destination_p1_refusal")):
+            with self.subTest(module=relative):
+                module = _load(name, relative)
+                carried, is_carried = module.ledger_writer_refusal(refusal, "entry", "goal")
+                self.assertIs(carried, refusal.refusal)
+                self.assertIs(is_carried, True)
+                built, is_carried = module.ledger_writer_refusal(
+                    SystemExit("HB_EPOCH_INVALID: hb_epoch '+33'"), "entry", "goal")
+                self.assertIs(is_carried, False)
+                self.assert_six_fields(built, "HB_EPOCH_INVALID")
+                self.assertEqual(module.ledger_writer_refusal(SystemExit("no code here"), "e", "g")[0]
+                                 ["failure_code"], "LEDGER_WRITER_REFUSED")
+                for ordinary in (SystemExit(0), SystemExit(1), SystemExit()):
+                    self.assertIsNone(module.ledger_writer_refusal(ordinary, "entry", "goal"))
+
+
+class CliRawEpochTests(TemporaryLedgers):
+    """Every --hb-epoch is type=str: the shared validator sees the raw text."""
+    INVALID = ("+33", " 33", "3_3")
+
+    def run_cli(self, relative, *args):
+        return subprocess.run([sys.executable, str(ROOT / relative), *args], cwd=ROOT,
+                              env=_cli_env(), capture_output=True, text=True, check=False)
+
+    def ingress(self, epoch, out):
+        return self.run_cli(
+            "resident-runtime/organization_manifest_ingress.py",
+            "--registry", str(ROOT / "org-boundary/registry/services.json"), "--manifest", str(MANIFEST),
+            "--standing", str(GENESIS_PATH), "--packet-id", "p1-raw-epoch", "--hb-epoch=" + epoch,
+            "--out", str(out))
+
+    def self_close(self, epoch, out):
+        return self.run_cli(
+            "resident-runtime/intr_destination_ingress.py", "--self-close",
+            "--registry", str(ROOT / "org-boundary/registry/services.json"),
+            "--communication-id", "p1-raw-epoch", "--packet-id", "p1-raw-epoch",
+            "--hb-epoch=" + epoch, "--out", str(out))
+
+    def egress(self, epoch, out):
+        payload = self.work / "payload.json"
+        payload.write_text(json.dumps({"message_class": "ecosystem.communication",
+                                       "communication_id": "p1-raw-epoch", "body": {}}))
+        standing = self.work / "standing.json"
+        standing.write_text(json.dumps(GENESIS))
+        env = _cli_env()
+        return subprocess.run(
+            [sys.executable, str(ROOT / "resident-runtime/organization_egress_boundary.py"),
+             "--destination-organization", PEER, "--payload", str(payload), "--standing", str(standing),
+             "--hb-epoch=" + epoch, "--out", str(out)],
+            cwd=ROOT, env=env, capture_output=True, text=True, check=False)
+
+    def assert_invalid(self, completed, out, writes_out=False):
+        self.assertEqual(completed.returncode, 1, completed.stdout[-2000:] + completed.stderr[-2000:])
+        printed = json.loads(completed.stdout) if completed.stdout.lstrip().startswith("{\n") \
+            else json.loads(completed.stdout.strip().splitlines()[-1])
+        self.assert_six_fields(printed, "HB_EPOCH_INVALID")
+        self.assertEqual(printed["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
+        if not writes_out:
+            self.assertFalse(out.exists(), "a refused run wrote --out")
+        self.assertEqual(self.written(), [])
+
+    def epochs(self):
+        receipts = [json.loads(p.read_text()) for p in self.written()]
+        return {r["hb_reference"]["epoch"] for r in receipts if "hb_reference" in r}
+
+    def test_the_ingress_cli_refuses_coerced_epochs(self):
+        for epoch in self.INVALID:
+            with self.subTest(epoch=epoch):
+                self.assert_invalid(self.ingress(epoch, self.work / "ingress-out.json"),
+                                    self.work / "ingress-out.json")
+
+    def test_the_ingress_cli_accepts_a_leading_zero_epoch(self):
+        completed = self.ingress("0033", self.work / "ingress-out.json")
+        self.assertEqual(completed.returncode, 0, completed.stdout[-2000:] + completed.stderr[-2000:])
+        self.assertEqual(json.loads(completed.stdout.splitlines()[-1])["disposition"], "ALLOW")
+        self.assertEqual(self.epochs(), {33})
+
+    def test_the_self_close_cli_refuses_coerced_epochs(self):
+        for epoch in self.INVALID:
+            with self.subTest(epoch=epoch):
+                self.assert_invalid(self.self_close(epoch, self.work / "close-out.json"),
+                                    self.work / "close-out.json")
+
+    def test_the_self_close_cli_accepts_a_leading_zero_epoch(self):
+        completed = self.self_close("0033", self.work / "close-out.json")
+        self.assertEqual(completed.returncode, 0, completed.stdout[-2000:] + completed.stderr[-2000:])
+        self.assertEqual(self.epochs(), {33})
+
+    def test_the_egress_cli_refuses_coerced_epochs(self):
+        for epoch in self.INVALID:
+            with self.subTest(epoch=epoch):
+                # The egress CLI writes its refusal to --out, as it always has.
+                self.assert_invalid(self.egress(epoch, self.work / "egress-out.json"),
+                                    self.work / "egress-out.json", writes_out=True)
+
+    def test_the_egress_cli_accepts_a_leading_zero_epoch(self):
+        completed = self.egress("0033", self.work / "egress-out.json")
+        printed = json.loads(completed.stdout)
+        self.assertNotIn(printed.get("failure_code"), ("HB_EPOCH_INVALID", "HB_EPOCH_NOT_SUPPLIED"),
+                         completed.stdout[-2000:] + completed.stderr[-2000:])
+        # No mesh is materialized for the CLI here: the refusal it records is
+        # stamped at the supplied epoch's value.
+        self.assertEqual(self.epochs(), {33})
 
 
 if __name__ == "__main__":
