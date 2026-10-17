@@ -19,6 +19,9 @@ on:
       - 'tests/test_manifest_ingress_idempotent.py'
       - 'tests/test_remediation_lane.py'
       - 'tests/test_manifest_ingress_d7_fail_closed.py'
+      - 'tests/test_p1_supplied_epoch_and_ledger_paths.py'
+      - 'org-boundary/runtime/capability_ingress.py'
+      - 'resident-runtime/intr_destination_ingress.py'
       - 'tests/fixtures/d6-far-side-non-allow.json'
       - 'tests/fixtures/d6_far_side_registry.py'
       - 'resident-runtime/organization_egress_boundary.py'
@@ -45,6 +48,9 @@ on:
       - 'tests/test_manifest_ingress_idempotent.py'
       - 'tests/test_remediation_lane.py'
       - 'tests/test_manifest_ingress_d7_fail_closed.py'
+      - 'tests/test_p1_supplied_epoch_and_ledger_paths.py'
+      - 'org-boundary/runtime/capability_ingress.py'
+      - 'resident-runtime/intr_destination_ingress.py'
       - 'tests/fixtures/d6-far-side-non-allow.json'
       - 'tests/fixtures/d6_far_side_registry.py'
       - 'resident-runtime/organization_egress_boundary.py'
@@ -351,3 +357,12 @@ jobs:
           STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/d7-repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/d7-org-ledger
         run: python -m unittest tests.test_manifest_ingress_d7_fail_closed -v
+
+      # P1 (#163): the supplied epoch reaches every ledger append (egress
+      # emission and closure, and a capability address consumed through
+      # dispatch), and the ledger writers' location is an optional input.
+      - name: Supplied epoch and ledger-component / consumer-root paths (P1)
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/p1-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/p1-org-ledger
+        run: python -m unittest tests.test_p1_supplied_epoch_and_ledger_paths -v

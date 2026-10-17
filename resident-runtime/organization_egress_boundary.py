@@ -111,6 +111,18 @@ CLOSURE_REFUSED_CLASS = "ORGANIZATION_EGRESS_CLOSURE_REFUSED"
 ALLOW = "ALLOW"
 DENY = "DENY"
 PENDING = "PENDING"
+FAIL_CLOSED = "FAIL_CLOSED"
+
+#: The shared supplied-epoch rule (consumers Q3; P1 #163; TVC#517). An emission
+#: or closure writes both ledger levels, so it takes the epoch it is given and
+#: never reads a clock: none supplied is HB_EPOCH_NOT_SUPPLIED, anything other
+#: than an integer at or above the HB32 anchor is HB_EPOCH_INVALID. Both fail
+#: closed with nothing published and nothing appended.
+HB_EPOCH_NOT_SUPPLIED = "HB_EPOCH_NOT_SUPPLIED"
+HB_EPOCH_INVALID = "HB_EPOCH_INVALID"
+HB_EPOCH_PREDICATE = "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+HB_ANCHOR_EPOCH = 32
+INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
 
 #: The acknowledgement classes a response may carry, as the kernel maps them.
 ACK_CLASSES = frozenset({"ecosystem.monitor.response", "ecosystem.work.ack",
@@ -483,17 +495,49 @@ def closure_record(resolved: Mapping[str, Any], origin: str, packet_id: str,
     }
 
 
+def epoch_refusal(hb_epoch: Any, entrypoint: str) -> dict[str, Any] | None:
+    """The six-field FAIL_CLOSED refusal of an epoch not supplied or invalid, or None."""
+    if hb_epoch is None:
+        code, detail = HB_EPOCH_NOT_SUPPLIED, "no hb_epoch was supplied and no clock is read"
+    elif (not isinstance(hb_epoch, int) or isinstance(hb_epoch, bool)
+          or hb_epoch < HB_ANCHOR_EPOCH):
+        code, detail = HB_EPOCH_INVALID, (
+            "hb_epoch " + json.dumps(hb_epoch, default=str) + " is not an integer at or above "
+            + str(HB_ANCHOR_EPOCH))
+    else:
+        return None
+    return {
+        "schema": RESULT_SCHEMA,
+        "operation": OPERATION_ID,
+        "disposition": FAIL_CLOSED,
+        "emitted": False,
+        "failure_code": code,
+        "failed_predicate": HB_EPOCH_PREDICATE,
+        "detail": detail,
+        "required_evidence_or_repair": (
+            "supply hb_epoch from the carrier as an integer >= " + str(HB_ANCHOR_EPOCH)
+            + " (--hb-epoch); it is never derived from a clock"),
+        "retry_entrypoint": entrypoint,
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "call " + entrypoint + " again with the supplied epoch; nothing was "
+                        "published and nothing was appended",
+        "refusal_recorded": False,
+        "authority_effect": "NONE_REFUSAL_ONLY",
+    }
+
+
 def _record(transition_id: str, transition_class: str, predecessor: str, successor: str,
-            record: Mapping[str, Any], hb_epoch: int | None) -> dict[str, Any]:
+            record: Mapping[str, Any], hb_epoch: int) -> dict[str, Any]:
     """Append at both levels: the repository first, the organization consuming it.
 
-    With a supplied epoch the frame and the record are reproducible, so a replay
-    of the same emission returns the receipts already recorded instead of
-    minting a second pair; the frame and payload digests must match or it is a
-    collision. Without one the frame carries a
-    clock-derived epoch, a replay is a different frame, and each is recorded.
+    The epoch is the supplied one (`epoch_refusal` has admitted it), so the
+    frame and the record are reproducible: a replay of the same emission
+    returns the receipts already recorded instead of minting a second pair; the
+    frame and payload digests must match or it is a collision.
     """
-    idempotent = hb_epoch is not None
+    if epoch_refusal(hb_epoch, "resident-runtime/organization_egress_boundary.py") is not None:
+        raise ValueError("HB_EPOCH_NOT_SUPPLIED_OR_INVALID: a ledger append takes a supplied epoch")
+    idempotent = True
     repository_receipt = repository_ledger.append(
         transition_id, transition_class, predecessor, successor,
         dict(record), "NONE", hb_epoch=hb_epoch,
@@ -534,6 +578,13 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
     of an emission and carries the frame's digest. Minting it first would be a
     receipt claiming a crossing that had not happened yet.
     """
+    # The supplied-epoch rule comes first: without an epoch the frame would be
+    # stamped from a clock, so nothing is built, published or appended.
+    refused_epoch = epoch_refusal(hb_epoch, "resident-runtime/organization_egress_boundary.py::emit")
+    if refused_epoch is not None:
+        return {**refused_epoch,
+                "communication_id": (payload or {}).get("communication_id")
+                if isinstance(payload, Mapping) else None}
     origin = this_organization(root)
     try:
         unclosable = closability_refusal(payload or {})
@@ -793,6 +844,12 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
             "destination_organization": resolved["destination_organization"],
             "authority_effect": "NONE_OBSERVATION_ONLY",
         }
+    # An arrival is recorded at both levels, which takes a supplied epoch.
+    refused_epoch = epoch_refusal(hb_epoch, "resident-runtime/organization_egress_boundary.py::close")
+    if refused_epoch is not None:
+        return {**{k: v for k, v in refused_epoch.items() if k != "emitted"},
+                "closed": False, "closure_recorded": False,
+                "communication_id": communication_id, "request_packet_id": packet_id}
     response = responses[0]
     emission = recorded_emission(packet_id)
     findings = verify_closure(resolved, packet_id, response, emission)

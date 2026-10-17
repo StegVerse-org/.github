@@ -201,6 +201,93 @@ organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
 
 
+#: P1 interface (#163): where the ledger writers load from and where their
+#: contracts resolve. Both default to this checkout, which is today's
+#: behaviour. A consumer that carries this operation without carrying the
+#: writers names them with `--ledger-component <path>` (a root holding
+#: `.stegverse/transition-ledger/emit.py` and
+#: `resident-runtime/aggregate_repo_transition.py`) and the root its contracts
+#: live in with `--consumer-root <path>` (a root holding
+#: `.stegverse/transition-ledger/contract.json` and `org-contract.json`). The
+#: ledger *locations* stay STEGVERSE_REPO_LEDGER_ROOT / STEGVERSE_ORG_LEDGER_ROOT.
+#: A path that is given and does not hold those files fails closed.
+LEDGER_COMPONENT_PATH_INVALID = "LEDGER_COMPONENT_PATH_INVALID"
+CONSUMER_ROOT_PATH_INVALID = "CONSUMER_ROOT_PATH_INVALID"
+LEDGER_COMPONENT_FILES = (".stegverse/transition-ledger/emit.py",
+                          "resident-runtime/aggregate_repo_transition.py")
+CONSUMER_ROOT_FILES = (".stegverse/transition-ledger/contract.json",
+                       ".stegverse/transition-ledger/org-contract.json")
+
+
+class LedgerPathRefused(SystemExit):
+    """A FAIL_CLOSED refusal of a given ledger path; `.refusal` carries the six fields."""
+
+    def __init__(self, refusal: Mapping[str, Any]):
+        super().__init__(refusal["failure_code"] + ":" + refusal["detail"])
+        self.refusal = dict(refusal)
+
+
+def _ledger_path_refusal(code: str, predicate: str, option: str, path: Any,
+                         required: tuple[str, ...], entrypoint: str, goal: str) -> LedgerPathRefused:
+    return LedgerPathRefused({
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": predicate,
+        "detail": option + " " + str(path) + " does not hold " + ", ".join(required),
+        "required_evidence_or_repair": (
+            "give " + option + " a directory holding " + ", ".join(required)
+            + ", or omit it to use this checkout"),
+        "retry_entrypoint": entrypoint,
+        "owning_existing_goal": goal,
+        "next_attempt": "run again with a valid " + option + "; nothing was loaded or appended",
+    })
+
+
+def bind_ledger_writers(ledger_component: Path | str | None = None,
+                        consumer_root: Path | str | None = None) -> dict[str, Any]:
+    """Load the ledger writers from `ledger_component`, their contracts from `consumer_root`.
+
+    Either left None keeps this checkout. Both are checked before anything is
+    loaded, so a refused path leaves the writers already bound in place.
+    """
+    global repository_ledger, organization_ledger
+    entrypoint = "resident-runtime/organization_manifest_ingress.py (--ledger-component, --consumer-root)"
+    component = Path(ledger_component).expanduser().resolve() if ledger_component is not None else None
+    consumer = Path(consumer_root).expanduser().resolve() if consumer_root is not None else None
+    if component is not None and not all((component / name).is_file() for name in LEDGER_COMPONENT_FILES):
+        raise _ledger_path_refusal(LEDGER_COMPONENT_PATH_INVALID, "LEDGER_COMPONENT_PATH_HOLDS_THE_LEDGER_WRITERS",
+                                   "--ledger-component", ledger_component, LEDGER_COMPONENT_FILES,
+                                   entrypoint, INTR_PROTOCOL_GOAL)
+    if consumer is not None and not all((consumer / name).is_file() for name in CONSUMER_ROOT_FILES):
+        raise _ledger_path_refusal(CONSUMER_ROOT_PATH_INVALID, "CONSUMER_ROOT_PATH_HOLDS_THE_LEDGER_CONTRACTS",
+                                   "--consumer-root", consumer_root, CONSUMER_ROOT_FILES,
+                                   entrypoint, INTR_PROTOCOL_GOAL)
+    try:
+        contracts = ({name: json.loads((consumer / name).read_text(encoding="utf-8"))
+                      for name in CONSUMER_ROOT_FILES} if consumer is not None else None)
+    except ValueError as exc:
+        raise _ledger_path_refusal(CONSUMER_ROOT_PATH_INVALID, "CONSUMER_ROOT_PATH_HOLDS_THE_LEDGER_CONTRACTS",
+                                   "--consumer-root", str(consumer_root) + " (" + str(exc) + ")",
+                                   CONSUMER_ROOT_FILES, entrypoint, INTR_PROTOCOL_GOAL) from None
+    base = component if component is not None else ROOT
+    repository = _module_at("repo_transition_emit_bound", base / LEDGER_COMPONENT_FILES[0])
+    organization = _module_at("aggregate_repo_transition_bound", base / LEDGER_COMPONENT_FILES[1])
+    if contracts is not None:
+        repository.ROOT, repository.C = consumer, contracts[CONSUMER_ROOT_FILES[0]]
+        organization.ROOT, organization.C = consumer, contracts[CONSUMER_ROOT_FILES[1]]
+    repository_ledger, organization_ledger = repository, organization
+    return {"ledger_component": str(base), "consumer_root": str(consumer if consumer is not None else ROOT),
+            "ledger_component_is_this_checkout": component is None,
+            "consumer_root_is_this_checkout": consumer is None}
+
+
+def _module_at(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def canon(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
@@ -1104,8 +1191,26 @@ def main() -> int:
                         help="federation mesh this node was materialized with; a governance "
                              "request leaves on it")
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--ledger-component", type=Path, default=None,
+                        help="root the ledger writers load from (.stegverse/transition-ledger/emit.py, "
+                             "resident-runtime/aggregate_repo_transition.py); default: this checkout")
+    parser.add_argument("--consumer-root", type=Path, default=None,
+                        help="root the ledger contracts resolve from (.stegverse/transition-ledger/"
+                             "contract.json, org-contract.json); default: this checkout")
     args = parser.parse_args()
 
+    if args.ledger_component is not None or args.consumer_root is not None:
+        try:
+            bind_ledger_writers(args.ledger_component, args.consumer_root)
+        except LedgerPathRefused as refused:
+            result = {"schema": RESULT_SCHEMA_ORG, "receiving_operation": OPERATION_ID,
+                      "received": False, **refused.refusal, "refusal_recorded": False,
+                      "authority_effect": "NONE_REFUSAL_ONLY"}
+            if args.out:
+                args.out.parent.mkdir(parents=True, exist_ok=True)
+                args.out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+            print(json.dumps(result, sort_keys=True))
+            return 1
     result = receive(
         json.loads(args.manifest.read_text(encoding="utf-8")),
         registry=json.loads(args.registry.read_text(encoding="utf-8")),
