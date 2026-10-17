@@ -55,6 +55,12 @@ under `ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED`. Before this they returned a
 refusal and wrote nothing, which made a held or retried submission
 indistinguishable from one that never arrived.
 
+The stored disposition is set per predicate. A submission defect is DENY. A
+state-transition route that no service in this organization admits (D7) is
+FAIL_CLOSED, stored and returned alike, because the missing configuration is
+this organization's. The six fields a refusing step carried -- the crossing's
+own -- are passed through rather than overwritten.
+
 `organization_receipt_observed` stays false on a refusal regardless. It means an
 admitted crossing was observed, and a refusal receipt is not that; a caller
 reading one as the other would treat a refused submission as a completed
@@ -91,6 +97,7 @@ from stegverse.manifest_state_transition_runtime import (
     admit_runtime_result,
     derive_execution_request,
 )
+from stegverse.route_resolution import route_from_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 BOUNDARY = ROOT / "org-runtime/interlock-intr.json"
@@ -124,6 +131,27 @@ OWNING_EXISTING_GOAL = "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001"
 # transition terminates on this chain. That is the contract's own replay_rule,
 # not a claim about any higher level.
 ORGANIZATION_REPLAY = "PASS"
+
+#: The six fields every non-ALLOW carries.
+SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+              "retry_entrypoint", "owning_existing_goal", "next_attempt")
+
+#: D7. A published route bound to the state-transition runtime is processed only
+#: by a service whose `admits_processing` names the declared {capability,
+#: route_id}. When none does, falling back to the `completion.egress` surface
+#: hands the manifest to the service its result returns to, so the crossing is
+#: refused before it is driven. Routes bound to another runtime
+#: (`native_source_math`, `customer_local_governance`) keep the surface
+#: fallback. The check lives here, not in the crossing: the crossing is
+#: stdlib-only and the boundary holds no route table (manifest_selection.py).
+STATE_TRANSITION_RUNTIME_BINDING = "stegverse.manifest_state_transition_runtime.execute_manifest"
+PROCESSING_NOT_DECLARED_CODE = "PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE"
+PROCESSING_NOT_DECLARED_PREDICATE = "CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE"
+INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
+#: Predicates whose refusal is stored as FAIL_CLOSED rather than DENY: the gap is
+#: this organization's own missing configuration, not a defect of the
+#: submission. Every other refusal keeps the DENY it was stored with before.
+FAIL_CLOSED_PREDICATES = frozenset({PROCESSING_NOT_DECLARED_PREDICATE})
 
 
 def _module(name: str, relative: str):
@@ -170,7 +198,7 @@ def submitted_capability(manifest: Any) -> dict[str, Any]:
 
 
 def refusal_record(failed_predicate: str, detail: str,
-                   manifest: Any) -> dict[str, Any]:
+                   manifest: Any, six_fields: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """What a refused submission records.
 
     The manifest reaches the chain by digest only. Nothing an admitted crossing
@@ -187,15 +215,19 @@ def refusal_record(failed_predicate: str, detail: str,
     a refusal resolved no destination, and marking it as a record that did would
     put it in a population measured for target and scope fields it correctly
     lacks.
+
+    The stored disposition is set per predicate (`FAIL_CLOSED_PREDICATES`). Six
+    fields passed through from the refusing step are stored with the record, so
+    what is stored and what is returned name the same repair.
     """
-    return {
+    record = {
         "schema": REFUSAL_SCHEMA,
         "receiving_operation": OPERATION_ID,
         "profile_id": PROFILE_ID,
         "operation": OPERATION,
         **submitted_capability(manifest),
         "intended_action": INTENDED_ACTION,
-        "disposition": "DENY",
+        "disposition": stored_disposition(failed_predicate),
         "transition_is_the_disposition_of_the_intended_action": True,
         "failed_predicate": failed_predicate,
         "detail": detail,
@@ -205,6 +237,69 @@ def refusal_record(failed_predicate: str, detail: str,
         "received": False,
         "retry_is_a_transition_not_a_lost_signal": True,
         "authority_effect": "NONE_REFUSAL_RECORD_ONLY",
+    }
+    if six_fields:
+        record.update({field: six_fields[field] for field in SIX_FIELDS})
+    return record
+
+
+def stored_disposition(failed_predicate: str) -> str:
+    """DENY for a submission defect; FAIL_CLOSED where the standard fails closed."""
+    return "FAIL_CLOSED" if failed_predicate in FAIL_CLOSED_PREDICATES else "DENY"
+
+
+def passed_through(source: Any) -> dict[str, Any] | None:
+    """The six fields a refusing step carried, or None when it carried no complete set."""
+    if not isinstance(source, Mapping):
+        return None
+    fields = {field: source.get(field) for field in SIX_FIELDS}
+    if not all(isinstance(value, str) and value.strip() for value in fields.values()):
+        return None
+    return fields
+
+
+def processing_service_precheck(manifest: Any, registry: Mapping[str, Any]) -> dict[str, Any] | None:
+    """D7: the six fields when a state-transition route has no declared processing service.
+
+    Returns None when the check does not apply: the manifest declares no
+    processing pair, its route binds another runtime, or a service admits the
+    pair. A route that does not resolve, or a registry that is ambiguous, is
+    left to the crossing, which refuses it with its own six fields.
+    """
+    if not isinstance(manifest, Mapping):
+        return None
+    processing = manifest.get("processing")
+    if not isinstance(processing, Mapping):
+        return None
+    capability, route_id = processing.get("capability"), processing.get("route_id")
+    if not capability or not route_id:
+        return None
+    try:
+        route = route_from_manifest(manifest)
+    except ValueError:
+        return None
+    if route.get("runtime_binding") != STATE_TRANSITION_RUNTIME_BINDING:
+        return None
+    try:
+        if crossing_module.processing_service(dict(manifest), dict(registry)) is not None:
+            return None
+    except SystemExit:
+        return None
+    pair = json.dumps({"capability": capability, "route_id": route_id}, sort_keys=True)
+    return {
+        "failure_code": PROCESSING_NOT_DECLARED_CODE,
+        "failed_predicate": PROCESSING_NOT_DECLARED_PREDICATE,
+        "detail": "route " + str(route_id) + " binds " + STATE_TRANSITION_RUNTIME_BINDING
+                  + " and no service in this organization's registry admits " + pair
+                  + "; the completion.egress surface is not used for processing",
+        "required_evidence_or_repair": "add a service row whose admits_processing names " + pair
+                                       + " in org-boundary/registry/services.json, with the route "
+                                         "published in the SDK (route_resolution.PUBLISHED_ROUTES)",
+        "retry_entrypoint": "the same manifest, resubmitted to stegverse-org.sdk-manifest-ingress "
+                            "(resident-runtime/organization_manifest_ingress.py::receive)",
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "once the admits_processing row lands; the refusal is recorded and "
+                        "nothing crossed",
     }
 
 
@@ -228,7 +323,7 @@ def _record_refusal(record: Mapping[str, Any], hb_epoch: int | None) -> dict[str
         repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
         {"receiving_operation": OPERATION_ID,
          "intended_action": INTENDED_ACTION,
-         "disposition": "DENY",
+         "disposition": record["disposition"],
          "failed_predicate": record["failed_predicate"]},
         "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"], idempotent=True)
     return {"repository_receipt": repository_receipt,
@@ -236,9 +331,26 @@ def _record_refusal(record: Mapping[str, Any], hb_epoch: int | None) -> dict[str
 
 
 def _refused(failed_predicate: str, detail: str, *, manifest: Any,
-             hb_epoch: int | None = None, **extra: Any) -> dict[str, Any]:
-    record = refusal_record(failed_predicate, detail, manifest)
+             hb_epoch: int | None = None, six_fields: Mapping[str, Any] | None = None,
+             **extra: Any) -> dict[str, Any]:
+    """Record and return a refusal.
+
+    `six_fields`, when the refusing step carried them, are passed through as
+    they were given rather than replaced by this operation's generic ones.
+    """
+    record = refusal_record(failed_predicate, detail, manifest, six_fields)
     appended = _record_refusal(record, hb_epoch)
+    generic = {
+        "failure_code": REFUSED_CLASS,
+        "failed_predicate": failed_predicate,
+        "required_evidence_or_repair": "satisfy the failed predicate (" + failed_predicate + ": " + detail
+                                       + ") and resubmit the manifest",
+        "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
+        "owning_existing_goal": OWNING_EXISTING_GOAL,
+        "next_attempt": "resubmit the same manifest once the predicate is satisfied; the refusal is "
+                        "recorded and nothing was admitted",
+    }
+    fields = {field: six_fields[field] for field in SIX_FIELDS} if six_fields else generic
     return {
         "schema": RESULT_SCHEMA_ORG,
         "organization": "StegVerse-org",
@@ -247,15 +359,9 @@ def _refused(failed_predicate: str, detail: str, *, manifest: Any,
         "received": False,
         # Every non-ALLOW carries the six fields a caller needs to repair and
         # retry (docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md).
-        "failure_code": REFUSED_CLASS,
-        "failed_predicate": failed_predicate,
+        **fields,
         "detail": detail,
-        "required_evidence_or_repair": "satisfy the failed predicate (" + failed_predicate + ": " + detail
-                                       + ") and resubmit the manifest",
-        "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py::receive",
-        "owning_existing_goal": OWNING_EXISTING_GOAL,
-        "next_attempt": "resubmit the same manifest once the predicate is satisfied; the refusal is "
-                        "recorded and nothing was admitted",
+        "refusal_stored_disposition": record["disposition"],
         # The refusal is recorded at both levels. `organization_receipt_observed`
         # stays false regardless: it means an admitted crossing was observed, and
         # a refusal receipt is not that. A caller reading it as one would treat a
@@ -711,13 +817,14 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     request: dict[str, Any] | None = None
     submitted_epoch = hb_epoch
 
-    def refused(failed_predicate: str, detail: str, **extra: Any) -> dict[str, Any]:
+    def refused(failed_predicate: str, detail: str,
+                six_fields: Mapping[str, Any] | None = None, **extra: Any) -> dict[str, Any]:
         # Every NON-ALLOW is a six-field receipt on both ledgers. A route-related
         # one, a manifest that derived a request, is then delivered on the
         # route that request calculates. No request means no route, and the
         # receipt is the whole record.
         recorded = _refused(failed_predicate, detail, manifest=manifest,
-                            hb_epoch=submitted_epoch, **extra)
+                            hb_epoch=submitted_epoch, six_fields=six_fields, **extra)
         if request is None:
             return recorded
         return _deliver_non_allow_disposition(
@@ -734,6 +841,13 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
         return refused("CAPABILITY_IS_BOUND_TO_THIS_RECEIVING_OPERATION", str(exc),
                        request_sha256=request.get("request_sha256"))
 
+    # D7: a state-transition route with no declared processing service fails
+    # closed here, before the crossing could fall back to the egress surface.
+    precheck = processing_service_precheck(manifest, registry)
+    if precheck is not None:
+        return refused(precheck["failed_predicate"], precheck["detail"], six_fields=precheck,
+                       request_sha256=request["request_sha256"])
+
     try:
         crossing = crossing_module.cross(manifest, registry=dict(registry), standing=standing, packet_id=packet_id)
     except SystemExit as exc:
@@ -741,14 +855,20 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
         # egress, a non-InTr transport, an unresolvable surface, no declared
         # standing. Those are dispositions of this submission, so they are
         # recorded here rather than leaving the operation by exception with
-        # nothing written.
+        # nothing written. The crossing's own six fields are passed through;
+        # only a refusal that carried none takes this operation's predicate.
+        carried = passed_through(getattr(exc, "refusal", None))
+        if carried is not None:
+            return refused(carried["failed_predicate"], str(exc), six_fields=carried)
         return refused("CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED", str(exc))
     if not crossing.get("crossing_completed"):
         # The far side refused. That is its disposition to state, not something
         # this operation rewrites into an admission -- but the submission still
-        # arrived here, so the refusal is recorded.
-        return refused("ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT",
-                       str(crossing.get("far_side_disposition")),
+        # arrived here, so the refusal is recorded, with the crossing's six fields.
+        carried = passed_through(crossing)
+        return refused(carried["failed_predicate"] if carried
+                       else "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT",
+                       str(crossing.get("far_side_disposition")), six_fields=carried,
                        request_sha256=request["request_sha256"],
                        resolved_service_id=crossing.get("resolved_service_id"),
                        crossing=crossing)

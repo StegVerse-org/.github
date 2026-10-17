@@ -200,11 +200,12 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertEqual(receipt["authority_effect"], "NONE")
 
     def unadmitted(self, source_output_id="refused-submission"):
-        """A manifest the internal endpoint does not admit, so the crossing refuses.
+        """A manifest no organization service admits, so the ingress refuses it.
 
-        Its capability is one no organization service admits, so processing
-        falls back to the declared surface, whose adapter refuses it. The
-        request is the committed fixture's, so the two cannot drift apart.
+        Its capability is one no organization service admits and its route binds
+        the state-transition runtime, so the ingress fails it closed (D7) before
+        the crossing could fall back to the declared surface. The request is the
+        committed fixture's, so the two cannot drift apart.
         """
         spec = json.loads(BUILD_SPEC.read_text(encoding="utf-8"))
         declared = spec["manifests"]["unadmitted-capability-to-llm-adapter"]
@@ -264,7 +265,9 @@ class ReceivingOperationTests(unittest.TestCase):
             "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
             "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         record = repository["evidence"]
-        self.assertEqual(record["disposition"], "DENY")
+        # D7 is stored as FAIL_CLOSED: the gap is this organization's missing
+        # processing row, not a defect of the submission.
+        self.assertEqual(record["disposition"], "FAIL_CLOSED")
         self.assertEqual(record["intended_action"], "RECEIVE_A_SUBMITTED_SDK_MANIFEST")
         self.assertIs(record["transition_is_the_disposition_of_the_intended_action"], True)
         self.assertIs(record["received"], False)
@@ -281,23 +284,50 @@ class ReceivingOperationTests(unittest.TestCase):
         self.assertNotIn("organization_receipt_sha256", result)
 
     def test_a_refusal_carries_the_six_fields_of_a_non_allow(self):
+        """D7's six fields are the ones returned, not this operation's generic ones."""
         result = self.refuse()
         self.assertEqual(result["disposition"], "FAIL_CLOSED")
         for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
                       "retry_entrypoint", "owning_existing_goal", "next_attempt"):
             self.assertTrue(result.get(field), field)
+        self.assertEqual(result["failure_code"], "PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE")
+        self.assertEqual(result["failed_predicate"],
+                         "CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE")
+        self.assertIn("resident-runtime/organization_manifest_ingress.py::receive",
+                      result["retry_entrypoint"])
+        self.assertEqual(result["owning_existing_goal"], "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001")
+        self.assertIn("admits_processing", result["required_evidence_or_repair"])
+        self.assertEqual(result["refusal_transition_class"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+
+    def test_a_generic_refusal_keeps_this_operations_six_fields_and_stored_deny(self):
+        """A refusal no step carried six fields for keeps the generic ones, and DENY."""
+        result = self.refuse(manifest={"not": "a manifest"})
+        self.assertEqual(result["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
         self.assertEqual(result["failure_code"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
-        self.assertEqual(result["retry_entrypoint"], "resident-runtime/organization_manifest_ingress.py::receive")
         self.assertEqual(result["owning_existing_goal"], "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001")
         self.assertIn(result["failed_predicate"], result["required_evidence_or_repair"])
+        self.assertEqual(result["refusal_stored_disposition"], "DENY")
+        repository, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
+            "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        self.assertEqual(repository["evidence"]["disposition"], "DENY")
 
     def test_a_manifest_the_crossing_cannot_drive_is_recorded_rather_than_raised(self):
-        """No declared standing used to leave the operation by exception."""
-        result = self.refuse(standing=None)
+        """No declared standing used to leave the operation by exception.
+
+        An admitted manifest, so the crossing itself is what refuses it. The
+        crossing's six fields are passed through rather than overwritten, and
+        the refusal, a submission defect, is still stored as DENY.
+        """
+        result = self.refuse(manifest=self.admitted("no-declared-standing"), standing=None)
         self.assertEqual(result["failed_predicate"],
-                         "CROSSING_IS_DRIVABLE_FROM_THE_MANIFEST_AS_DECLARED")
+                         "CROSSING_STANDING_IS_DERIVED_FROM_THE_MANIFEST_OR_DECLARED")
+        self.assertEqual(result["failure_code"], "CROSSING_REQUIRES_DECLARED_STANDING")
+        self.assertEqual(result["retry_entrypoint"], "resident-runtime/sdk_manifest_crossing.py::cross")
+        self.assertEqual(result["owning_existing_goal"], "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001")
         self.assertIs(result["refusal_recorded"], True)
         self.assertIn("CROSSING_REQUIRES_DECLARED_STANDING", result["detail"])
+        self.assertEqual(result["refusal_stored_disposition"], "DENY")
         repository, = self.ledger_receipts(
             "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
             "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
@@ -388,12 +418,19 @@ class ReceivingOperationTests(unittest.TestCase):
                          "ORGANIZATION_INGRESS_RESOLVED_A_DIFFERENT_CAPABILITY")
 
     def test_a_capability_the_internal_endpoint_does_not_admit_is_refused(self):
-        """Refused as a disposition, and recorded as one rather than as an admission."""
+        """Refused as a disposition, and recorded as one rather than as an admission.
+
+        D7: the route binds execute_manifest and no service admits the pair, so
+        it fails closed at the ingress and never falls back to the egress surface.
+        """
         result = self.refuse(manifest=self.unadmitted("unadmitted-capability"))
         self.assertEqual(result["disposition"], "FAIL_CLOSED")
         self.assertIs(result["received"], False)
         self.assertEqual(result["failed_predicate"],
-                         "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT")
+                         "CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE")
+        self.assertEqual(result["refusal_stored_disposition"], "FAIL_CLOSED")
+        self.assertNotIn("crossing", result)
+        self.assertNotIn("resolved_service_id", result)
         self.assertIs(result["organization_receipt_observed"], False)
         self.assertIs(result["refusal_recorded"], True)
 
