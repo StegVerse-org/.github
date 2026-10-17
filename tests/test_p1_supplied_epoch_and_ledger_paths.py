@@ -324,7 +324,21 @@ REFUSAL = {"disposition": "FAIL_CLOSED", "failure_code": "HB_EPOCH_NOT_SUPPLIED"
            "retry_entrypoint": "emit.py::append", "owning_existing_goal": "StegVerse-org/.github#163",
            "next_attempt": "append again with a supplied epoch"}
 
+class _RefusingContract(dict):
+    """A contract every read of which is the writer's refusal."""
+    def __getitem__(self, key):
+        raise LedgerRefusal(dict(REFUSAL))
+
+    def get(self, key, default=None):
+        raise LedgerRefusal(dict(REFUSAL))
+
+ROOT = None
+C = _RefusingContract()
+
 def __getattr__(name):
+    # Introspection (a test harness's locus hook) is not a ledger use.
+    if name.startswith("__") or name == "declared_ledger_locus":
+        raise AttributeError(name)
     raise LedgerRefusal(dict(REFUSAL))
 '''
 
