@@ -63,3 +63,19 @@ crossing refused and later admitted is two transitions. Custody refusals
 (missing node state or ledger location, a foreign root) still refuse the whole
 pass before any mutation, and a capability-address refusal still raises: its
 receiving operation records it.
+
+## The cycle and the executor read no clock
+
+The federation cycle record was stamped with `kernel.hb_reference()` called
+without an epoch, which derives the reference from the host clock, and the
+resident executor stamped `datetime.now()` as `observed_at`. Both now take the
+epoch the materializer supplies (`--hb-epoch` on `federation_cycle.py` and
+`resident_executor.py`), checked by the shared supplied-epoch rule
+(`capability_ingress.supplied_epoch_failure`). The executor records the cycle's
+`heartbeat_reference` instead of a clock reading. Without a valid epoch the
+cycle record carries `heartbeat_reference: null` and a six-field FAIL_CLOSED
+`heartbeat_reference_refusal` (`HB_EPOCH_NOT_SUPPLIED` or `HB_EPOCH_INVALID`,
+predicate `SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH`). Frames are still
+handled: the reference stamps the record only, and each consumed crossing
+carries its own frame's epoch. Covered by
+`tests/test_federation_cycle_supplied_epoch.py`.

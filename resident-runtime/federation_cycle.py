@@ -15,6 +15,9 @@ LS=importlib.util.module_from_spec(LSSPEC); LSSPEC.loader.exec_module(LS)
 # intra-organization: no boundary is crossed and no InTr is involved.
 PRSPEC=importlib.util.spec_from_file_location("propagate_repository_receipts",ROOT/"resident-runtime"/"propagate_repository_receipts.py")
 PR=importlib.util.module_from_spec(PRSPEC); PRSPEC.loader.exec_module(PR)
+# The one supplied-epoch rule, shared rather than restated here.
+CISPEC=importlib.util.spec_from_file_location("capability_ingress",ROOT/"org-boundary"/"runtime"/"capability_ingress.py")
+CI=importlib.util.module_from_spec(CISPEC); CISPEC.loader.exec_module(CI)
 
 def returns_for_consumed(results, *, mesh_root):
     """Materialize the governance return for each decision consumed in this cycle.
@@ -72,6 +75,28 @@ def mesh_location_refusal(*, retry_entrypoint):
             "next_attempt":PR.organization_ledger.location_next_attempt("the mesh locator"),
             "consequence_committed":False}
 
+def cycle_heartbeat(hb_epoch):
+    """The cycle record's heartbeat reference, from the epoch the materializer supplied.
+
+    No clock is read. Without a valid supplied epoch the record carries no
+    reference and says why in six fields. The frames are still handled: the
+    reference stamps this record only, and every consumed crossing is stamped
+    with its own frame's epoch by the kernel.
+    """
+    failure=CI.supplied_epoch_failure(hb_epoch)
+    if failure is None:
+        return K.hb_reference(epoch=int(str(hb_epoch))),None
+    code,detail=failure
+    return None,{"disposition":"FAIL_CLOSED",
+                 "failure_code":code,
+                 "failed_predicate":CI.HB_EPOCH_PREDICATE,
+                 "detail":detail,
+                 "required_evidence_or_repair":"supply --hb-epoch from the carrier (ASCII digits, value >= 32); it is never derived from a clock",
+                 "retry_entrypoint":"resident-runtime/federation_cycle.py::main",
+                 "owning_existing_goal":CI.INTR_PROTOCOL_GOAL,
+                 "next_attempt":"the next materialization that is given the carrier's epoch",
+                 "consequence_committed":False}
+
 def supplied_ledger(variable):
     """A ledger location as this organization's materializer supplies it, or None.
 
@@ -82,7 +107,8 @@ def supplied_ledger(variable):
     return LS.parse_locator(value) if value else None
 
 def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
-         repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None):
+         repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None,
+         hb_epoch=None):
     if node_state_root is None:
         raise SystemExit("NODE_STATE_LOCATION_REQUIRED_FROM_MATERIALIZER")
     # The carrier is the declared one: kernel frames over the mesh this node
@@ -122,10 +148,11 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
     governance_returns=returns_for_consumed(results, mesh_root=mesh_root)
+    heartbeat,heartbeat_refusal=cycle_heartbeat(hb_epoch)
     receipt={
       "schema_version":"stegverse.org-federation-cycle.v1",
       "organization":K.load_registry(ROOT)["organization"],
-      "heartbeat_reference":K.hb_reference(),
+      "heartbeat_reference":heartbeat,
       "frames_seen":len(results),
       "frames_consumed":consumed,
       "frames_denied":sum(1 for x in results if (x.get("result") or {}).get("status")=="REFUSED"
@@ -136,6 +163,8 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
       "authority_effect":"NONE_CARRIER_ONLY",
       "transport":"INTERLOCK_INTR_SUPPLIED_MESH"
     }
+    if heartbeat_refusal is not None:
+        receipt["heartbeat_reference_refusal"]=heartbeat_refusal
     if governance_returns:
         receipt["governance_returns"]=governance_returns
     # Propagated after the frames are handled, so a cycle that failed to consume
@@ -181,5 +210,7 @@ if __name__=="__main__":
     ap=argparse.ArgumentParser()
     ap.add_argument("--mesh-root", type=Path, default=None)
     ap.add_argument("--node-state-root", type=Path, required=True)
+    # Raw text, so the shared rule sees exactly what was supplied.
+    ap.add_argument("--hb-epoch", type=str, default=None)
     args=ap.parse_args()
-    main(mesh_root=args.mesh_root,node_state_root=args.node_state_root)
+    main(mesh_root=args.mesh_root,node_state_root=args.node_state_root,hb_epoch=args.hb_epoch)
