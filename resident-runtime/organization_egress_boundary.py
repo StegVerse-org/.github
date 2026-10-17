@@ -132,6 +132,16 @@ HB_EPOCH_PREDICATE = "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
 HB_ANCHOR_EPOCH = 32
 INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
 
+#: The declared order of `close`'s refusals. Input refusals take precedence over
+#: state refusals, and within inputs the supplied-epoch check comes first: a
+#: call missing both an epoch and a response is HB_EPOCH_NOT_SUPPLIED, not the
+#: response absence. No refusal on this list appends anything.
+CLOSE_REFUSAL_PRECEDENCE = (
+    (HB_EPOCH_PREDICATE, "INPUT"),
+    ("DESTINATION_IS_A_DECLARED_PEER_OF_THIS_ORGANIZATION", "INPUT"),
+    (RESPONSE_ABSENT_PREDICATE, "STATE"),
+)
+
 #: The acknowledgement classes a response may carry, as the kernel maps them.
 ACK_CLASSES = frozenset({"ecosystem.monitor.response", "ecosystem.work.ack",
                          "ecosystem.communication.ack"})
@@ -867,7 +877,17 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
     to record, and appending a refusal per attempt would record the attempts
     rather than the crossing. The refusal says what a later attempt needs
     instead of leaving the caller to wait.
+
+    Refusals follow `CLOSE_REFUSAL_PRECEDENCE`: the supplied epoch first, then
+    the destination, then the response absence.
     """
+    # Input refusals precede state refusals; within inputs the epoch is first.
+    refused_epoch = epoch_refusal(hb_epoch, "resident-runtime/organization_egress_boundary.py::close")
+    if refused_epoch is not None:
+        return {**{k: v for k, v in refused_epoch.items() if k != "emitted"},
+                "closed": False, "closure_recorded": False,
+                "communication_id": communication_id, "request_packet_id": packet_id}
+    hb_epoch = int(str(hb_epoch))  # admitted as ASCII digits
     origin = this_organization(root)
     resolved = resolve_destination(destination_organization, root=root)
     collected = kernel.collect_ecosystem_responses(origin, communication_id,
@@ -904,13 +924,7 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
             "destination_organization": resolved["destination_organization"],
             "authority_effect": "NONE_REFUSAL_ONLY",
         }
-    # An arrival is recorded at both levels, which takes a supplied epoch.
-    refused_epoch = epoch_refusal(hb_epoch, "resident-runtime/organization_egress_boundary.py::close")
-    if refused_epoch is not None:
-        return {**{k: v for k, v in refused_epoch.items() if k != "emitted"},
-                "closed": False, "closure_recorded": False,
-                "communication_id": communication_id, "request_packet_id": packet_id}
-    hb_epoch = int(str(hb_epoch))  # admitted as ASCII digits
+    # An arrival is recorded at both levels with the epoch admitted above.
     response = responses[0]
     emission = recorded_emission(packet_id)
     findings = verify_closure(resolved, packet_id, response, emission)

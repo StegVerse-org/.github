@@ -9,6 +9,11 @@ failure_code, failed_predicate, required_evidence_or_repair, retry_entrypoint,
 owning_existing_goal and next_attempt. The path still writes nothing at either
 ledger level: an absence is not an arrival.
 
+Precedence (`CLOSE_REFUSAL_PRECEDENCE`): input refusals precede state
+refusals, and within inputs the supplied epoch is first. A call missing both an
+epoch and a response is HB_EPOCH_NOT_SUPPLIED; an invalid epoch with no
+response is HB_EPOCH_INVALID; only a supplied epoch reaches the response check.
+
 The module is byte-identical in StegVerse-org/.github and
 StegVerse-Labs/.github. The destination is the other of those two
 organizations, read from this organization's own registry. Both ledger roots
@@ -119,10 +124,53 @@ class CloseResponseAbsentFailsClosed(unittest.TestCase):
         self.assert_response_absent_refusal(second)
         self.assert_nothing_appended()
 
-    def test_the_absence_is_refused_before_the_epoch_is_read(self):
-        # Nothing would be appended either way; the absence is the disposition.
-        self.assert_response_absent_refusal(self.close(None))
+    def assert_epoch_refusal(self, result, failure_code):
+        self.assertEqual(result["disposition"], "FAIL_CLOSED")
+        for field in SIX_FIELDS:
+            self.assertIsInstance(result.get(field), str, field)
+            self.assertTrue(result[field].strip(), field)
+        self.assertEqual(result["failure_code"], failure_code)
+        self.assertEqual(result["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
+        self.assertEqual(result["retry_entrypoint"], ENTRYPOINT)
+        self.assertEqual(result["owning_existing_goal"],
+                         "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001")
+        self.assertIs(result["closed"], False)
+        self.assertIs(result["closure_recorded"], False)
+        self.assertIs(result["refusal_recorded"], False)
+        self.assertEqual(result["authority_effect"], "NONE_REFUSAL_ONLY")
+        self.assertEqual(result["request_packet_id"], "packet-response-absent")
+        self.assertEqual(result["communication_id"], "comm-response-absent")
+
+    def test_no_epoch_and_no_response_is_hb_epoch_not_supplied(self):
+        self.assert_epoch_refusal(self.close(None), "HB_EPOCH_NOT_SUPPLIED")
         self.assert_nothing_appended()
+
+    def test_an_invalid_epoch_and_no_response_is_hb_epoch_invalid(self):
+        for invalid in ("31", "+33", " 33", "3_3", "33.0", True, 31):
+            with self.subTest(hb_epoch=invalid):
+                self.assert_epoch_refusal(self.close(invalid), "HB_EPOCH_INVALID")
+        self.assert_nothing_appended()
+
+    def test_a_supplied_epoch_and_no_response_is_the_response_absence(self):
+        for supplied in ("32", "0033", 40):
+            with self.subTest(hb_epoch=supplied):
+                self.assert_response_absent_refusal(self.close(supplied))
+        self.assert_nothing_appended()
+
+    def test_the_epoch_is_checked_before_the_destination_or_the_mesh_is_read(self):
+        with mock.patch.object(egress, "resolve_destination",
+                               side_effect=AssertionError("destination read")), \
+                mock.patch.object(egress.kernel, "collect_ecosystem_responses",
+                                  side_effect=AssertionError("mesh read")):
+            self.assert_epoch_refusal(self.close(None), "HB_EPOCH_NOT_SUPPLIED")
+        self.assert_nothing_appended()
+
+    def test_the_declared_precedence_puts_inputs_before_state_and_the_epoch_first(self):
+        order = egress.CLOSE_REFUSAL_PRECEDENCE
+        self.assertEqual(order[0], ("SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH", "INPUT"))
+        kinds = [kind for _, kind in order]
+        self.assertEqual(kinds, sorted(kinds, key=lambda kind: kind != "INPUT"))
+        self.assertIn(("EGRESS_RESPONSE_DURABLY_MATERIALIZED_BEFORE_CLOSE", "STATE"), order)
 
     def test_no_constant_names_a_bare_pending_disposition(self):
         self.assertFalse(hasattr(egress, "PENDING"))
