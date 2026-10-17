@@ -127,6 +127,17 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
 
     closed = egress.close(binding["destination_organization"], packet_id, communication_id,
                           mesh_root=mesh_root, hb_epoch=hb_epoch)
+    if closed.get("failure_code") in (egress.HB_EPOCH_NOT_SUPPLIED, egress.HB_EPOCH_INVALID):
+        # The epoch refusal close() made, carried with its own six fields so it
+        # is never attributed to the answer's verification. No epoch is added
+        # or derived here.
+        return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,
+                **{field: closed[field] for field in (
+                    "failure_code", "failed_predicate", "required_evidence_or_repair",
+                    "retry_entrypoint", "owning_existing_goal", "next_attempt")},
+                "detail": closed.get("detail"), "refusal_recorded": False,
+                "awaits_the_decision": False,
+                "authority_effect": "NONE_REFUSAL_ONLY"}
     if closed.get("failure_code") == egress.RESPONSE_ABSENT_FAILURE_CODE:
         return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,
                 "failure_code": closed["failure_code"],
