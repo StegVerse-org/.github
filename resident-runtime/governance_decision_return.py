@@ -15,8 +15,9 @@ boundary closures are read back from the repository ledger, not carried by the
 caller -- and hands it to the SDK's `admit_runtime_result`, which decides
 whether it closes the transition.
 
-Nothing waits. No answer yet is `PENDING` and records nothing: an absence is
-not an arrival. The decision is recorded in organization records only; Master
+Nothing waits. No answer yet is the egress boundary's FAIL_CLOSED
+DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION, carried here with its six
+fields, and records nothing: an absence is not an arrival. The decision is recorded in organization records only; Master
 Records is not in this path.
 """
 from __future__ import annotations
@@ -35,13 +36,12 @@ OPERATION_ID = "ORGANIZATION_GOVERNANCE_DECISION_RETURN"
 RESULT_SCHEMA = "stegverse.organization-governance-decision-return-result/v1"
 DECISION_SCHEMA = "stegverse.org-governance-decision/v1"
 RETRY_ENTRYPOINT = "resident-runtime/governance_decision_return.py::return_decision"
-# A shell caller sees the same three outcomes the result carries. PENDING is an
-# observation that nothing has arrived, not a transition, so it is neither the
-# success status nor the refusal status.
+# A shell caller sees the disposition the result carries: ALLOW is the
+# returned decision; DENY and FAIL_CLOSED -- including an answer not yet
+# materialized (DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION) -- are not.
 EXIT_RETURNED = 0
 EXIT_NOT_ALLOWED = 1
-EXIT_PENDING_OBSERVATION = 3
-EXIT_STATUS = {"ALLOW": EXIT_RETURNED, "PENDING": EXIT_PENDING_OBSERVATION}
+EXIT_STATUS = {"ALLOW": EXIT_RETURNED}
 
 
 def _module(name: str, relative: str):
@@ -127,12 +127,20 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
 
     closed = egress.close(binding["destination_organization"], packet_id, communication_id,
                           mesh_root=mesh_root, hb_epoch=hb_epoch)
-    if closed["disposition"] == egress.PENDING:
-        return {**base, "disposition": "PENDING", "decision_returned": False,
-                "absence_is_not_a_transition": True, "observation_only": True,
-                "awaits_the_decision": False,
+    if closed.get("failure_code") == egress.RESPONSE_ABSENT_FAILURE_CODE:
+        return {**base, "disposition": "FAIL_CLOSED", "decision_returned": False,
+                "failure_code": closed["failure_code"],
+                "failed_predicate": closed["failed_predicate"],
+                "detail": closed.get("detail"),
+                "required_evidence_or_repair": closed["required_evidence_or_repair"],
                 "retry_entrypoint": RETRY_ENTRYPOINT,
-                "authority_effect": "NONE_OBSERVATION_ONLY"}
+                "owning_existing_goal": closed["owning_existing_goal"],
+                "next_attempt": ("call " + RETRY_ENTRYPOINT + " again with the same packet_id "
+                                 "and communication_id once the decision is materialized; "
+                                 "nothing was appended"),
+                "absence_is_not_a_transition": True, "refusal_recorded": False,
+                "awaits_the_decision": False,
+                "authority_effect": "NONE_REFUSAL_ONLY"}
     closure = {key: closed.get(key) for key in (
         "closure_transition_class", "closure_repository_receipt_sha256",
         "closure_organization_receipt_sha256", "closure_findings", "far_side_terminal_receipt")}

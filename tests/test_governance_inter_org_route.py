@@ -189,10 +189,18 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertIs(emitted["awaits_the_decision"], False)
         self.assertNotIn("sdk_admitted_result", emitted)
         self.assertEqual(emitted["sdk_admission"], "AT_DECISION_RETURN")
-        pending = self.return_decision(emitted)
-        self.assertEqual(pending["disposition"], "PENDING")
-        self.assertIs(pending["decision_returned"], False)
-        self.assertIs(pending["absence_is_not_a_transition"], True)
+        absent = self.return_decision(emitted)
+        self.assertEqual(absent["disposition"], "FAIL_CLOSED")
+        self.assertEqual(absent["failure_code"], "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION")
+        self.assertEqual(absent["failed_predicate"],
+                         "EGRESS_RESPONSE_DURABLY_MATERIALIZED_BEFORE_CLOSE")
+        for field in ("required_evidence_or_repair", "retry_entrypoint",
+                      "owning_existing_goal", "next_attempt"):
+            self.assertTrue(absent[field], field)
+        self.assertEqual(absent["retry_entrypoint"], returning.RETRY_ENTRYPOINT)
+        self.assertIs(absent["decision_returned"], False)
+        self.assertIs(absent["absence_is_not_a_transition"], True)
+        self.assertIs(absent["refusal_recorded"], False)
 
     def consumed_answers(self):
         """This organization's federation cycle consuming its mesh, and the returns it materializes."""
@@ -336,12 +344,12 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()):
             return returning.main()
 
-    def test_a_pending_observation_does_not_exit_as_a_returned_decision(self):
+    def test_an_unanswered_return_does_not_exit_as_a_returned_decision(self):
         emitted = self.receive()
-        self.assertEqual(self.run_cli(emitted), returning.EXIT_PENDING_OBSERVATION)
-        self.assertNotEqual(returning.EXIT_PENDING_OBSERVATION, returning.EXIT_RETURNED)
-        self.assertNotEqual(returning.EXIT_PENDING_OBSERVATION, returning.EXIT_NOT_ALLOWED)
-        self.assertIs(self.return_decision(emitted)["observation_only"], True)
+        self.assertEqual(self.run_cli(emitted), returning.EXIT_NOT_ALLOWED)
+        self.assertNotEqual(returning.EXIT_NOT_ALLOWED, returning.EXIT_RETURNED)
+        self.assertFalse(hasattr(returning, "EXIT_PENDING_OBSERVATION"))
+        self.assertEqual(self.return_decision(emitted)["authority_effect"], "NONE_REFUSAL_ONLY")
 
     def test_a_returned_decision_exits_as_returned_whatever_the_governance_disposition(self):
         emitted = self.receive()
