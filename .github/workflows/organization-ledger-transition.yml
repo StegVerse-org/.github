@@ -6,6 +6,15 @@ name: Organization Ledger Transition
 # designated ref (org-contract.json organization_ledger_ref), published by a
 # fast-forward-only push, and read back from a fresh fetch. The ledger is the
 # evidence; this run's success is not.
+#
+# A dispatch with mode=self-closure runs the intr-destination diagnostic
+# self-closure instead (resident-runtime/intr_destination_ingress.py::closure),
+# as the other organizations' writers do. It addresses this organization's own
+# intr-destination and appends a repository receipt and an organization receipt
+# that both carry communication_id, at the supplied hb_epoch. No peer is named.
+# The same publish step pushes the ref fast-forward only, and the closure is
+# read back from a fresh fetch. Authority and time are constraint variables.
+# The disposition is transition evidence only.
 on:
   push:
     branches: [main]
@@ -13,12 +22,37 @@ on:
       - '.stegverse/transition-requests/**'
   workflow_dispatch:
     inputs:
+      mode:
+        description: 'request: receive a committed transition request; self-closure: close an intr-destination diagnostic against this organization'
+        required: false
+        default: request
+        type: choice
+        options:
+          - request
+          - self-closure
       request:
-        description: 'Path of a committed transition request'
-        required: true
+        description: 'Path of a committed transition request (mode=request; required in that mode)'
+        required: false
+        default: ''
       mesh_root:
-        description: 'git+repository#refs/... mesh locator (a committed request may declare mesh_root instead)'
-        required: true
+        description: 'git+repository#refs/... mesh locator (mode=request; a committed request may declare mesh_root instead)'
+        required: false
+        default: ''
+      communication_id:
+        description: 'communication_id the closure correlates on (mode=self-closure)'
+        required: false
+        default: ''
+        type: string
+      hb_epoch:
+        description: 'supplied heartbeat epoch the self-closure receipts carry (mode=self-closure; non-negative integer); no clock is read for it'
+        required: false
+        default: ''
+        type: string
+      packet_id:
+        description: 'packet id (mode=self-closure); the run id is used when this is empty'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -35,6 +69,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LEDGER_REF: refs/stegverse/organization-ledger
+      # A push runs the committed-request mode. A dispatch names its mode.
+      MODE: ${{ github.event.inputs.mode || 'request' }}
+      HB_EPOCH: ${{ github.event.inputs.hb_epoch }}
     steps:
       - name: Checkout organization boundary
         uses: actions/checkout@v4
@@ -63,7 +100,8 @@ jobs:
 
       - name: Validate committed request and readback implementation before any append
         run: |
-          python -m py_compile resident-runtime/organization_ledger_readback.py
+          python -m py_compile resident-runtime/organization_ledger_readback.py \
+            resident-runtime/intr_destination_ingress.py
           python - <<'PY'
           import json
           from pathlib import Path
@@ -99,10 +137,15 @@ jobs:
           fi
 
       - name: Select committed transition requests
+        if: env.MODE != 'self-closure'
         env:
           INPUT_REQUEST: ${{ github.event.inputs.request }}
           BEFORE: ${{ github.event.before }}
         run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ -z "$INPUT_REQUEST" ]; then
+            echo "FAIL_CLOSED: DISPATCH_REQUEST_REQUIRED (mode=request names a committed transition request)" >&2
+            exit 1
+          fi
           if [ -n "$INPUT_REQUEST" ]; then
             # A dispatch may select only an existing, committed transition
             # request from the checked-out revision, never an arbitrary path.
@@ -130,6 +173,7 @@ jobs:
           cat "$RUNNER_TEMP/requests.txt"
 
       - name: Receive each request and append to the repository and organization ledgers
+        if: env.MODE != 'self-closure'
         env:
           INPUT_MESH_ROOT: ${{ github.event.inputs.mesh_root }}
         run: |
@@ -250,10 +294,47 @@ jobs:
             python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
           done < "$RUNNER_TEMP/requests.txt"
 
+      # mode=self-closure: this organization's own intr-destination, at the
+      # supplied epoch. No peer is named; the address is derived from this
+      # organization's own name.
+      - name: Close an intr-destination diagnostic against this organization
+        if: env.MODE == 'self-closure'
+        env:
+          INPUT_COMMUNICATION_ID: ${{ github.event.inputs.communication_id }}
+          INPUT_PACKET_ID: ${{ github.event.inputs.packet_id }}
+        run: |
+          set -euo pipefail
+          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
+          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
+          out="$RUNNER_TEMP/results/self-closure"
+          mkdir -p "$out"
+          packet_id="$INPUT_PACKET_ID"
+          if [ -z "$packet_id" ]; then
+            packet_id="intr-destination-self-closure-${GITHUB_RUN_ID}"
+          fi
+          # Time is supplied with the dispatch. It is not sampled from a clock.
+          case "$HB_EPOCH" in
+            ''|*[!0-9]*)
+              echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_HB_EPOCH_INVALID","failed_predicate":"HB_EPOCH_IS_SUPPLIED_AS_A_NON_NEGATIVE_INTEGER","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","consequence_committed":false}'
+              exit 1 ;;
+          esac
+          # A refusal is recorded too; the publish step below carries it, and
+          # the readback step fails the run on any closure that is not ALLOW.
+          python resident-runtime/intr_destination_ingress.py \
+            --self-close \
+            --hb-epoch "$HB_EPOCH" \
+            --registry org-boundary/registry/services.json \
+            --communication-id "$INPUT_COMMUNICATION_ID" \
+            --packet-id "$packet_id" \
+            --out "$out/closure.json" || true
+          test -f "$out/closure.json"
+          python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("closure disposition:", x["disposition"], x.get("communication_id"), x.get("organization_receipt_sha256"))' "$out/closure.json"
+
       # The frames a request left on the designated mesh are published before
       # the ledger that says they were emitted: a receipt never claims an
       # emission whose frame did not outlive this run.
       - name: Publish the designated mesh ref (fast-forward only)
+        if: env.MODE != 'self-closure'
         run: |
           if [ -z "${MESH_PUBLISH_REF:-}" ]; then
             echo "no mesh ref bound by this run; nothing to publish"; exit 0
@@ -278,6 +359,7 @@ jobs:
           fi
 
       - name: Read the organization and repository ledgers back from a fresh fetch
+        if: env.MODE != 'self-closure'
         run: |
           set -euo pipefail
           fresh="$RUNNER_TEMP/readback.git"
@@ -304,10 +386,36 @@ jobs:
           done
           exit $status
 
+      - name: Read the intr-destination self-closure back from a fresh fetch
+        if: env.MODE == 'self-closure'
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/results/self-closure"
+          fresh="$RUNNER_TEMP/self-closure-readback.git"
+          git init -q --bare "$fresh"
+          auth_header=$(git config --local --get http.https://github.com/.extraheader || true)
+          if [ -z "$auth_header" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE","failed_predicate":"FRESH_FETCH_AUTHENTICATED","required_evidence_or_repair":"checkout credentials unavailable for independent sovereign ref fetch","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"LLMA-DECLARED-PATH-CONFORMANCE-368","next_attempt":"retry with authorized existing repository contents token"}'
+            exit 1
+          fi
+          git --git-dir="$fresh" -c http.https://github.com/.extraheader="$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
+          python resident-runtime/intr_destination_ingress.py \
+            --verify-self-closure \
+            --location "git+$fresh#$LEDGER_REF" \
+            --repository-namespace "$REPO_LEDGER_NAMESPACE" \
+            --closure "$out/closure.json" \
+            --out "$out/readback.json"
+          {
+            echo "### intr-destination self-closure"
+            echo '```json'
+            cat "$out/readback.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # What the designated mesh holds after this run, read from a fresh fetch
       # the way a peer that materializes later would read it.
       - name: Read the designated mesh ref back from a fresh fetch
-        if: env.MESH_PUBLISH_REF != ''
+        if: env.MODE != 'self-closure' && env.MESH_PUBLISH_REF != ''
         run: |
           set -euo pipefail
           fresh="$RUNNER_TEMP/mesh-readback.git"

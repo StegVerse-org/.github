@@ -6,9 +6,11 @@ peer can address it without a purpose-specific route. Governance stays a
 purpose route, bound to the organization that owns the decider. A
 route-related NON-ALLOW is a disposition delivered on the manifest-calculated
 InTr route, not a classification request and not a route this diagnostic
-binds. This operation is the mesh primitive underneath purpose routes: a diagnostic
-crossing arrives, both ledger levels record the disposition, and nothing is
-granted.
+binds. This operation is the mesh primitive underneath purpose routes: a
+diagnostic crossing arrives, both ledger levels record the disposition, and
+the disposition is transition evidence only. Authority and time stay
+constraint variables. This operation does not touch governance or
+remediation routing.
 
 The payload is an ``ecosystem.communication``. That is a request class the
 transport profile answers, and it carries the ``communication_id`` a closure
@@ -21,8 +23,18 @@ baseline does not declare the profile, and the canonical StegOS connector
 registry was not readable from the change that added it, so this repository
 does not claim StegOS already named it.
 
-Nothing here grants authority. The address did not select a processor, standing
-was already required at ingress, and this operation does not re-decide either.
+``closure`` is the diagnostic self-closure. It addresses this organization's
+own intr-destination, derived as ``organization_slug + "." + profile_id``, and
+records the acknowledgement on the repository ledger and the organization
+ledger. Both receipts carry the ``communication_id``. No peer is named and
+``federation.json`` is not read. A ``workflow_dispatch`` of
+``.github/workflows/organization-ledger-transition.yml`` runs that closure
+against the designated ledger ref, publishes the ref fast-forward only, and
+reads the receipts back from a fresh fetch.
+
+Authority and time are constraint variables. The address did not select a
+processor, standing was already required at ingress, and this operation does
+not re-decide either. The disposition is transition evidence only.
 """
 from __future__ import annotations
 
@@ -50,6 +62,27 @@ DENY = "DENY"
 FAIL_CLOSED = "FAIL_CLOSED"
 ACK_EFFECT = "NONE_DIAGNOSTIC_ACK_ONLY"
 REFUSAL_EFFECT = "NONE_REFUSAL_ONLY"
+CLOSURE_SCHEMA = "stegverse.org-intr-destination-self-closure/v1"
+CLOSURE_RETRY = "resident-runtime/intr_destination_ingress.py::closure"
+CLOSURE_GOAL = "LLMA-DECLARED-PATH-CONFORMANCE-368"
+CONSTRAINT = "CONSTRAINT_VARIABLE"
+DISPOSITION_ROLE = "TRANSITION_EVIDENCE_ONLY"
+CONSTRAINT_FIELDS = {
+    "routing_authority_constraint": CONSTRAINT,
+    "admission_authority_constraint": CONSTRAINT,
+    "execution_authority_constraint": CONSTRAINT,
+    "time_constraint": CONSTRAINT,
+    "disposition_role": DISPOSITION_ROLE,
+}
+
+
+class SelfClosureRefused(Exception):
+    """A self-closure that stopped before it could be recorded."""
+
+    def __init__(self, failed_predicate: str, detail: str) -> None:
+        super().__init__(failed_predicate + ": " + detail)
+        self.failed_predicate = failed_predicate
+        self.detail = detail
 
 
 def _module(name: str, relative: str):
@@ -113,9 +146,7 @@ def _evidence(payload: Any, packet_id: str, disposition: str, *,
         "payload_schema": PAYLOAD_SCHEMA,
         "disposition": disposition,
         "authority_effect": effect,
-        "grants_routing_authority": False,
-        "grants_admission_authority": False,
-        "grants_execution_authority": False,
+        **CONSTRAINT_FIELDS,
         "selects_processing": False,
         "purpose_specific_route": False,
         "standing_rechecked_here": False,
@@ -148,9 +179,7 @@ def _result(evidence: Mapping[str, Any], appended: Mapping[str, Any] | None, *,
         "standing_rechecked_here": False,
         "selects_processing": False,
         "purpose_specific_route": False,
-        "grants_routing_authority": False,
-        "grants_admission_authority": False,
-        "grants_execution_authority": False,
+        **CONSTRAINT_FIELDS,
         "authority_effect": evidence["authority_effect"],
     }
     if evidence.get("failed_predicate") is not None:
@@ -243,24 +272,261 @@ def receive(payload: Any, *, registry: Mapping[str, Any], standing: Mapping[str,
     return _recorded(ALLOW, payload, packet_id, hb_epoch)
 
 
+def _organization_slug(organization: str) -> str:
+    """Same derivation as the kernel's ``organization_slug``."""
+    kernel = _module("org_kernel_intr_destination", "org-kernel/kernel.py")
+    return kernel.organization_slug(organization)
+
+
+def _token(value: Any, failed_predicate: str) -> str:
+    if (not isinstance(value, str) or not value
+            or any(ord(character) <= 32 or ord(character) > 126 for character in value)):
+        raise SelfClosureRefused(
+            failed_predicate,
+            "expected one line of printable characters with no spaces")
+    return value
+
+
+def _served_address(registry: Mapping[str, Any]) -> str:
+    """This organization's intr-destination address, derived from its own name.
+
+    The registry must already serve that address. Peers are not consulted.
+    """
+    if not isinstance(registry, Mapping):
+        raise SelfClosureRefused("CAPABILITY_MAP_IS_A_MAPPING", "registry is not an object")
+    organization = registry.get("organization")
+    if organization != organization_ledger.C["organization"]:
+        raise SelfClosureRefused(
+            "REGISTRY_IS_THIS_ORGANIZATION",
+            str(organization))
+    if not isinstance(organization, str):
+        raise SelfClosureRefused("REGISTRY_IS_THIS_ORGANIZATION", str(organization))
+    address = _organization_slug(organization) + "." + PROFILE_ID
+    services = registry.get("services")
+    served = isinstance(services, list) and any(
+        isinstance(row, Mapping) and row.get("service_id") == address
+        and row.get("capability_profile_id") == PROFILE_ID for row in services)
+    if not served:
+        raise SelfClosureRefused(
+            "THIS_ORGANIZATION_SERVES_INTR_DESTINATION", address)
+    return address
+
+
+def _closure_payload(communication_id: str, addressed_service: str) -> dict[str, Any]:
+    return {
+        "message_class": COMMUNICATION_CLASS,
+        "communication_id": communication_id,
+        "subject": "purpose-neutral intr-destination diagnostic self-closure",
+        "body": {
+            "schema": PAYLOAD_SCHEMA,
+            "probe": "diagnostic-self-closure",
+            "addressed_service": addressed_service,
+        },
+    }
+
+
+def _closure_result(address: str, communication_id: str, packet_id: str,
+                    recorded: Mapping[str, Any]) -> dict[str, Any]:
+    result = {
+        "schema": CLOSURE_SCHEMA,
+        "organization": organization_ledger.C["organization"],
+        "receiving_operation": OPERATION_ID,
+        "owner_repository": OWNER_REPOSITORY,
+        "profile_id": PROFILE_ID,
+        "profile_name": PROFILE_NAME,
+        "operation": OPERATION,
+        "self_closure": True,
+        "addressed_service": address,
+        "peer_enumerated": False,
+        "communication_id": communication_id,
+        "packet_id": packet_id,
+        "disposition": recorded.get("disposition"),
+        "received": recorded.get("received"),
+        "communication_acknowledged": recorded.get("communication_acknowledged"),
+        "transition_replayed": recorded.get("transition_replayed"),
+        "payload_sha256": recorded.get("payload_sha256"),
+        "repository_receipt_sha256": recorded.get("repository_receipt_sha256"),
+        "organization_receipt_sha256": recorded.get("organization_receipt_sha256"),
+        "authority_effect": recorded.get("authority_effect"),
+        "selects_processing": False,
+        "purpose_specific_route": False,
+        "standing_rechecked_here": False,
+        **CONSTRAINT_FIELDS,
+    }
+    if recorded.get("failed_predicate") is not None:
+        result["failed_predicate"] = recorded["failed_predicate"]
+        result["detail"] = recorded.get("detail")
+    return result
+
+
+def closure(communication_id: Any, *, registry: Mapping[str, Any], packet_id: Any,
+            hb_epoch: int | None = None) -> dict[str, Any]:
+    """Acknowledge a diagnostic this organization addresses to itself.
+
+    The destination is this organization's served intr-destination. Both ledger
+    levels append, and both receipts carry ``communication_id``. An existing
+    chain is extended: the predecessor link is the published HEAD, and an empty
+    chain is not reopened over receipts that are already there.
+    """
+    address = _served_address(registry)
+    communication_id = _token(communication_id, "COMMUNICATION_ID_REQUIRED")
+    packet_id = _token(packet_id, "PACKET_ID_REQUIRED")
+    recorded = receive(_closure_payload(communication_id, address), registry=registry,
+                       packet_id=packet_id, hb_epoch=hb_epoch)
+    return _closure_result(address, communication_id, packet_id, recorded)
+
+
+def closure_refusal(exc: SelfClosureRefused, location: str | None = None) -> dict[str, Any]:
+    """A refusal that stopped the closure. Nothing in this document was appended by it."""
+    return {
+        "schema": CLOSURE_SCHEMA,
+        "organization": organization_ledger.C["organization"],
+        "location": location,
+        "disposition": FAIL_CLOSED,
+        "failure_code": "INTR_DESTINATION_SELF_CLOSURE_REFUSED",
+        "failed_predicate": exc.failed_predicate,
+        "required_evidence_or_repair": exc.detail,
+        "retry_entrypoint": CLOSURE_RETRY,
+        "owning_existing_goal": CLOSURE_GOAL,
+        "next_attempt": "correct the closure input and run it again; a published chain is left as it was",
+        "self_closure": True,
+        "peer_enumerated": False,
+        "authority_effect": REFUSAL_EFFECT,
+        **CONSTRAINT_FIELDS,
+    }
+
+
+def verify_closure(location: str, closure_result: Mapping[str, Any], *,
+                   repository_namespace: str) -> dict[str, Any]:
+    """Read the ledger back and require this closure's receipts on that chain.
+
+    The chain walk is ``organization_ledger_readback``. This checks that the
+    closure's repository and organization receipts are on the verified chains
+    and that both carry ``communication_id``. It reports what that location
+    holds. It does not assert anything about a receipt that was not read back
+    from ``location``.
+    """
+    if closure_result.get("disposition") != ALLOW:
+        raise SelfClosureRefused(
+            "SELF_CLOSURE_DISPOSITION_IS_ALLOW", str(closure_result.get("disposition")))
+    communication_id = closure_result.get("communication_id")
+    org_digest = closure_result.get("organization_receipt_sha256")
+    repo_digest = closure_result.get("repository_receipt_sha256")
+    if not all(isinstance(value, str) and value
+               for value in (communication_id, org_digest, repo_digest)):
+        raise SelfClosureRefused(
+            "SELF_CLOSURE_NAMES_BOTH_RECEIPTS_AND_COMMUNICATION_ID",
+            "communication_id, organization_receipt_sha256, repository_receipt_sha256")
+    readback_mod = _module("organization_ledger_readback_closure",
+                           "resident-runtime/organization_ledger_readback.py")
+    try:
+        verified = readback_mod.readback(location)
+    except readback_mod.ReadbackRefused as exc:
+        raise SelfClosureRefused(exc.failed_predicate, exc.detail) from None
+    if not any(item["receipt_sha256"] == org_digest for item in verified["chain"]):
+        raise SelfClosureRefused(
+            "SELF_CLOSURE_ORGANIZATION_RECEIPT_IS_IN_THE_CHAIN", str(org_digest))
+    locator = organization_ledger.parse_locator(location)
+    org_store = organization_ledger.open_store(locator)
+    org_receipt = org_store.get(organization_ledger.receipt_key(org_digest)) or {}
+    boundary = org_receipt.get("boundary_evidence") or {}
+    if boundary.get("communication_id") != communication_id:
+        raise SelfClosureRefused(
+            "ORGANIZATION_RECEIPT_CARRIES_THE_COMMUNICATION_ID", str(communication_id))
+    if org_receipt.get("repo_receipt_sha256") != repo_digest:
+        raise SelfClosureRefused(
+            "ORGANIZATION_RECEIPT_PRESERVES_THE_REPOSITORY_RECEIPT", str(repo_digest))
+    previous = org_receipt.get("previous_receipt_sha256")
+    if previous is not None and not any(item["receipt_sha256"] == previous
+                                        for item in verified["chain"]):
+        raise SelfClosureRefused(
+            "SELF_CLOSURE_EXTENDS_THE_PUBLISHED_CHAIN", str(previous))
+    try:
+        repository = readback_mod.repository_readback(location, repository_namespace, verified)
+    except readback_mod.ReadbackRefused as exc:
+        raise SelfClosureRefused(exc.failed_predicate, exc.detail) from None
+    if not any(item["receipt_sha256"] == repo_digest for item in repository["chain"]):
+        raise SelfClosureRefused(
+            "SELF_CLOSURE_REPOSITORY_RECEIPT_IS_IN_THE_CHAIN", str(repo_digest))
+    repo_store = organization_ledger.open_store(
+        organization_ledger.parse_locator(str(locator) + ":" + repository_namespace))
+    repo_receipt = repo_store.get(organization_ledger.receipt_key(repo_digest)) or {}
+    if (repo_receipt.get("evidence") or {}).get("communication_id") != communication_id:
+        raise SelfClosureRefused(
+            "REPOSITORY_RECEIPT_CARRIES_THE_COMMUNICATION_ID", str(communication_id))
+    verified = dict(verified)
+    verified.update({
+        "repository_ledger": repository,
+        "self_closure_communication_id": communication_id,
+        "self_closure_organization_receipt_sha256": org_digest,
+        "self_closure_repository_receipt_sha256": repo_digest,
+        "self_closure_receipts_in_chain": True,
+        "communication_id_on_organization_receipt": True,
+        "communication_id_on_repository_receipt": True,
+        "self_closure_extends_published_chain": True,
+        "authority_effect": "NONE_READBACK_ONLY",
+    })
+    return verified
+
+
+def _emit(result: Mapping[str, Any], out: Path | None) -> None:
+    rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
+    if out is not None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(rendered, encoding="utf-8")
+    print(json.dumps(result, sort_keys=True))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--payload", type=Path, required=True)
-    parser.add_argument("--registry", type=Path, required=True)
-    parser.add_argument("--packet-id", default="organization-intr-destination")
+    parser.add_argument("--payload", type=Path)
+    parser.add_argument("--registry", type=Path)
+    parser.add_argument("--packet-id", default=None)
     parser.add_argument("--hb-epoch", type=int, default=None)
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--self-close", action="store_true",
+                        help="append an intr-destination diagnostic self-closure")
+    parser.add_argument("--communication-id")
+    parser.add_argument("--verify-self-closure", action="store_true",
+                        help="read a self-closure back from a ledger location")
+    parser.add_argument("--location", help="ledger locator, e.g. git+<repo>#<ref>")
+    parser.add_argument("--repository-namespace")
+    parser.add_argument("--closure", type=Path, help="closure result JSON to read back")
     args = parser.parse_args()
-    result = receive(
-        json.loads(args.payload.read_text(encoding="utf-8")),
-        registry=json.loads(args.registry.read_text(encoding="utf-8")),
-        packet_id=args.packet_id, hb_epoch=args.hb_epoch)
-    rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
-    if args.out:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(rendered, encoding="utf-8")
-    print(json.dumps(result, sort_keys=True))
-    return 0 if result.get("disposition") == ALLOW else 1
+    try:
+        if args.verify_self_closure:
+            if not args.location or not args.repository_namespace or args.closure is None:
+                raise SelfClosureRefused(
+                    "SELF_CLOSURE_READBACK_INPUTS_PRESENT",
+                    "--location, --repository-namespace, and --closure are required")
+            result = verify_closure(
+                args.location,
+                json.loads(args.closure.read_text(encoding="utf-8")),
+                repository_namespace=args.repository_namespace)
+            code = 0
+        elif args.self_close:
+            if args.registry is None:
+                raise SelfClosureRefused("REGISTRY_REQUIRED", "--registry is required")
+            result = closure(
+                args.communication_id,
+                registry=json.loads(args.registry.read_text(encoding="utf-8")),
+                packet_id=args.packet_id, hb_epoch=args.hb_epoch)
+            code = 0 if result.get("disposition") == ALLOW else 1
+        else:
+            if args.payload is None or args.registry is None:
+                raise SelfClosureRefused(
+                    "PAYLOAD_AND_REGISTRY_REQUIRED", "--payload and --registry are required")
+            result = receive(
+                json.loads(args.payload.read_text(encoding="utf-8")),
+                registry=json.loads(args.registry.read_text(encoding="utf-8")),
+                packet_id=args.packet_id or "organization-intr-destination",
+                hb_epoch=args.hb_epoch)
+            code = 0 if result.get("disposition") == ALLOW else 1
+    except SelfClosureRefused as exc:
+        result = closure_refusal(exc, args.location)
+        code = 1
+    _emit(result, args.out)
+    return code
 
 
 if __name__ == "__main__":
