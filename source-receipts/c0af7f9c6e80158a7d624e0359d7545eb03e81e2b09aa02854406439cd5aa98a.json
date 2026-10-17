@@ -1,0 +1,42 @@
+{
+  "authority_effect": "NONE",
+  "evidence": {
+    "admission_authority_constraint": "CONSTRAINT_VARIABLE",
+    "authority_effect": "NONE_DIAGNOSTIC_ACK_ONLY",
+    "communication_id": "intr-selfclose-StegVerse-org-20261017",
+    "disposition": "ALLOW",
+    "disposition_role": "TRANSITION_EVIDENCE_ONLY",
+    "execution_authority_constraint": "CONSTRAINT_VARIABLE",
+    "operation": "DIAGNOSTIC_CROSSING",
+    "owner_repository": "StegVerse-org/.github",
+    "packet_id": "intr-destination-self-closure-c09d867e-b5d7-4659-98b3-1ff16f863f7c",
+    "payload_schema": "stegverse.org-intr-destination-diagnostic/v1",
+    "payload_sha256": "sha256:f97cd6ceea644b7dab510c8adc124289b650f1106189e8bd51b2ef9d0ce8873f",
+    "profile_id": "intr-destination",
+    "profile_name": "InTr:Destination",
+    "purpose_specific_route": false,
+    "receiving_operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+    "routing_authority_constraint": "CONSTRAINT_VARIABLE",
+    "selects_processing": false,
+    "standing_rechecked_here": false,
+    "time_constraint": "CONSTRAINT_VARIABLE"
+  },
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 446655631,
+    "frequency_hz": 100,
+    "generation": 446655631,
+    "heartbeat_id": "HB:446655631",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+  },
+  "predecessor_state_sha256": "sha256:f97cd6ceea644b7dab510c8adc124289b650f1106189e8bd51b2ef9d0ce8873f",
+  "previous_receipt_sha256": "sha256:70ce69d4f1235de1c151f7b5cb90f0443dfbf211bf63b2aa003e21146fc19cfa",
+  "receipt_sha256": "sha256:c0af7f9c6e80158a7d624e0359d7545eb03e81e2b09aa02854406439cd5aa98a",
+  "repository": "StegVerse-org/.github",
+  "schema": "stegverse.repo-transition-receipt/v1",
+  "successor_state_sha256": "sha256:dc4a377fcfd55c80fcb7dd9d6fef7da2c359c20717ce5247937080ce6307d016",
+  "transition_class": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+  "transition_id": "ORGANIZATION_INTR_DESTINATION_INGRESS:intr-destination-self-closure-c09d867e-b5d7-4659-98b3-1ff16f863f7c"
+}
