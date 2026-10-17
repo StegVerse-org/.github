@@ -150,3 +150,9 @@ This is derivation: where the map's content comes from. The two are separable,
 and deriving the content does not decide how it travels.
 
 Nothing here grants authority.
+
+## Task registration discovery (cross-organization navigation)
+
+A participant seeking to **register** a Goal Task must follow the canonical Task Registry owner's [Task Registration Guide](https://github.com/StegVerse-Labs/.github/blob/main/docs/TASK_REGISTRATION_GUIDE.md), not infer registration from this demonstration projection. The authoritative coordination source is `StegVerse-Labs/.github:data/canonical-task-registry.json`, with task shards under `data/canonical-task-records/`. The existing read-only organization disclosure at `resident-runtime/task_registry_disclosure_endpoint.py` returns `StegVerse-org/.github:orchestration/task-registry.json`, a **different organization-local work-intent registry**.
+
+Discovery flow: inspect the canonical Registry; query with `scripts/query_canonical_tasks.py`; reconcile collisions with `scripts/evaluate_task_registry_collision_checkin.py`; request owner-controlled admission; then verify committed generation, exact task identity/COSV, handoff, and authorized readback. A worker-admission `ADMIT` verdict does not register a Goal Task or grant execution authority. The demonstrated-capability projection is evidence-only and cannot mint registration, claims, fences, or governance returns. No new endpoint, service, route, framework, or external-machine prerequisite is introduced by this cross-reference.
