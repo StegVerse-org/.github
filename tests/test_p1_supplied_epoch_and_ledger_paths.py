@@ -353,10 +353,18 @@ def __getattr__(name):
     _refuse()
 '''
 
-#: An old-layout writer: a plain SystemExit(message), no .refusal.
-OLD_LAYOUT_WRITER = REFUSING_WRITER.replace(
-    "def _refuse():\n    raise LedgerRefusal(dict(REFUSAL))",
-    "def _refuse():\n    raise SystemExit(\"HB_EPOCH_NOT_SUPPLIED: no hb_epoch was supplied; no clock is read\")")
+#: An old-layout writer: this checkout's writers, whose append raises a plain
+#: SystemExit(message) with no .refusal, as an old-layout writer refuses.
+OLD_LAYOUT_APPEND = (
+    "\n\ndef append(*args, **kwargs):  # fixture: an old-layout writer's own refusal\n"
+    "    raise SystemExit(\"HB_EPOCH_NOT_SUPPLIED: no hb_epoch was supplied; no clock is read\")\n")
+
+
+def _old_layout_component(path: Path) -> Path:
+    component = _copy_component(path)
+    emit = component / ".stegverse/transition-ledger/emit.py"
+    emit.write_text(emit.read_text(encoding="utf-8") + OLD_LAYOUT_APPEND, encoding="utf-8")
+    return component
 
 
 def _flat_component(path: Path, source: str | None = None) -> Path:
@@ -451,22 +459,26 @@ class LedgerWriterRefusalTests(TemporaryLedgers):
         self.assertIn("no clock is read", printed["detail"])
 
     def ingress(self, source, name):
-        component = _flat_component(self.work / name, source)
+        component = (_old_layout_component(self.work / name) if source is None
+                     else _flat_component(self.work / name, source))
         out = self.work / (name + "-ingress-out.json")
         return self.run_cli(
             "resident-runtime/organization_manifest_ingress.py",
             "--registry", str(ROOT / "org-boundary/registry/services.json"), "--manifest", str(MANIFEST),
             "--standing", str(GENESIS_PATH), "--packet-id", "p1-ledger-refusal", "--hb-epoch", "32",
-            "--ledger-component", str(component), "--out", str(out)), out
+            "--ledger-component", str(component), "--consumer-root", str(ROOT),
+            "--out", str(out)), out
 
     def self_close(self, source, name):
-        component = _flat_component(self.work / name, source)
+        component = (_old_layout_component(self.work / name) if source is None
+                     else _flat_component(self.work / name, source))
         out = self.work / (name + "-self-close-out.json")
         return self.run_cli(
             "resident-runtime/intr_destination_ingress.py", "--self-close",
             "--registry", str(ROOT / "org-boundary/registry/services.json"),
             "--communication-id", "p1-ledger-refusal", "--packet-id", "p1-ledger-refusal",
-            "--hb-epoch", "32", "--ledger-component", str(component), "--out", str(out)), out
+            "--hb-epoch", "32", "--ledger-component", str(component), "--consumer-root", str(ROOT),
+            "--out", str(out)), out
 
     def test_the_ingress_cli_prints_the_writers_refusal_as_given(self):
         self.assert_carried(*self.ingress(REFUSING_WRITER, "refusing"))
@@ -475,10 +487,10 @@ class LedgerWriterRefusalTests(TemporaryLedgers):
         self.assert_carried(*self.self_close(REFUSING_WRITER, "refusing"))
 
     def test_the_ingress_cli_builds_six_fields_for_an_old_layout_writer(self):
-        self.assert_built(*self.ingress(OLD_LAYOUT_WRITER, "old-layout"))
+        self.assert_built(*self.ingress(None, "old-layout"))
 
     def test_the_self_close_cli_builds_six_fields_for_an_old_layout_writer(self):
-        self.assert_built(*self.self_close(OLD_LAYOUT_WRITER, "old-layout"))
+        self.assert_built(*self.self_close(None, "old-layout"))
 
     def test_the_refusal_is_read_from_the_systemexit_only(self):
         writer = self.writer()
@@ -495,14 +507,246 @@ class LedgerWriterRefusalTests(TemporaryLedgers):
                 carried, is_carried = module.ledger_writer_refusal(refusal, "entry", "goal")
                 self.assertIs(carried, refusal.refusal)
                 self.assertIs(is_carried, True)
-                built, is_carried = module.ledger_writer_refusal(
-                    SystemExit("HB_EPOCH_INVALID: hb_epoch '+33'"), "entry", "goal")
+                # Only a writer call's own plain SystemExit gets the built six fields.
+                def old_writer():
+                    raise SystemExit("HB_EPOCH_INVALID: hb_epoch '+33'")
+                with self.assertRaises(module.LedgerWriterExit) as marked:
+                    module._ledger_write(old_writer)
+                built, is_carried = module.ledger_writer_refusal(marked.exception, "entry", "goal")
                 self.assertIs(is_carried, False)
                 self.assert_six_fields(built, "HB_EPOCH_INVALID")
-                self.assertEqual(module.ledger_writer_refusal(SystemExit("no code here"), "e", "g")[0]
-                                 ["failure_code"], "LEDGER_WRITER_REFUSED")
-                for ordinary in (SystemExit(0), SystemExit(1), SystemExit()):
+                self.assertEqual(module.ledger_writer_refusal(module.LedgerWriterExit("no code here"),
+                                                              "e", "g")[0]["failure_code"],
+                                 "LEDGER_WRITER_REFUSED")
+                # A carried refusal passes _ledger_write unchanged.
+                def new_writer():
+                    raise refusal
+                with self.assertRaises(SystemExit) as passed:
+                    module._ledger_write(new_writer)
+                self.assertIs(passed.exception, refusal)
+                for ordinary in (SystemExit(0), SystemExit(1), SystemExit(),
+                                 SystemExit("governance-decision-repository-receipt-failed: x")):
                     self.assertIsNone(module.ledger_writer_refusal(ordinary, "entry", "goal"))
+
+
+    def run_main(self, module, argv):
+        previous = sys.argv
+        sys.argv = [module.__file__, *argv]
+        self.addCleanup(setattr, sys, "argv", previous)
+        return module.main()
+
+    def test_an_exit_that_is_not_a_writer_call_is_not_reported_as_a_ledger_refusal(self):
+        # e.g. governance_endpoint's repository-receipt-failed: it escapes as it is.
+        unrelated = SystemExit("governance-decision-repository-receipt-failed: boom")
+
+        def raises(*args, **kwargs):
+            raise unrelated
+        module = _load("intr_destination_p1_unrelated_exit", "resident-runtime/intr_destination_ingress.py")
+        for name in ("closure", "self_close"):
+            if hasattr(module, name):
+                setattr(module, name, raises)
+        out = self.work / "unrelated-out.json"
+        with self.assertRaises(SystemExit) as escaped:
+            self.run_main(module, ["--self-close", "--registry", str(ROOT / "org-boundary/registry/services.json"),
+                                   "--communication-id", "p1-unrelated", "--packet-id", "p1-unrelated",
+                                   "--hb-epoch", "32", "--out", str(out)])
+        self.assertIs(escaped.exception, unrelated)
+        self.assertFalse(out.exists())
+
+SERVICES = json.loads((ROOT / "org-boundary/registry/services.json").read_text(encoding="utf-8"))
+
+
+#: A fixture of P1's C6 readback (not a production receipt): a ledger whose org
+#: contract declares a legacy segment is read back with its repository
+#: namespace, and a readback given no contract refuses rather than guess. It
+#: then walks the chain with this checkout's readback.
+C6_READBACK = '''"""Fixture: P1's C6 readback contract, delegating the walk to this checkout's readback."""
+import importlib.util
+
+_spec = importlib.util.spec_from_file_location("checkout_readback", %(checkout)r)
+_real = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_real)
+SEEN = []
+
+
+class ReadbackRefused(_real.ReadbackRefused):
+    def __init__(self, failure_code, failed_predicate, detail):
+        super().__init__(failed_predicate, detail)
+        self.failure_code = failure_code
+
+
+def readback(location, ingress_result=None, manifest=None, *, org_contract=None, repository_namespace=None):
+    SEEN.append({"org_contract": org_contract, "repository_namespace": repository_namespace})
+    if not isinstance(org_contract, dict):
+        raise ReadbackRefused("ORG_CONTRACT_NOT_GIVEN", "READBACK_IS_GIVEN_THE_ORG_CONTRACT",
+                              "no org contract: what the ledger declares is unknown")
+    if org_contract.get("legacy_segments") and not repository_namespace:
+        raise ReadbackRefused("REPOSITORY_NAMESPACE_REQUIRED", "LEGACY_SEGMENT_IS_READ_WITH_ITS_NAMESPACE",
+                              "the ledger declares a legacy segment")
+    try:
+        return _real.readback(location, ingress_result, manifest)
+    except _real.ReadbackRefused as exc:
+        code = "ORGANIZATION_LEDGER_HEAD_ABSENT" if exc.failed_predicate == "ORGANIZATION_LEDGER_HEAD_PRESENT" \\
+            else "READBACK_REFUSED"
+        raise ReadbackRefused(code, exc.failed_predicate, exc.detail) from None
+
+
+def repository_readback(location, namespace, organization_result, ingress_result=None, *, org_contract=None):
+    SEEN.append({"repository_readback_org_contract": org_contract, "namespace": namespace})
+    return _real.repository_readback(location, namespace, organization_result, ingress_result)
+'''
+
+#: The legacy segment the fixture contract declares (shape illustrative).
+LEGACY_SEGMENT = {"repository": "SV-011/.github", "organization_receipt_sha256_prefix": "3db9008d",
+                  "read_with": "repository_namespace"}
+
+
+class ReadbackContractTests(TemporaryLedgers):
+    """--verify-self-closure gives the readback the org contract and the repository namespace."""
+    NAMESPACE = "repository-ledger/" + "StegVerse-org" + "/.github"
+
+    def git_ledger(self):
+        repo = self.work / "ledger"
+        subprocess.check_call(["git", "init", "-q", str(repo)])
+        ref = "refs/stegverse/organization-ledger"
+        org_root = "git+" + str(repo) + "#" + ref
+        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = org_root
+        os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = org_root + ":" + self.NAMESPACE
+        return repo, ref
+
+    def fresh(self, repo, ref):
+        fresh = self.work / ("readback-%d.git" % len(list(self.work.glob("readback-*.git"))))
+        subprocess.check_call(["git", "init", "-q", "--bare", str(fresh)])
+        if repo is not None:
+            subprocess.check_call(["git", "--git-dir", str(fresh), "fetch", "-q", str(repo), "+" + ref + ":" + ref])
+        return "git+" + str(fresh) + "#" + ref
+
+    def consumer(self, legacy=True):
+        consumer = self.work / "consumer"
+        shutil.copytree(ROOT / ".stegverse/transition-ledger", consumer / ".stegverse/transition-ledger",
+                        ignore=shutil.ignore_patterns("__pycache__", "*.py"))
+        contract_path = consumer / ".stegverse/transition-ledger/org-contract.json"
+        contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        if legacy:
+            contract["legacy_segments"] = [LEGACY_SEGMENT]
+        contract_path.write_text(json.dumps(contract), encoding="utf-8")
+        return consumer, contract
+
+    def component(self):
+        component = _copy_component(self.work / "component")
+        (component / "resident-runtime/organization_ledger_readback.py").write_text(
+            C6_READBACK % {"checkout": str(ROOT / "resident-runtime/organization_ledger_readback.py")},
+            encoding="utf-8")
+        return component
+
+    def closed(self, module):
+        repo, ref = self.git_ledger()
+        result = module.closure("p1-readback-001", registry=SERVICES, packet_id="p1-readback-001",
+                                hb_epoch=40)
+        return repo, ref, result
+
+    def test_a_legacy_segment_ledger_is_read_back_with_the_contract_and_the_namespace(self):
+        module = _load("intr_destination_p1_c6", "resident-runtime/intr_destination_ingress.py")
+        repo, ref, closure = self.closed(module)
+        consumer, contract = self.consumer()
+        module.bind_ledger_writers(self.component(), consumer)
+        fixture = module.readback_module()
+        self.assertEqual(Path(fixture.__file__).resolve().parent.parent, (self.work / "component").resolve())
+        module.readback_module = lambda: fixture  # one loaded fixture, so what it was given is kept
+        verified = module.verify_closure(self.fresh(repo, ref), closure, repository_namespace=self.NAMESPACE)
+        self.assertEqual(fixture.SEEN[0], {"org_contract": contract, "repository_namespace": self.NAMESPACE})
+        self.assertEqual(fixture.SEEN[1], {"repository_readback_org_contract": contract,
+                                           "namespace": self.NAMESPACE})
+        self.assertEqual(contract["legacy_segments"], [LEGACY_SEGMENT])
+        self.assertEqual(verified["disposition"], "ALLOW")
+        self.assertEqual(verified["readback_repository_namespace"], self.NAMESPACE)
+        self.assertEqual(verified["readback_org_contract"],
+                         str(consumer / ".stegverse/transition-ledger/org-contract.json"))
+        self.assertIs(verified["self_closure_receipts_in_chain"], True)
+
+    def test_the_fixture_readback_refuses_without_the_contract_or_the_namespace(self):
+        # What P1 saw before: no contract is an undeclared FAIL_CLOSED, and a
+        # legacy segment without its namespace is refused.
+        module = _load("intr_destination_p1_c6_refusals", "resident-runtime/intr_destination_ingress.py")
+        repo, ref, closure = self.closed(module)
+        consumer, contract = self.consumer()
+        module.bind_ledger_writers(self.component(), consumer)
+        fixture = module.readback_module()
+        location = self.fresh(repo, ref)
+        with self.assertRaises(fixture.ReadbackRefused) as no_contract:
+            fixture.readback(location)
+        self.assertEqual(no_contract.exception.failure_code, "ORG_CONTRACT_NOT_GIVEN")
+        with self.assertRaises(fixture.ReadbackRefused) as no_namespace:
+            fixture.readback(location, org_contract=contract)
+        self.assertEqual(no_namespace.exception.failure_code, "REPOSITORY_NAMESPACE_REQUIRED")
+        self.assertEqual(fixture.readback(location, org_contract=contract,
+                                          repository_namespace=self.NAMESPACE)["disposition"], "ALLOW")
+
+    def test_the_cli_forwards_the_default_contract_and_the_namespace(self):
+        module = _load("intr_destination_p1_c6_cli", "resident-runtime/intr_destination_ingress.py")
+        repo, ref, closure = self.closed(module)
+        consumer, _ = self.consumer()
+        closure_path = self.work / "closure.json"
+        closure_path.write_text(json.dumps(closure), encoding="utf-8")
+        out = self.work / "readback.json"
+        completed = subprocess.run(
+            [sys.executable, str(ROOT / "resident-runtime/intr_destination_ingress.py"), "--verify-self-closure",
+             "--location", self.fresh(repo, ref), "--repository-namespace", self.NAMESPACE,
+             "--closure", str(closure_path), "--ledger-component", str(self.component()),
+             "--consumer-root", str(consumer), "--out", str(out)],
+            cwd=ROOT, env=_cli_env(), capture_output=True, text=True, check=False)
+        self.assertEqual(completed.returncode, 0, completed.stdout[-2000:] + completed.stderr[-2000:])
+        result = json.loads(out.read_text(encoding="utf-8"))
+        self.assertEqual(result["readback_org_contract"],
+                         str(consumer / ".stegverse/transition-ledger/org-contract.json"))
+        self.assertEqual(result["readback_repository_namespace"], self.NAMESPACE)
+
+    def test_the_contract_defaults_to_the_consumer_root_or_this_checkout(self):
+        module = _load("intr_destination_p1_contract_default", "resident-runtime/intr_destination_ingress.py")
+        relative = ".stegverse/transition-ledger/org-contract.json"
+        self.assertEqual(module.default_org_contract_path(), ROOT / relative)
+        self.assertEqual(module.load_org_contract()[1], ROOT / relative)
+        consumer, contract = self.consumer()
+        module.bind_ledger_writers(None, consumer)
+        self.assertEqual(module.default_org_contract_path(), consumer / relative)
+        loaded, path = module.load_org_contract()
+        self.assertEqual((loaded, path), (contract, consumer / relative))
+        self.assertEqual(loaded["legacy_segments"], [LEGACY_SEGMENT])
+        given = self.work / "given-org-contract.json"
+        given.write_text(json.dumps({"organization": "given"}), encoding="utf-8")
+        self.assertEqual(module.load_org_contract(given), ({"organization": "given"}, given.resolve()))
+        for bad in (self.work / "missing.json", self.work / "list.json"):
+            if bad.name == "list.json":
+                bad.write_text("[]", encoding="utf-8")
+            with self.subTest(path=bad.name):
+                with self.assertRaises(module.SelfClosureRefused) as refused:
+                    module.load_org_contract(bad)
+                fields = module.closure_refusal(refused.exception)
+                self.assert_six_fields(fields, "ORG_CONTRACT_PATH_INVALID")
+
+    def test_an_empty_ledger_is_organization_ledger_head_absent(self):
+        module = _load("intr_destination_p1_empty", "resident-runtime/intr_destination_ingress.py")
+        closure = {"disposition": "ALLOW", "communication_id": "p1-empty",
+                   "organization_receipt_sha256": "sha256:" + "a" * 64,
+                   "repository_receipt_sha256": "sha256:" + "b" * 64}
+        closure_path = self.work / "closure.json"
+        closure_path.write_text(json.dumps(closure), encoding="utf-8")
+        out = self.work / "empty-readback.json"
+        completed = subprocess.run(
+            [sys.executable, str(ROOT / "resident-runtime/intr_destination_ingress.py"), "--verify-self-closure",
+             "--location", self.fresh(None, "refs/stegverse/organization-ledger"),
+             "--repository-namespace", self.NAMESPACE, "--closure", str(closure_path), "--out", str(out)],
+            cwd=ROOT, env=_cli_env(), capture_output=True, text=True, check=False)
+        self.assertEqual(completed.returncode, 1, completed.stdout[-2000:] + completed.stderr[-2000:])
+        refused = json.loads(out.read_text(encoding="utf-8"))
+        self.assert_six_fields(refused, "ORGANIZATION_LEDGER_HEAD_ABSENT")
+        self.assertEqual(refused["failed_predicate"], "ORGANIZATION_LEDGER_HEAD_PRESENT")
+        table = _load("org_ingress_p1_head_absent", "resident-runtime/organization_manifest_ingress.py")
+        self.assertEqual(table.refusal_disposition("ORGANIZATION_LEDGER_HEAD_ABSENT",
+                                                   "ORGANIZATION_LEDGER_HEAD_PRESENT"), "FAIL_CLOSED")
+        self.assertEqual(table.REFUSAL_DISPOSITIONS[("ORGANIZATION_LEDGER_HEAD_ABSENT",
+                                                     "ORGANIZATION_LEDGER_HEAD_PRESENT")],
+                         refused["disposition"])
 
 
 class CliRawEpochTests(TemporaryLedgers):

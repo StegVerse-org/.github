@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib.util
+import inspect
 import json
 import re
 import sys
@@ -78,12 +79,18 @@ CONSTRAINT_FIELDS = {
 
 
 class SelfClosureRefused(Exception):
-    """A self-closure that stopped before it could be recorded."""
+    """A self-closure that stopped before it could be recorded.
 
-    def __init__(self, failed_predicate: str, detail: str) -> None:
+    `failure_code` is the refusal's own code when it has one (a readback
+    refusal, e.g. ORGANIZATION_LEDGER_HEAD_ABSENT); otherwise the closure's
+    INTR_DESTINATION_SELF_CLOSURE_REFUSED.
+    """
+
+    def __init__(self, failed_predicate: str, detail: str, failure_code: str | None = None) -> None:
         super().__init__(failed_predicate + ": " + detail)
         self.failed_predicate = failed_predicate
         self.detail = detail
+        self.failure_code = failure_code
 
 
 def _module(name: str, relative: str):
@@ -124,6 +131,20 @@ LEDGER_COMPONENT_LAYOUTS = (" and ".join(LEDGER_COMPONENT_FILES)
                             + ", or as siblings " + " and ".join(LEDGER_COMPONENT_FLAT_FILES),)
 CONSUMER_ROOT_FILES = (".stegverse/transition-ledger/contract.json",
                        ".stegverse/transition-ledger/org-contract.json")
+#: The org contract the ledger readback is given (--org-contract), by default
+#: under the consumer root (--consumer-root) or this checkout.
+ORG_CONTRACT_RELATIVE = CONSUMER_ROOT_FILES[1]
+ORG_CONTRACT_PATH_INVALID = "ORG_CONTRACT_PATH_INVALID"
+#: The readback the bound ledger component carries, if it carries one (flat:
+#: a sibling of emit.py; nested: where this checkout keeps it). Otherwise
+#: this checkout's readback reads the ledger back.
+READBACK_FILES = {"FLAT": "organization_ledger_readback.py",
+                  "NESTED": "resident-runtime/organization_ledger_readback.py"}
+#: An empty ledger: the readback finds no HEAD.
+LEDGER_HEAD_PRESENT = "ORGANIZATION_LEDGER_HEAD_PRESENT"
+LEDGER_HEAD_ABSENT = "ORGANIZATION_LEDGER_HEAD_ABSENT"
+#: Where the bound writers came from (bind_ledger_writers); None is this checkout.
+LEDGER_BINDING: dict[str, Any] = {"component": None, "layout": "NESTED", "consumer_root": None}
 
 
 class LedgerPathRefused(SystemExit):
@@ -157,14 +178,17 @@ def ledger_writer_refusal(exc: SystemExit, entrypoint: str,
     The ledger component's LedgerRefusal (ledger_common.py, flat next to
     emit.py) subclasses SystemExit and carries its refusal as `.refusal`, a
     dict: that is returned as given, (refusal, True), and printed unchanged.
-    An old-layout writer raises a plain SystemExit(message): the message is
-    given the six fields here, FAIL_CLOSED, (fields, False). A SystemExit
-    whose code is not a message (an int or None) is an ordinary exit (None).
+    An old-layout writer raises a plain SystemExit(message): only when it
+    came out of a ledger writer call itself (`_ledger_write`, which marks it
+    LedgerWriterExit) is the message given the six fields here, FAIL_CLOSED,
+    (fields, False). Any other SystemExit -- an int or None code, or a message
+    from anything but a writer call (e.g. repository-receipt-failed) -- is not
+    a ledger refusal (None) and is re-raised by the caller.
     """
     refusal = getattr(exc, "refusal", None)
     if isinstance(refusal, dict):
         return refusal, True
-    if not isinstance(exc.code, str):
+    if not isinstance(exc, LedgerWriterExit) or not isinstance(exc.code, str):
         return None
     message = exc.code
     head = message.split(":", 1)[0].strip()
@@ -179,6 +203,25 @@ def ledger_writer_refusal(exc: SystemExit, entrypoint: str,
         "owning_existing_goal": goal,
         "next_attempt": "run again once the ledger writer's refusal is repaired; nothing was written",
     }, False
+
+
+class LedgerWriterExit(SystemExit):
+    """A plain SystemExit(message) that a ledger writer call itself raised (old layout)."""
+
+
+def _ledger_write(call: Any, *args: Any, **kwargs: Any) -> Any:
+    """Run one ledger writer call; a plain SystemExit(message) from it is marked as the writer's.
+
+    Only a plain SystemExit is marked. A LedgerRefusal (it carries
+    `.refusal`), the writer's other SystemExit subclasses (e.g.
+    OrgLedgerAppendRefused) and an exit with no message pass through unchanged.
+    """
+    try:
+        return call(*args, **kwargs)
+    except SystemExit as exc:
+        if type(exc) is not SystemExit or not isinstance(exc.code, str):
+            raise
+        raise LedgerWriterExit(exc.code) from exc
 
 
 def cli_hb_epoch(text: str | None, entrypoint: str,
@@ -250,6 +293,9 @@ def bind_ledger_writers(ledger_component: Path | str | None = None,
         repository.ROOT, repository.C = consumer, contracts[CONSUMER_ROOT_FILES[0]]
         organization.ROOT, organization.C = consumer, contracts[CONSUMER_ROOT_FILES[1]]
     repository_ledger, organization_ledger = repository, organization
+    LEDGER_BINDING.update({"component": component,
+                           "layout": "FLAT" if files == LEDGER_COMPONENT_FLAT_FILES else "NESTED",
+                           "consumer_root": consumer})
     return {"ledger_component": str(base), "consumer_root": str(consumer if consumer is not None else ROOT),
             "ledger_component_is_this_checkout": component is None,
             "ledger_component_layout": "FLAT" if files == LEDGER_COMPONENT_FLAT_FILES else "NESTED",
@@ -380,15 +426,15 @@ def _append(transition_class: str, packet_id: str, evidence: Mapping[str, Any],
     transition_id = transition_class + ":" + packet_id
     store = repository_ledger.ledger_store.open_store(repository_ledger.lr())
     head = store.get(repository_ledger.ledger_store.HEAD_KEY)
-    prior = repository_ledger.recorded(store, head, transition_id, transition_class)
-    repository_receipt = repository_ledger.append(
+    prior = _ledger_write(repository_ledger.recorded, store, head, transition_id, transition_class)
+    repository_receipt = _ledger_write(repository_ledger.append,
         transition_id, transition_class, predecessor, successor, dict(evidence),
         "NONE", hb_epoch=hb_epoch,
         idempotent_on=("communication_id", "payload_sha256", "disposition"))
     # The organization receipt takes the repository receipt's epoch, so a replay
     # rebuilds the same organization receipt rather than one stamped later.
     epoch = repository_receipt["hb_reference"]["epoch"]
-    organization_receipt = organization_ledger.append(
+    organization_receipt = _ledger_write(organization_ledger.append,
         repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
         {"operation": OPERATION_ID, "profile_id": PROFILE_ID,
          "disposition": evidence["disposition"],
@@ -549,7 +595,7 @@ def closure_refusal(exc: SelfClosureRefused, location: str | None = None) -> dic
         "organization": organization_ledger.C["organization"],
         "location": location,
         "disposition": FAIL_CLOSED,
-        "failure_code": "INTR_DESTINATION_SELF_CLOSURE_REFUSED",
+        "failure_code": getattr(exc, "failure_code", None) or "INTR_DESTINATION_SELF_CLOSURE_REFUSED",
         "failed_predicate": exc.failed_predicate,
         "required_evidence_or_repair": exc.detail,
         "retry_entrypoint": CLOSURE_RETRY,
@@ -562,11 +608,64 @@ def closure_refusal(exc: SelfClosureRefused, location: str | None = None) -> dic
     }
 
 
+def default_org_contract_path() -> Path:
+    """<consumer root, or this checkout>/.stegverse/transition-ledger/org-contract.json."""
+    return (LEDGER_BINDING["consumer_root"] or ROOT) / ORG_CONTRACT_RELATIVE
+
+
+def load_org_contract(path: Path | str | None = None) -> tuple[dict[str, Any], Path]:
+    """The org contract the readback is given, and where it was read (default above)."""
+    resolved = Path(path).expanduser().resolve() if path is not None else default_org_contract_path()
+    try:
+        contract = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SelfClosureRefused("ORG_CONTRACT_IS_A_READABLE_JSON_OBJECT",
+                                 "--org-contract " + str(resolved) + ": " + str(exc),
+                                 ORG_CONTRACT_PATH_INVALID) from None
+    if not isinstance(contract, dict):
+        raise SelfClosureRefused("ORG_CONTRACT_IS_A_READABLE_JSON_OBJECT",
+                                 "--org-contract " + str(resolved) + " is not a JSON object",
+                                 ORG_CONTRACT_PATH_INVALID)
+    return contract, resolved
+
+
+def readback_module():
+    """The bound ledger component's readback when it carries one, else this checkout's."""
+    component = LEDGER_BINDING["component"]
+    if component is not None:
+        carried = component / READBACK_FILES[LEDGER_BINDING["layout"]]
+        if carried.is_file():
+            return _module_at("organization_ledger_readback_bound", carried)
+    return _module("organization_ledger_readback_closure",
+                   "resident-runtime/organization_ledger_readback.py")
+
+
+def _given(function: Any, **context: Any) -> dict[str, Any]:
+    """The readback context (org_contract, repository_namespace) this readback declares it takes."""
+    parameters = inspect.signature(function).parameters
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+        return context
+    return {name: value for name, value in context.items() if name in parameters}
+
+
+def _readback_refusal(exc: Any) -> SelfClosureRefused:
+    """A readback refusal, keeping its own code; an empty ledger is ORGANIZATION_LEDGER_HEAD_ABSENT."""
+    code = getattr(exc, "failure_code", None)
+    if not code and exc.failed_predicate == LEDGER_HEAD_PRESENT:
+        code = LEDGER_HEAD_ABSENT
+    return SelfClosureRefused(exc.failed_predicate, exc.detail, code or None)
+
+
 def verify_closure(location: str, closure_result: Mapping[str, Any], *,
-                   repository_namespace: str) -> dict[str, Any]:
+                   repository_namespace: str,
+                   org_contract: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Read the ledger back and require this closure's receipts on that chain.
 
-    The chain walk is ``organization_ledger_readback``. This checks that the
+    The readback is given the org contract (default: load_org_contract()) and
+    the repository namespace: a ledger that declares a legacy segment is read
+    with its namespace, and without its contract a readback cannot tell what
+    the ledger declares. The chain walk is ``organization_ledger_readback``
+    (the bound component's, when it carries one). This checks that the
     closure's repository and organization receipts are on the verified chains
     and that both carry ``communication_id``. It reports what that location
     holds. It does not assert anything about a receipt that was not read back
@@ -583,12 +682,15 @@ def verify_closure(location: str, closure_result: Mapping[str, Any], *,
         raise SelfClosureRefused(
             "SELF_CLOSURE_NAMES_BOTH_RECEIPTS_AND_COMMUNICATION_ID",
             "communication_id, organization_receipt_sha256, repository_receipt_sha256")
-    readback_mod = _module("organization_ledger_readback_closure",
-                           "resident-runtime/organization_ledger_readback.py")
+    contract_path = None
+    if org_contract is None:
+        org_contract, contract_path = load_org_contract()
+    context = {"org_contract": dict(org_contract), "repository_namespace": repository_namespace}
+    readback_mod = readback_module()
     try:
-        verified = readback_mod.readback(location)
+        verified = readback_mod.readback(location, **_given(readback_mod.readback, **context))
     except readback_mod.ReadbackRefused as exc:
-        raise SelfClosureRefused(exc.failed_predicate, exc.detail) from None
+        raise _readback_refusal(exc) from None
     if not any(item["receipt_sha256"] == org_digest for item in verified["chain"]):
         raise SelfClosureRefused(
             "SELF_CLOSURE_ORGANIZATION_RECEIPT_IS_IN_THE_CHAIN", str(org_digest))
@@ -608,9 +710,11 @@ def verify_closure(location: str, closure_result: Mapping[str, Any], *,
         raise SelfClosureRefused(
             "SELF_CLOSURE_EXTENDS_THE_PUBLISHED_CHAIN", str(previous))
     try:
-        repository = readback_mod.repository_readback(location, repository_namespace, verified)
+        repository = readback_mod.repository_readback(
+            location, repository_namespace, verified,
+            **_given(readback_mod.repository_readback, org_contract=context["org_contract"]))
     except readback_mod.ReadbackRefused as exc:
-        raise SelfClosureRefused(exc.failed_predicate, exc.detail) from None
+        raise _readback_refusal(exc) from None
     if not any(item["receipt_sha256"] == repo_digest for item in repository["chain"]):
         raise SelfClosureRefused(
             "SELF_CLOSURE_REPOSITORY_RECEIPT_IS_IN_THE_CHAIN", str(repo_digest))
@@ -630,6 +734,8 @@ def verify_closure(location: str, closure_result: Mapping[str, Any], *,
         "communication_id_on_organization_receipt": True,
         "communication_id_on_repository_receipt": True,
         "self_closure_extends_published_chain": True,
+        "readback_repository_namespace": repository_namespace,
+        "readback_org_contract": str(contract_path) if contract_path is not None else "GIVEN",
         "authority_effect": "NONE_READBACK_ONLY",
     })
     return verified
@@ -656,7 +762,11 @@ def main() -> int:
     parser.add_argument("--verify-self-closure", action="store_true",
                         help="read a self-closure back from a ledger location")
     parser.add_argument("--location", help="ledger locator, e.g. git+<repo>#<ref>")
-    parser.add_argument("--repository-namespace")
+    parser.add_argument("--repository-namespace",
+                        help="repository ledger namespace; forwarded to the readback")
+    parser.add_argument("--org-contract", type=Path, default=None,
+                        help="org contract the readback is given; default: <consumer-root or this "
+                             "checkout>/" + ORG_CONTRACT_RELATIVE)
     parser.add_argument("--closure", type=Path, help="closure result JSON to read back")
     parser.add_argument("--ledger-component", type=Path, default=None,
                         help="root the ledger writers load from (.stegverse/transition-ledger/emit.py, "
@@ -684,10 +794,12 @@ def main() -> int:
                 raise SelfClosureRefused(
                     "SELF_CLOSURE_READBACK_INPUTS_PRESENT",
                     "--location, --repository-namespace, and --closure are required")
+            contract, contract_path = load_org_contract(args.org_contract)
             result = verify_closure(
                 args.location,
                 json.loads(args.closure.read_text(encoding="utf-8")),
-                repository_namespace=args.repository_namespace)
+                repository_namespace=args.repository_namespace, org_contract=contract)
+            result["readback_org_contract"] = str(contract_path)
             code = 0
         elif args.self_close:
             if args.registry is None:
