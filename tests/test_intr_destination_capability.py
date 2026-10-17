@@ -20,6 +20,7 @@ import importlib.util
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -35,6 +36,21 @@ ADDRESS = "stegverse-org." + PROFILE_ID
 PAYLOAD_SCHEMA = "stegverse.org-intr-destination-diagnostic/v1"
 PEER = "StegVerse-Labs"
 MANIFEST_PROFILE = "sdk-manifest-ingress"
+THIS = "StegVerse-org"
+CONSTRAINT = "CONSTRAINT_VARIABLE"
+DISPOSITION_ROLE = "TRANSITION_EVIDENCE_ONLY"
+CONSTRAINT_FIELDS = (
+    "routing_authority_constraint",
+    "admission_authority_constraint",
+    "execution_authority_constraint",
+    "time_constraint",
+)
+
+
+def assert_constraints(test, record):
+    for name in CONSTRAINT_FIELDS:
+        test.assertEqual(record[name], CONSTRAINT, name)
+    test.assertEqual(record["disposition_role"], DISPOSITION_ROLE)
 
 
 def _module(name, relative):
@@ -257,7 +273,7 @@ class RedirectedLedgers(unittest.TestCase):
 
 
 class OperationReceiptTests(RedirectedLedgers):
-    def test_a_diagnostic_is_acknowledged_at_both_ledger_levels_and_grants_nothing(self):
+    def test_a_diagnostic_is_acknowledged_at_both_ledger_levels_as_evidence_only(self):
         result = ingress.receive(diagnostic(), registry=REGISTRY, packet_id="direct-diagnostic",
                                  hb_epoch=32)
         self.assertEqual(result["disposition"], "ALLOW", result.get("detail"))
@@ -267,10 +283,9 @@ class OperationReceiptTests(RedirectedLedgers):
         self.assertIs(result["organization_receipt_observed"], True)
         self.assertIs(result["organization_receipt_preserves_repository_receipt"], True)
         self.assertEqual(result["authority_effect"], "NONE_DIAGNOSTIC_ACK_ONLY")
-        for flag in ("grants_routing_authority", "grants_admission_authority",
-                     "grants_execution_authority", "selects_processing", "purpose_specific_route",
-                     "standing_rechecked_here"):
+        for flag in ("selects_processing", "purpose_specific_route", "standing_rechecked_here"):
             self.assertIs(result[flag], False, flag)
+        assert_constraints(self, result)
         repository, = self.receipts("STEGVERSE_REPO_LEDGER_ROOT",
                                     "stegverse.repo-transition-receipt/v1", OPERATION_ID)
         self.assertEqual(repository["evidence"]["profile_id"], PROFILE_ID)
@@ -445,6 +460,179 @@ class AddressedAndClosedTests(RedirectedLedgers):
                                            egress.CLOSED_CLASS)), 1)
         self.assertTrue(self.receipts("STEGVERSE_ORG_LEDGER_ROOT",
                                       "stegverse.organization-transition-receipt/v1"))
+
+
+class DiagnosticSelfClosureTests(RedirectedLedgers):
+    """A self-closure records both receipts on supplied temporary ledgers.
+
+    Nothing in this class is an authentic production receipt, and nothing here
+    is a live peer. The temporary chain only shows that the closure appends
+    and that a readback can see ``communication_id``.
+    """
+
+    def test_a_self_closure_records_communication_id_on_both_receipts(self):
+        before = (ROOT / "org-boundary/registry/federation.json").read_bytes()
+        result = ingress.closure(
+            "self-close-comm-001", registry=REGISTRY, packet_id="self-close-packet-001",
+            hb_epoch=32)
+        self.assertEqual((ROOT / "org-boundary/registry/federation.json").read_bytes(), before)
+        self.assertEqual(result["schema"], ingress.CLOSURE_SCHEMA)
+        self.assertEqual(result["disposition"], "ALLOW", result.get("detail"))
+        self.assertIs(result["self_closure"], True)
+        self.assertIs(result["peer_enumerated"], False)
+        self.assertEqual(result["addressed_service"], ADDRESS)
+        self.assertEqual(result["communication_id"], "self-close-comm-001")
+        self.assertIs(result["communication_acknowledged"], True)
+        assert_constraints(self, result)
+        repository, = self.receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1", OPERATION_ID)
+        self.assertEqual(repository["evidence"]["communication_id"], "self-close-comm-001")
+        matched = [record for record in self.receipts(
+            "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1")
+            if record.get("repo_receipt_sha256") == repository["receipt_sha256"]]
+        self.assertEqual(len(matched), 1)
+        self.assertEqual(matched[0]["boundary_evidence"]["communication_id"], "self-close-comm-001")
+
+    def test_a_replay_of_the_same_self_closure_does_not_mint_a_second_pair(self):
+        first = ingress.closure(
+            "self-close-replay", registry=REGISTRY, packet_id="self-close-replay-packet",
+            hb_epoch=32)
+        second = ingress.closure(
+            "self-close-replay", registry=REGISTRY, packet_id="self-close-replay-packet",
+            hb_epoch=99)
+        self.assertIs(second["transition_replayed"], True)
+        self.assertEqual(first["organization_receipt_sha256"], second["organization_receipt_sha256"])
+        self.assertEqual(len(self.receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1", OPERATION_ID)), 1)
+
+    def test_a_blank_communication_id_writes_nothing(self):
+        with self.assertRaises(ingress.SelfClosureRefused) as refused:
+            ingress.closure(" ", registry=REGISTRY, packet_id="self-close-blank", hb_epoch=32)
+        self.assertEqual(refused.exception.failed_predicate, "COMMUNICATION_ID_REQUIRED")
+        self.assertEqual(self.receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1"), [])
+        self.assertEqual(self.receipts(
+            "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1"), [])
+
+    def test_a_registry_that_does_not_serve_the_address_writes_nothing(self):
+        with self.assertRaises(ingress.SelfClosureRefused) as refused:
+            ingress.closure(
+                "self-close-unserved",
+                registry={"organization": THIS, "services": []},
+                packet_id="self-close-unserved", hb_epoch=32)
+        self.assertEqual(refused.exception.failed_predicate,
+                         "THIS_ORGANIZATION_SERVES_INTR_DESTINATION")
+        self.assertEqual(self.receipts(
+            "STEGVERSE_ORG_LEDGER_ROOT", "stegverse.organization-transition-receipt/v1"), [])
+
+    def test_self_closure_fast_forwards_an_existing_git_ledger_and_reads_back(self):
+        # Supplied temporary git ref. Not the published organization ledger,
+        # and not an authentic production receipt.
+        repo = Path(self._work.name) / "ledger"
+        subprocess.check_call(["git", "init", "-q", str(repo)])
+        ref = "refs/stegverse/organization-ledger"
+        namespace = "repository-ledger/" + THIS + "/.github"
+        org_root = "git+" + str(repo) + "#" + ref
+        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = org_root
+        os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = org_root + ":" + namespace
+        first = ingress.closure(
+            "git-close-001", registry=REGISTRY, packet_id="git-close-packet-001", hb_epoch=40)
+        tip_before = subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", ref], text=True).strip()
+        count_before = int(subprocess.check_output(
+            ["git", "-C", str(repo), "rev-list", "--count", ref], text=True))
+        second = ingress.closure(
+            "git-close-002", registry=REGISTRY, packet_id="git-close-packet-002", hb_epoch=41)
+        tip_after = subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", ref], text=True).strip()
+        count_after = int(subprocess.check_output(
+            ["git", "-C", str(repo), "rev-list", "--count", ref], text=True))
+        subprocess.check_call(
+            ["git", "-C", str(repo), "merge-base", "--is-ancestor", tip_before, tip_after])
+        self.assertGreater(count_after, count_before)
+        self.assertNotEqual(first["organization_receipt_sha256"],
+                            second["organization_receipt_sha256"])
+        replay = ingress.closure(
+            "git-close-002", registry=REGISTRY, packet_id="git-close-packet-002", hb_epoch=77)
+        self.assertIs(replay["transition_replayed"], True)
+        self.assertEqual(subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", ref], text=True).strip(), tip_after)
+        fresh = Path(self._work.name) / "readback.git"
+        subprocess.check_call(["git", "init", "-q", "--bare", str(fresh)])
+        subprocess.check_call(
+            ["git", "--git-dir", str(fresh), "fetch", "-q", str(repo), "+" + ref + ":" + ref])
+        verified = ingress.verify_closure(
+            "git+" + str(fresh) + "#" + ref, second, repository_namespace=namespace)
+        digests = [item["receipt_sha256"] for item in verified["chain"]]
+        self.assertIn(first["organization_receipt_sha256"], digests)
+        self.assertIn(second["organization_receipt_sha256"], digests)
+        self.assertEqual(verified["self_closure_communication_id"], "git-close-002")
+        self.assertIs(verified["communication_id_on_organization_receipt"], True)
+        self.assertIs(verified["communication_id_on_repository_receipt"], True)
+        self.assertIs(verified["self_closure_extends_published_chain"], True)
+        self.assertEqual(verified["head_receipt_sha256"], second["organization_receipt_sha256"])
+        fresh_tip = subprocess.check_output(
+            ["git", "--git-dir", str(fresh), "rev-parse", ref], text=True).strip()
+        self.assertEqual(fresh_tip, tip_after)
+        subprocess.check_call(
+            ["git", "--git-dir", str(fresh), "merge-base", "--is-ancestor", tip_before, fresh_tip])
+
+
+class LedgerWriterSelfClosureModeTests(unittest.TestCase):
+    """The writer's self-closure mode appends, pushes fast-forward only, and reads back.
+
+    This inspects the workflow text. It does not dispatch the workflow and it
+    does not write the published ledger ref.
+    """
+
+    def text(self):
+        return (ROOT / ".github/workflows/organization-ledger-transition.yml").read_text(
+            encoding="utf-8")
+
+    def step(self, name):
+        return self.text().split("      - name: " + name + "\n")[1].split("      - name:")[0]
+
+    def test_the_self_closure_mode_matches_the_other_writers(self):
+        text = self.text()
+        self.assertIn("workflow_dispatch:", text)
+        for name in ("mode:", "communication_id:", "hb_epoch:", "- self-closure"):
+            self.assertIn(name, text)
+        self.assertIn("group: organization-ledger", text)
+        self.assertIn("cancel-in-progress: false", text)
+        self.assertIn("contents: write", text)
+        self.assertIn("HB_EPOCH: ${{ github.event.inputs.hb_epoch }}", text)
+        close = self.step("Close an intr-destination diagnostic against this organization")
+        self.assertIn("if: env.MODE == 'self-closure'", close)
+        self.assertIn("DISPATCH_HB_EPOCH_INVALID", close)
+        self.assertIn('--hb-epoch "$HB_EPOCH"', close)
+        self.assertIn("--self-close", close)
+        self.assertNotIn("federation.json", close)
+        self.assertNotIn("capability_destination_bindings", close)
+        readback = self.step("Read the intr-destination self-closure back from a fresh fetch")
+        self.assertIn("if: env.MODE == 'self-closure'", readback)
+        self.assertIn("--verify-self-closure", readback)
+        for name in ("Select committed transition requests",
+                     "Receive each request and append to the repository and organization ledgers",
+                     "Publish the designated mesh ref (fast-forward only)",
+                     "Read the organization and repository ledgers back from a fresh fetch"):
+            self.assertIn("if: env.MODE != 'self-closure'", self.step(name), name)
+        # One fast-forward push publishes the ledger ref in either mode.
+        self.assertEqual(text.count('git push origin "$LEDGER_REF:$LEDGER_REF"'), 1)
+        self.assertNotIn("if:", self.step("Publish the ledger ref (fast-forward only)").split("run:")[0])
+        self.assertLess(text.index("Close an intr-destination diagnostic against this organization"),
+                        text.index("- name: Publish the ledger ref (fast-forward only)"))
+        self.assertLess(text.index("- name: Publish the ledger ref (fast-forward only)"),
+                        text.index("Read the intr-destination self-closure back from a fresh fetch"))
+        self.assertNotIn("--force", text)
+        prohibited = "gr" + "ant"
+        self.assertNotIn(prohibited, text.lower())
+        self.assertNotIn(prohibited, (
+            ROOT / "resident-runtime/intr_destination_ingress.py").read_text(encoding="utf-8").lower())
+
+    def test_a_request_dispatch_still_names_a_committed_request(self):
+        text = self.step("Select committed transition requests")
+        self.assertIn("DISPATCH_REQUEST_REQUIRED", text)
+        self.assertIn("DISPATCH_REQUEST_NOT_COMMITTED", text)
 
 
 if __name__ == "__main__":
