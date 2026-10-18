@@ -30,6 +30,8 @@ REPO = "stegverse.repo-transition-receipt/v1"
 # The emitter requires a digest in every *_sha256 field.
 STATE_BEFORE = "sha256:" + "a" * 64
 STATE_AFTER = "sha256:" + "b" * 64
+# A supplied heartbeat epoch: an append without one is refused (PR-1c).
+HB_EPOCH = 4128
 
 spec = importlib.util.spec_from_file_location("org_append_role", EMITTER)
 module = importlib.util.module_from_spec(spec)
@@ -376,7 +378,7 @@ class EmitterAdmissionTests(unittest.TestCase):
                     module.append({"schema": "stegverse.not-consumed/v1",
                                    "transition_id": "x"},
                                   "ORGANIZATION_STATE_TRANSITION",
-                                  STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                                  STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
             self.assertFalse(root.exists())
 
 
@@ -386,7 +388,7 @@ class EmitterAppendTests(unittest.TestCase):
             with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
                 receipt = canonical_receipt(1)
                 record = module.append(receipt, "ORGANIZATION_STATE_TRANSITION",
-                                       STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                                       STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
                 self.assertEqual(record["schema"],
                                  "stegverse.organization-transition-receipt/v1")
                 self.assertEqual(record["organization"], ORGANIZATION)
@@ -402,10 +404,10 @@ class EmitterAppendTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
                 first = module.append(repo_receipt(1), "REPO_STATE_PROPAGATION",
-                                      STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                                      STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
                 second = module.append(canonical_receipt(2),
                                        "ORGANIZATION_STATE_TRANSITION",
-                                       STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                                       STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
                 self.assertIsNone(first["previous_receipt_sha256"])
                 self.assertEqual(second["previous_receipt_sha256"],
                                  first["receipt_sha256"])
