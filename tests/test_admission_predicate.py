@@ -19,6 +19,7 @@ sys.modules[spec.name] = ap
 spec.loader.exec_module(ap)
 
 SIX = set(ap.SIX_FIELDS)
+TARGET = "StegVerse-Labs/.github"  # the synthetic receipts read this repository's ledger (data/canonical-task-registry.json)
 SESSION = "grok:p4-maintenance-lane/a65c67bf"
 LEDGER = "a5bb54d81893b392a3ce28182986fc39857807e1"
 
@@ -90,7 +91,7 @@ class Fixture:
             rec = ["--base-state-receipt", str(path)]
         ep = ["--hb-epoch", epoch] if epoch is not None else []
         exp = [x for e in expect for x in ("--expect", e)]
-        ident = ["--repository", "Example/lane", "--base-registry-generation", "319", "--base-ledger-head", LEDGER,
+        ident = ["--repository", TARGET, "--base-registry-generation", "319", "--base-ledger-head", LEDGER,
                  "--current-registry-generation", "319", "--current-ledger-head", LEDGER] if identity else []
         return ap.parse(["--clone", str(self.clone), "--branch", "lane/x", "--session-id", session,
                          *rec, *ep, "--check-runs", checks or self.checks({"a": "success"}), *exp,
@@ -137,7 +138,7 @@ class AdmissionPredicateTest(unittest.TestCase):
         self.assertEqual([{"session": SESSION, "evidence_class": "DECLARED"}] * 3, [e["writer_session"] for e in out["content"]])
         self.assertEqual({"path", "blob_digest", "writer_session", "deleted"}, set(out["content"][0]))
         # P1 rule: sha256 over the change_id canonical bytes of {target_repository, base_ref, content-identity}
-        ident = {"target_repository": "Example/lane",
+        ident = {"target_repository": TARGET,
                  "base_ref": {"registry_generation": 319, "ledger_head": LEDGER},
                  "content": sorted(({"path": e["path"], "blob_digest": e["blob_digest"], "deleted": e["deleted"]}
                                     for e in out["content"]), key=lambda e: e["path"])}
@@ -401,7 +402,7 @@ class ChangeIdentityInputTest(unittest.TestCase):
 
     def test_missing_registry_generation_or_ledger_head_fails_closed(self) -> None:
         for extra in ((), ("--base-registry-generation", "319", "--base-ledger-head", "XYZ")):
-            p, ident = ap.p_identity(self.f.args("--repository", "Example/lane", *extra, identity=False), self.CONTENT)
+            p, ident = ap.p_identity(self.f.args("--repository", TARGET, *extra, identity=False), self.CONTENT)
             self.assertEqual("SV_CHANGE_BASE_UNBOUND", p["failure_code"])
             self.assertEqual("FAIL_CLOSED", p["disposition"])
             self.assertTrue(SIX <= p.keys())
@@ -421,7 +422,7 @@ HEAD_RECEIPT_KEY = "receipts/" + "3" * 64 + ".json"
 
 
 def readback_receipt(bound: str, generation: int = 319, ledger: str = LEDGER, epoch: str | None = None,
-                     legacy: bool = False) -> dict:
+                     legacy: bool = False, repository: str = "StegVerse-Labs/.github") -> dict:
     """A receipt in the pinned #3266 producer's shape for the fixture's base commit, sealed with the same rule: an observed
     epoch is sealed with hb_epoch_source {ledger_head, receipt, field} and the head receipt is in sources.
     legacy=True gives the pre-641f4b03 shape (caller-supplied epoch, no hb_epoch_source)."""
@@ -435,6 +436,7 @@ def readback_receipt(bound: str, generation: int = 319, ledger: str = LEDGER, ep
         if epoch is None:
             body["open_questions"] = [{"id": "JD-P4-3", "slot": "hb_epoch", "status": "OPEN"}]
         return ap.seal(body)
+    body["repository"] = repository  # the target repository's own ledger (CHANGE_BINDS_TARGET_REPOSITORY_LEDGER)
     body["hb_epoch_source"] = None
     if epoch is not None:
         body["sources"].append({"file": "refs/stegverse/organization-ledger:" + HEAD_RECEIPT_KEY, "blob_sha": "4" * 40})
@@ -456,7 +458,7 @@ class BaseStateReceiptTest(unittest.TestCase):
         return str(path)
 
     def evaluate(self, receipt: dict, *extra: str, epoch: Any = "auto") -> dict:
-        return ap.evaluate(self.f.args("--repository", "Example/lane", *extra, epoch=epoch, identity=False, receipt=receipt))
+        return ap.evaluate(self.f.args("--repository", TARGET, *extra, epoch=epoch, identity=False, receipt=receipt))
 
     def test_tvc_fixture_receipt_verifies_as_tvc_binds_it(self) -> None:
         receipt = json.loads(BASE_STATE_FIXTURE.read_text(encoding="utf-8"))
@@ -509,7 +511,7 @@ class BaseStateReceiptTest(unittest.TestCase):
                          out["base_ref"])
         self.assertEqual(319, out["current_base"]["registry_generation"])
         self.assertIsNotNone(out["change_digest"])
-        flags = ap.evaluate(self.f.args("--repository", "Example/lane"))
+        flags = ap.evaluate(self.f.args("--repository", TARGET))
         self.assertEqual(flags["change_digest"], out["change_digest"])  # same identity as the explicit flags
         agreeing = self.evaluate(readback_receipt(self.f.base, epoch="1000"), "--base-registry-generation", "319", "--base-ledger-head", LEDGER)
         self.assertEqual("ALLOW", agreeing["disposition"])
@@ -714,6 +716,38 @@ class BaseStateReceiptTest(unittest.TestCase):
         src = Path(ap.__file__).read_text(encoding="utf-8")
         for ref in stale:
             self.assertNotIn(ref, src)
+
+    def test_change_binds_target_repository_ledger(self) -> None:
+        """P1 #3264 @76407068 CHANGE_BINDS_TARGET_REPOSITORY_LEDGER: the readback must have read the target repository's own
+        ledger. An org target (StegVerse-org/.github) with the real 2ba0e329 Labs readbacks (ALLOW, DENY) is FAIL_CLOSED
+        HB_EPOCH_SOURCE_UNOBSERVED whatever is supplied; no --repository is UNKNOWN (P1: target_repository or UNKNOWN), also
+        FAIL_CLOSED; the matching repository still reaches ALLOW."""
+        d = BASE_STATE_FIXTURE.parent
+        for name in ("labs-main-978b8880-producer-2ba0e329.json", "labs-main-978b8880-producer-2ba0e329-hb-epoch-469411751-deny.json"):
+            real = json.loads((d / name).read_text(encoding="utf-8"))
+            self.assertEqual("StegVerse-Labs/.github", real["repository"])
+            receipt = ap.seal(dict({k: v for k, v in real.items() if k != "result_sha256"}, bound_main_commit=self.f.base))
+            for flag in (None, "469411750", "469411751", "x", "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"):
+                with self.subTest(name=name, flag=flag):
+                    out = self.evaluate(receipt, "--repository", "StegVerse-org/.github", epoch=flag)
+                    hb = pred(out, "HB_EPOCH_SUPPLIED")
+                    self.assertTrue(pred(out, "BASE_STATE_RECEIPT_BOUND")["holds"])
+                    self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED", "HB_EPOCH_SUPPLIED"),
+                                     (out["disposition"], out["failure_code"], out["failed_predicate"]))
+                    self.assertEqual("the readback read 'StegVerse-Labs/.github''s ledger, not the target repository "
+                                     "'StegVerse-org/.github''s own ledger ref", hb["detail"])
+                    self.assertEqual(("StegVerse-org/.github", "StegVerse-Labs/.github", "a5bb54d81893b392a3ce28182986fc39857807e1"),
+                                     (hb["target_repository"], hb["readback_repository"], hb["ledger_head"]))
+                    self.assertTrue(SIX <= hb.keys() and all(hb[f] for f in SIX))
+                    self.assertIsNone(out["hb_epoch"])
+            out = ap.evaluate(self.f.args(identity=False, receipt=receipt, epoch=None))
+            self.assertEqual((ap.UNKNOWN, "HB_EPOCH_SOURCE_UNOBSERVED"),
+                             (pred(out, "HB_EPOCH_SUPPLIED")["target_repository"], pred(out, "HB_EPOCH_SUPPLIED")["failure_code"]))
+            ok = self.evaluate(receipt, "--repository", "StegVerse-Labs/.github", epoch=None)
+            self.assertEqual(("ALLOW", False), (pred(ok, "HB_EPOCH_SUPPLIED")["disposition"], pred(ok, "HB_EPOCH_SUPPLIED")["cross_checked"]))
+        full = self.evaluate(ap.seal(dict({k: v for k, v in json.loads((d / "labs-main-978b8880-producer-2ba0e329.json").read_text(
+            encoding="utf-8")).items() if k != "result_sha256"}, bound_main_commit=self.f.base)), "--repository", "StegVerse-Labs/.github", epoch=None)
+        self.assertEqual(("ALLOW", "admission-input-ready", 469411750), (full["disposition"], full["admission_input"], full["hb_epoch"]))
 
     def test_bad_hb_epoch_source_is_source_unobserved(self) -> None:
         """P1 @ae8b105d: an hb_epoch_source not naming $.hb_reference.epoch at base_ref.ledger_head, a receipt that is not

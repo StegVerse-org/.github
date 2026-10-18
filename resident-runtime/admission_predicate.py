@@ -554,10 +554,12 @@ HB_EPOCH_NOT_CROSS_CHECKED = "HB_EPOCH_NOT_CROSS_CHECKED"  # P1 sentinel: the op
 # P1 SUPPLIED_EPOCH_UNOBSERVED_VALUES (None, "", "null", UNKNOWN): explicit unobserved values -> FAIL_CLOSED, never DENY.
 # The CLI cannot pass JSON null; an omitted --hb-epoch is HB_EPOCH_NOT_CROSS_CHECKED, never None.
 SUPPLIED_EPOCH_UNOBSERVED_VALUES = (None, "", "null", UNKNOWN)
-P1_REFERENCE = {"repository": "StegVerse-Labs/.github", "pull_request": 3264, "ref": "ae8b105d7504565665bf6918367517ffdcb481fd",
-                "path": "resident-runtime/sv_work_items.py", "git_blob_sha": "446889c5114c416f34ee4ceadd5c3492c821df50",
+LEDGER_BINDING_INVARIANT = "CHANGE_BINDS_TARGET_REPOSITORY_LEDGER"  # P1: base_ref.ledger_head is the TARGET repository's own ledger head
+P1_REFERENCE = {"repository": "StegVerse-Labs/.github", "pull_request": 3264, "ref": "764070689f0dd793c987d27d7cbf3252f37a6b47",
+                "path": "resident-runtime/sv_work_items.py", "git_blob_sha": "625b12f7c637b030eccc2fea03d745d12e4d36d8",
                 "function": "verify_admission_hb_epoch",
-                "supplied_epoch_rule": "org-kernel/kernel.py::supplied_epoch_failure (source segment sha256 726248a5)"}
+                "supplied_epoch_rule": "org-kernel/kernel.py::supplied_epoch_failure (source segment sha256 726248a5)",
+                "ledger_binding": LEDGER_BINDING_INVARIANT + " (evaluate_admission passes target_repository or UNKNOWN)"}
 
 
 def supplied_epoch_failure(value: Any, reference: Any = None) -> tuple[str, str] | None:
@@ -584,9 +586,11 @@ def supplied_epoch_failure(value: Any, reference: Any = None) -> tuple[str, str]
 
 
 def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
-    """HB_EPOCH_SUPPLIED = P1 verify_admission_hb_epoch (StegVerse-Labs/.github#3264 @ae8b105d, sv_work_items.py blob 446889c5)
+    """HB_EPOCH_SUPPLIED = P1 verify_admission_hb_epoch (StegVerse-Labs/.github#3264 @76407068, sv_work_items.py blob 625b12f7)
     over the receipt BASE_STATE_RECEIPT_BOUND verified (schema, seal, ALLOW or DENY HB_EPOCH_MISMATCH, bound commit/flags):
-      FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED: no bound receipt; fixture_only; no hb_epoch_source naming $.hb_reference.epoch
+      FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED: no bound receipt; fixture_only; the readback's repository is not the target
+        repository (--repository, else UNKNOWN; CHANGE_BINDS_TARGET_REPOSITORY_LEDGER: an org change never binds a Labs
+        ledger); no hb_epoch_source naming $.hb_reference.epoch
         at base_ref.ledger_head; hb_epoch_source.receipt not receipts/<hex>.json (P4 also requires that receipt in sources);
         a sealed hb_epoch slot failing 726248a5 (with hb_epoch_source as the reference); or an explicit --hb-epoch of
         '', 'null' or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED (checked before 726248a5). Row detail: {ledger_head, detail}.
@@ -596,9 +600,10 @@ def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
       ALLOW {hb_epoch, ledger_head, cross_checked: true}: the cross-check held."""
     bound = (receipt_row or {}).get("receipts", {}).get("base", {}).get("binds") if receipt_row and receipt_row["holds"] else None
     head = bound.get("ledger_head") if bound else None
+    target = a.repository or UNKNOWN  # P1 evaluate_admission: target_repository or UNKNOWN
     supplied = HB_EPOCH_NOT_CROSS_CHECKED if a.hb_epoch is None else a.hb_epoch
     r = row("HB_EPOCH_SUPPLIED", invariant=HB_EPOCH_INVARIANT, aligned_to=P1_REFERENCE, base_state_producer=BASE_STATE_PRODUCER,
-            ledger_head=head,
+            ledger_head=head, target_repository=target, readback_repository=bound.get("repository") if bound else None,
             receipt_hb_epoch=bound.get("hb_epoch") if bound else None,
             receipt_hb_epoch_source=bound.get("hb_epoch_source") if bound else None,
             receipt_result_sha256=bound.get("result_sha256") if bound else None,
@@ -616,6 +621,9 @@ def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
         return unobserved("no verified --base-state-receipt")
     if bound.get("fixture_only"):
         return unobserved("a fixture_only readback counts only in fixture_mode (P4 has none)")
+    if bound.get("repository") != target:
+        # CHANGE_BINDS_TARGET_REPOSITORY_LEDGER: the base is the target repository's own refs/stegverse/organization-ledger
+        return unobserved("the readback read %r's ledger, not the target repository %r's own ledger ref" % (bound.get("repository"), target))
     src = bound.get("hb_epoch_source")
     if not isinstance(src, Mapping) or src.get("ledger_head") != head or src.get("field") != HB_EPOCH_SOURCE_FIELD:
         return unobserved(f"no hb_epoch_source naming {HB_EPOCH_SOURCE_FIELD} at the bound head")
