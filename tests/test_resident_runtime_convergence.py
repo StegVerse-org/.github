@@ -77,7 +77,8 @@ class Fixture(unittest.TestCase):
         self.target = self.tmp / "target"
         self.out = self.tmp / "out"
 
-    def manifest(self, before: dict[str, str] | None = None, reconciled=()) -> Path:
+    def manifest(self, before: dict[str, str] | None = None, reconciled=(), extension=None,
+                 **target_fields) -> Path:
         files = {}
         for role, path in FILES.items():
             data = (self.base / path).read_bytes()
@@ -96,7 +97,12 @@ class Fixture(unittest.TestCase):
             "test_modules": ["tests.test_fx"],
             "targets": {"Fixture-Org": {"repository": "Fixture-Org/.github", "commit": "1" * 40,
                                         "before_sha256": before,
-                                        "reconciled_hunk_sha256": list(reconciled)}},
+                                        "reconciled_hunk_sha256": reconciled if isinstance(reconciled, dict)
+                                        else list(reconciled),
+                                        **({"extension": extension} if extension else {}),
+                                        **target_fields}},
+            "baseline_identity_strings": ["StegVerse-org"],
+            "pending_close_port_traceback_patterns": [r'egress\.py", line \d+, in close$'],
         }
         path = self.tmp / "manifest.json"
         path.write_text(json.dumps(manifest), encoding="utf-8")
@@ -144,9 +150,26 @@ class ConvergenceTransition(Fixture):
         refusal = next(r for r in result["refusals"] if r["failure_code"] == conv.ORG_SPECIFIC)
         self.assertIn("fixture_org_bilateral_match", refusal["detail"]["new_top_level_definitions"])
         hunk = next(h for h in result["hunks"] if h["class"] == conv.ORG_SPECIFIC_HUNK)
-        # Reconciling that exact hunk, by its digest, is what lets convergence proceed.
+        # A bare digest is not a reconciliation: it must say ported or superseded, why, and on what evidence.
         result = self.run_converge(self.manifest(reconciled=[hunk["hunk_sha256"]]))
+        self.assertIn(conv.RECONCILIATION_INVALID, self.codes(result))
+        # Ported is only ported when the extension carries it.
+        entry = {hunk["hunk_sha256"]: {"decision": "ported", "reason": "org-only definition",
+                                       "evidence": "target L13-L15"}}
+        result = self.run_converge(self.manifest(reconciled=entry))
+        self.assertIn(conv.RECONCILIATION_INVALID, self.codes(result))
+        extension = {"module_symbols": ["fixture_org_bilateral_match"], "module_imports": []}
+        extension["module_sha256"] = digest(conv.build_extension(
+            (self.target / FILES["module"]).read_text(), "Fixture-Org", "1" * 40,
+            extension["module_symbols"], []).decode())
+        result = self.run_converge(self.manifest(reconciled=entry, extension=extension))
         self.assertEqual(result["disposition"], conv.ALLOW, result["refusals"])
+        converged = (self.out / "Fixture-Org/converged" / FILES["module"]).read_text()
+        # The org behaviour survives, after the untouched baseline bytes.
+        self.assertIn("def fixture_org_bilateral_match", converged)
+        module = next(f for f in result["files"] if f["role"] == "module")
+        self.assertEqual(module["baseline_prefix_normalized_sha256"], module["baseline_sha256"])
+        self.assertNotEqual(module["after_normalized_sha256"], module["baseline_sha256"])
 
     def test_apply_never_writes_across_an_unreconciled_refusal(self):
         extra = MODULE + '\n\ndef fixture_org_only():\n    return 1\n'
@@ -204,6 +227,88 @@ class ConvergenceTransition(Fixture):
         result = conv.converge(self.manifest(), "Nobody", self.target, self.base, self.out)
         self.assertEqual(self.codes(result), [conv.ORG_NOT_DECLARED])
         self.assertSixFields(result)
+
+
+class Reconciliation(Fixture):
+    def setUp(self):
+        super().setUp()
+        write(self.base, {"org-runtime/interlock-intr.json": json.dumps(
+            {"egress": {"rule": {"neutral": True}, "named": {"owner": "StegVerse-org/.github"}}}, indent=2) + "\n"})
+        write(self.target, {FILES["module"]: MODULE.replace("StegVerse-org", "Fixture-Org"),
+                            "tests/__init__.py": "",
+                            "org-runtime/interlock-intr.json": json.dumps({"egress": {}}, indent=2) + "\n"})
+
+    def test_an_absent_closure_file_is_added_as_pinned_baseline_bytes(self):
+        result = self.run_converge(self.manifest(closure_additions=[{"path": "lib/dep.py", "sha256": digest(DEP)}]))
+        self.assertEqual(result["disposition"], conv.ALLOW, result["refusals"])
+        self.assertEqual(result["closure_added"][0]["path"], "lib/dep.py")
+        self.assertEqual((self.out / "Fixture-Org/converged/lib/dep.py").read_text(), DEP)
+
+    def test_a_closure_addition_never_overwrites_an_org_file(self):
+        write(self.target, {"lib/dep.py": "VALUE = 7  # the organization's own\n"})
+        result = self.run_converge(self.manifest(closure_additions=[{"path": "lib/dep.py", "sha256": digest(DEP)}]))
+        self.assertIn(conv.CLOSURE_CONFLICT, self.codes(result))
+        self.assertSixFields(result)
+
+    def test_a_neutral_baseline_config_value_is_added_where_absent(self):
+        value = {"neutral": True}
+        result = self.run_converge(self.manifest(
+            closure_additions=[{"path": "lib/dep.py", "sha256": digest(DEP)}],
+            config_additions=[{"path": "org-runtime/interlock-intr.json", "pointer": "/egress/rule",
+                               "value_sha256": conv.sha(value)}]))
+        self.assertEqual(result["disposition"], conv.ALLOW, result["refusals"])
+        written = json.loads((self.out / "Fixture-Org/converged/org-runtime/interlock-intr.json").read_text())
+        self.assertEqual(written["egress"]["rule"], value)
+
+    def test_a_config_value_naming_the_baseline_organization_is_undecidable(self):
+        result = self.run_converge(self.manifest(
+            config_additions=[{"path": "org-runtime/interlock-intr.json", "pointer": "/egress/named",
+                               "value_sha256": conv.sha({"owner": "StegVerse-org/.github"})}]))
+        self.assertIn(conv.CONFIG_UNDECIDABLE, self.codes(result))
+        # The declared parameter makes it decidable.
+        result = self.run_converge(self.manifest(
+            closure_additions=[{"path": "lib/dep.py", "sha256": digest(DEP)}],
+            config_additions=[{"path": "org-runtime/interlock-intr.json", "pointer": "/egress/named",
+                               "parameterized_fields": {"owner": "{repository}"},
+                               "value_sha256": conv.sha({"owner": "Fixture-Org/.github"})}]))
+        self.assertEqual(result["disposition"], conv.ALLOW, result["refusals"])
+
+    def test_an_existing_org_config_value_is_never_overwritten(self):
+        write(self.target, {"org-runtime/interlock-intr.json": json.dumps({"egress": {"rule": {"neutral": False}}})})
+        result = self.run_converge(self.manifest(
+            config_additions=[{"path": "org-runtime/interlock-intr.json", "pointer": "/egress/rule",
+                               "value_sha256": conv.sha({"neutral": True})}]))
+        self.assertIn(conv.CONFIG_UNDECIDABLE, self.codes(result))
+        self.assertEqual(json.loads((self.target / "org-runtime/interlock-intr.json").read_text())["egress"]["rule"],
+                         {"neutral": False})
+
+    def test_a_declared_undecidable_key_is_a_six_field_refusal(self):
+        result = self.run_converge(self.manifest(undecidable_config_keys=[
+            {"path": "org-runtime/interlock-intr.json", "pointer": "/egress/capability_destination_bindings",
+             "reason": "routing policy is the organization's own"}]))
+        self.assertIn(conv.CONFIG_UNDECIDABLE, self.codes(result))
+        self.assertSixFields(result)
+
+
+class Attribution(unittest.TestCase):
+    def test_a_traceback_through_close_is_the_pending_intr_port(self):
+        failure = {"traceback": '  File "/t/resident-runtime/egress.py", line 9, in close\n    x()\nTypeError: x',
+                   "exception": "TypeError: x"}
+        rules = {"pending_close_port_traceback_patterns": [r'egress\.py", line \d+, in close$']}
+        self.assertEqual(conv.attribute_failure(failure, rules), "PENDING_INTR_CLOSE_PORT")
+
+    def test_a_missing_symbol_of_a_divergent_closure_file_is_named(self):
+        failure = {"traceback": "", "exception": "AttributeError: module 'rb' has no attribute 'egress_bound'"}
+        rules = {"divergent_closure": {"org-runtime/runtime_boundary.py": {"missing_baseline_symbols": ["egress_bound"]}}}
+        self.assertEqual(conv.attribute_failure(failure, rules),
+                         "DIVERGENT_CLOSURE_FILE:org-runtime/runtime_boundary.py")
+
+    def test_anything_else_is_unattributed(self):
+        self.assertEqual(conv.attribute_failure({"traceback": "", "exception": "KeyError: 'x'"}, {}), "UNATTRIBUTED")
+
+    def test_api_divergence_names_missing_symbols_and_signatures(self):
+        found = conv.api_divergence("def a(x):\n pass\ndef b():\n pass\n", "def a(x, y):\n pass\n")
+        self.assertEqual(found, {"missing_baseline_symbols": ["b"], "signature_differs": ["a"]})
 
 
 class Receipt(Fixture):

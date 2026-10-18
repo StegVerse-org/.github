@@ -84,6 +84,13 @@ TARGET_DRIFTED = "CONVERGENCE_TARGET_DRIFTED_SINCE_MANIFEST"
 ORG_SPECIFIC = "ORG_SPECIFIC_BEHAVIOUR_UNRECONCILED"
 CLOSURE_ABSENT = "BASELINE_DEPENDENCY_CLOSURE_ABSENT"
 TESTS_FAILED = "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE"
+RECONCILIATION_INVALID = "CONVERGENCE_RECONCILIATION_INCOMPLETE"
+EXTENSION_INVALID = "ORG_EXTENSION_NOT_AT_PIN"
+CLOSURE_CONFLICT = "CLOSURE_ADDITION_WOULD_OVERWRITE_AN_ORG_FILE"
+CONFIG_UNDECIDABLE = "ORG_CONFIG_KEY_UNDECIDABLE"
+CLOSE_PORT_PENDING = "INTR_CLOSE_PORT_PENDING"
+ORG_REGRESSED = "ORG_BEHAVIOUR_REGRESSED_BY_CONVERGENCE"
+CLOSURE_DIVERGENT = "BASELINE_CLOSURE_FILE_DIVERGENT"
 HB_EPOCH_NOT_SUPPLIED = "HB_EPOCH_NOT_SUPPLIED"
 HB_EPOCH_INVALID = "HB_EPOCH_INVALID"
 HB_ANCHOR_EPOCH = 32
@@ -399,6 +406,193 @@ def append_receipt(body: Mapping[str, Any], ledger_repo_root: Path) -> dict[str,
                           idempotent_on=("manifest_sha256", "disposition"))
 
 
+# --------------------------------------------------------------------- reconciliation
+
+def enclosing_symbols(source: str, first: int, last: int) -> list[str]:
+    """Top-level symbols whose source range (decorators included) overlaps [first, last]."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+    found = []
+    for node in tree.body:
+        start = min([node.lineno] + [d.lineno for d in getattr(node, "decorator_list", [])])
+        if start > last or node.end_lineno < first:
+            continue
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            found.append(node.name)
+        elif isinstance(node, ast.Assign):
+            found.extend(t.id for t in node.targets if isinstance(t, ast.Name))
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            found.append(node.target.id)
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            found.append("<import>")
+        else:
+            found.append("<statement>")
+    return found
+
+
+def reconciliation_entries(target: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    """`reconciled_hunk_sha256` as {digest: entry}; a bare list is read as undocumented entries."""
+    declared = target.get("reconciled_hunk_sha256") or {}
+    if isinstance(declared, list):
+        return {d: {} for d in declared}
+    return dict(declared)
+
+
+def build_extension(target_text: str, organization: str, commit: str, symbols: list[str],
+                    imports: list[str]) -> bytes:
+    """The declared org-specific symbols, carried byte for byte from the target, in its order.
+
+    Appended after the baseline bytes, so the baseline part of the converged
+    module is unchanged and a definition here overrides the baseline one of the
+    same name at import (module globals bind late).
+    """
+    if not symbols and not imports:
+        return b""
+    tree = ast.parse(target_text)
+    lines = target_text.splitlines(keepends=True)
+    wanted = set(symbols)
+    segments = []
+    for node in tree.body:
+        names: list[str] = []
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names = [node.name]
+        elif isinstance(node, ast.Assign):
+            names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names = [node.target.id]
+        if not wanted.intersection(names):
+            continue
+        start = min([node.lineno] + [d.lineno for d in getattr(node, "decorator_list", [])])
+        while start > 1 and lines[start - 2].lstrip().startswith("#"):
+            start -= 1  # the comment that documents the definition travels with it
+        segments.append("".join(lines[start - 1:node.end_lineno]).rstrip("\n") + "\n")
+    carried: set[str] = set()
+    for segment in segments:
+        for definition, assigned in re.findall(r"^(?:def|class)\s+(\w+)|^(\w+)\s*[:=]", segment, re.M):
+            carried.add(definition or assigned)
+    missing = wanted - carried
+    if missing:
+        raise ConvergenceRefused(EXTENSION_INVALID, "EVERY_DECLARED_EXTENSION_SYMBOL_IS_DEFINED_IN_THE_TARGET",
+                                 "remove or correct the extension symbols named in detail",
+                                 "rerun once the extension names only target-defined symbols",
+                                 detail=sorted(missing))
+    header = (
+        "\n\n# " + "-" * 75 + "\n"
+        f"# Organization extension: {organization}. Declared in\n"
+        "# resident-runtime/resident-runtime-convergence-manifest.json (targets."
+        f"{organization}.extension)\n"
+        f"# and carried byte for byte from {organization}/.github@{commit[:8]} by RESIDENT_RUNTIME_CONVERGENCE.\n"
+        "# Everything above this block is the StegVerse-org baseline, declared parameters aside.\n"
+        "# A definition here overrides the baseline definition of the same name.\n"
+        "# " + "-" * 75 + "\n"
+    )
+    body = "".join(line.rstrip("\n") + "\n" for line in imports)
+    body += "\n\n".join(segments)
+    return (header + ("\n" if imports else "") + body).encode("utf-8")
+
+
+def json_pointer_get(document: Any, pointer: str) -> tuple[bool, Any]:
+    current = document
+    for part in [p for p in pointer.split("/") if p]:
+        if not isinstance(current, dict) or part not in current:
+            return False, None
+        current = current[part]
+    return True, current
+
+
+def json_pointer_set(document: dict[str, Any], pointer: str, value: Any) -> None:
+    parts = [p for p in pointer.split("/") if p]
+    current = document
+    for part in parts[:-1]:
+        current = current.setdefault(part, {})
+    current[parts[-1]] = value
+
+
+def parse_test_failures(output: str) -> list[dict[str, Any]]:
+    """Each `ERROR:`/`FAIL:` block of unittest output, with its traceback text."""
+    blocks = re.split(r"^=+\n", output, flags=re.M)
+    failures = []
+    for block in blocks:
+        match = re.match(r"(ERROR|FAIL): (\S+) \(([^)]*)\)", block)
+        if not match:
+            continue
+        traceback = block.split("-" * 70, 1)[1] if "-" * 70 in block else block
+        traceback = traceback.split("\n" + "-" * 70, 1)[0]
+        last = [l for l in traceback.strip().splitlines() if l.strip()]
+        failures.append({"kind": match.group(1), "test": match.group(3) or match.group(2),
+                         "exception": last[-1][:300] if last else "", "traceback": traceback})
+    return failures
+
+
+def attribute_failure(failure: Mapping[str, Any], rules: Mapping[str, Any]) -> str:
+    """Which declared cause a failing test is attributed to, by its traceback alone."""
+    text = failure["traceback"]
+    for pattern in rules.get("pending_close_port_traceback_patterns") or []:
+        if re.search(pattern, text, re.M):
+            return "PENDING_INTR_CLOSE_PORT"
+    for key in rules.get("undecidable_config_keys") or []:
+        if key in text:
+            return "UNDECIDABLE_ORG_CONFIG_KEY"
+    exception = failure.get("exception") or ""
+    named = set(re.findall(r"has no attribute '(\w+)'", exception)) | set(re.findall(r"^KeyError: '(\w+)'$", exception))
+    called = set(re.findall(r"(\w+)\(\) (?:got an unexpected keyword|takes \d+|missing \d+ required)", exception))
+    for path, row in (rules.get("divergent_closure") or {}).items():
+        if named & set(row.get("missing_baseline_symbols") or []) or called & set(row.get("signature_differs") or []):
+            return "DIVERGENT_CLOSURE_FILE:" + path
+    for path in rules.get("org_owned_different") or []:
+        if path in exception:
+            return "DIVERGENT_CLOSURE_FILE:" + path  # the organization's own registry or config answers differently
+    frames = re.findall(r'^\s*File "([^"]+)", line \d+, in \w+', text, re.M)
+    for path in rules.get("different_closure_files") or []:
+        if frames and frames[-1].endswith("/" + path):
+            return "DIVERGENT_CLOSURE_FILE:" + path  # raised inside the organization's own revision of the file
+    return "UNATTRIBUTED"
+
+
+def api_divergence(baseline_source: str, target_source: str) -> dict[str, list[str]]:
+    """Top-level names a baseline closure file defines that the target's lacks, and functions whose signature differs."""
+    def table(source: str) -> dict[str, str]:
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            return {}
+        out = {}
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                out[node.name] = ast.dump(node.args, include_attributes=False)
+            elif isinstance(node, ast.ClassDef):
+                out[node.name] = "class"
+            elif isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if isinstance(t, ast.Name):
+                        out[t.id] = "value"
+        return out
+    base, target = table(baseline_source), table(target_source)
+    return {"missing_baseline_symbols": sorted(set(base) - set(target)),
+            "signature_differs": sorted(n for n in set(base) & set(target)
+                                        if base[n] not in ("class", "value") and base[n] != target[n])}
+
+
+def run_command(tree: Path, argv: list[str], timeout: int) -> dict[str, Any]:
+    with tempfile.TemporaryDirectory(prefix="convergence-ledgers-") as ledgers:
+        env = dict(os.environ)
+        env["STEGVERSE_REPO_LEDGER_ROOT"] = str(Path(ledgers) / "repo-ledger")
+        env["STEGVERSE_ORG_LEDGER_ROOT"] = str(Path(ledgers) / "org-ledger")
+        env["PYTHONDONTWRITEBYTECODE"] = "1"
+        argv = [sys.executable if a == "{python}" else a for a in argv]
+        try:
+            proc = subprocess.run(argv, cwd=tree, env=env, capture_output=True, text=True, timeout=timeout)
+            output, returncode = proc.stdout + proc.stderr, proc.returncode
+        except subprocess.TimeoutExpired:
+            output, returncode = "", None
+    ran = re.findall(r"^Ran (\d+) tests?", output, re.M)
+    return {"argv": argv[1:] if argv and argv[0] == sys.executable else argv, "returncode": returncode,
+            "passed": returncode == 0, "tests_run": int(ran[-1]) if ran else None,
+            "output_sha256": sha256_bytes(output.encode("utf-8")), "output": output}
+
+
 # --------------------------------------------------------------------- transition
 
 def converge(manifest_path: Path, organization: str, target_root: Path, baseline_root: Path,
@@ -413,7 +607,8 @@ def converge(manifest_path: Path, organization: str, target_root: Path, baseline
     result: dict[str, Any] = {
         "schema": RESULT_SCHEMA, "operation_id": OPERATION_ID, "organization": organization,
         "manifest_sha256": manifest_sha, "disposition": None, "files": [], "hunks": [],
-        "symbols": {}, "closure": [], "refusals": [], "tests": None, "applied": False,
+        "symbols": {}, "closure": [], "closure_added": [], "config_added": [], "extension": None,
+        "reconciliation": {}, "refusals": [], "tests": None, "org_tests": [], "applied": False,
     }
     if organization not in manifest["targets"]:
         result["refusals"].append(fail_closed(
@@ -424,10 +619,13 @@ def converge(manifest_path: Path, organization: str, target_root: Path, baseline
         return result
     target = manifest["targets"][organization]
     values = parameter_values(manifest, organization)
-    reconciled = set(target.get("reconciled_hunk_sha256") or [])
+    entries = reconciliation_entries(target)
+    reconciled = set(entries)
+    extension_decl = target.get("extension") or {}
     rendered: dict[str, bytes] = {}
+    module_path = (manifest["baseline"]["files"].get("module") or {}).get("path")
 
-    # 1. pins
+    # 1. pins, evidence and hunks
     for role, entry in manifest["baseline"]["files"].items():
         path = entry["path"]
         base_bytes = (Path(baseline_root) / path).read_bytes() if (Path(baseline_root) / path).is_file() else None
@@ -448,9 +646,26 @@ def converge(manifest_path: Path, organization: str, target_root: Path, baseline
                 f"re-record before_sha256 for {path} in the manifest from {target.get('repository')} main and re-run the evidence step",
                 goal, "rerun on the manifest revision that pins the current target bytes",
                 detail={"path": path, "expected": expected, "observed": before_sha or "ABSENT"}))
-        after = render(base_bytes, path, manifest, values)
+        prefix = render(base_bytes, path, manifest, values)
+        after = prefix
+        if path == module_path and before is not None and (extension_decl.get("module_symbols")
+                                                             or extension_decl.get("module_imports")):
+            ext = build_extension(before.decode("utf-8"), organization, target.get("commit", ""),
+                                  list(extension_decl.get("module_symbols") or []),
+                                  list(extension_decl.get("module_imports") or []))
+            ext_sha = sha256_bytes(ext)
+            result["extension"] = {"path": path, "symbols": list(extension_decl.get("module_symbols") or []),
+                                   "imports": list(extension_decl.get("module_imports") or []),
+                                   "sha256": ext_sha, "lines": ext.count(b"\n")}
+            if extension_decl.get("module_sha256") != ext_sha:
+                result["refusals"].append(fail_closed(
+                    EXTENSION_INVALID, "ORG_EXTENSION_BYTES_MATCH_MANIFEST_PIN",
+                    f"pin targets.{organization}.extension.module_sha256 to the extension the declared symbols produce",
+                    goal, "rerun once the extension pin matches",
+                    detail={"expected": extension_decl.get("module_sha256"), "observed": ext_sha}))
+            (evidence_dir / "organization_extension.py.fragment").write_bytes(ext)
+            after = prefix + ext
         rendered[path] = after
-        after_sha = sha256_bytes(after)
         normalized_before = normalize(before, path, manifest, values) if before is not None else None
         diff = "".join(difflib.unified_diff(
             (before or b"").decode("utf-8", errors="replace").splitlines(keepends=True),
@@ -465,7 +680,8 @@ def converge(manifest_path: Path, organization: str, target_root: Path, baseline
             "role": role, "path": path,
             "before_sha256": before_sha or "ABSENT",
             "before_lines": before.count(b"\n") if before is not None else 0,
-            "after_sha256": after_sha, "after_lines": after.count(b"\n"),
+            "after_sha256": sha256_bytes(after), "after_lines": after.count(b"\n"),
+            "baseline_prefix_normalized_sha256": sha256_bytes(normalize(prefix, path, manifest, values)),
             "after_normalized_sha256": sha256_bytes(normalize(after, path, manifest, values)),
             "baseline_sha256": entry["sha256"],
             "byte_identical_to_baseline": after == base_bytes,
@@ -474,10 +690,14 @@ def converge(manifest_path: Path, organization: str, target_root: Path, baseline
             "diff_sha256": sha256_bytes(diff.encode("utf-8")),
         })
         if normalized_before is not None:
-            result["hunks"].extend(classify_hunks(base_bytes, normalized_before, path, organization, reconciled))
+            hunks = classify_hunks(base_bytes, normalized_before, path, organization, reconciled)
+            text = normalized_before.decode("utf-8", errors="replace")
+            for hunk in hunks:
+                hunk["symbols"] = enclosing_symbols(text, *hunk["target_lines"]) if path.endswith(".py") else []
+            result["hunks"].extend(hunks)
             if path.endswith(".py"):
                 b_syms = top_level_symbols(base_bytes.decode("utf-8"))
-                t_syms = top_level_symbols(normalized_before.decode("utf-8", errors="replace"))
+                t_syms = top_level_symbols(text)
                 result["symbols"][path] = {
                     "only_in_target": sorted(set(t_syms) - set(b_syms)),
                     "only_in_baseline": sorted(set(b_syms) - set(t_syms)),
@@ -485,73 +705,264 @@ def converge(manifest_path: Path, organization: str, target_root: Path, baseline
                     "identical": sorted(n for n in set(t_syms) & set(b_syms) if t_syms[n] == b_syms[n]),
                 }
 
-    # 2. no silent deletion
+    # 2. no silent deletion, and a port is only a port if the extension carries it
     unreconciled = [h for h in result["hunks"]
                     if h["class"] in (ORG_SPECIFIC_HUNK, DIVERGENT) and not h["reconciled"]]
+    carried = set(extension_decl.get("module_symbols") or [])
+    carried_workflows = {w.get("source_path") for w in extension_decl.get("workflows") or []}
+    not_carried, undocumented = [], []
+    counts = {"ported": 0, "superseded": 0}
+    for hunk in result["hunks"]:
+        entry = entries.get(hunk["hunk_sha256"])
+        if entry is None:
+            continue
+        decision = entry.get("decision")
+        if decision not in ("ported", "superseded") or not entry.get("reason") or not entry.get("evidence"):
+            undocumented.append(hunk["hunk_sha256"])
+            continue
+        counts[decision] += 1
+        if decision == "ported":
+            names = [s for s in hunk.get("symbols") or [] if not s.startswith("<")]
+            if hunk["path"].endswith(".py"):
+                rest = set(names) - carried
+                if hunk["path"] != module_path or not set(names) & carried \
+                        or not rest <= set(entry.get("superseded_symbols") or []):
+                    not_carried.append(hunk["hunk_sha256"])
+            elif hunk["path"] not in carried_workflows:
+                not_carried.append(hunk["hunk_sha256"])
+    result["reconciliation"] = {"ported": counts["ported"], "superseded": counts["superseded"],
+                                "unreconciled": len(unreconciled), "undocumented": len(undocumented),
+                                "ported_but_not_carried": len(not_carried)}
     if unreconciled:
         org_specific = [h for h in unreconciled if h["class"] == ORG_SPECIFIC_HUNK]
         result["refusals"].append(fail_closed(
             ORG_SPECIFIC, "EVERY_NON_PARAMETER_NON_COSMETIC_TARGET_HUNK_IS_RECONCILED",
-            "for each hunk named in detail: port it into the baseline under the owning goal, or record its "
-            "hunk_sha256 under targets." + organization + ".reconciled_hunk_sha256 with the reason it is superseded; "
+            "for each hunk named in detail: record it under targets." + organization + ".reconciled_hunk_sha256 "
+            "as ported (carried by the extension) or superseded (with the baseline symbol that supersedes it); "
             "convergence never deletes it silently",
             goal, "rerun converge once every listed hunk_sha256 is reconciled in the manifest",
             detail={"org_specific_hunks": len(org_specific),
                     "divergent_code_hunks": len(unreconciled) - len(org_specific),
                     "new_top_level_definitions": sorted({d for h in unreconciled for d in h["new_top_level_definitions"]}),
                     "hunk_sha256": [h["hunk_sha256"] for h in unreconciled]}))
-
-    # 3. closure
-    seeds = [e["path"] for e in manifest["baseline"]["files"].values()]
-    for path in dependency_closure(Path(baseline_root), seeds):
-        target_file = Path(target_root) / path
-        base_sha = sha256_bytes((Path(baseline_root) / path).read_bytes())
-        state = "ABSENT"
-        if target_file.is_file():
-            state = "IDENTICAL" if sha256_bytes(target_file.read_bytes()) == base_sha else "DIFFERENT"
-        result["closure"].append({"path": path, "org_owned": is_org_owned(path, manifest),
-                                  "baseline_sha256": base_sha, "target_state": state})
-    absent = [c["path"] for c in result["closure"] if c["target_state"] == "ABSENT"]
-    if absent:
+    if undocumented or not_carried:
         result["refusals"].append(fail_closed(
-            CLOSURE_ABSENT, "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
-            "converge or declare each absent closure file (detail) in the target organization first; "
-            "org-owned ones are that organization's own configuration and are not overwritten from the baseline",
-            goal, "rerun converge once the closure resolves in the target",
-            detail={"absent": absent,
-                    "absent_org_owned": [c["path"] for c in result["closure"]
-                                         if c["target_state"] == "ABSENT" and c["org_owned"]]}))
+            RECONCILIATION_INVALID, "EVERY_RECONCILIATION_IS_DOCUMENTED_AND_EVERY_PORT_IS_CARRIED",
+            "give each listed entry a decision, reason and evidence; list each ported hunk's symbols in "
+            "extension.module_symbols (or its workflow in extension.workflows)",
+            goal, "rerun once the reconciliation entries are complete",
+            detail={"undocumented": undocumented, "ported_but_not_carried": not_carried}))
 
-    # 4. converge, in a sandbox unless applying
+    # 3. converge, in a sandbox unless applying
     with tempfile.TemporaryDirectory(prefix=f"convergence-{organization}-") as sandbox:
+        original = Path(sandbox) / "original"
+        shutil.copytree(target_root, original, ignore=shutil.ignore_patterns(".git", "__pycache__"))
         tree = Path(target_root) if apply else Path(sandbox) / "tree"
         if not apply:
-            shutil.copytree(target_root, tree, ignore=shutil.ignore_patterns(".git", "__pycache__"))
-        blocked = any(r["failure_code"] in (BASELINE_MISMATCH, TARGET_DRIFTED, ORG_SPECIFIC)
+            shutil.copytree(original, tree)
+        blocked = any(r["failure_code"] in (BASELINE_MISMATCH, TARGET_DRIFTED, ORG_SPECIFIC,
+                                            RECONCILIATION_INVALID, EXTENSION_INVALID)
                       for r in result["refusals"])
-        if apply and blocked:
-            pass  # never overwrite the real checkout across an unreconciled refusal
-        else:
-            for path, data in rendered.items():
+        writes: dict[str, bytes] = dict(rendered)
+        # 3a. preserved org workflows, renamed so the baseline workflow can take the original path
+        for workflow in extension_decl.get("workflows") or []:
+            source = original / workflow["source_path"]
+            if not source.is_file():
+                result["refusals"].append(fail_closed(
+                    EXTENSION_INVALID, "PRESERVED_WORKFLOW_EXISTS_IN_THE_TARGET",
+                    f"correct extension.workflows source_path {workflow['source_path']}", goal,
+                    "rerun once the preserved workflow source exists"))
+                continue
+            text = source.read_text(encoding="utf-8")
+            text = re.sub(r"^name: .*$", "name: " + workflow["name"], text, count=1, flags=re.M)
+            data = text.encode("utf-8")
+            if workflow.get("sha256") != sha256_bytes(data):
+                result["refusals"].append(fail_closed(
+                    EXTENSION_INVALID, "PRESERVED_WORKFLOW_BYTES_MATCH_MANIFEST_PIN",
+                    f"pin extension.workflows[{workflow['dest_path']}].sha256", goal,
+                    "rerun once the preserved workflow pin matches",
+                    detail={"expected": workflow.get("sha256"), "observed": sha256_bytes(data)}))
+            writes[workflow["dest_path"]] = data
+        # 3b. absent closure files, as exact baseline bytes; an existing file is never overwritten
+        for addition in target.get("closure_additions") or []:
+            path = addition["path"]
+            base_file = Path(baseline_root) / path
+            data = base_file.read_bytes() if base_file.is_file() else None
+            if data is None or sha256_bytes(data) != addition["sha256"]:
+                result["refusals"].append(fail_closed(
+                    BASELINE_MISMATCH, "CLOSURE_ADDITION_BYTES_MATCH_MANIFEST_PIN",
+                    f"pin closure_additions[{path}] to the baseline bytes", goal,
+                    "rerun against the pinned baseline", detail={"path": path}))
+                continue
+            if (original / path).exists():
+                result["refusals"].append(fail_closed(
+                    CLOSURE_CONFLICT, "CLOSURE_ADDITION_IS_ABSENT_IN_THE_TARGET",
+                    f"{path} exists in the target; it is that organization's file and is not overwritten. "
+                    "Remove the addition from the manifest", goal, "rerun once the manifest no longer adds it",
+                    detail={"path": path}))
+                continue
+            writes[path] = data
+            result["closure_added"].append({"path": path, "sha256": addition["sha256"],
+                                            "git_blob_sha": git_blob_sha(data)})
+        # 3c. org config keys, only from declared baseline values, only where the target lacks them
+        for addition in target.get("config_additions") or []:
+            path, pointer = addition["path"], addition["pointer"]
+            base_doc = json.loads((Path(baseline_root) / path).read_text(encoding="utf-8"))
+            found, value = json_pointer_get(base_doc, pointer)
+            if found:
+                for field, template in (addition.get("parameterized_fields") or {}).items():
+                    if isinstance(value, dict) and field in value:
+                        value = {**value, field: template.format(**values)}
+            identities = manifest.get("baseline_identity_strings") or []
+            text_value = json.dumps(value, sort_keys=True)
+            if not found or sha(value) != addition.get("value_sha256") \
+                    or any(i in text_value for i in identities):
+                result["refusals"].append(fail_closed(
+                    CONFIG_UNDECIDABLE, "ORG_CONFIG_ADDITION_IS_A_PINNED_ORG_NEUTRAL_BASELINE_VALUE",
+                    f"{path}{pointer}: pin value_sha256 to the baseline value with declared parameters, "
+                    "or leave the key to the organization", goal, "rerun once the addition is decidable",
+                    detail={"path": path, "pointer": pointer, "observed_value_sha256": sha(value) if found else None}))
+                continue
+            doc_path = tree / path
+            raw = writes.get(path) or (original / path).read_bytes()
+            doc = json.loads(raw.decode("utf-8"))
+            present, existing = json_pointer_get(doc, pointer)
+            if present:
+                if existing != value:
+                    result["refusals"].append(fail_closed(
+                        CONFIG_UNDECIDABLE, "ORG_CONFIG_KEY_IS_ABSENT_OR_ALREADY_EQUAL",
+                        f"{path}{pointer} exists with an org value; it is never overwritten", goal,
+                        "rerun once the manifest no longer adds it", detail={"path": path, "pointer": pointer}))
+                continue
+            json_pointer_set(doc, pointer, value)
+            writes[path] = (json.dumps(doc, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+            result["config_added"].append({"path": path, "pointer": pointer, "value_sha256": sha(value)})
+        for key in target.get("undecidable_config_keys") or []:
+            result["refusals"].append(fail_closed(
+                CONFIG_UNDECIDABLE, "ORG_CONFIG_KEY_THE_BASELINE_READS_IS_DECLARED_BY_THE_ORGANIZATION",
+                f"{key['path']}{key['pointer']}: {key['reason']}", key.get("owning_existing_goal") or goal,
+                key.get("next_attempt") or "rerun once the organization declares the key in its own overlay",
+                detail={"path": key["path"], "pointer": key["pointer"]}))
+        if not (apply and blocked):
+            for path, data in writes.items():
                 (tree / path).parent.mkdir(parents=True, exist_ok=True)
                 (tree / path).write_bytes(data)
             result["applied"] = apply
         converged_dir = out_dir / "converged"
-        for path, data in rendered.items():
+        if converged_dir.exists():
+            shutil.rmtree(converged_dir)
+        for path, data in writes.items():
             (converged_dir / path).parent.mkdir(parents=True, exist_ok=True)
             (converged_dir / path).write_bytes(data)
+        # 4. closure, as the converged tree has it
+        check_root = tree if (not apply or result["applied"]) else original
+        seeds = [e["path"] for e in manifest["baseline"]["files"].values()]
+        for path in dependency_closure(Path(baseline_root), seeds):
+            base_sha = sha256_bytes((Path(baseline_root) / path).read_bytes())
+            state = "ABSENT"
+            if (check_root / path).is_file():
+                state = "IDENTICAL" if sha256_bytes((check_root / path).read_bytes()) == base_sha else "DIFFERENT"
+            row = {"path": path, "org_owned": is_org_owned(path, manifest),
+                   "baseline_sha256": base_sha, "target_state": state,
+                   "added_by_convergence": any(a["path"] == path for a in result["closure_added"])}
+            if state == "DIFFERENT" and path.endswith(".py") and path not in rendered:
+                row.update(api_divergence((Path(baseline_root) / path).read_text(encoding="utf-8"),
+                                          (check_root / path).read_text(encoding="utf-8", errors="replace")))
+            result["closure"].append(row)
+        absent = [c["path"] for c in result["closure"] if c["target_state"] == "ABSENT"]
+        if absent:
+            result["refusals"].append(fail_closed(
+                CLOSURE_ABSENT, "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+                "declare each absent closure file (detail) as a closure addition of baseline bytes, or, where it "
+                "is that organization's own configuration, have the organization author it",
+                goal, "rerun converge once the closure resolves in the target",
+                detail={"absent": absent,
+                        "absent_org_owned": [c["path"] for c in result["closure"]
+                                             if c["target_state"] == "ABSENT" and c["org_owned"]]}))
         # 5. tests
         if run_test_step and (not apply or result["applied"]):
             tests = run_tests(tree, manifest.get("test_modules") or [], timeout)
             (evidence_dir / "tests.out").write_text(tests["output"], encoding="utf-8")
+            failures = parse_test_failures(tests["output"])
+            rules = {"pending_close_port_traceback_patterns": manifest.get("pending_close_port_traceback_patterns"),
+                     "undecidable_config_keys": [k["pointer"].rsplit("/", 1)[-1]
+                                                 for k in target.get("undecidable_config_keys") or []],
+                     "divergent_closure": {c["path"]: c for c in result["closure"] if c.get("missing_baseline_symbols")
+                                           or c.get("signature_differs")},
+                     "org_owned_different": [c["path"] for c in result["closure"]
+                                             if c["target_state"] == "DIFFERENT" and c["org_owned"]],
+                     "different_closure_files": [c["path"] for c in result["closure"]
+                                                 if c["target_state"] == "DIFFERENT" and c["path"].endswith(".py")]}
+            buckets: dict[str, list[dict[str, str]]] = {}
+            for failure in failures:
+                cause = attribute_failure(failure, rules)
+                buckets.setdefault(cause, []).append({"test": failure["test"], "kind": failure["kind"],
+                                                      "exception": failure["exception"]})
             result["tests"] = {k: v for k, v in tests.items() if k != "output"}
-            if not tests["passed"]:
+            result["tests"]["failures_by_cause"] = buckets
+            import_failed = tests["tests_run"] == 0 and not tests["passed"]
+            if import_failed or buckets.get("UNATTRIBUTED"):
                 result["refusals"].append(fail_closed(
                     TESTS_FAILED, "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
-                    "repair the failing tests' preconditions in the target (see evidence/tests.out); "
-                    "a refusal from an earlier predicate usually explains them",
+                    "repair the unattributed failures named in detail (evidence/tests.out); each is a "
+                    "divergence between a carried org extension or org-owned closure file and the baseline contract",
                     goal, "rerun converge; the test step reruns on the converged tree",
-                    detail={k: tests[k] for k in ("tests_run", "failures", "errors", "error_kinds", "timed_out")}))
+                    detail={"tests_run": tests["tests_run"], "import_failed": import_failed,
+                            "unattributed": [f["test"] for f in buckets.get("UNATTRIBUTED", [])],
+                            "error_kinds": tests["error_kinds"]}))
+            divergent = {cause.split(":", 1)[1]: [f["test"] for f in found]
+                         for cause, found in buckets.items() if cause.startswith("DIVERGENT_CLOSURE_FILE:")}
+            if divergent:
+                result["refusals"].append(fail_closed(
+                    CLOSURE_DIVERGENT, "THE_TARGETS_CLOSURE_FILES_EXPOSE_THE_API_THE_BASELINE_CALLS",
+                    "each closure file in detail is the organization's own revision and lacks baseline symbols or "
+                    "signatures the converged files call; converge it as a further manifest unit with its own hunk "
+                    "reconciliation, or have the organization add the named symbols",
+                    goal, "rerun converge once those closure files expose the baseline API",
+                    detail={path: {"tests": tests_,
+                                   "missing_baseline_symbols": next(c for c in result["closure"] if c["path"] == path).get("missing_baseline_symbols"),
+                                   "signature_differs": next(c for c in result["closure"] if c["path"] == path).get("signature_differs")}
+                            for path, tests_ in divergent.items()}))
+            # 6. the organization's own tests, before and after, so preservation is observed
+            pending_org: list[str] = []
+            for org_test in target.get("org_tests") or []:
+                before_run = run_command(original, org_test["argv"], timeout)
+                after_run = run_command(tree, org_test["argv"], timeout)
+                name = re.sub(r"[^\w.-]+", "_", org_test["id"])
+                (evidence_dir / f"org-test.{name}.before.out").write_text(before_run["output"], encoding="utf-8")
+                (evidence_dir / f"org-test.{name}.after.out").write_text(after_run["output"], encoding="utf-8")
+                record = {"id": org_test["id"],
+                          "before": {k: v for k, v in before_run.items() if k != "output"},
+                          "after": {k: v for k, v in after_run.items() if k != "output"}}
+                result["org_tests"].append(record)
+                after_failures = parse_test_failures(after_run["output"])
+                if not after_failures and not after_run["passed"] and "Traceback (most recent call last):" in after_run["output"]:
+                    tail = after_run["output"].rsplit("Traceback (most recent call last):", 1)[1]
+                    lines_ = [l for l in tail.strip().splitlines() if l.strip()]
+                    after_failures = [{"kind": "ERROR", "test": org_test["id"], "traceback": tail,
+                                       "exception": lines_[-1][:300] if lines_ else ""}]  # a script-style test
+                causes = sorted({attribute_failure(f, rules) for f in after_failures})
+                record["after"]["failures_by_cause"] = {
+                    c: [f["test"] for f in after_failures if attribute_failure(f, rules) == c] for c in causes}
+                if before_run["passed"] and not after_run["passed"] and causes == ["PENDING_INTR_CLOSE_PORT"]:
+                    pending_org.extend(record["after"]["failures_by_cause"]["PENDING_INTR_CLOSE_PORT"])
+                elif before_run["passed"] and not after_run["passed"]:
+                    result["refusals"].append(fail_closed(
+                        ORG_REGRESSED, "THE_ORGANIZATIONS_OWN_TESTS_STILL_PASS_ON_THE_CONVERGED_TREE",
+                        f"{org_test['id']} passed before convergence and fails after (evidence/org-test.{name}.after.out); "
+                        "carry the behaviour it depends on in the extension",
+                        goal, "rerun converge once the organization's own test passes on the converged tree",
+                        detail={"org_test": org_test["id"]}))
+
+            pending_baseline = [f["test"] for f in buckets.get("PENDING_INTR_CLOSE_PORT", [])]
+            if pending_baseline or pending_org:
+                result["refusals"].append(fail_closed(
+                    CLOSE_PORT_PENDING, "CONVERGED_CLOSE_IS_THE_INTR_PORT_FOR_THIS_ORGANIZATION",
+                    "InTr's per-organization close() port (H52), with the names it needs, lands in this target; "
+                    "these tests fail only with a traceback through close()",
+                    manifest.get("close_port_owning_goal") or goal,
+                    "rerun converge on the target commit that carries the InTr close() port",
+                    detail={"baseline_tests": pending_baseline, "org_tests": pending_org}))
 
     result["disposition"] = ALLOW if not result["refusals"] else FAIL_CLOSED
     evidence_files = sorted(p for p in evidence_dir.rglob("*") if p.is_file())
