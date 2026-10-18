@@ -26,9 +26,11 @@ Predicates (all evaluated after HB_EPOCH_SUPPLIED; ADMISSION_INPUT_READY only if
   ALL_JOBS_RAN_AND_PASSED        DELEGATED to Lane A's job-observation predicate
       (StegVerse-Labs/.github#3262), vendored at vendor/lane_a/ and loaded only when
       its git blob sha and sha256 equal config/admission-predicate/lane-a-job-observation.pin.json
-      (TVC#519 pattern). P4 keeps no classifier: Lane A READY -> ALLOW, any FAIL ->
-      DENY REQUIRED_CHECK_DENIED, otherwise FAIL_CLOSED CHECK_SKIPPED_OR_UNOBSERVED
-      (TVC sv_change_job_observation mapping).
+      (TVC#519 pattern). Lane A v2 receives head, expected jobs, hb_epoch,
+      change_digest and goal and returns a sealed record (seal verified here). P4
+      keeps no classifier: READY -> ALLOW, any FAIL -> DENY REQUIRED_CHECK_DENIED,
+      Lane A FAIL_CLOSED -> FAIL_CLOSED with Lane A's own code, otherwise FAIL_CLOSED
+      CHECK_SKIPPED_OR_UNOBSERVED (TVC sv_change_job_observation mapping).
   HEAD_CURRENT_WITH_BASE         judged only from supplied inputs, no git: the PR's
       base_ref (--base-sha, the merge-base the head was built on, and its commit
       time) against the observed current base (--current-base-sha and its commit
@@ -233,7 +235,7 @@ def load_job_observation_reference(pin_path: Path | None = None):
         return None, {"pin_file": str(pin_path)}, f"reference unreadable: {exc}"
 
 
-def p_jobs(a, head: str) -> tuple[dict, dict | None]:
+def p_jobs(a, head: str, change: str | None) -> tuple[dict, dict | None]:
     r = row("ALL_JOBS_RAN_AND_PASSED", delegated_to="StegVerse-Labs/.github#3262 scripts/evaluate_admission_job_observation.py")
     mod, ref, why = load_job_observation_reference()
     r["reference"] = ref
@@ -243,22 +245,27 @@ def p_jobs(a, head: str) -> tuple[dict, dict | None]:
                       "re-vendor the pinned bytes or re-pin to a new #3262 head"), None
     try:
         doc = json.loads(Path(a.check_runs).read_text(encoding="utf-8")) if a.check_runs else None
-        if doc is None:
-            raise ValueError("no --check-runs document supplied")
-        record = mod.evaluate(doc, head, list(a.expect or []))
-    except (ValueError, OSError, json.JSONDecodeError) as exc:
-        return refuse(r, a, "CHECK_SKIPPED_OR_UNOBSERVED",
-                      f"a check-runs document for the head and a declared --expect list (Lane A refused: {exc})",
-                      "rerun with --check-runs and --expect supplied"), None
-    r["lane_a_decision"] = record["decision"]
+    except (OSError, json.JSONDecodeError):
+        doc = None  # Lane A refuses a malformed document with its own six-field FAIL_CLOSED
+    record = mod.evaluate(doc, head, list(a.expect or []), hb_epoch=int(a.hb_epoch),
+                          change_digest_value=change, owning_existing_goal=a.goal)
+    r["lane_a_decision"] = record.get("decision")
+    if record.get("schema") != mod.SCHEMA or not seal_verifies(record, mod.SEAL_FIELD):
+        return refuse(r, a, "JOB_OBSERVATION_REFERENCE_UNAVAILABLE",
+                      "a Lane A record with the pinned result schema and a verifying result_sha256 seal",
+                      "re-vendor the pinned bytes or re-pin to a new #3262 head"), record
     if record["decision"] == mod.READY:
+        return r, record
+    if record["decision"] == mod.FAIL_CLOSED:  # Lane A refused the input: carry its own code
+        refuse(r, a, record["failure_code"], record["required_evidence_or_repair"], record["next_attempt"])
+        r["lane_a_failed_predicate"] = record["failed_predicate"]
         return r, record
     if record["counts"].get(mod.FAIL):
         return refuse(r, a, "REQUIRED_CHECK_DENIED", "every expected job at the exact head concludes success",
                       "a repair pushed to the head branch; checks rerun on pull_request", disposition="DENY"), record
     return refuse(r, a, "CHECK_SKIPPED_OR_UNOBSERVED",
                   "every expected job at the exact head runs and concludes success (a skipped, pending, "
-                  "path-filtered or other-head run is never a pass)",
+                  "path-filtered, null-head or other-head run is never a pass)",
                   "rerun on the head's check runs once every expected job has run"), record
 
 
@@ -353,22 +360,21 @@ def evaluate(a) -> dict:
     else:
         writer = p_writer(a, head, range_base) if range_base else None
         predicates = [p_session(a)]
-        if writer is not None:
-            predicates.append(writer)
-        jobs, job_record = p_jobs(a, head)
-        predicates += [jobs, p_base(a)]
         if writer is None:
-            predicates.insert(1, refuse(row("BRANCH_WRITER_IS_BRANCH_OWNER"), a, "BRANCH_HAS_FOREIGN_WRITER",
-                                        "supply a --range-base/--base-sha commit present in the clone so the PR's own range is defined",
-                                        "rerun with the range supplied"))
-        if a.pin:
-            predicates.append(p_binder(a, head))
+            writer = refuse(row("BRANCH_WRITER_IS_BRANCH_OWNER"), a, "BRANCH_HAS_FOREIGN_WRITER",
+                            "supply a --range-base/--base-sha commit present in the clone so the PR's own range is defined",
+                            "rerun with the range supplied")
+        predicates.append(writer)
         if range_base:
-            sess_ok = predicates[0]["holds"] and predicates[1]["holds"]
+            sess_ok = predicates[0]["holds"] and writer["holds"]
             for path, deleted in changed_paths(a.clone, range_base, head):
                 content.append({"path": path, "deleted": deleted,
                                 "blob_digest": None if deleted else blob_digest(a.clone, head, path),
                                 "writer_session": a.session_id if sess_ok else UNKNOWN})
+        jobs, job_record = p_jobs(a, head, change_digest(content) if content else None)
+        predicates += [jobs, p_base(a)]
+        if a.pin:
+            predicates.append(p_binder(a, head))
     failed = [p for p in predicates if p["disposition"] != "ALLOW"]
     disposition = "ALLOW" if not failed else failed[0]["disposition"]  # TVC: first non-ALLOW decides
     body = {

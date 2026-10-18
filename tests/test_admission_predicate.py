@@ -130,7 +130,7 @@ class AdmissionPredicateTest(unittest.TestCase):
         path = self.f.checks({"a": "success"})
         out = ap.evaluate(self.f.args(checks=path))
         self.assertEqual("sha256:" + hashlib.sha256(Path(path).read_bytes()).hexdigest(), out["check_runs_input"]["digest"])
-        self.assertEqual("stegverse.admission-job-observation/v1", out["job_observation"]["schema"])
+        self.assertEqual("stegverse.admission-job-observation/v2", out["job_observation"]["schema"])
         self.assertEqual("ADMISSION_INPUT_READY", out["job_observation"]["decision"])
         self.assertNotIn("jobs", pred(out, "ALL_JOBS_RAN_AND_PASSED"))  # no own classification rows
 
@@ -166,9 +166,44 @@ class AdmissionPredicateTest(unittest.TestCase):
         out = ap.evaluate(self.f.args(checks=self.f.checks({"a": "success"}, sha="1" * 40)))
         self.assertEqual("CHECK_SKIPPED_OR_UNOBSERVED", pred(out, "ALL_JOBS_RAN_AND_PASSED")["failure_code"])
 
-    def test_no_expectation_or_no_document_fails_closed(self) -> None:
+    def test_no_expectation_or_no_document_fails_closed_with_lane_a_code(self) -> None:
         out = ap.evaluate(self.f.args(expect=()))
-        self.assertEqual("CHECK_SKIPPED_OR_UNOBSERVED", pred(out, "ALL_JOBS_RAN_AND_PASSED")["failure_code"])
+        p = pred(out, "ALL_JOBS_RAN_AND_PASSED")
+        self.assertEqual("EXPECTED_JOBS_NOT_DECLARED", p["failure_code"])
+        self.assertEqual("FAIL_CLOSED", p["disposition"])
+        self.assertTrue(SIX <= p.keys())
+        bad = self.f.td / "bad.json"
+        bad.write_text("not json")
+        out = ap.evaluate(self.f.args(checks=str(bad)))
+        self.assertEqual("CHECK_RUNS_DOCUMENT_MALFORMED", pred(out, "ALL_JOBS_RAN_AND_PASSED")["failure_code"])
+
+    def test_null_head_sha_run_no_longer_counts_for_head(self) -> None:
+        path = self.f.td / "nullhead.json"
+        path.write_text(json.dumps({"check_runs": [
+            {"name": "a", "status": "completed", "conclusion": "success", "head_sha": None}]}))
+        out = ap.evaluate(self.f.args(checks=str(path)))
+        p = pred(out, "ALL_JOBS_RAN_AND_PASSED")
+        self.assertEqual("CHECK_SKIPPED_OR_UNOBSERVED", p["failure_code"])
+        self.assertEqual("UNKNOWN_NOT_AUTHENTICALLY_OBSERVED", out["job_observation"]["jobs"][0]["state"])
+        self.assertEqual(1, out["job_observation"]["runs_not_evidence_for_head"])
+        path.write_text(json.dumps({"check_runs": [{"name": "a", "status": "completed", "conclusion": "success"}]}))
+        self.assertEqual("CHECK_SKIPPED_OR_UNOBSERVED",
+                         pred(ap.evaluate(self.f.args(checks=str(path))), "ALL_JOBS_RAN_AND_PASSED")["failure_code"])
+
+    def test_lane_a_record_is_sealed_and_bound(self) -> None:
+        out = ap.evaluate(self.f.args())
+        rec = out["job_observation"]
+        self.assertTrue(ap.seal_verifies(rec))
+        self.assertEqual(out["change_digest"], rec["change_digest"])
+        self.assertEqual(1000, rec["hb_epoch"])
+        self.assertEqual("StegVerse-org/.github#166", rec["owning_existing_goal"])
+
+    def test_pin_is_lane_a_78ea9128(self) -> None:
+        pin = json.loads(ap.LANE_A_PIN.read_text())
+        self.assertEqual("78ea91280f04cebed02d95a9714670540f30b112", pin["producer"]["head"])
+        self.assertEqual("4edc240aa9447b27adfb4a7443dfcf7bb7d9a665", pin["producer"]["git_blob_sha"])
+        self.assertEqual("0e962613328ef4acd09973062844d2bf5d46230714abd2b35b110342d6660a0d", pin["sha256"])
+        self.assertEqual("stegverse.admission-job-observation/v2", pin["result_schema"])
 
     def test_lane_a_pin_verified_and_tamper_fails_closed(self) -> None:
         mod, ref, why = ap.load_job_observation_reference()
