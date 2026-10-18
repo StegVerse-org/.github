@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 SCRIPT = Path(__file__).resolve().parents[1] / "resident-runtime" / "admission_predicate.py"
 spec = importlib.util.spec_from_file_location("admission_predicate", SCRIPT)
@@ -75,16 +76,28 @@ class Fixture:
             for n, c in conclusions.items()]}))
         return str(path)
 
-    def args(self, *extra: str, checks: str | None = None, epoch: str = "1000", session: str = SESSION,
-             current: tuple | None = None, expect: tuple = ("a",), identity: bool = True):
+    def args(self, *extra: str, checks: str | None = None, epoch: str | None = None, session: str = SESSION,
+             current: tuple | None = None, expect: tuple = ("a",), identity: bool = True, receipt: Any = "default"):
+        """By default a sealed #3266-shape base-state receipt for the base commit carries hb_epoch 1000 (the source)."""
         c = current or (self.base, self.base_time)
+        rec = []
+        if receipt is not None:
+            path = self.td / "base-state.json"
+            path.write_text(json.dumps(readback_receipt(self.base, epoch="1000") if receipt == "default" else receipt))
+            rec = ["--base-state-receipt", str(path)]
+        ep = ["--hb-epoch", epoch] if epoch is not None else []
         exp = [x for e in expect for x in ("--expect", e)]
         ident = ["--repository", "Example/lane", "--base-registry-generation", "319", "--base-ledger-head", LEDGER,
                  "--current-registry-generation", "319", "--current-ledger-head", LEDGER] if identity else []
         return ap.parse(["--clone", str(self.clone), "--branch", "lane/x", "--session-id", session,
-                         "--hb-epoch", epoch, "--check-runs", checks or self.checks({"a": "success"}), *exp,
+                         *rec, *ep, "--check-runs", checks or self.checks({"a": "success"}), *exp,
                          "--base-sha", self.base, "--base-commit-time", str(self.base_time),
                          "--current-base-sha", c[0], "--current-base-commit-time", str(c[1]), *ident, *extra])
+
+
+def base_row(a) -> dict:
+    """HEAD_CURRENT_WITH_BASE on supplied inputs alone (pure; no receipt filling)."""
+    return ap.p_base(a)
 
 
 def pred(out: dict, name: str) -> dict:
@@ -141,13 +154,16 @@ class AdmissionPredicateTest(unittest.TestCase):
         self.assertEqual("ADMISSION_INPUT_READY", out["job_observation"]["decision"])
         self.assertNotIn("jobs", pred(out, "ALL_JOBS_RAN_AND_PASSED"))  # no own classification rows
 
-    def test_hb_epoch_missing_or_invalid_fails_closed(self) -> None:
-        for epoch, code in (("", "HB_EPOCH_NOT_SUPPLIED"), ("12", "HB_EPOCH_INVALID"), ("1e3", "HB_EPOCH_INVALID")):
-            out = ap.evaluate(self.f.args(epoch=epoch))
+    def test_hb_epoch_source_unobserved_fails_closed(self) -> None:
+        for receipt in (None, readback_receipt(self.f.base, epoch=None)):
+            out = ap.evaluate(self.f.args(receipt=receipt))
             self.assertEqual("FAIL_CLOSED", out["disposition"])
-            self.assertEqual(code, out["failure_code"])
+            self.assertEqual("HB_EPOCH_SOURCE_UNOBSERVED", out["failure_code"])
+            self.assertIn(ap.HB_EPOCH_INVARIANT, out["required_evidence_or_repair"])
             self.assertIsNone(out["hb_epoch"])
             self.assertTrue(ap.seal_verifies(out))
+        # a flag is never the source
+        self.assertEqual("HB_EPOCH_SOURCE_UNOBSERVED", ap.evaluate(self.f.args(receipt=None, epoch="1000"))["failure_code"])
 
     def test_session_not_declared(self) -> None:
         out = ap.evaluate(self.f.args(session="x"))
@@ -267,16 +283,15 @@ class AdmissionPredicateTest(unittest.TestCase):
         self.assertTrue(pred(ap.evaluate(self.f.args()), "HEAD_CURRENT_WITH_BASE")["holds"])
 
     def test_registry_generation_and_ledger_head_compared_when_supplied(self) -> None:
-        out = ap.evaluate(self.f.args("--base-registry-generation", "319", "--current-registry-generation", "320",
-                                      "--base-ledger-head", "L1", "--current-ledger-head", "L1"))
-        p = pred(out, "HEAD_CURRENT_WITH_BASE")
+        p = base_row(self.f.args("--base-registry-generation", "319", "--current-registry-generation", "320",
+                                 "--base-ledger-head", "L1", "--current-ledger-head", "L1", identity=False))
         self.assertEqual("BASE_STALE", p["failure_code"])
         self.assertEqual({"registry_generation"}, set(p["moved"]))
 
     def test_one_sided_registry_generation_fails_closed(self) -> None:
         for extra in (("--base-registry-generation", "319"), ("--current-registry-generation", "319")):
             with self.subTest(extra):
-                p = pred(ap.evaluate(self.f.args(*extra, identity=False)), "HEAD_CURRENT_WITH_BASE")
+                p = base_row(self.f.args(*extra, identity=False))
                 self.assertEqual("BASE_STATE_NOT_OBSERVED", p["failure_code"])
                 self.assertEqual("FAIL_CLOSED", p["disposition"])
                 self.assertTrue(SIX <= p.keys())
@@ -284,7 +299,7 @@ class AdmissionPredicateTest(unittest.TestCase):
     def test_one_sided_ledger_head_fails_closed(self) -> None:
         for extra in (("--base-ledger-head", "a" * 40), ("--current-ledger-head", "a" * 40)):
             with self.subTest(extra):
-                p = pred(ap.evaluate(self.f.args(*extra, identity=False)), "HEAD_CURRENT_WITH_BASE")
+                p = base_row(self.f.args(*extra, identity=False))
                 self.assertEqual("BASE_STATE_NOT_OBSERVED", p["failure_code"])
                 self.assertEqual("FAIL_CLOSED", p["disposition"])
 
@@ -379,23 +394,21 @@ class ChangeIdentityInputTest(unittest.TestCase):
     def tearDown(self) -> None:
         self._td.cleanup()
 
+    CONTENT = [{"path": "a.txt", "blob_digest": "sha256:" + "a" * 64, "deleted": False}]
+
     def test_missing_registry_generation_or_ledger_head_fails_closed(self) -> None:
-        out = ap.evaluate(self.f.args("--repository", "Example/lane", identity=False))
-        p = pred(out, "CHANGE_IDENTITY_INPUT_BOUND")
-        self.assertEqual("SV_CHANGE_BASE_UNBOUND", p["failure_code"])
-        self.assertEqual("FAIL_CLOSED", p["disposition"])
-        self.assertTrue(SIX <= p.keys())
-        self.assertIsNone(out["change_digest"])
-        self.assertIsNone(out["change_id"])
-        out = ap.evaluate(self.f.args("--repository", "Example/lane", "--base-registry-generation", "319",
-                                      "--current-registry-generation", "319", "--base-ledger-head", "XYZ",
-                                      "--current-ledger-head", "XYZ", identity=False))
-        self.assertEqual("SV_CHANGE_BASE_UNBOUND", pred(out, "CHANGE_IDENTITY_INPUT_BOUND")["failure_code"])
+        for extra in ((), ("--base-registry-generation", "319", "--base-ledger-head", "XYZ")):
+            p, ident = ap.p_identity(self.f.args("--repository", "Example/lane", *extra, identity=False), self.CONTENT)
+            self.assertEqual("SV_CHANGE_BASE_UNBOUND", p["failure_code"])
+            self.assertEqual("FAIL_CLOSED", p["disposition"])
+            self.assertTrue(SIX <= p.keys())
+            self.assertIsNone(ident)
 
     def test_missing_repository_fails_closed(self) -> None:
-        out = ap.evaluate(self.f.args("--base-registry-generation", "319", "--current-registry-generation", "319",
-                                      "--base-ledger-head", LEDGER, "--current-ledger-head", LEDGER, identity=False))
-        self.assertEqual("TARGET_REPOSITORY_NOT_SUPPLIED", pred(out, "CHANGE_IDENTITY_INPUT_BOUND")["failure_code"])
+        p, _ = ap.p_identity(self.f.args("--base-registry-generation", "319", "--base-ledger-head", LEDGER, identity=False),
+                             self.CONTENT)
+        self.assertEqual("TARGET_REPOSITORY_NOT_SUPPLIED", p["failure_code"])
+
 
 BASE_STATE_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "admission-predicate" / "base-state-readback" / "labs-main-978b8880.json"
 OTHER_LEDGER = "b" * 40
@@ -427,9 +440,8 @@ class BaseStateReceiptTest(unittest.TestCase):
         path.write_text(json.dumps(receipt), encoding="utf-8")
         return str(path)
 
-    def evaluate(self, receipt: dict, *extra: str, epoch: str = "1000") -> dict:
-        return ap.evaluate(self.f.args("--repository", "Example/lane", "--base-state-receipt", self.write(receipt),
-                                       *extra, epoch=epoch, identity=False))
+    def evaluate(self, receipt: dict, *extra: str, epoch: str | None = None) -> dict:
+        return ap.evaluate(self.f.args("--repository", "Example/lane", *extra, epoch=epoch, identity=False, receipt=receipt))
 
     def test_tvc_fixture_receipt_verifies_as_tvc_binds_it(self) -> None:
         receipt = json.loads(BASE_STATE_FIXTURE.read_text(encoding="utf-8"))
@@ -470,7 +482,7 @@ class BaseStateReceiptTest(unittest.TestCase):
         self.assertIn("Q-ORG-REGISTRY-GENERATION", p["next_attempt"])
 
     def test_valid_receipt_binds_identity_and_base(self) -> None:
-        out = self.evaluate(readback_receipt(self.f.base))
+        out = self.evaluate(readback_receipt(self.f.base, epoch="1000"))
         self.assertEqual("admission-input-ready", out["admission_input"], out["fail_closed"])
         self.assertTrue(pred(out, "BASE_STATE_RECEIPT_BOUND")["holds"])
         self.assertEqual({"sha": self.f.base, "commit_time": self.f.base_time, "registry_generation": 319, "ledger_head": LEDGER},
@@ -479,11 +491,11 @@ class BaseStateReceiptTest(unittest.TestCase):
         self.assertIsNotNone(out["change_digest"])
         flags = ap.evaluate(self.f.args("--repository", "Example/lane"))
         self.assertEqual(flags["change_digest"], out["change_digest"])  # same identity as the explicit flags
-        agreeing = self.evaluate(readback_receipt(self.f.base), "--base-registry-generation", "319", "--base-ledger-head", LEDGER)
+        agreeing = self.evaluate(readback_receipt(self.f.base, epoch="1000"), "--base-registry-generation", "319", "--base-ledger-head", LEDGER)
         self.assertEqual("ALLOW", agreeing["disposition"])
 
     def test_tampered_seal_fails_closed(self) -> None:
-        receipt = readback_receipt(self.f.base)
+        receipt = readback_receipt(self.f.base, epoch="1000")
         receipt["base_ref"] = {"registry_generation": 320, "ledger_head": LEDGER}
         out = self.evaluate(receipt)
         p = pred(out, "BASE_STATE_RECEIPT_BOUND")
@@ -491,9 +503,9 @@ class BaseStateReceiptTest(unittest.TestCase):
         self.assertEqual("FAIL_CLOSED", out["disposition"])
         self.assertTrue(SIX <= out.keys() and SIX <= p.keys())
         self.assertIsNone(out["change_digest"])
-        wrong = dict(readback_receipt(self.f.base), schema="other/v1")
+        wrong = dict(readback_receipt(self.f.base, epoch="1000"), schema="other/v1")
         self.assertEqual("BASE_STATE_RECEIPT_SCHEMA_MISMATCH", self.evaluate(ap.seal(wrong))["failure_code"])
-        refused = ap.seal(dict(readback_receipt(self.f.base), disposition="FAIL_CLOSED", failure_code="REGISTRY_GENERATION_UNREADABLE"))
+        refused = ap.seal(dict(readback_receipt(self.f.base, epoch="1000"), disposition="FAIL_CLOSED", failure_code="REGISTRY_GENERATION_UNREADABLE"))
         out = self.evaluate(refused)
         self.assertEqual("BASE_STATE_NOT_OBSERVED", out["failure_code"])
         self.assertEqual("REGISTRY_GENERATION_UNREADABLE", pred(out, "BASE_STATE_RECEIPT_BOUND")["receipt_failure_code"])
@@ -502,24 +514,48 @@ class BaseStateReceiptTest(unittest.TestCase):
         for extra in (("--base-registry-generation", "318"), ("--base-ledger-head", OTHER_LEDGER),
                       ("--current-ledger-head", OTHER_LEDGER)):
             with self.subTest(extra=extra):
-                out = self.evaluate(readback_receipt(self.f.base), *extra)
+                out = self.evaluate(readback_receipt(self.f.base, epoch="1000"), *extra)
                 p = pred(out, "BASE_STATE_RECEIPT_BOUND")
                 self.assertEqual("BASE_STATE_RECEIPT_FLAG_MISMATCH", p["failure_code"])
                 self.assertEqual("FAIL_CLOSED", out["disposition"])
                 self.assertTrue(SIX <= out.keys())
-        out = self.evaluate(readback_receipt("c" * 40))
+        out = self.evaluate(readback_receipt("c" * 40, epoch="1000"))
         self.assertEqual("BASE_STATE_RECEIPT_COMMIT_MISMATCH", out["failure_code"])
         self.assertTrue(SIX <= out.keys())
 
-    def test_null_receipt_epoch_never_satisfies_hb_epoch(self) -> None:
-        out = self.evaluate(readback_receipt(self.f.base), epoch="")
-        self.assertEqual("FAIL_CLOSED", out["disposition"])
-        self.assertEqual("HB_EPOCH_NOT_SUPPLIED", out["failure_code"])
-        self.assertIsNone(out["hb_epoch"])
-        self.assertEqual(["HB_EPOCH_SUPPLIED"], [p["predicate"] for p in out["predicates"]])
-        # even a receipt carrying an epoch does not supply the predicate's hb_epoch
-        self.assertEqual("HB_EPOCH_NOT_SUPPLIED", self.evaluate(readback_receipt(self.f.base, epoch="1000"), epoch="")["failure_code"])
+    def test_epoch_from_valid_receipt_binds(self) -> None:
+        out = self.evaluate(readback_receipt(self.f.base, epoch="4242"))
+        self.assertEqual("ALLOW", out["disposition"], out["fail_closed"])
+        self.assertEqual(4242, out["hb_epoch"])
+        hb = pred(out, "HB_EPOCH_SUPPLIED")
+        self.assertEqual(("4242", ap.HB_EPOCH_INVARIANT), (hb["receipt_hb_epoch"], hb["invariant"]))
+        self.assertEqual(4242, out["job_observation"]["hb_epoch"])  # the receipt epoch reaches Lane A
+        self.assertEqual(["BASE_STATE_RECEIPT_BOUND", "HB_EPOCH_SUPPLIED"], [p["predicate"] for p in out["predicates"][:2]])
+        self.assertEqual("ALLOW", self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch="4242")["disposition"])
 
+    def test_null_receipt_epoch_is_source_unobserved(self) -> None:
+        for epoch in (None, "4242"):
+            out = self.evaluate(readback_receipt(self.f.base, epoch=None), epoch=epoch)
+            self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED"), (out["disposition"], out["failure_code"]))
+            self.assertTrue(pred(out, "BASE_STATE_RECEIPT_BOUND")["holds"])
+            self.assertEqual(["BASE_STATE_RECEIPT_BOUND", "HB_EPOCH_SUPPLIED"], [p["predicate"] for p in out["predicates"]])
+            self.assertIsNone(out["hb_epoch"])
+            self.assertTrue(SIX <= out.keys())
+
+    def test_flag_mismatch_fails_closed(self) -> None:
+        for flag in ("4243", "12", "x"):
+            out = self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch=flag)
+            self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_FLAG_MISMATCH"), (out["disposition"], out["failure_code"]))
+            self.assertIn(ap.HB_EPOCH_INVARIANT, out["required_evidence_or_repair"])
+            self.assertEqual(2, len(out["predicates"]))
+
+    def test_failed_receipt_leaves_epoch_unobserved(self) -> None:
+        receipt = readback_receipt(self.f.base, epoch="4242")
+        receipt["base_ref"] = {"registry_generation": 320, "ledger_head": LEDGER}  # seal no longer verifies
+        out = self.evaluate(receipt)
+        self.assertEqual("BASE_STATE_RECEIPT_SEAL_INVALID", out["failure_code"])
+        self.assertEqual("HB_EPOCH_SOURCE_UNOBSERVED", pred(out, "HB_EPOCH_SUPPLIED")["failure_code"])
+        self.assertEqual(2, len(out["predicates"]))
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,7 +19,12 @@ the result seal follow StegVerse-Labs/TVC docs/SV_CHANGE_ADMISSION_PREDICATE_REF
 (TVC#519) and its ``tvc_request_digest`` (canonical JSON: sorted keys, (",", ":") separators,
 UTF-8, ensure_ascii=False; value ``"sha256:" + hex``).
 
-Predicates (all evaluated after HB_EPOCH_SUPPLIED; ADMISSION_INPUT_READY only if every one is ALLOW)
+Order: BASE_STATE_RECEIPT_BOUND, then HB_EPOCH_SUPPLIED, then the rest (nothing else is evaluated while the
+epoch is unobserved); ADMISSION_INPUT_READY only if every one is ALLOW.
+  HB_EPOCH_SUPPLIED              ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH: hb_epoch is taken from the
+      verified base-state receipt (the epoch on the org-ledger head receipt the base is bound to), never from
+      a clock or the flag. Absent receipt or null/invalid epoch -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED;
+      --hb-epoch, when given, must equal it, else FAIL_CLOSED HB_EPOCH_FLAG_MISMATCH.
   PR_AUTHOR_SESSION_DECLARED     --session-id matches the SV_CHANGE session pattern.
   BRANCH_WRITER_IS_BRANCH_OWNER  (own code; the only predicate that reads git) branch
       created in this clone; every move of the remote-tracking ref is "update by push"
@@ -38,7 +43,7 @@ Predicates (all evaluated after HB_EPOCH_SUPPLIED; ADMISSION_INPUT_READY only if
       readback receipt verifies as TVC#519 @af754807 sv_change_base_state checks it (schema,
       component, seal, ALLOW, well-formed base_ref/sources/hb_epoch), is bound to --base-sha
       and agrees with any explicit flag; it then supplies registry_generation / ledger_head
-      for change identity and HEAD_CURRENT_WITH_BASE. Its hb_epoch never satisfies HB_EPOCH_SUPPLIED.
+      for change identity and HEAD_CURRENT_WITH_BASE, and its hb_epoch is the HB_EPOCH_SUPPLIED source.
   HEAD_CURRENT_WITH_BASE         judged only from supplied inputs, no git: the PR's
       base_ref (--base-sha, the merge-base the head was built on, and its commit
       time) against the observed current base (--current-base-sha and its commit
@@ -515,16 +520,34 @@ def p_binder(a, head: str) -> dict:
     return r
 
 
-def hb_epoch_refusal(a) -> dict | None:
-    text = a.hb_epoch
-    r = row("HB_EPOCH_SUPPLIED")
-    if text is None or text == "":
-        return refuse(r, a, "HB_EPOCH_NOT_SUPPLIED", "supply --hb-epoch from the carrier; no clock is read",
-                      "rerun with --hb-epoch supplied")
-    if not HB_EPOCH.fullmatch(text) or int(text) < HB_EPOCH_MINIMUM:
-        return refuse(r, a, "HB_EPOCH_INVALID", "hb_epoch as ASCII digits >= 32; no clock is read",
-                      "rerun with --hb-epoch as digits >= 32")
-    return None
+HB_EPOCH_INVARIANT = "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH"
+
+
+def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
+    """HB_EPOCH_SUPPLIED under ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH: the admission hb_epoch is the epoch
+    on the org-ledger head receipt the base is bound to, carried sealed in the verified #3266 base-state receipt
+    (BASE_STATE_RECEIPT_BOUND). Never a clock. --hb-epoch is accepted only when it equals that value."""
+    bound = (receipt_row or {}).get("receipts", {}).get("base", {}).get("binds") if receipt_row and receipt_row["holds"] else None
+    source = bound.get("hb_epoch") if bound else None
+    r = row("HB_EPOCH_SUPPLIED", invariant=HB_EPOCH_INVARIANT,
+            source="BASE_STATE_RECEIPT_BOUND base receipt hb_epoch (#3266)", receipt_hb_epoch=source,
+            receipt_result_sha256=bound.get("result_sha256") if bound else None, flag_hb_epoch=a.hb_epoch)
+    if not (isinstance(source, str) and HB_EPOCH.fullmatch(source) and int(source) >= HB_EPOCH_MINIMUM):
+        why = ("no verified --base-state-receipt" if bound is None else "the verified receipt's hb_epoch is null (JD-P4-3 open)"
+               if source is None else "the verified receipt's hb_epoch is not digits >= 32")
+        return refuse(r, a, "HB_EPOCH_SOURCE_UNOBSERVED",
+                      f"{HB_EPOCH_INVARIANT}: a verified #3266 base-state receipt (--base-state-receipt) whose hb_epoch is the "
+                      f"epoch of the org-ledger head receipt the base is bound to ({why}); no clock is read and the flag is never the source",
+                      "rerun once the bound ledger head's receipt epoch is carried in the readback receipt (JD-P4-3)"), None
+    if a.hb_epoch not in (None, "") and not (HB_EPOCH.fullmatch(a.hb_epoch) and int(a.hb_epoch) == int(source)):
+        return refuse(r, a, "HB_EPOCH_FLAG_MISMATCH",
+                      f"{HB_EPOCH_INVARIANT}: --hb-epoch ({a.hb_epoch}) equals the bound receipt's hb_epoch ({source}), or omit the flag",
+                      "rerun without --hb-epoch or with the receipt's value"), None
+    return r, source
+
+
+def pred_holds(predicates: list, name: str) -> bool:
+    return any(p["predicate"] == name and p["holds"] for p in predicates)
 
 
 def evaluate(a) -> dict:
@@ -535,28 +558,27 @@ def evaluate(a) -> dict:
         range_base = None  # unresolvable range: the writer predicate fails closed, content stays empty
     runs_raw = Path(a.check_runs).read_bytes() if a.check_runs else None
     job_record = None
-    epoch_fail = hb_epoch_refusal(a)
     content: list = []
     identity = None
-    if epoch_fail is not None:
-        predicates = [epoch_fail]
-    else:
+    # BASE_STATE_RECEIPT_BOUND first: the epoch is read only from a verified receipt.
+    receipt_row = p_base_state(a) if (a.base_state_receipt or a.current_base_state_receipt) else None
+    epoch_row, epoch = p_hb_epoch(a, receipt_row)
+    predicates = ([receipt_row] if receipt_row else []) + [epoch_row]
+    if epoch is not None:  # nothing else is evaluated while the epoch is unobserved
+        a.hb_epoch = epoch
         writer = p_writer(a, head, range_base) if range_base else None
-        predicates = [p_session(a)]
+        predicates.append(p_session(a))
         if writer is None:
             writer = refuse(row("BRANCH_WRITER_IS_BRANCH_OWNER"), a, "BRANCH_HAS_FOREIGN_WRITER",
                             "supply a --range-base/--base-sha commit present in the clone so the PR's own range is defined",
                             "rerun with the range supplied")
         predicates.append(writer)
         if range_base:
-            sess_ok = predicates[0]["holds"] and writer["holds"]
+            sess_ok = pred_holds(predicates, "PR_AUTHOR_SESSION_DECLARED") and writer["holds"]
             for path, deleted in changed_paths(a.clone, range_base, head):
                 content.append({"path": path, "deleted": deleted,
                                 "blob_digest": None if deleted else blob_digest(a.clone, head, path),
                                 "writer_session": writer_session(a.session_id if sess_ok else None)})
-        if a.base_state_receipt or a.current_base_state_receipt:
-            receipt_row = p_base_state(a)
-            predicates.append(receipt_row)
         identity_row, identity = p_identity(a, content)
         predicates.append(identity_row)
         jobs, job_record = p_jobs(a, head, identity["change_digest"] if identity else None)
@@ -583,7 +605,7 @@ def evaluate(a) -> dict:
         "check_runs_input": {"path": str(a.check_runs), "digest": digest(runs_raw)} if runs_raw is not None else None,
         "expected_jobs": sorted(set(a.expect or [])),
         "job_observation": job_record,
-        "hb_epoch": int(a.hb_epoch) if epoch_fail is None else None,
+        "hb_epoch": int(epoch) if epoch is not None else None,
         "owning_existing_goal": a.goal,
         "admission_input": "admission-input-ready" if not failed else "not-ready",
         "disposition": disposition,
@@ -600,7 +622,8 @@ def parse(argv: list[str]):
     p.add_argument("--clone", required=True)
     p.add_argument("--branch", required=True)
     p.add_argument("--session-id", required=True, help="declared authoring session (declared input)")
-    p.add_argument("--hb-epoch", required=True, help="carrier-supplied epoch, ASCII digits >= 32; no clock is read")
+    p.add_argument("--hb-epoch", default=None,
+                   help="optional cross-check only: must equal the verified base-state receipt's hb_epoch (the source)")
     p.add_argument("--check-runs", default=None, help="check-runs JSON for the head, passed to Lane A's evaluator")
     p.add_argument("--expect", action="append", default=None, help="expected job name for Lane A (repeatable)")
     p.add_argument("--base-sha", default=None, help="B1 base_ref: the PR's merge-base the head was built on")
