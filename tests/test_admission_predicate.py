@@ -593,10 +593,10 @@ class BaseStateReceiptTest(unittest.TestCase):
                 self.assertNotIn("HB_EPOCH_FLAG_MISMATCH", [p.get("failure_code") for p in out["predicates"]])
                 self.assertTrue(ap.seal_verifies(out))
 
-    def test_absent_null_or_sentinel_supplied_epoch_fails_closed(self) -> None:
-        """Contract invariant (15:59Z): an absent, null or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED supplied epoch is FAIL_CLOSED
+    def test_explicit_null_or_sentinel_flag_fails_closed(self) -> None:
+        """Ruling 16:03Z: an explicit '', 'null' or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED --hb-epoch is FAIL_CLOSED
         HB_EPOCH_SOURCE_UNOBSERVED, even when the sealed source is observed."""
-        for flag in (None, "", "null", "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"):
+        for flag in ("", "null", "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"):
             with self.subTest(flag=flag):
                 out = self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch=flag)
                 hb = pred(out, "HB_EPOCH_SUPPLIED")
@@ -606,6 +606,22 @@ class BaseStateReceiptTest(unittest.TestCase):
                 self.assertNotIn("supplied_epoch_rule", hb)
                 self.assertIsNone(out["hb_epoch"])
                 self.assertEqual(2, len(out["predicates"]))
+
+    def test_omitted_flag_runs_no_cross_check_and_reaches_allow(self) -> None:
+        """Ruling 16:03Z: --hb-epoch omitted -> no cross-check; ALLOW on the sealed epoch of the real 641f4b03 ALLOW receipt."""
+        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-641f4b03.json").read_text(encoding="utf-8"))
+        receipt = ap.seal(dict({k: v for k, v in allow.items() if k != "result_sha256"}, bound_main_commit=self.f.base))
+        out = self.evaluate(receipt, epoch=None)
+        hb = pred(out, "HB_EPOCH_SUPPLIED")
+        self.assertEqual(("ALLOW", "NOT_REQUESTED", None), (hb["disposition"], hb["cross_check"], hb["flag_hb_epoch"]))
+        self.assertEqual("ALLOW", out["disposition"], out["fail_closed"])
+        self.assertEqual("admission-input-ready", out["admission_input"])
+        self.assertEqual(469411750, out["hb_epoch"])
+        self.assertEqual(469411750, out["job_observation"]["hb_epoch"])
+        self.assertTrue(ap.seal_verifies(out))
+        self.assertEqual("ALLOW", self.evaluate(receipt, epoch="469411750")["disposition"])
+        self.assertEqual(("DENY", "HB_EPOCH_MISMATCH"), tuple(self.evaluate(receipt, epoch="469411751")[k] for k in ("disposition", "failure_code")))
+        self.assertEqual("ALLOW", self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch=None)["disposition"])
 
     def test_source_is_checked_before_the_supplied_value(self) -> None:
         """P1 order: an unobserved sealed source is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED whatever was supplied."""
