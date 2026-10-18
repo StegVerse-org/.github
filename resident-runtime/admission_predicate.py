@@ -35,7 +35,7 @@ Predicates (all evaluated after HB_EPOCH_SUPPLIED; ADMISSION_INPUT_READY only if
       Lane A FAIL_CLOSED -> FAIL_CLOSED with Lane A's own code, otherwise FAIL_CLOSED
       CHECK_SKIPPED_OR_UNOBSERVED (TVC sv_change_job_observation mapping).
   BASE_STATE_RECEIPT_BOUND       (with --base-state-receipt) the sealed StegVerse-Labs/.github#3266
-      readback receipt verifies as TVC#519 @28699422 sv_change_base_state checks it (schema,
+      readback receipt verifies as TVC#519 @af754807 sv_change_base_state checks it (schema,
       component, seal, ALLOW, well-formed base_ref/sources/hb_epoch), is bound to --base-sha
       and agrees with any explicit flag; it then supplies registry_generation / ledger_head
       for change identity and HEAD_CURRENT_WITH_BASE. Its hb_epoch never satisfies HB_EPOCH_SUPPLIED.
@@ -288,11 +288,15 @@ def load_job_observation_reference(pin_path: Path | None = None):
 
 
 # ---- B1 base-state readback receipt (StegVerse-Labs/.github#3266 RTC-SV-CHANGE-BASE-STATE-READBACK-014) ----
-# Verified exactly as TVC#519 @28699422 sv_change_base_state.base_state_from_readback does; producer pinned in
+# Verified exactly as TVC#519 @af754807 sv_change_base_state.base_state_from_readback does; producer pinned in
 # config/admission-predicate/base-state-readback.pin.json (traceability: P4 consumes only the sealed receipt).
 BASE_STATE_SCHEMA = "stegverse.sv-change-base-state-readback/v1"
 BASE_STATE_COMPONENT = "RTC-SV-CHANGE-BASE-STATE-READBACK-014"
-BASE_STATE_SOURCES = ("data/canonical-task-registry.json", "refs/stegverse/organization-ledger:HEAD.json")
+BASE_STATE_LEDGER_HEAD_FILE = "refs/stegverse/organization-ledger:HEAD.json"
+BASE_STATE_LABS_REGISTRY = "data/canonical-task-registry.json"  # receipts without ``repository`` (producer c431bfb0)
+BASE_STATE_REGISTRY_PATHS = {"StegVerse-Labs/.github": "data/canonical-task-registry.json",
+                             "StegVerse-org/.github": "orchestration/task-registry.json"}  # == producer REGISTRY_PATHS @78a0c78e
+REGISTRY_GENERATION_JOINT_ITEM = "Q-ORG-REGISTRY-GENERATION"
 BASE_STATE_PIN = Path(__file__).resolve().parents[1] / "config" / "admission-predicate" / "base-state-readback.pin.json"
 
 
@@ -314,14 +318,21 @@ def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str
     sources = receipt.get("sources")
     files = {x.get("file"): x.get("blob_sha") for x in sources if isinstance(x, Mapping)} if isinstance(sources, list) else {}
     epoch = receipt.get("hb_epoch")
+    if "repository" in receipt:
+        registry_file = BASE_STATE_REGISTRY_PATHS.get(receipt["repository"]) if isinstance(receipt["repository"], str) else None
+        if registry_file is None:
+            return None, "BASE_STATE_RECEIPT_MALFORMED", f"receipt repository {receipt['repository']!r} has no pinned registry path"
+    else:
+        registry_file = BASE_STATE_LABS_REGISTRY
     if (not base_bound({"registry_generation": gen, "ledger_head": head})
             or not isinstance(commit, str) or not GIT_SHA.match(commit)
-            or not all(isinstance(files.get(f), str) and GIT_SHA.match(files[f]) for f in BASE_STATE_SOURCES)
+            or not all(isinstance(files.get(f), str) and GIT_SHA.match(files[f]) for f in (registry_file, BASE_STATE_LEDGER_HEAD_FILE))
             or (epoch is not None and not (isinstance(epoch, str) and epoch.isascii() and epoch.isdigit() and int(epoch) >= HB_EPOCH_MINIMUM))):
         return None, "BASE_STATE_RECEIPT_MALFORMED", "base_ref, bound_main_commit, sources or hb_epoch not well formed"
     return {"registry_generation": gen, "ledger_head": head, "bound_main_commit": commit,
             "result_sha256": receipt[SEAL_FIELD], "hb_epoch": epoch, "hb_epoch_open": epoch is None,
-            "registry_blob_sha": files[BASE_STATE_SOURCES[0]]}, None, None
+            "registry_blob_sha": files[registry_file], "repository": receipt.get("repository"),
+            "registry_file": registry_file}, None, None
 
 
 def p_base_state(a) -> dict:
@@ -329,8 +340,8 @@ def p_base_state(a) -> dict:
     registry_generation / ledger_head. Each receipt must verify (TVC rule), be bound to that side's commit
     (--base-sha / --current-base-sha), and agree with any explicit flag. The base receipt also observes the
     current side when --current-base-sha is its bound commit and no current receipt is supplied."""
-    r = row("BASE_STATE_RECEIPT_BOUND", producer="StegVerse-Labs/.github#3266 @c431bfb0 " + BASE_STATE_COMPONENT,
-            verifier="TVC#519 @28699422 sv_change_base_state.base_state_from_readback (reproduced)", receipts={})
+    r = row("BASE_STATE_RECEIPT_BOUND", producer="StegVerse-Labs/.github#3266 @78a0c78e " + BASE_STATE_COMPONENT,
+            verifier="TVC#519 @af754807 sv_change_base_state.base_state_from_readback (reproduced)", receipts={})
     sides = [("base", a.base_state_receipt, a.base_sha), ("current", a.current_base_state_receipt, a.current_base_sha)]
     for side, path, sha in sides:
         if not path:
@@ -347,6 +358,12 @@ def p_base_state(a) -> dict:
             if isinstance(receipt, Mapping) and receipt.get("failure_code"):
                 r["receipt_failure_code"] = receipt.get("failure_code")
                 r["receipt_failed_predicate"] = receipt.get("failed_predicate")
+            if code == "BASE_STATE_NOT_OBSERVED" and r.get("receipt_failure_code") == "REGISTRY_GENERATION_NOT_DECLARED":
+                r["joint_item"] = REGISTRY_GENERATION_JOINT_ITEM
+                return refuse(r, a, code, f"the {side} repository's registry declares an integer generation >= 0 "
+                              f"(receipt REGISTRY_GENERATION_NOT_DECLARED; joint item {REGISTRY_GENERATION_JOINT_ITEM}); "
+                              "P4 proposes and makes no registry edit",
+                              f"after {REGISTRY_GENERATION_JOINT_ITEM} decides, rerun with a fresh ALLOW readback receipt")
             return refuse(r, a, code, f"a sealed {BASE_STATE_SCHEMA} ALLOW receipt from #3266's read-only producer ({side}: {why})",
                           "rerun with a fresh readback receipt for the bound commit")
         if state["bound_main_commit"] != sha:

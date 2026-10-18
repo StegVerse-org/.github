@@ -439,12 +439,35 @@ class BaseStateReceiptTest(unittest.TestCase):
                           "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
                           "result_sha256": "sha256:04ae0f6e40cacf885bb9bce0b466e5cc3dfd4a48783596188eefa7bfbd516a20",
                           "hb_epoch": None, "hb_epoch_open": True,
-                          "registry_blob_sha": "8d3ff1902412ab85c0fafcdb4c2f11cc0b0afbef"}, state)
+                          "registry_blob_sha": "8d3ff1902412ab85c0fafcdb4c2f11cc0b0afbef",
+                          "repository": None, "registry_file": "data/canonical-task-registry.json"}, state)
         pin = json.loads(ap.BASE_STATE_PIN.read_text(encoding="utf-8"))
-        self.assertEqual("c431bfb038f064b29b6b8ba7c68409f0057ea9e7", pin["producer"]["ref"])
+        self.assertEqual("78a0c78e1f1313bd11ff916b26a3ab467f2f54e2", pin["producer"]["ref"])
         self.assertEqual(ap.BASE_STATE_SCHEMA, pin["result_schema"])
-        self.assertEqual(hashlib.sha1(b"blob %d\0" % BASE_STATE_FIXTURE.stat().st_size + BASE_STATE_FIXTURE.read_bytes()).hexdigest(),
-                         pin["fixture"]["git_blob_sha"])
+        self.assertEqual(ap.BASE_STATE_REGISTRY_PATHS, pin["registry_paths"])
+        root = Path(__file__).resolve().parents[1]
+        for fx in pin["fixtures"]:
+            data = (root / fx["path"]).read_bytes()
+            self.assertEqual(hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest(), fx["git_blob_sha"])
+        labs = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-78a0c78e.json").read_text(encoding="utf-8"))
+        state, code, _ = ap.base_state_from_readback(labs)
+        self.assertIsNone(code)
+        self.assertEqual(("StegVerse-Labs/.github", "data/canonical-task-registry.json", 319),
+                         (state["repository"], state["registry_file"], state["registry_generation"]))
+        unmapped = ap.seal(dict(labs, repository="Other/repo"))
+        self.assertEqual("BASE_STATE_RECEIPT_MALFORMED", ap.base_state_from_readback(unmapped)[1])
+
+    def test_org_registry_without_generation_names_the_joint_item(self) -> None:
+        receipt = json.loads((BASE_STATE_FIXTURE.parent / "org-main-40a5d235-producer-78a0c78e.json").read_text(encoding="utf-8"))
+        self.assertEqual("REGISTRY_GENERATION_NOT_DECLARED", receipt["failure_code"])
+        receipt = ap.seal(dict(receipt, bound_main_commit=self.f.base))
+        out = self.evaluate(receipt)
+        p = pred(out, "BASE_STATE_RECEIPT_BOUND")
+        self.assertEqual(("FAIL_CLOSED", "BASE_STATE_NOT_OBSERVED", "REGISTRY_GENERATION_NOT_DECLARED"),
+                         (p["disposition"], p["failure_code"], p["receipt_failure_code"]))
+        self.assertTrue(SIX <= p.keys())
+        self.assertIn("Q-ORG-REGISTRY-GENERATION", p["required_evidence_or_repair"])
+        self.assertIn("Q-ORG-REGISTRY-GENERATION", p["next_attempt"])
 
     def test_valid_receipt_binds_identity_and_base(self) -> None:
         out = self.evaluate(readback_receipt(self.f.base))

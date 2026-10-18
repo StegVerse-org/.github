@@ -1,30 +1,56 @@
 {
-  "_note": "Pin of the B1 base-state readback producer (RTC-SV-CHANGE-BASE-STATE-READBACK-014, StegVerse-Labs/.github draft PR 3266). The producer runs git, so P4 does not vendor or execute it; admission_predicate.py consumes only its sealed receipt (--base-state-receipt) and verifies it as TVC#519 @28699422 sv_change_base_state.base_state_from_readback does. git_blob_sha and sha256 verified against bytes fetched at the PR head on 2026-10-18.",
+  "_note": "Pin of the B1 base-state readback producer (RTC-SV-CHANGE-BASE-STATE-READBACK-014, StegVerse-Labs/.github draft PR 3266). The producer runs git, so P4 does not vendor or execute it; admission_predicate.py consumes only its sealed receipt (--base-state-receipt) and verifies it as TVC#519 @af754807 sv_change_base_state.base_state_from_readback does. git_blob_sha and sha256 verified against bytes fetched at PR head 78a0c78e on 2026-10-18 (re-pinned from c431bfb0, as TVC@af754807 did). 78a0c78e does not fill hb_epoch: it stays caller-supplied or null.",
   "producer": {
     "repository": "StegVerse-Labs/.github",
     "pull_request": 3266,
     "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
     "path": "resident-runtime/sv_change_base_state_readback.py",
-    "ref": "c431bfb038f064b29b6b8ba7c68409f0057ea9e7",
-    "git_blob_sha": "2d63993121d91e963e95808dad8e973e216b6a3c",
-    "tests_git_blob_sha": "56892c8b75b65413f21baf4ca4cf12e342bf8b9c"
+    "ref": "78a0c78e1f1313bd11ff916b26a3ab467f2f54e2",
+    "git_blob_sha": "2c369c8e6db39c6ef1e6a55e953f16a66bd36c77",
+    "tests_git_blob_sha": "1ea61d90280dfc9843dac08b03a8909dc9031b99"
   },
-  "sha256": "2e2b8be9659112cac9649a250ddf466c4633d2ab892923541fe6d76226440d14",
+  "sha256": "11c52bb7c6e4bb404b63d47d28ec66c9015ace38221d2b2fcc5ca8026068f344",
   "result_schema": "stegverse.sv-change-base-state-readback/v1",
   "result_seal_field": "result_sha256",
   "verifier_reference": {
     "repository": "StegVerse-Labs/TVC",
     "pull_request": 519,
-    "ref": "286994223124340251f1d77adb5f90e6b8111ef5",
+    "ref": "af7548076f4d4af89e5762dcec618e2f5229e0f5",
     "path": "sv_change_base_state.py",
-    "git_blob_sha": "e5310480a51b2810e1f76fb5269fc4b7f9e22582",
-    "sha256": "879eb59bbee80fa79d980acc3fb524cf886275a1aff44ce84ec6a41caf7808d1",
+    "git_blob_sha": "ee5a1b61181a217163b96325827d6188151504e0",
+    "sha256": "a96b1c562e59d5523d24b10f26502878f836da33b858333532c2bb5d4226a1de",
     "function": "base_state_from_readback"
   },
-  "fixture": {
-    "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880.json",
-    "copied_verbatim_from": "StegVerse-Labs/TVC@286994223124340251f1d77adb5f90e6b8111ef5 tests/fixtures/base-state-readback/labs-main-978b8880.json",
-    "git_blob_sha": "d59408c98e239c26aeb5109651504471d0859932"
+  "hb_epoch_slot": "caller-supplied or null (open as JD-P4-3); P4 never takes hb_epoch from this receipt",
+  "fixtures": [
+    {
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880.json",
+      "copied_verbatim_from": "StegVerse-Labs/TVC@af7548076f4d4af89e5762dcec618e2f5229e0f5 tests/fixtures/base-state-readback/labs-main-978b8880.json",
+      "git_blob_sha": "d59408c98e239c26aeb5109651504471d0859932"
+    },
+    {
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-78a0c78e.json",
+      "copied_verbatim_from": "StegVerse-Labs/TVC@af7548076f4d4af89e5762dcec618e2f5229e0f5 tests/fixtures/base-state-readback/labs-main-978b8880-producer-78a0c78e.json",
+      "git_blob_sha": "0d7752d685a45d3aafb883bf0382323a956e0978"
+    },
+    {
+      "path": "tests/fixtures/admission-predicate/base-state-readback/org-main-40a5d235-producer-78a0c78e.json",
+      "copied_verbatim_from": "StegVerse-Labs/TVC@af7548076f4d4af89e5762dcec618e2f5229e0f5 tests/fixtures/base-state-readback/org-main-40a5d235-producer-78a0c78e.json",
+      "git_blob_sha": "8192e3081fdc9c8da13cb85c77caef10f8b017eb"
+    }
+  ],
+  "registry_paths": {
+    "StegVerse-Labs/.github": "data/canonical-task-registry.json",
+    "StegVerse-org/.github": "orchestration/task-registry.json"
   },
-  "hb_epoch_slot": "caller-supplied or null (open as JD-P4-3); P4 never takes hb_epoch from this receipt"
+  "registry_generation_joint_item": "Q-ORG-REGISTRY-GENERATION",
+  "superseded": [
+    {
+      "ref": "c431bfb038f064b29b6b8ba7c68409f0057ea9e7",
+      "git_blob_sha": "2d63993121d91e963e95808dad8e973e216b6a3c",
+      "sha256": "2e2b8be9659112cac9649a250ddf466c4633d2ab892923541fe6d76226440d14",
+      "tests_git_blob_sha": "56892c8b75b65413f21baf4ca4cf12e342bf8b9c",
+      "reason": "hard-coded data/canonical-task-registry.json; StegVerse-org/.github returned REGISTRY_GENERATION_UNREADABLE"
+    }
+  ]
 }
