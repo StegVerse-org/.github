@@ -106,10 +106,13 @@ PR #115 merged at `7d57e8afa05e6e562dd4e1eb8445765f34451b7a` after
 all seven workflows succeeded for head `daed4d8196aa6b1454a33d5b9dc8e33884e6f27d`.
 Foundation validation run: `38030595921`; Registry validation run: `38030595755`.
 The non-authority/Inference Window tests and README obligations are now reconciled
-in `orchestration/task-registry.json`; no source obligations remain there.
+in `orchestration/task-registry.json`; no source obligations of this parent remain there.
 The 13 existing foundation contract and validator tests also passed locally.
-Registry status `accepted`, COSV `20011100110000`, and the existing active goal
-are preserved pending terminal coordination review. This is not Sandbox activation.
+Registry status is `complete` with COSV `71000000100100` (`orchestration/task-registry.json`;
+`control/task-vectors/SVORG-LLM-ORG-FOUNDATION-001.json`). Subtasks
+`SVORG-LLM-ORG-FOUNDATION-001-W01` through `-W13` remain open in the registry (W01
+`in_progress`; W02–W04 `proposed`; W05 `blocked`; W06–W13 `validating`).
+This is not Sandbox activation.
 
 The separate LLMA-368 read-only Registry disclosure has an authentic historical
 organization-ledger receipt, independently verified from a fresh fetch at

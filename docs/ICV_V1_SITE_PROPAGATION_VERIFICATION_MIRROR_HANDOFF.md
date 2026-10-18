@@ -2,12 +2,12 @@
 
 Goal Task ID: `ICV-V1-SITE-PROPAGATION-VERIFICATION-001`
 Issue: #64
-Status: COMPLETE / NO_PROPAGATION_REQUIRED
+Status: COMPLETE / NO_PROPAGATION_REQUIRED (evidence class `SOURCE_IMPLEMENTED`; the registry keeps legacy status `complete` only because its schema cannot carry the class, #150; not a runtime-complete claim)
 Source release: `Infrastructure-Continuity-Ventures/.github v1.0.0`
 Source commit: `9b691cfaac076b565153c5a1c0f6c4072b8b044e`
 Destination: `StegVerse-Labs/Site`
 Authority: PROPAGATION_VERIFICATION_ONLY
-COSV: ABSENT_FROM_CURRENT_TASK_REGISTRY_SCHEMA
+COSV: NOT_PROJECTED. The registry schema has no COSV field, and that absence is not an exemption: COSV is projected through `control/task-vector-index.json` (see `docs/STEGOS_PORTABILITY_MIRROR_HANDOFF.md`), which holds no vector for this task.
 
 ## Trigger
 
@@ -38,4 +38,4 @@ Site's older `source_merge=dcc176eea7e4ecc69e9b05c76036a337d987e650` records the
 
 The v1.0.0 acceptance/delivery/closure/continuing-obligation/reconstruction/evidence-set additions are internal commercial architecture and do not alter the public catalog/request semantics mirrored by Site. No served-body revalidation is required because no Site artifact changes or deployment transition is performed by this Goal; the existing handoff already retains the authentic served-body observation for the unchanged public surface.
 
-Goal terminal state: COMPLETE. No downstream propagation obligation remains from this release verification.
+Goal terminal state: COMPLETE (source-implemented; see Status). No downstream propagation obligation remains from this release verification.

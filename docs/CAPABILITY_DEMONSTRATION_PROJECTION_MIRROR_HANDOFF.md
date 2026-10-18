@@ -135,6 +135,7 @@ CAPABILITY_MAP_DERIVED_FROM_DEMONSTRATIONS=PASS 2 demonstrations
 tests.test_capability_demonstration_projection   18 OK
 tests.test_organization_manifest_ingress         23 OK
 org-runtime/runtime_boundary.py validate         valid, 15/15
+# counts at the time; on main 40a5d23: 31 manifest-ingress tests, 17 validate checks
 actionlint                                       clean
 ```
 
