@@ -11,9 +11,12 @@ predicate carries the six fields (failure_code, failed_predicate,
 required_evidence_or_repair, retry_entrypoint, owning_existing_goal, next_attempt).
 It is admission input only: it admits nothing and grants no authority.
 
-Field names, failure codes, the change_digest rule and the seal scheme follow
-StegVerse-Labs/TVC docs/SV_CHANGE_ADMISSION_PREDICATE_REFERENCE.md (TVC#519) and
-its ``tvc_request_digest`` (canonical JSON: sorted keys, (",", ":") separators,
+change_id / change_digest follow P1's rule (StegVerse-Labs/.github#3264 @725d0f65
+``resident-runtime/sv_work_items.py``): change_digest = "sha256:" + sha256 over the
+change_id canonical bytes of {target_repository, base_ref {registry_generation,
+ledger_head}, content [{path, blob_digest, deleted}]}. Field names, failure codes and
+the result seal follow StegVerse-Labs/TVC docs/SV_CHANGE_ADMISSION_PREDICATE_REFERENCE.md
+(TVC#519) and its ``tvc_request_digest`` (canonical JSON: sorted keys, (",", ":") separators,
 UTF-8, ensure_ascii=False; value ``"sha256:" + hex``).
 
 Predicates (all evaluated after HB_EPOCH_SUPPLIED; ADMISSION_INPUT_READY only if every one is ALLOW)
@@ -96,9 +99,41 @@ def writer_session(session: str | None) -> dict:
     return {"session": session, "evidence_class": "DECLARED"}
 
 
-def change_digest(content: list) -> str:
-    """TVC sv_change_admission.change_digest: digest over content sorted by path (B2)."""
-    return digest(sorted((dict(e) for e in content), key=lambda e: str(e.get("path"))))
+# ---- P1 change identity (StegVerse-Labs/.github#3264 @725d0f65 resident-runtime/sv_work_items.py) ----
+GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
+
+
+def change_identity_canonical_bytes(value: Any) -> bytes:
+    """P1 canon() / CANONICAL_SERIALIZATION: JSON, sort_keys, (",", ":"), UTF-8, ensure_ascii False, no newline."""
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def base_bound(base: Any) -> bool:
+    """P1 _base_ok: registry_generation int >= 0 (not bool) and ledger_head 40 lowercase hex."""
+    return (isinstance(base, Mapping) and isinstance(base.get("registry_generation"), int)
+            and not isinstance(base.get("registry_generation"), bool) and base["registry_generation"] >= 0
+            and isinstance(base.get("ledger_head"), str) and GIT_SHA.match(base["ledger_head"]) is not None)
+
+
+def change_identity_input(rec: Mapping[str, Any]) -> dict:
+    """P1 change_identity_input: {target_repository, base_ref as recorded, content [{path, blob_digest (null when
+    deleted), deleted}] sorted by path}. Only boolean true deletes; writer_session is evidence, not identity."""
+    content = []
+    for c in rec.get("content") or []:
+        if isinstance(c, Mapping):
+            deleted = c.get("deleted", False) is True
+            content.append({"path": c.get("path"), "blob_digest": None if deleted else c.get("blob_digest"), "deleted": deleted})
+    return {"target_repository": rec.get("target_repository"), "base_ref": dict(rec["base_ref"]),
+            "content": sorted(content, key=lambda c: str(c["path"]))}
+
+
+def change_id(rec: Mapping[str, Any]) -> str:
+    return "svc:" + hashlib.sha256(change_identity_canonical_bytes(change_identity_input(rec))).hexdigest()
+
+
+def change_digest(rec: Mapping[str, Any]) -> str:
+    """P1 change_digest: "sha256:" + sha256 over the change_id canonical bytes (change_digest[7:] == change_id[4:])."""
+    return "sha256:" + hashlib.sha256(change_identity_canonical_bytes(change_identity_input(rec))).hexdigest()
 
 
 # ---- git ----
@@ -247,6 +282,32 @@ def load_job_observation_reference(pin_path: Path | None = None):
         return None, {"pin_file": str(pin_path)}, f"reference unreadable: {exc}"
 
 
+def p_identity(a, content: list) -> tuple[dict, dict | None]:
+    """CHANGE_IDENTITY_INPUT_BOUND: P1's change_id / change_digest need target_repository, base_ref
+    {registry_generation, ledger_head} and content. They are supplied by --repository,
+    --base-registry-generation and --base-ledger-head; nothing is guessed."""
+    base = {"registry_generation": a.base_registry_generation, "ledger_head": a.base_ledger_head}
+    r = row("CHANGE_IDENTITY_INPUT_BOUND", rule="StegVerse-Labs/.github#3264 @725d0f65 sv_work_items.change_digest",
+            identity_base_ref=base, target_repository=a.repository)
+    if not isinstance(a.repository, str) or not a.repository:
+        return refuse(r, a, "TARGET_REPOSITORY_NOT_SUPPLIED",
+                      "--repository owner/name (change_id hashes target_repository)",
+                      "rerun with --repository supplied"), None
+    if not base_bound(base):
+        refuse(r, a, "SV_CHANGE_BASE_UNBOUND",
+               "--base-registry-generation (int >= 0) and --base-ledger-head (40 lowercase hex): change_id and "
+               "change_digest hash both (P1 BASE_BOUND_TO_REGISTRY_GENERATION_AND_LEDGER_HEAD)",
+               "rerun with the registry generation and ledger head supplied")
+        r["p1_failed_predicate"] = "BASE_BOUND_TO_REGISTRY_GENERATION_AND_LEDGER_HEAD"
+        return r, None
+    if not content:
+        return refuse(r, a, "CHANGE_CONTENT_NOT_OBSERVED",
+                      "a non-empty content[] for the PR's own range (writer range must resolve)",
+                      "rerun with a resolvable --range-base/--base-sha"), None
+    rec = {"target_repository": a.repository, "base_ref": base, "content": content}
+    return r, {"change_id": change_id(rec), "change_digest": change_digest(rec)}
+
+
 def p_jobs(a, head: str, change: str | None) -> tuple[dict, dict | None]:
     r = row("ALL_JOBS_RAN_AND_PASSED", delegated_to="StegVerse-Labs/.github#3262 scripts/evaluate_admission_job_observation.py")
     mod, ref, why = load_job_observation_reference()
@@ -372,6 +433,7 @@ def evaluate(a) -> dict:
     job_record = None
     epoch_fail = hb_epoch_refusal(a)
     content: list = []
+    identity = None
     if epoch_fail is not None:
         predicates = [epoch_fail]
     else:
@@ -388,7 +450,9 @@ def evaluate(a) -> dict:
                 content.append({"path": path, "deleted": deleted,
                                 "blob_digest": None if deleted else blob_digest(a.clone, head, path),
                                 "writer_session": writer_session(a.session_id if sess_ok else None)})
-        jobs, job_record = p_jobs(a, head, change_digest(content) if content else None)
+        identity_row, identity = p_identity(a, content)
+        predicates.append(identity_row)
+        jobs, job_record = p_jobs(a, head, identity["change_digest"] if identity else None)
         predicates += [jobs, p_base(a)]
         if a.pin:
             predicates.append(p_binder(a, head))
@@ -407,7 +471,8 @@ def evaluate(a) -> dict:
                          "registry_generation": a.current_registry_generation, "ledger_head": a.current_ledger_head},
         "range_base": range_base,
         "content": sorted(content, key=lambda e: e["path"]),
-        "change_digest": change_digest(content) if content else None,
+        "change_id": identity["change_id"] if identity else None,
+        "change_digest": identity["change_digest"] if identity else None,
         "check_runs_input": {"path": str(a.check_runs), "digest": digest(runs_raw)} if runs_raw is not None else None,
         "expected_jobs": sorted(set(a.expect or [])),
         "job_observation": job_record,

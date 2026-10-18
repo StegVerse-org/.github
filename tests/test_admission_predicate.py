@@ -19,6 +19,7 @@ spec.loader.exec_module(ap)
 
 SIX = set(ap.SIX_FIELDS)
 SESSION = "grok:p4-maintenance-lane/a65c67bf"
+LEDGER = "a5bb54d81893b392a3ce28182986fc39857807e1"
 
 
 def run(cwd: Path, *args: str) -> str:
@@ -75,13 +76,15 @@ class Fixture:
         return str(path)
 
     def args(self, *extra: str, checks: str | None = None, epoch: str = "1000", session: str = SESSION,
-             current: tuple | None = None, expect: tuple = ("a",)):
+             current: tuple | None = None, expect: tuple = ("a",), identity: bool = True):
         c = current or (self.base, self.base_time)
         exp = [x for e in expect for x in ("--expect", e)]
+        ident = ["--repository", "Example/lane", "--base-registry-generation", "319", "--base-ledger-head", LEDGER,
+                 "--current-registry-generation", "319", "--current-ledger-head", LEDGER] if identity else []
         return ap.parse(["--clone", str(self.clone), "--branch", "lane/x", "--session-id", session,
                          "--hb-epoch", epoch, "--check-runs", checks or self.checks({"a": "success"}), *exp,
                          "--base-sha", self.base, "--base-commit-time", str(self.base_time),
-                         "--current-base-sha", c[0], "--current-base-commit-time", str(c[1]), *extra])
+                         "--current-base-sha", c[0], "--current-base-commit-time", str(c[1]), *ident, *extra])
 
 
 def pred(out: dict, name: str) -> dict:
@@ -117,10 +120,14 @@ class AdmissionPredicateTest(unittest.TestCase):
         self.assertEqual("sha256:" + hashlib.sha256(self.f.vendored).hexdigest(), content["vendor/v.txt"]["blob_digest"])
         self.assertEqual([{"session": SESSION, "evidence_class": "DECLARED"}] * 3, [e["writer_session"] for e in out["content"]])
         self.assertEqual({"path", "blob_digest", "writer_session", "deleted"}, set(out["content"][0]))
-        # deterministic, TVC rule: digest over content sorted by path
-        expected = "sha256:" + hashlib.sha256(json.dumps(sorted(out["content"], key=lambda e: e["path"]),
-                                              sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
-        self.assertEqual(expected, out["change_digest"])
+        # P1 rule: sha256 over the change_id canonical bytes of {target_repository, base_ref, content-identity}
+        ident = {"target_repository": "Example/lane",
+                 "base_ref": {"registry_generation": 319, "ledger_head": LEDGER},
+                 "content": sorted(({"path": e["path"], "blob_digest": e["blob_digest"], "deleted": e["deleted"]}
+                                    for e in out["content"]), key=lambda e: e["path"])}
+        raw = json.dumps(ident, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+        self.assertEqual("sha256:" + hashlib.sha256(raw).hexdigest(), out["change_digest"])
+        self.assertEqual(out["change_digest"][7:], out["change_id"][4:])
         self.assertEqual(out["change_digest"], ap.evaluate(self.f.args())["change_digest"])
         writer = pred(out, "BRANCH_WRITER_IS_BRANCH_OWNER")
         self.assertEqual(3, len(writer["commits"]))
@@ -269,7 +276,7 @@ class AdmissionPredicateTest(unittest.TestCase):
     def test_one_sided_registry_generation_fails_closed(self) -> None:
         for extra in (("--base-registry-generation", "319"), ("--current-registry-generation", "319")):
             with self.subTest(extra):
-                p = pred(ap.evaluate(self.f.args(*extra)), "HEAD_CURRENT_WITH_BASE")
+                p = pred(ap.evaluate(self.f.args(*extra, identity=False)), "HEAD_CURRENT_WITH_BASE")
                 self.assertEqual("BASE_STATE_NOT_OBSERVED", p["failure_code"])
                 self.assertEqual("FAIL_CLOSED", p["disposition"])
                 self.assertTrue(SIX <= p.keys())
@@ -277,7 +284,7 @@ class AdmissionPredicateTest(unittest.TestCase):
     def test_one_sided_ledger_head_fails_closed(self) -> None:
         for extra in (("--base-ledger-head", "a" * 40), ("--current-ledger-head", "a" * 40)):
             with self.subTest(extra):
-                p = pred(ap.evaluate(self.f.args(*extra)), "HEAD_CURRENT_WITH_BASE")
+                p = pred(ap.evaluate(self.f.args(*extra, identity=False)), "HEAD_CURRENT_WITH_BASE")
                 self.assertEqual("BASE_STATE_NOT_OBSERVED", p["failure_code"])
                 self.assertEqual("FAIL_CLOSED", p["disposition"])
 
@@ -317,63 +324,78 @@ class AdmissionPredicateTest(unittest.TestCase):
             self.assertNotIn(forbidden, src)
 
 
-# Known-answer vectors for change_digest (TVC rule, D7 writer_session shape).
-# Source 1-2: StegVerse-Labs/TVC@735c9548c4746dfa28a8b26b8992f3f29a27b7a8
-#   tests/fixtures/admission-scenarios/scenarios.jsonl (git blob 1e207c2773ececf7da0730bdb2f8c00c793c709c),
-#   sv_change.content and sv_change.head.change_digest of the named scenarios, copied verbatim.
-# Source 3: TVC@735c9548 tvc_request_digest.digest (blob ac242efac0c3f2020f95fc47b9690938e3b044e6) applied as
-#   sv_change_admission.change_digest (blob 76003e3c56f423e554c71cae9fabfb4a81400b40) to the input below,
-#   run on the box; covers a deleted entry and an UNKNOWN writer_session.
-WS_A = {"evidence_class": "DECLARED", "session": "b699e0c0-3b4e-4a24-945f-6f521c282268"}
-KAT = [
-    ("SCN-LABS-3246-POSITIVE-CONTROL", [
-        {"blob_digest": "sha256:85caa915309ffc2e6c4b3f84eb21b436b977660d0001d48b883cfdba7b0f0007", "deleted": False,
-         "path": "scripts/consume_sdk_evaluator_governance_posture_request.py",
-         "writer_session": {"evidence_class": "DECLARED", "session": "6329a668"}},
-        {"blob_digest": "sha256:0489e69eb154e5a8c04afb400ac44860f22cf9361825db8bca30c430cfe8bee3", "deleted": False,
-         "path": "tests/test_sdk_evaluator_governance_posture_resident.py",
-         "writer_session": {"evidence_class": "DECLARED", "session": "6329a668"}}],
-     "sha256:9cfbc87b37b3ca5d2abd91e3948e2af057fb070eef15f4ae5e2a7c638e6b064f"),
-    ("SCN-LABS-3241-SKIPPED-TRANSITION", [
-        {"blob_digest": "sha256:c0c27c3e8e879e757195152e8806edc15986bb13eebb513bf2de8f2a48f0099d", "deleted": False,
-         "path": ".github/workflows/organization-claim-allocator-transition.yml", "writer_session": WS_A},
-        {"blob_digest": "sha256:6d27fddf4d9c3fdfa4355c67cc8c1b242ae0cebe4cf862e38298fb241caedd5b", "deleted": False,
-         "path": "control/workflow-surface-registry.json",
-         "writer_session": {"evidence_class": "OBSERVED_COMMIT_TRAILER", "session": "session_013aXjQ22ZG7VKiewGKyCd4T"}},
-        {"blob_digest": "sha256:1f31062afcd948b407e49d336b47a55275da3e7b3b60092ee9885c84d99e4eb1", "deleted": False,
-         "path": "docs/RESIDENT_ORG_CLAIM_ALLOCATOR_MIRROR_HANDOFF.md",
-         "writer_session": {"evidence_class": "OBSERVED_COMMIT_TRAILER", "session": "session_01QryfB2bHgHftfiBdLzx5cG"}},
-        {"blob_digest": "sha256:d152791869a4a77ca3c9d176d4f23be6d294eb0a2012c95ad473f13df0d5322a", "deleted": False,
-         "path": "receipts/sovereign-host/resident-request-dispatch.latest.json",
-         "writer_session": {"evidence_class": "OBSERVED_COMMIT_TRAILER", "session": "session_01QryfB2bHgHftfiBdLzx5cG"}},
-        {"blob_digest": "sha256:43764f3d60a85c225a53bdc93c02bbbb06c18f8764cae6c92ae7165256fa40eb", "deleted": False,
-         "path": "scripts/consume_org_claim_allocator_request.py", "writer_session": WS_A},
-        {"blob_digest": "sha256:0d5b6576f0a899eeb8b74e7bdfe5fc49f4a2ac86ebe6bdfa7aef15a66be1b95a", "deleted": False,
-         "path": "tests/test_org_claim_custody.py", "writer_session": WS_A},
-        {"blob_digest": "sha256:f8f6856ff2da446dc5ee07f52c172cebe3ebbb27b4a3a13a32d80c6b35eb0266", "deleted": False,
-         "path": "tests/test_resident_org_claim_allocator.py", "writer_session": WS_A}],
-     "sha256:2bf1f7b83c5ae879f389aa69833c1fb9aea90f006c229f93d684725105856c50"),
-    ("TVC-IMPL-735c9548-DELETED-AND-UNKNOWN", [
-        {"path": "b/old.txt", "blob_digest": None, "deleted": True,
-         "writer_session": {"session": "grok:p4-maintenance-lane/a65c67bf", "evidence_class": "DECLARED"}},
-        {"path": "a/new.txt", "blob_digest": "sha256:" + "ab" * 32, "deleted": False,
-         "writer_session": {"session": None, "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"}}],
-     "sha256:76a4f1116df7d6cc12b629c00de13c50a85c11a5e2f4e4ba574407f212fa0c09"),
-]
+# Known-answer vector for change_id / change_digest (P1 rule), copied verbatim from
+# StegVerse-Labs/.github#3264 @725d0f65cd5e7b81684c045c6f5d047f95fa946b
+#   tests/test_sv_record_modes.py (git blob 6dd5aa84cdc2d6ab0d4a4f72655ce2b3a6cb00f9) KAT_RECORD / KAT_BYTES / KAT_CHANGE_ID,
+#   test ChangeIdCanonicalTests.test_change_id_known_answer and test_change_digest_equals_change_id_hex;
+#   rule in resident-runtime/sv_work_items.py (git blob 4c6f3e75c636e19404667a7c32c22ae8dac652d4).
+# The earlier TVC content-list vectors were dropped: no field uses the content-list digest any more.
+KAT_RECORD = {
+    "target_repository": "StegVerse-Labs/.github",
+    "base_ref": {"registry_generation": 319, "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1"},
+    "content": [
+        {"path": "schemas/\u00e9.json", "blob_digest": "sha256:" + "b" * 64,
+         "writer_session": {"session": "P1", "evidence_class": "DECLARED"}},
+        {"path": "docs/old.md", "blob_digest": None, "deleted": True,
+         "writer_session": {"session": None, "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"}},
+    ],
+}
+KAT_BYTES = ('{"base_ref":{"ledger_head":"a5bb54d81893b392a3ce28182986fc39857807e1","registry_generation":319},'
+             '"content":[{"blob_digest":null,"deleted":true,"path":"docs/old.md"},'
+             '{"blob_digest":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","deleted":false,"path":"schemas/\u00e9.json"}],'
+             '"target_repository":"StegVerse-Labs/.github"}').encode("utf-8")
+KAT_CHANGE_ID = "svc:b1f56ebe998a4a0896e8f3f18ef76abe65f6f6bd0c613fa04e50291025300239"
+KAT_CHANGE_DIGEST = "sha256:b1f56ebe998a4a0896e8f3f18ef76abe65f6f6bd0c613fa04e50291025300239"
 
 
 class ChangeDigestKnownAnswerTest(unittest.TestCase):
-    def test_change_digest_equals_tvc_byte_for_byte(self) -> None:
-        for name, content, expected in KAT:
-            with self.subTest(name):
-                self.assertEqual(expected, ap.change_digest(content))
+    def test_canonical_bytes_equal_p1_byte_for_byte(self) -> None:
+        produced = ap.change_identity_canonical_bytes(ap.change_identity_input(KAT_RECORD))
+        self.assertEqual(KAT_BYTES, produced)
+        self.assertEqual(342, len(produced))
+        self.assertFalse(produced.endswith(b"\n"))
+
+    def test_change_id_and_change_digest_equal_p1(self) -> None:
+        self.assertEqual(KAT_CHANGE_ID, ap.change_id(KAT_RECORD))
+        self.assertEqual(KAT_CHANGE_DIGEST, ap.change_digest(KAT_RECORD))
+        self.assertEqual("sha256:" + hashlib.sha256(KAT_BYTES).hexdigest(), ap.change_digest(KAT_RECORD))
+
+    def test_writer_session_is_not_identity(self) -> None:
+        import copy
+        other = copy.deepcopy(KAT_RECORD)
+        other["content"][0]["writer_session"] = {"session": None, "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"}
+        self.assertEqual(KAT_CHANGE_DIGEST, ap.change_digest(other))
 
     def test_writer_session_shape_is_tvc_d7(self) -> None:
         self.assertEqual({"session": SESSION, "evidence_class": "DECLARED"}, ap.writer_session(SESSION))
         self.assertEqual({"session": None, "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"}, ap.writer_session(None))
-        for ws in (ap.writer_session(SESSION), ap.writer_session(None)):
-            self.assertEqual({"session", "evidence_class"}, set(ws))
-            self.assertIn(ws["evidence_class"], ap.WRITER_EVIDENCE_CLASSES)
+
+
+class ChangeIdentityInputTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self._td = tempfile.TemporaryDirectory()
+        self.f = Fixture(Path(self._td.name))
+
+    def tearDown(self) -> None:
+        self._td.cleanup()
+
+    def test_missing_registry_generation_or_ledger_head_fails_closed(self) -> None:
+        out = ap.evaluate(self.f.args("--repository", "Example/lane", identity=False))
+        p = pred(out, "CHANGE_IDENTITY_INPUT_BOUND")
+        self.assertEqual("SV_CHANGE_BASE_UNBOUND", p["failure_code"])
+        self.assertEqual("FAIL_CLOSED", p["disposition"])
+        self.assertTrue(SIX <= p.keys())
+        self.assertIsNone(out["change_digest"])
+        self.assertIsNone(out["change_id"])
+        out = ap.evaluate(self.f.args("--repository", "Example/lane", "--base-registry-generation", "319",
+                                      "--current-registry-generation", "319", "--base-ledger-head", "XYZ",
+                                      "--current-ledger-head", "XYZ", identity=False))
+        self.assertEqual("SV_CHANGE_BASE_UNBOUND", pred(out, "CHANGE_IDENTITY_INPUT_BOUND")["failure_code"])
+
+    def test_missing_repository_fails_closed(self) -> None:
+        out = ap.evaluate(self.f.args("--base-registry-generation", "319", "--current-registry-generation", "319",
+                                      "--base-ledger-head", LEDGER, "--current-ledger-head", LEDGER, identity=False))
+        self.assertEqual("TARGET_REPOSITORY_NOT_SUPPLIED", pred(out, "CHANGE_IDENTITY_INPUT_BOUND")["failure_code"])
 
 
 if __name__ == "__main__":
