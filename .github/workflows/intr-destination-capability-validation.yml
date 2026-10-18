@@ -14,6 +14,11 @@ on:
       - 'tests/test_intr_destination_capability.py'
       - 'docs/INTR_DESTINATION_CAPABILITY_MIRROR_HANDOFF.md'
       - '.github/workflows/intr-destination-capability-validation.yml'
+      - 'data/intr-protocol/v1/protocol.json'
+      - 'org-runtime/intr_protocol.py'
+      - 'tests/test_intr_protocol_conformance.py'
+      - 'tests/fixtures/intr-protocol/**'
+      - 'docs/INTR_PROTOCOL_V1.md'
   push:
     branches: [main]
     paths:
@@ -27,6 +32,11 @@ on:
       - 'tests/test_intr_destination_capability.py'
       - 'docs/INTR_DESTINATION_CAPABILITY_MIRROR_HANDOFF.md'
       - '.github/workflows/intr-destination-capability-validation.yml'
+      - 'data/intr-protocol/v1/protocol.json'
+      - 'org-runtime/intr_protocol.py'
+      - 'tests/test_intr_protocol_conformance.py'
+      - 'tests/fixtures/intr-protocol/**'
+      - 'docs/INTR_PROTOCOL_V1.md'
   workflow_dispatch:
 
 permissions:
@@ -64,3 +74,16 @@ jobs:
           STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: python -m unittest tests.test_intr_destination_capability -v
+
+      # The canonical InTr protocol v1 contract, checked offline against the
+      # byte snapshots of the eight organizations' destination documents.
+      # Conformance evidence only; not admission, routing or execution authority.
+      - name: Validate InTr protocol v1 conformance across the mesh snapshot
+        run: |
+          python -m unittest tests.test_intr_protocol_conformance -v
+          python org-runtime/intr_protocol.py mesh --manifest tests/fixtures/intr-protocol/destinations/manifest.json > mesh.json
+          python - <<'PY'
+          import json
+          r = json.load(open("mesh.json"))
+          print("INTR_PROTOCOL_V1_MESH", json.dumps(r["counts"], sort_keys=True), r["report_digest"])
+          PY
