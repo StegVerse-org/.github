@@ -10,6 +10,7 @@ on:
       - "tests/test_admission_predicate.py"
       - "vendor/lane_a/**"
       - "config/admission-predicate/**"
+      - "tests/fixtures/admission-predicate/**"
       - ".github/workflows/admission-predicate-selftest.yml"
 
 permissions:

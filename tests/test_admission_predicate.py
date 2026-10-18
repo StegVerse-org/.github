@@ -397,6 +397,106 @@ class ChangeIdentityInputTest(unittest.TestCase):
                                       "--base-ledger-head", LEDGER, "--current-ledger-head", LEDGER, identity=False))
         self.assertEqual("TARGET_REPOSITORY_NOT_SUPPLIED", pred(out, "CHANGE_IDENTITY_INPUT_BOUND")["failure_code"])
 
+BASE_STATE_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "admission-predicate" / "base-state-readback" / "labs-main-978b8880.json"
+OTHER_LEDGER = "b" * 40
+
+
+def readback_receipt(bound: str, generation: int = 319, ledger: str = LEDGER, epoch: str | None = None) -> dict:
+    """A receipt in #3266's shape for the fixture's base commit, sealed with the same rule."""
+    body = {"schema": ap.BASE_STATE_SCHEMA, "component_id": ap.BASE_STATE_COMPONENT, "disposition": "ALLOW",
+            "authority_effect": "NONE_READBACK_ONLY", "readback_writes": False, "main_ref": "refs/heads/main",
+            "main_tip": bound, "bound_main_commit": bound, "hb_epoch": epoch,
+            "base_ref": {"registry_generation": generation, "ledger_head": ledger},
+            "sources": [{"file": "data/canonical-task-registry.json", "blob_sha": "1" * 40},
+                        {"file": "refs/stegverse/organization-ledger:HEAD.json", "blob_sha": "2" * 40}]}
+    if epoch is None:
+        body["open_questions"] = [{"id": "JD-P4-3", "slot": "hb_epoch", "status": "OPEN"}]
+    return ap.seal(body)
+
+
+class BaseStateReceiptTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self._td = tempfile.TemporaryDirectory()
+        self.f = Fixture(Path(self._td.name))
+
+    def tearDown(self) -> None:
+        self._td.cleanup()
+
+    def write(self, receipt: dict, name: str = "receipt.json") -> str:
+        path = self.f.td / name
+        path.write_text(json.dumps(receipt), encoding="utf-8")
+        return str(path)
+
+    def evaluate(self, receipt: dict, *extra: str, epoch: str = "1000") -> dict:
+        return ap.evaluate(self.f.args("--repository", "Example/lane", "--base-state-receipt", self.write(receipt),
+                                       *extra, epoch=epoch, identity=False))
+
+    def test_tvc_fixture_receipt_verifies_as_tvc_binds_it(self) -> None:
+        receipt = json.loads(BASE_STATE_FIXTURE.read_text(encoding="utf-8"))
+        state, code, _ = ap.base_state_from_readback(receipt)
+        self.assertIsNone(code)
+        self.assertEqual({"registry_generation": 319, "ledger_head": LEDGER,
+                          "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+                          "result_sha256": "sha256:04ae0f6e40cacf885bb9bce0b466e5cc3dfd4a48783596188eefa7bfbd516a20",
+                          "hb_epoch": None, "hb_epoch_open": True,
+                          "registry_blob_sha": "8d3ff1902412ab85c0fafcdb4c2f11cc0b0afbef"}, state)
+        pin = json.loads(ap.BASE_STATE_PIN.read_text(encoding="utf-8"))
+        self.assertEqual("c431bfb038f064b29b6b8ba7c68409f0057ea9e7", pin["producer"]["ref"])
+        self.assertEqual(ap.BASE_STATE_SCHEMA, pin["result_schema"])
+        self.assertEqual(hashlib.sha1(b"blob %d\0" % BASE_STATE_FIXTURE.stat().st_size + BASE_STATE_FIXTURE.read_bytes()).hexdigest(),
+                         pin["fixture"]["git_blob_sha"])
+
+    def test_valid_receipt_binds_identity_and_base(self) -> None:
+        out = self.evaluate(readback_receipt(self.f.base))
+        self.assertEqual("admission-input-ready", out["admission_input"], out["fail_closed"])
+        self.assertTrue(pred(out, "BASE_STATE_RECEIPT_BOUND")["holds"])
+        self.assertEqual({"sha": self.f.base, "commit_time": self.f.base_time, "registry_generation": 319, "ledger_head": LEDGER},
+                         out["base_ref"])
+        self.assertEqual(319, out["current_base"]["registry_generation"])
+        self.assertIsNotNone(out["change_digest"])
+        flags = ap.evaluate(self.f.args("--repository", "Example/lane"))
+        self.assertEqual(flags["change_digest"], out["change_digest"])  # same identity as the explicit flags
+        agreeing = self.evaluate(readback_receipt(self.f.base), "--base-registry-generation", "319", "--base-ledger-head", LEDGER)
+        self.assertEqual("ALLOW", agreeing["disposition"])
+
+    def test_tampered_seal_fails_closed(self) -> None:
+        receipt = readback_receipt(self.f.base)
+        receipt["base_ref"] = {"registry_generation": 320, "ledger_head": LEDGER}
+        out = self.evaluate(receipt)
+        p = pred(out, "BASE_STATE_RECEIPT_BOUND")
+        self.assertEqual("BASE_STATE_RECEIPT_SEAL_INVALID", p["failure_code"])
+        self.assertEqual("FAIL_CLOSED", out["disposition"])
+        self.assertTrue(SIX <= out.keys() and SIX <= p.keys())
+        self.assertIsNone(out["change_digest"])
+        wrong = dict(readback_receipt(self.f.base), schema="other/v1")
+        self.assertEqual("BASE_STATE_RECEIPT_SCHEMA_MISMATCH", self.evaluate(ap.seal(wrong))["failure_code"])
+        refused = ap.seal(dict(readback_receipt(self.f.base), disposition="FAIL_CLOSED", failure_code="REGISTRY_GENERATION_UNREADABLE"))
+        out = self.evaluate(refused)
+        self.assertEqual("BASE_STATE_NOT_OBSERVED", out["failure_code"])
+        self.assertEqual("REGISTRY_GENERATION_UNREADABLE", pred(out, "BASE_STATE_RECEIPT_BOUND")["receipt_failure_code"])
+
+    def test_mismatch_with_flags_or_bound_commit_fails_closed(self) -> None:
+        for extra in (("--base-registry-generation", "318"), ("--base-ledger-head", OTHER_LEDGER),
+                      ("--current-ledger-head", OTHER_LEDGER)):
+            with self.subTest(extra=extra):
+                out = self.evaluate(readback_receipt(self.f.base), *extra)
+                p = pred(out, "BASE_STATE_RECEIPT_BOUND")
+                self.assertEqual("BASE_STATE_RECEIPT_FLAG_MISMATCH", p["failure_code"])
+                self.assertEqual("FAIL_CLOSED", out["disposition"])
+                self.assertTrue(SIX <= out.keys())
+        out = self.evaluate(readback_receipt("c" * 40))
+        self.assertEqual("BASE_STATE_RECEIPT_COMMIT_MISMATCH", out["failure_code"])
+        self.assertTrue(SIX <= out.keys())
+
+    def test_null_receipt_epoch_never_satisfies_hb_epoch(self) -> None:
+        out = self.evaluate(readback_receipt(self.f.base), epoch="")
+        self.assertEqual("FAIL_CLOSED", out["disposition"])
+        self.assertEqual("HB_EPOCH_NOT_SUPPLIED", out["failure_code"])
+        self.assertIsNone(out["hb_epoch"])
+        self.assertEqual(["HB_EPOCH_SUPPLIED"], [p["predicate"] for p in out["predicates"]])
+        # even a receipt carrying an epoch does not supply the predicate's hb_epoch
+        self.assertEqual("HB_EPOCH_NOT_SUPPLIED", self.evaluate(readback_receipt(self.f.base, epoch="1000"), epoch="")["failure_code"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,30 @@
+{
+  "_note": "Pin of the B1 base-state readback producer (RTC-SV-CHANGE-BASE-STATE-READBACK-014, StegVerse-Labs/.github draft PR 3266). The producer runs git, so P4 does not vendor or execute it; admission_predicate.py consumes only its sealed receipt (--base-state-receipt) and verifies it as TVC#519 @28699422 sv_change_base_state.base_state_from_readback does. git_blob_sha and sha256 verified against bytes fetched at the PR head on 2026-10-18.",
+  "producer": {
+    "repository": "StegVerse-Labs/.github",
+    "pull_request": 3266,
+    "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+    "path": "resident-runtime/sv_change_base_state_readback.py",
+    "ref": "c431bfb038f064b29b6b8ba7c68409f0057ea9e7",
+    "git_blob_sha": "2d63993121d91e963e95808dad8e973e216b6a3c",
+    "tests_git_blob_sha": "56892c8b75b65413f21baf4ca4cf12e342bf8b9c"
+  },
+  "sha256": "2e2b8be9659112cac9649a250ddf466c4633d2ab892923541fe6d76226440d14",
+  "result_schema": "stegverse.sv-change-base-state-readback/v1",
+  "result_seal_field": "result_sha256",
+  "verifier_reference": {
+    "repository": "StegVerse-Labs/TVC",
+    "pull_request": 519,
+    "ref": "286994223124340251f1d77adb5f90e6b8111ef5",
+    "path": "sv_change_base_state.py",
+    "git_blob_sha": "e5310480a51b2810e1f76fb5269fc4b7f9e22582",
+    "sha256": "879eb59bbee80fa79d980acc3fb524cf886275a1aff44ce84ec6a41caf7808d1",
+    "function": "base_state_from_readback"
+  },
+  "fixture": {
+    "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880.json",
+    "copied_verbatim_from": "StegVerse-Labs/TVC@286994223124340251f1d77adb5f90e6b8111ef5 tests/fixtures/base-state-readback/labs-main-978b8880.json",
+    "git_blob_sha": "d59408c98e239c26aeb5109651504471d0859932"
+  },
+  "hb_epoch_slot": "caller-supplied or null (open as JD-P4-3); P4 never takes hb_epoch from this receipt"
+}

@@ -34,6 +34,11 @@ Predicates (all evaluated after HB_EPOCH_SUPPLIED; ADMISSION_INPUT_READY only if
       keeps no classifier: READY -> ALLOW, any FAIL -> DENY REQUIRED_CHECK_DENIED,
       Lane A FAIL_CLOSED -> FAIL_CLOSED with Lane A's own code, otherwise FAIL_CLOSED
       CHECK_SKIPPED_OR_UNOBSERVED (TVC sv_change_job_observation mapping).
+  BASE_STATE_RECEIPT_BOUND       (with --base-state-receipt) the sealed StegVerse-Labs/.github#3266
+      readback receipt verifies as TVC#519 @28699422 sv_change_base_state checks it (schema,
+      component, seal, ALLOW, well-formed base_ref/sources/hb_epoch), is bound to --base-sha
+      and agrees with any explicit flag; it then supplies registry_generation / ledger_head
+      for change identity and HEAD_CURRENT_WITH_BASE. Its hb_epoch never satisfies HB_EPOCH_SUPPLIED.
   HEAD_CURRENT_WITH_BASE         judged only from supplied inputs, no git: the PR's
       base_ref (--base-sha, the merge-base the head was built on, and its commit
       time) against the observed current base (--current-base-sha and its commit
@@ -282,6 +287,88 @@ def load_job_observation_reference(pin_path: Path | None = None):
         return None, {"pin_file": str(pin_path)}, f"reference unreadable: {exc}"
 
 
+# ---- B1 base-state readback receipt (StegVerse-Labs/.github#3266 RTC-SV-CHANGE-BASE-STATE-READBACK-014) ----
+# Verified exactly as TVC#519 @28699422 sv_change_base_state.base_state_from_readback does; producer pinned in
+# config/admission-predicate/base-state-readback.pin.json (traceability: P4 consumes only the sealed receipt).
+BASE_STATE_SCHEMA = "stegverse.sv-change-base-state-readback/v1"
+BASE_STATE_COMPONENT = "RTC-SV-CHANGE-BASE-STATE-READBACK-014"
+BASE_STATE_SOURCES = ("data/canonical-task-registry.json", "refs/stegverse/organization-ledger:HEAD.json")
+BASE_STATE_PIN = Path(__file__).resolve().parents[1] / "config" / "admission-predicate" / "base-state-readback.pin.json"
+
+
+def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str | None]:
+    """(state, None, None) when TVC's adapter would bind the receipt; else (None, failure_code, reason).
+    hb_epoch in the receipt is carried as evidence only and never satisfies HB_EPOCH_SUPPLIED."""
+    if not isinstance(receipt, Mapping):
+        return None, "BASE_STATE_RECEIPT_UNREADABLE", "receipt is not a JSON object"
+    if receipt.get("schema") != BASE_STATE_SCHEMA or receipt.get("component_id") != BASE_STATE_COMPONENT:
+        return None, "BASE_STATE_RECEIPT_SCHEMA_MISMATCH", f"schema/component_id != {BASE_STATE_SCHEMA}/{BASE_STATE_COMPONENT}"
+    if not isinstance(receipt.get(SEAL_FIELD), str) or not seal_verifies(receipt):
+        return None, "BASE_STATE_RECEIPT_SEAL_INVALID", "result_sha256 does not verify over the canonical receipt"
+    if receipt.get("disposition") != "ALLOW":
+        return None, "BASE_STATE_NOT_OBSERVED", f"receipt disposition {receipt.get('disposition')} ({receipt.get('failure_code')})"
+    base = receipt.get("base_ref")
+    gen = base.get("registry_generation") if isinstance(base, Mapping) else None
+    head = base.get("ledger_head") if isinstance(base, Mapping) else None
+    commit = receipt.get("bound_main_commit")
+    sources = receipt.get("sources")
+    files = {x.get("file"): x.get("blob_sha") for x in sources if isinstance(x, Mapping)} if isinstance(sources, list) else {}
+    epoch = receipt.get("hb_epoch")
+    if (not base_bound({"registry_generation": gen, "ledger_head": head})
+            or not isinstance(commit, str) or not GIT_SHA.match(commit)
+            or not all(isinstance(files.get(f), str) and GIT_SHA.match(files[f]) for f in BASE_STATE_SOURCES)
+            or (epoch is not None and not (isinstance(epoch, str) and epoch.isascii() and epoch.isdigit() and int(epoch) >= HB_EPOCH_MINIMUM))):
+        return None, "BASE_STATE_RECEIPT_MALFORMED", "base_ref, bound_main_commit, sources or hb_epoch not well formed"
+    return {"registry_generation": gen, "ledger_head": head, "bound_main_commit": commit,
+            "result_sha256": receipt[SEAL_FIELD], "hb_epoch": epoch, "hb_epoch_open": epoch is None,
+            "registry_blob_sha": files[BASE_STATE_SOURCES[0]]}, None, None
+
+
+def p_base_state(a) -> dict:
+    """BASE_STATE_RECEIPT_BOUND: --base-state-receipt (and optionally --current-base-state-receipt) supply
+    registry_generation / ledger_head. Each receipt must verify (TVC rule), be bound to that side's commit
+    (--base-sha / --current-base-sha), and agree with any explicit flag. The base receipt also observes the
+    current side when --current-base-sha is its bound commit and no current receipt is supplied."""
+    r = row("BASE_STATE_RECEIPT_BOUND", producer="StegVerse-Labs/.github#3266 @c431bfb0 " + BASE_STATE_COMPONENT,
+            verifier="TVC#519 @28699422 sv_change_base_state.base_state_from_readback (reproduced)", receipts={})
+    sides = [("base", a.base_state_receipt, a.base_sha), ("current", a.current_base_state_receipt, a.current_base_sha)]
+    for side, path, sha in sides:
+        if not path:
+            continue
+        flag = "--base-sha" if side == "base" else "--current-base-sha"
+        try:
+            receipt = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            receipt = exc
+        state, code, why = base_state_from_readback(receipt)
+        r["receipts"][side] = {"path": str(path), "result_sha256": receipt.get(SEAL_FIELD) if isinstance(receipt, Mapping) else None,
+                               "binds": state}
+        if state is None:
+            if isinstance(receipt, Mapping) and receipt.get("failure_code"):
+                r["receipt_failure_code"] = receipt.get("failure_code")
+                r["receipt_failed_predicate"] = receipt.get("failed_predicate")
+            return refuse(r, a, code, f"a sealed {BASE_STATE_SCHEMA} ALLOW receipt from #3266's read-only producer ({side}: {why})",
+                          "rerun with a fresh readback receipt for the bound commit")
+        if state["bound_main_commit"] != sha:
+            return refuse(r, a, "BASE_STATE_RECEIPT_COMMIT_MISMATCH",
+                          f"{side} receipt bound_main_commit {state['bound_main_commit']} equals {flag} ({sha})",
+                          f"rerun with a readback receipt produced for {flag}")
+        targets = (("registry_generation", "base_registry_generation", "current_registry_generation"),
+                   ("ledger_head", "base_ledger_head", "current_ledger_head"))
+        fill = [side] + (["current"] if side == "base" and not a.current_base_state_receipt and a.current_base_sha == sha else [])
+        for s in fill:
+            for key, battr, cattr in targets:
+                attr = battr if s == "base" else cattr
+                given = getattr(a, attr)
+                if given is not None and given != state[key]:
+                    return refuse(r, a, "BASE_STATE_RECEIPT_FLAG_MISMATCH",
+                                  f"--{attr.replace('_', '-')} ({given}) equals the {side} receipt's {key} ({state[key]}), or omit the flag",
+                                  "rerun with flags that agree with the receipt, or the receipt alone")
+                setattr(a, attr, state[key])
+        r["receipts"][side]["observes"] = fill
+    return r
+
+
 def p_identity(a, content: list) -> tuple[dict, dict | None]:
     """CHANGE_IDENTITY_INPUT_BOUND: P1's change_id / change_digest need target_repository, base_ref
     {registry_generation, ledger_head} and content. They are supplied by --repository,
@@ -450,6 +537,9 @@ def evaluate(a) -> dict:
                 content.append({"path": path, "deleted": deleted,
                                 "blob_digest": None if deleted else blob_digest(a.clone, head, path),
                                 "writer_session": writer_session(a.session_id if sess_ok else None)})
+        if a.base_state_receipt or a.current_base_state_receipt:
+            receipt_row = p_base_state(a)
+            predicates.append(receipt_row)
         identity_row, identity = p_identity(a, content)
         predicates.append(identity_row)
         jobs, job_record = p_jobs(a, head, identity["change_digest"] if identity else None)
@@ -504,6 +594,10 @@ def parse(argv: list[str]):
     p.add_argument("--current-base-commit-time", type=int, default=None, help="current base tip commit time (supplied)")
     p.add_argument("--current-registry-generation", type=int, default=None)
     p.add_argument("--current-ledger-head", default=None)
+    p.add_argument("--base-state-receipt", default=None,
+                   help="sealed #3266 base-state readback receipt for --base-sha (fills base registry_generation/ledger_head)")
+    p.add_argument("--current-base-state-receipt", default=None,
+                   help="sealed #3266 readback receipt for --current-base-sha (default: the base receipt when the shas match)")
     p.add_argument("--repository", default=None, help="target repository, e.g. owner/name")
     p.add_argument("--remote", default="origin")
     p.add_argument("--range-base", default=None, help="start of the PR's own range (stacked PRs); default --base-sha")
