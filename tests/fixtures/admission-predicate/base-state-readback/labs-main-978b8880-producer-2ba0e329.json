@@ -6,8 +6,10 @@
   },
   "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
   "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+  "cross_checked": false,
   "disposition": "ALLOW",
   "hb_epoch": "469411750",
+  "hb_epoch_cross_check": "HB_EPOCH_NOT_CROSS_CHECKED",
   "hb_epoch_source": {
     "field": "$.hb_reference.epoch",
     "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
@@ -20,7 +22,7 @@
   "main_tip": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
   "readback_writes": false,
   "repository": "StegVerse-Labs/.github",
-  "result_sha256": "sha256:ec20c103be08495132ff1cd42cb967ce8e1c0cbf0ff8cfa4f1a18d24d149cbc7",
+  "result_sha256": "sha256:084f638e3663a3f25f789aa3c7a4118d33911dcf27c93379bf384113afb35d6a",
   "schema": "stegverse.sv-change-base-state-readback/v1",
   "sources": [
     {

@@ -422,7 +422,7 @@ HEAD_RECEIPT_KEY = "receipts/" + "3" * 64 + ".json"
 
 def readback_receipt(bound: str, generation: int = 319, ledger: str = LEDGER, epoch: str | None = None,
                      legacy: bool = False) -> dict:
-    """A receipt in #3266 @641f4b03's shape for the fixture's base commit, sealed with the same rule: an observed
+    """A receipt in the pinned #3266 producer's shape for the fixture's base commit, sealed with the same rule: an observed
     epoch is sealed with hb_epoch_source {ledger_head, receipt, field} and the head receipt is in sources.
     legacy=True gives the pre-641f4b03 shape (caller-supplied epoch, no hb_epoch_source)."""
     body = {"schema": ap.BASE_STATE_SCHEMA, "component_id": ap.BASE_STATE_COMPONENT, "disposition": "ALLOW",
@@ -471,9 +471,9 @@ class BaseStateReceiptTest(unittest.TestCase):
                           "hb_epoch_source": None, "hb_epoch_source_receipt_blob": None,
                           "readback_disposition": "ALLOW", "fixture_only": False}, state)
         pin = json.loads(ap.BASE_STATE_PIN.read_text(encoding="utf-8"))
-        self.assertEqual("641f4b03e612d07047e15f2384d24780e2af86c0", pin["producer"]["ref"])
-        self.assertEqual("fbd453e531fc8d8f62261d2a72bc7a596798a445", pin["producer"]["git_blob_sha"])
-        self.assertEqual(["78a0c78e1f1313bd11ff916b26a3ab467f2f54e2", "c431bfb038f064b29b6b8ba7c68409f0057ea9e7"],
+        self.assertEqual("2ba0e329c224c94863dac15de3f8011f777cb34f", pin["producer"]["ref"])
+        self.assertEqual("2c730142254b78a5b9e1c05566fe6f5111b7d571", pin["producer"]["git_blob_sha"])
+        self.assertEqual(["641f4b03e612d07047e15f2384d24780e2af86c0", "78a0c78e1f1313bd11ff916b26a3ab467f2f54e2", "c431bfb038f064b29b6b8ba7c68409f0057ea9e7"],
                          [x["ref"] for x in pin["superseded"]])
         self.assertEqual(ap.BASE_STATE_SCHEMA, pin["result_schema"])
         self.assertEqual(ap.BASE_STATE_REGISTRY_PATHS, pin["registry_paths"])
@@ -613,8 +613,8 @@ class BaseStateReceiptTest(unittest.TestCase):
 
     def test_omitted_flag_runs_no_cross_check_and_reaches_allow(self) -> None:
         """P1 @ae8b105d: --hb-epoch omitted is HB_EPOCH_NOT_CROSS_CHECKED -> ALLOW {hb_epoch, ledger_head, cross_checked: false},
-        on the sealed epoch of the real 641f4b03 ALLOW receipt; a held cross-check is ALLOW with cross_checked true."""
-        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-641f4b03.json").read_text(encoding="utf-8"))
+        on the sealed epoch of the real 2ba0e329 ALLOW receipt; a held cross-check is ALLOW with cross_checked true."""
+        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-2ba0e329.json").read_text(encoding="utf-8"))
         receipt = ap.seal(dict({k: v for k, v in allow.items() if k != "result_sha256"}, bound_main_commit=self.f.base))
         out = self.evaluate(receipt, epoch=None)
         hb = pred(out, "HB_EPOCH_SUPPLIED")
@@ -659,10 +659,10 @@ class BaseStateReceiptTest(unittest.TestCase):
         other = ap.seal(dict(body, failure_code="REGISTRY_GENERATION_NOT_DECLARED"))
         self.assertEqual("BASE_STATE_NOT_OBSERVED", ap.base_state_from_readback(other)[1])
 
-    def test_real_641f4b03_receipts_bind_the_kat_epoch(self) -> None:
-        """Receipts produced by the pinned producer @641f4b03 at the Labs ledger head a5bb54d8 (its KAT): both the ALLOW
+    def test_real_2ba0e329_receipts_bind_the_kat_epoch(self) -> None:
+        """Receipts produced by the pinned producer @2ba0e329 at the Labs ledger head a5bb54d8 (its KAT): both the ALLOW
         receipt and the --hb-epoch 469411751 DENY receipt seal hb_epoch 469411750 with hb_epoch_source and bind it."""
-        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-641f4b03.json").read_text(encoding="utf-8"))
+        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-2ba0e329.json").read_text(encoding="utf-8"))
         state, code, why = ap.base_state_from_readback(allow)
         self.assertIsNone(code, why)
         self.assertEqual(("469411750", "a5bb54d81893b392a3ce28182986fc39857807e1", 319),
@@ -673,7 +673,7 @@ class BaseStateReceiptTest(unittest.TestCase):
         out = self.evaluate(ap.seal(dict({k: v for k, v in allow.items() if k != "result_sha256"}, bound_main_commit=self.f.base)))
         self.assertEqual("ALLOW", pred(out, "HB_EPOCH_SUPPLIED")["disposition"], out["fail_closed"])
         self.assertEqual(469411750, out["hb_epoch"])
-        deny = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-641f4b03-hb-epoch-469411751-deny.json").read_text(encoding="utf-8"))
+        deny = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-2ba0e329-hb-epoch-469411751-deny.json").read_text(encoding="utf-8"))
         state, code, why = ap.base_state_from_readback(deny)
         self.assertIsNone(code, why)
         self.assertEqual(("DENY", "469411750"), (state["readback_disposition"], state["hb_epoch"]))
@@ -681,6 +681,39 @@ class BaseStateReceiptTest(unittest.TestCase):
         self.assertEqual(("ALLOW", False), (lambda h: (h["disposition"], h["cross_checked"]))(pred(self.evaluate(resealed, epoch=None), "HB_EPOCH_SUPPLIED")))
         out = self.evaluate(resealed, epoch="469411751")
         self.assertEqual(("DENY", "HB_EPOCH_MISMATCH"), (out["disposition"], out["failure_code"]))
+
+    def test_2ba0e329_receipt_seals_and_sentinel(self) -> None:
+        """Re-minted at #3266 @2ba0e329: the omitted --hb-epoch ALLOW seal is 084f638e and carries cross_checked false +
+        hb_epoch_cross_check HB_EPOCH_NOT_CROSS_CHECKED; --hb-epoch UNKNOWN_NOT_AUTHENTICALLY_OBSERVED is a sealed FAIL_CLOSED
+        HB_EPOCH_SOURCE_UNOBSERVED receipt with hb_epoch and hb_epoch_source null, which binds nothing here."""
+        d = BASE_STATE_FIXTURE.parent
+        allow = json.loads((d / "labs-main-978b8880-producer-2ba0e329.json").read_text(encoding="utf-8"))
+        self.assertEqual("sha256:084f638e3663a3f25f789aa3c7a4118d33911dcf27c93379bf384113afb35d6a", allow["result_sha256"])
+        self.assertTrue(ap.seal_verifies(allow))
+        self.assertEqual((False, "HB_EPOCH_NOT_CROSS_CHECKED"), (allow["cross_checked"], allow["hb_epoch_cross_check"]))
+        sentinel = json.loads((d / "labs-main-978b8880-producer-2ba0e329-hb-epoch-unknown-fail-closed.json").read_text(encoding="utf-8"))
+        self.assertTrue(ap.seal_verifies(sentinel))
+        self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED", None, None),
+                         (sentinel["disposition"], sentinel["failure_code"], sentinel["hb_epoch"], sentinel["hb_epoch_source"]))
+        self.assertEqual("BASE_STATE_NOT_OBSERVED", ap.base_state_from_readback(sentinel)[1])
+        out = self.evaluate(ap.seal(dict({k: v for k, v in sentinel.items() if k != "result_sha256"}, bound_main_commit=self.f.base)), epoch=None)
+        self.assertEqual("HB_EPOCH_SOURCE_UNOBSERVED", pred(out, "BASE_STATE_RECEIPT_BOUND")["receipt_failure_code"])
+        self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED"),
+                         (pred(out, "HB_EPOCH_SUPPLIED")["disposition"], pred(out, "HB_EPOCH_SUPPLIED")["failure_code"]))
+
+    def test_row_text_cites_only_the_current_3266_head(self) -> None:
+        pin = json.loads(ap.BASE_STATE_PIN.read_text(encoding="utf-8"))
+        self.assertEqual("StegVerse-Labs/.github#3266 @" + pin["producer"]["ref"][:8], ap.BASE_STATE_PRODUCER)
+        stale = [x["ref"][:8] for x in pin["superseded"]]
+        for receipt, flag in ((readback_receipt(self.f.base, epoch="4242"), None), (readback_receipt(self.f.base, epoch=None), None),
+                              (readback_receipt(self.f.base, epoch="4242"), "x"), (None, None)):
+            text = json.dumps(self.evaluate(receipt, epoch=flag))
+            self.assertIn(ap.BASE_STATE_PRODUCER, text)
+            for ref in stale:
+                self.assertNotIn(ref, text)
+        src = Path(ap.__file__).read_text(encoding="utf-8")
+        for ref in stale:
+            self.assertNotIn(ref, src)
 
     def test_bad_hb_epoch_source_is_source_unobserved(self) -> None:
         """P1 @ae8b105d: an hb_epoch_source not naming $.hb_reference.epoch at base_ref.ledger_head, a receipt that is not

@@ -28,7 +28,7 @@ epoch is unobserved); ADMISSION_INPUT_READY only if every one is ALLOW.
       of '' / 'null' / UNKNOWN_NOT_AUTHENTICALLY_OBSERVED -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED. Any other malformed value (kernel
       supplied_epoch_failure 726248a5) or a differing value -> DENY HB_EPOCH_MISMATCH. --hb-epoch omitted ->
       ALLOW with cross_checked false (detail HB_EPOCH_NOT_CROSS_CHECKED). A #3266 DENY HB_EPOCH_MISMATCH receipt still
-      observed (and sealed) the epoch, so it binds like ALLOW (P1 @ae8b105d).
+      observed (and sealed) the epoch, so it binds like ALLOW (P1 verify_admission_hb_epoch).
   PR_AUTHOR_SESSION_DECLARED     --session-id matches the SV_CHANGE session pattern.
   BRANCH_WRITER_IS_BRANCH_OWNER  (own code; the only predicate that reads git) branch
       created in this clone; every move of the remote-tracking ref is "update by push"
@@ -303,19 +303,31 @@ BASE_STATE_SCHEMA = "stegverse.sv-change-base-state-readback/v1"
 BASE_STATE_COMPONENT = "RTC-SV-CHANGE-BASE-STATE-READBACK-014"
 BASE_STATE_LEDGER_REF = "refs/stegverse/organization-ledger"
 BASE_STATE_LEDGER_HEAD_FILE = BASE_STATE_LEDGER_REF + ":HEAD.json"
-HB_EPOCH_SOURCE_FIELD = "$.hb_reference.epoch"  # #3266 @641f4b03 hb_epoch_source.field (Lane B #46 names)
+HB_EPOCH_SOURCE_FIELD = "$.hb_reference.epoch"  # #3266 hb_epoch_source.field (Lane B #46 names)
 RECEIPT_KEY = re.compile(r"^receipts/[0-9a-f]{64}\.json$")  # ledger_store.receipt_key
-BASE_STATE_LABS_REGISTRY = "data/canonical-task-registry.json"  # receipts without ``repository`` (producer c431bfb0)
+BASE_STATE_LABS_REGISTRY = "data/canonical-task-registry.json"  # receipts without ``repository`` (a superseded producer; see the pin file)
 BASE_STATE_REGISTRY_PATHS = {"StegVerse-Labs/.github": "data/canonical-task-registry.json",
-                             "StegVerse-org/.github": "orchestration/task-registry.json"}  # == producer REGISTRY_PATHS @78a0c78e and @641f4b03
+                             "StegVerse-org/.github": "orchestration/task-registry.json"}  # == the pinned producer's REGISTRY_PATHS
 REGISTRY_GENERATION_JOINT_ITEM = "Q-ORG-REGISTRY-GENERATION"
 BASE_STATE_PIN = Path(__file__).resolve().parents[1] / "config" / "admission-predicate" / "base-state-readback.pin.json"
 
 
+def _pinned_producer_ref() -> str:
+    """The current #3266 head from the pin file (row text cites only it); unreadable pin -> UNKNOWN."""
+    try:
+        ref = json.loads(BASE_STATE_PIN.read_text(encoding="utf-8"))["producer"]["ref"]
+        return ref if isinstance(ref, str) and GIT_SHA.match(ref) else UNKNOWN
+    except (OSError, ValueError, KeyError, TypeError):
+        return UNKNOWN
+
+
+BASE_STATE_PRODUCER = "StegVerse-Labs/.github#3266 @" + _pinned_producer_ref()[:8]
+
+
 def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str | None]:
     """(state, None, None) when TVC's adapter would bind the receipt; else (None, failure_code, reason).
-    A DENY HB_EPOCH_MISMATCH receipt binds like ALLOW (#3266 @641f4b03 seals base_ref, hb_epoch and hb_epoch_source on it;
-    only the producer's own --hb-epoch cross-check disagreed; P1 @ae8b105d treats it as observed). hb_epoch_source is
+    A DENY HB_EPOCH_MISMATCH receipt binds like ALLOW (the pinned #3266 producer seals base_ref, hb_epoch and hb_epoch_source
+    on it; only the producer's own --hb-epoch cross-check disagreed; P1 treats it as observed). hb_epoch_source is
     carried as-is and judged by HB_EPOCH_SUPPLIED (P1: a bad source is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED)."""
     if not isinstance(receipt, Mapping):
         return None, "BASE_STATE_RECEIPT_UNREADABLE", "receipt is not a JSON object"
@@ -360,7 +372,7 @@ def p_base_state(a) -> dict:
     registry_generation / ledger_head. Each receipt must verify (TVC rule), be bound to that side's commit
     (--base-sha / --current-base-sha), and agree with any explicit flag. The base receipt also observes the
     current side when --current-base-sha is its bound commit and no current receipt is supplied."""
-    r = row("BASE_STATE_RECEIPT_BOUND", producer="StegVerse-Labs/.github#3266 @641f4b03 " + BASE_STATE_COMPONENT,
+    r = row("BASE_STATE_RECEIPT_BOUND", producer=BASE_STATE_PRODUCER + " " + BASE_STATE_COMPONENT,
             verifier="TVC#519 @af754807 sv_change_base_state.base_state_from_readback (reproduced)", receipts={})
     sides = [("base", a.base_state_receipt, a.base_sha), ("current", a.current_base_state_receipt, a.current_base_sha)]
     for side, path, sha in sides:
@@ -384,7 +396,7 @@ def p_base_state(a) -> dict:
                               f"(receipt REGISTRY_GENERATION_NOT_DECLARED; joint item {REGISTRY_GENERATION_JOINT_ITEM}); "
                               "P4 proposes and makes no registry edit",
                               f"after {REGISTRY_GENERATION_JOINT_ITEM} decides, rerun with a fresh ALLOW readback receipt")
-            return refuse(r, a, code, f"a sealed {BASE_STATE_SCHEMA} ALLOW receipt from #3266's read-only producer ({side}: {why})",
+            return refuse(r, a, code, f"a sealed {BASE_STATE_SCHEMA} ALLOW receipt from {BASE_STATE_PRODUCER}'s read-only producer ({side}: {why})",
                           "rerun with a fresh readback receipt for the bound commit")
         if state["bound_main_commit"] != sha:
             return refuse(r, a, "BASE_STATE_RECEIPT_COMMIT_MISMATCH",
@@ -538,7 +550,7 @@ def p_binder(a, head: str) -> dict:
 HB_EPOCH_INVARIANT = "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH"
 
 
-HB_EPOCH_NOT_CROSS_CHECKED = "HB_EPOCH_NOT_CROSS_CHECKED"  # P1 @ae8b105d sentinel: the optional cross-check was left out
+HB_EPOCH_NOT_CROSS_CHECKED = "HB_EPOCH_NOT_CROSS_CHECKED"  # P1 sentinel: the optional cross-check was left out
 # P1 SUPPLIED_EPOCH_UNOBSERVED_VALUES (None, "", "null", UNKNOWN): explicit unobserved values -> FAIL_CLOSED, never DENY.
 # The CLI cannot pass JSON null; an omitted --hb-epoch is HB_EPOCH_NOT_CROSS_CHECKED, never None.
 SUPPLIED_EPOCH_UNOBSERVED_VALUES = (None, "", "null", UNKNOWN)
@@ -585,7 +597,8 @@ def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
     bound = (receipt_row or {}).get("receipts", {}).get("base", {}).get("binds") if receipt_row and receipt_row["holds"] else None
     head = bound.get("ledger_head") if bound else None
     supplied = HB_EPOCH_NOT_CROSS_CHECKED if a.hb_epoch is None else a.hb_epoch
-    r = row("HB_EPOCH_SUPPLIED", invariant=HB_EPOCH_INVARIANT, aligned_to=P1_REFERENCE, ledger_head=head,
+    r = row("HB_EPOCH_SUPPLIED", invariant=HB_EPOCH_INVARIANT, aligned_to=P1_REFERENCE, base_state_producer=BASE_STATE_PRODUCER,
+            ledger_head=head,
             receipt_hb_epoch=bound.get("hb_epoch") if bound else None,
             receipt_hb_epoch_source=bound.get("hb_epoch_source") if bound else None,
             receipt_result_sha256=bound.get("result_sha256") if bound else None,
@@ -594,10 +607,10 @@ def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
     def unobserved(why: str) -> tuple[dict, None]:
         r["detail"] = why
         return refuse(r, a, "HB_EPOCH_SOURCE_UNOBSERVED",
-                      f"{HB_EPOCH_INVARIANT}: a sealed ALLOW {BASE_STATE_SCHEMA} receipt (Labs#3266) for base_ref.ledger_head whose "
+                      f"{HB_EPOCH_INVARIANT}: a sealed ALLOW {BASE_STATE_SCHEMA} receipt ({BASE_STATE_PRODUCER}) for base_ref.ledger_head whose "
                       f"hb_epoch slot was read from {HB_EPOCH_SOURCE_FIELD} of the head receipt and passes "
                       f"org-kernel/kernel.py::supplied_epoch_failure (sha256 726248a5) ({why})",
-                      "after Lane C's readback (Labs#3266) seals an epoch read at that ledger head; no epoch is minted"), None
+                      f"after Lane C's readback ({BASE_STATE_PRODUCER}) seals an epoch read at that ledger head; no epoch is minted"), None
 
     if bound is None:
         return unobserved("no verified --base-state-receipt")
