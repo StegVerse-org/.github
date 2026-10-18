@@ -28,8 +28,9 @@ epoch is unobserved); ADMISSION_INPUT_READY only if every one is ALLOW.
       of '' / 'null' / UNKNOWN_NOT_AUTHENTICALLY_OBSERVED -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED. Any other malformed value (kernel
       supplied_epoch_failure 726248a5) or a differing value -> DENY HB_EPOCH_MISMATCH. --hb-epoch omitted ->
       ALLOW with P1's NOT_CROSS_CHECKED_MARKER {cross_checked: false, detail: HB_EPOCH_NOT_CROSS_CHECKED}, both absent when
-      the cross-check ran. A #3266 DENY HB_EPOCH_MISMATCH receipt still
-      observed (and sealed) the epoch, so it binds like ALLOW (P1 verify_admission_hb_epoch).
+      the cross-check ran. Only an ALLOW #3266 receipt binds (TVC; ruling 17:07Z): a DENY receipt is
+      BASE_STATE_NOT_OBSERVED, and a void readback shape is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED under
+      READBACK_SHAPE_MATCHES_PINNED_PRODUCER.
   PR_AUTHOR_SESSION_DECLARED     --session-id matches the SV_CHANGE session pattern.
   BRANCH_WRITER_IS_BRANCH_OWNER  (own code; the only predicate that reads git) branch
       created in this clone; every move of the remote-tracking ref is "update by push"
@@ -45,7 +46,7 @@ epoch is unobserved); ADMISSION_INPUT_READY only if every one is ALLOW.
       Lane A FAIL_CLOSED -> FAIL_CLOSED with Lane A's own code, otherwise FAIL_CLOSED
       CHECK_SKIPPED_OR_UNOBSERVED (TVC sv_change_job_observation mapping).
   BASE_STATE_RECEIPT_BOUND       (with --base-state-receipt) the sealed StegVerse-Labs/.github#3266
-      readback receipt verifies as TVC#519 @af754807 sv_change_base_state checks it (schema,
+      readback receipt verifies as TVC#519 @39afe092 sv_change_base_state checks it (schema,
       component, seal, ALLOW, well-formed base_ref/sources/hb_epoch), is bound to --base-sha
       and agrees with any explicit flag; it then supplies registry_generation / ledger_head
       for change identity and HEAD_CURRENT_WITH_BASE, and its hb_epoch is the HB_EPOCH_SUPPLIED source.
@@ -298,7 +299,7 @@ def load_job_observation_reference(pin_path: Path | None = None):
 
 
 # ---- B1 base-state readback receipt (StegVerse-Labs/.github#3266 RTC-SV-CHANGE-BASE-STATE-READBACK-014) ----
-# Verified exactly as TVC#519 @af754807 sv_change_base_state.base_state_from_readback does; producer pinned in
+# Verified exactly as TVC#519 @39afe092 sv_change_base_state.base_state_from_readback (blob 94b13f34) does; producer pinned in
 # config/admission-predicate/base-state-readback.pin.json (traceability: P4 consumes only the sealed receipt).
 BASE_STATE_SCHEMA = "stegverse.sv-change-base-state-readback/v1"
 BASE_STATE_COMPONENT = "RTC-SV-CHANGE-BASE-STATE-READBACK-014"
@@ -325,20 +326,28 @@ def _pinned_producer_ref() -> str:
 BASE_STATE_PRODUCER = "StegVerse-Labs/.github#3266 @" + _pinned_producer_ref()[:8]
 
 
+# Ruling (P1 via Lane C, 17:07Z): a readback whose shape the pinned #3266 producer (9c9b9f51) never emits is void:
+# FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED with failed_check/failed_predicate READBACK_SHAPE_MATCHES_PINNED_PRODUCER.
+READBACK_SHAPE_PREDICATE = "READBACK_SHAPE_MATCHES_PINNED_PRODUCER"
+
+
 def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str | None]:
     """(state, None, None) when TVC's adapter would bind the receipt; else (None, failure_code, reason).
-    A DENY HB_EPOCH_MISMATCH receipt binds like ALLOW (the pinned #3266 producer seals base_ref, hb_epoch and hb_epoch_source
-    on it; only the producer's own --hb-epoch cross-check disagreed; P1 treats it as observed). hb_epoch_source is
-    carried as-is and judged by HB_EPOCH_SUPPLIED (P1: a bad source is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED)."""
+    Only an ALLOW receipt binds (TVC sv_change_base_state @39afe092; ruling 17:07Z). A DENY HB_EPOCH_MISMATCH receipt
+    is BASE_STATE_NOT_OBSERVED here: TVC and P1 accept it only as a raw hb_epoch readback, which P4 does not take.
+    A void shape (hb_epoch_cross_check key, i.e. superseded #3266 producers; or an ALLOW whose top-level marker is not
+    exactly P1's NOT_CROSS_CHECKED_MARKER) is (None, HB_EPOCH_SOURCE_UNOBSERVED, reason) under READBACK_SHAPE_PREDICATE.
+    hb_epoch_source is carried as-is and judged by HB_EPOCH_SUPPLIED (P1: a bad source is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED)."""
     if not isinstance(receipt, Mapping):
         return None, "BASE_STATE_RECEIPT_UNREADABLE", "receipt is not a JSON object"
     if receipt.get("schema") != BASE_STATE_SCHEMA or receipt.get("component_id") != BASE_STATE_COMPONENT:
         return None, "BASE_STATE_RECEIPT_SCHEMA_MISMATCH", f"schema/component_id != {BASE_STATE_SCHEMA}/{BASE_STATE_COMPONENT}"
     if not isinstance(receipt.get(SEAL_FIELD), str) or not seal_verifies(receipt):
         return None, "BASE_STATE_RECEIPT_SEAL_INVALID", "result_sha256 does not verify over the canonical receipt"
-    observed = receipt.get("disposition") == "ALLOW" or (receipt.get("disposition") == "DENY"
-                                                         and receipt.get("failure_code") == "HB_EPOCH_MISMATCH")
-    if not observed:
+    if "hb_epoch_cross_check" in receipt:
+        return None, "HB_EPOCH_SOURCE_UNOBSERVED", (READBACK_SHAPE_PREDICATE + ": the readback carries hb_epoch_cross_check, "
+                                                    "a void shape (superseded #3266 producers) the pinned producer never emits")
+    if receipt.get("disposition") != "ALLOW":
         return None, "BASE_STATE_NOT_OBSERVED", f"receipt disposition {receipt.get('disposition')} ({receipt.get('failure_code')})"
     base = receipt.get("base_ref")
     gen = base.get("registry_generation") if isinstance(base, Mapping) else None
@@ -359,14 +368,14 @@ def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str
             or (epoch is not None and not (isinstance(epoch, str) and epoch.isascii() and epoch.isdigit() and int(epoch) >= HB_EPOCH_MINIMUM))):
         return None, "BASE_STATE_RECEIPT_MALFORMED", "base_ref, bound_main_commit, sources or hb_epoch not well formed"
     # The receipt's own not-cross-checked marker (top level, P1 NOT_CROSS_CHECKED_MARKER): on an ALLOW either exactly
-    # {cross_checked: false, detail: HB_EPOCH_NOT_CROSS_CHECKED} (its --hb-epoch was omitted) or both absent (it ran);
-    # never on a DENY; the void pre-canonical placement under hb_epoch_cross_check is refused. It is readback evidence
-    # only: the admission's own cross-check is HB_EPOCH_SUPPLIED's.
+    # {cross_checked: false, detail: HB_EPOCH_NOT_CROSS_CHECKED} (its --hb-epoch was omitted) or both absent (it ran).
+    # A partial or altered marker (an omitted-flag ALLOW without the canonical marker) is a void shape. It is readback
+    # evidence only: the admission's own cross-check is HB_EPOCH_SUPPLIED's.
     marker = {k: receipt[k] for k in ("cross_checked", "detail") if k in receipt}
-    if "hb_epoch_cross_check" in receipt or (marker and (receipt.get("disposition") != "ALLOW" or marker != NOT_CROSS_CHECKED_MARKER)):
-        return None, "BASE_STATE_RECEIPT_MALFORMED", ("the receipt's not-cross-checked marker is not P1's NOT_CROSS_CHECKED_MARKER "
-                                                      "(top-level cross_checked false + detail HB_EPOCH_NOT_CROSS_CHECKED on an ALLOW, "
-                                                      "else absent; not under hb_epoch_cross_check)")
+    if marker and not (marker == NOT_CROSS_CHECKED_MARKER and type(marker.get("cross_checked")) is bool):
+        return None, "HB_EPOCH_SOURCE_UNOBSERVED", (READBACK_SHAPE_PREDICATE + ": the ALLOW's top-level marker %r is not exactly "
+                                                    "P1's NOT_CROSS_CHECKED_MARKER (cross_checked false + detail "
+                                                    "HB_EPOCH_NOT_CROSS_CHECKED) and not absent" % (marker,))
     source = receipt.get("hb_epoch_source")
     key = source.get("receipt") if isinstance(source, Mapping) else None
     return {"registry_generation": gen, "ledger_head": head, "bound_main_commit": commit,
@@ -384,7 +393,7 @@ def p_base_state(a) -> dict:
     (--base-sha / --current-base-sha), and agree with any explicit flag. The base receipt also observes the
     current side when --current-base-sha is its bound commit and no current receipt is supplied."""
     r = row("BASE_STATE_RECEIPT_BOUND", producer=BASE_STATE_PRODUCER + " " + BASE_STATE_COMPONENT,
-            verifier="TVC#519 @af754807 sv_change_base_state.base_state_from_readback (reproduced)", receipts={})
+            verifier="TVC#519 @39afe092 sv_change_base_state.base_state_from_readback (reproduced)", receipts={})
     sides = [("base", a.base_state_receipt, a.base_sha), ("current", a.current_base_state_receipt, a.current_base_sha)]
     for side, path, sha in sides:
         if not path:
@@ -407,8 +416,11 @@ def p_base_state(a) -> dict:
                               f"(receipt REGISTRY_GENERATION_NOT_DECLARED; joint item {REGISTRY_GENERATION_JOINT_ITEM}); "
                               "P4 proposes and makes no registry edit",
                               f"after {REGISTRY_GENERATION_JOINT_ITEM} decides, rerun with a fresh ALLOW readback receipt")
-            return refuse(r, a, code, f"a sealed {BASE_STATE_SCHEMA} ALLOW receipt from {BASE_STATE_PRODUCER}'s read-only producer ({side}: {why})",
-                          "rerun with a fresh readback receipt for the bound commit")
+            refuse(r, a, code, f"a sealed {BASE_STATE_SCHEMA} ALLOW receipt from {BASE_STATE_PRODUCER}'s read-only producer ({side}: {why})",
+                   "rerun with a fresh readback receipt for the bound commit")
+            if why.startswith(READBACK_SHAPE_PREDICATE):
+                r["failed_predicate"] = r["failed_check"] = READBACK_SHAPE_PREDICATE
+            return r
         if state["bound_main_commit"] != sha:
             return refuse(r, a, "BASE_STATE_RECEIPT_COMMIT_MISMATCH",
                           f"{side} receipt bound_main_commit {state['bound_main_commit']} equals {flag} ({sha})",
@@ -603,8 +615,8 @@ def supplied_epoch_failure(value: Any, reference: Any = None) -> tuple[str, str]
 
 
 def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
-    """HB_EPOCH_SUPPLIED = P1 verify_admission_hb_epoch (StegVerse-Labs/.github#3264 @7898cedb, sv_work_items.py blob 4c2aa6ef, listed in its contract-pins.json 98277496)
-    over the receipt BASE_STATE_RECEIPT_BOUND verified (schema, seal, ALLOW or DENY HB_EPOCH_MISMATCH, bound commit/flags):
+    """HB_EPOCH_SUPPLIED = P1 verify_admission_hb_epoch (StegVerse-Labs/.github#3264 @7898cedb, sv_work_items.py blob 4c2aa6ef, listed in its contract-pins.json 98277496; checked 17:07Z, still the head)
+    over the receipt BASE_STATE_RECEIPT_BOUND verified (schema, seal, ALLOW only, pinned-producer shape, bound commit/flags):
       FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED: no bound receipt; fixture_only; the readback's repository is not the target
         repository (--repository, else UNKNOWN; CHANGE_BINDS_TARGET_REPOSITORY_LEDGER: an org change never binds a Labs
         ledger); no hb_epoch_source naming $.hb_reference.epoch
@@ -636,6 +648,10 @@ def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
                       f"after Lane C's readback ({BASE_STATE_PRODUCER}) seals an epoch read at that ledger head; no epoch is minted"), None
 
     if bound is None:
+        if receipt_row and receipt_row.get("failed_predicate") == READBACK_SHAPE_PREDICATE:
+            unobserved("the readback's shape does not match the pinned producer's (" + READBACK_SHAPE_PREDICATE + ")")
+            r["failed_predicate"] = r["failed_check"] = READBACK_SHAPE_PREDICATE
+            return r, None
         return unobserved("no verified --base-state-receipt")
     if bound.get("fixture_only"):
         return unobserved("a fixture_only readback counts only in fixture_mode (P4 has none)")
