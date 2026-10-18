@@ -78,8 +78,10 @@ class FederationCycleSuppliedEpochTests(unittest.TestCase):
                 self.assertIsNone(receipt["heartbeat_reference"])
                 self.assertEqual(receipt["heartbeat_reference_refusal"]["failure_code"], "HB_EPOCH_INVALID")
 
-    def test_the_supplied_epoch_times_propagation_and_no_epoch_adds_no_fallback(self):
-        for supplied, expected in (("446655631", 446655631), (None, None), ("+33", None)):
+    def test_the_supplied_epoch_reaches_propagation_unchanged(self):
+        # The raw epoch reaches the writer, which applies the same shared rule and
+        # refuses an absent or invalid one in six fields.
+        for supplied, expected in (("446655631", "446655631"), (None, None), ("+33", "+33")):
             with self.subTest(supplied=supplied), tempfile.TemporaryDirectory() as work, \
                     mock.patch.object(FC.K, "consume_and_respond", return_value=[]), \
                     mock.patch.object(FC, "returns_for_consumed", return_value=[]), \
