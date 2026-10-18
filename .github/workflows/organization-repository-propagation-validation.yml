@@ -104,7 +104,7 @@ jobs:
           cycle = load("federation_cycle", "resident-runtime/federation_cycle.py")
           mesh = Path(os.environ.get("RUNNER_TEMP", "/tmp")) / "cycle-mesh"
           node_state = Path(os.environ["STEGVERSE_NODE_STATE_ROOT"])
-          reported = cycle.main(mesh_root=mesh, node_state_root=node_state)
+          reported = cycle.main(mesh_root=mesh, node_state_root=node_state, hb_epoch=32)
           carried = reported["repository_propagation"]
           assert carried["receipts_propagated"] == 1, carried
           assert carried["repositories_present"] == 1, carried
@@ -122,7 +122,7 @@ jobs:
           assert organization[0]["org_transition_class"] == "REPO_STATE_PROPAGATION"
 
           # Running the cycle again carries nothing rather than failing on a duplicate.
-          again = cycle.main(mesh_root=mesh, node_state_root=node_state)
+          again = cycle.main(mesh_root=mesh, node_state_root=node_state, hb_epoch=32)
           assert again["repository_propagation"]["receipts_propagated"] == 0
           assert again["repository_propagation"]["receipts_already_carried"] == 1
 

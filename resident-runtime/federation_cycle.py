@@ -176,6 +176,11 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
         # The supplied epoch, when valid, times the propagated receipts too; the
         # cycle adds no fallback of its own when it is absent.
         propagation=PR.propagate_all(hb_epoch=heartbeat["epoch"] if heartbeat else None)
+    except PR.organization_ledger.OrgLedgerEpochRefused as exc:
+        receipt["repository_propagation"]={**exc.refusal,
+          "consequence_committed":False,
+          "crossed_an_organization_boundary":False,
+          "interlock_intr_involved":False}
     except PR.organization_ledger.LedgerLocationRequired as exc:
         receipt["repository_propagation"]={
           "disposition":"FAIL_CLOSED",
