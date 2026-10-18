@@ -1,0 +1,1629 @@
+{
+  "schema": "stegverse.resident-runtime-convergence-dry-run/v1",
+  "baseline": "StegVerse-org/.github@0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+  "run": "local dry run, sandbox only, no append, 2026-10-18",
+  "pr186_close_globals": [
+    "CLOSED_CLASS",
+    "CLOSURE_REFUSED_CLASS",
+    "FAIL_CLOSED",
+    "INTR_PROTOCOL_GOAL",
+    "OPERATION_ID",
+    "RESPONSE_ABSENT_FAILURE_CODE",
+    "RESPONSE_ABSENT_PREDICATE",
+    "RESULT_SCHEMA",
+    "_record",
+    "_recorded_attestation",
+    "closure_record",
+    "epoch_refusal",
+    "kernel",
+    "reconstruct_far_side_chain",
+    "recorded_emission",
+    "resolve_destination",
+    "sha",
+    "this_organization",
+    "verify_closure"
+  ],
+  "orgs": {
+    "SV-011": {
+      "disposition": "FAIL_CLOSED",
+      "refusals": [
+        {
+          "detail": {
+            "divergent_code_hunks": 35,
+            "hunk_sha256": [
+              "751bbe2a0eea93debd5861fd7603adddb18434a7bd89c882f2f480ce1c3756e3",
+              "cd7b66f5512c2310495c6cc0b4c2bf4eda4c478b6275ba6422182a6b3b476193",
+              "cd7b66f5512c2310495c6cc0b4c2bf4eda4c478b6275ba6422182a6b3b476193",
+              "2ed106c149cec710b5903ed69c202fcf9c7d1176ecf112137efe6bc0a6e8900d",
+              "004481d1348a3af7e57b321a228378077274cdf75c0ece5f3db1c4af00c0ea3d",
+              "6e77293eb4337abb636d2963eb074f5ce8f94835d139593dcdcbef04875f1052",
+              "33ab387584c97d2329af1fb746dc462ce8350279aaea26c25ecf0c38b78e5a40",
+              "97565e16d4540199b4e589a6f890f5a113423e7c9d310623bfe695b06b94e7f7",
+              "af3aa138cea76d80766d15ad651ef9960c6e97096ea12c5905b4a6e8ba596133",
+              "e87375e040f7d1e1bc5e8159da5343e9a23ebabf9d05301aae6df27db193e7b6",
+              "fcba4d16ff59ce8f6bf1b20be82c5a7e5eae262c4030b08c281c71968823de0f",
+              "fd60c81cea96ff954179a5fac9e6e70e94f20f6215e28d7c9cc70ac6d263f175",
+              "2b9a1c1e8ad0c54433faac967b65757d09b59e7d495ed5aedc78a27cb29dcf73",
+              "97565e16d4540199b4e589a6f890f5a113423e7c9d310623bfe695b06b94e7f7",
+              "baa58c6058a96722e086d99d6c65f36682bdf77da2898db7dd38e4b06bab7a39",
+              "df00b5dd4c04c4d48334eb70f3071332cb0a3c02b0b3966da4554fb085815453",
+              "74f28aae0ca67afe70a973274d49fd5db95c48307c67f97f61ff0400e628bfeb",
+              "b6adf50b7dd930fba702d4b9b00279f5de44ab1944c51b5f189903721eeb16c8",
+              "bb97f2b3aeaf7ec1fe469838affc2b388a1884bfefc9ecce8562406096682aa4",
+              "6322fdfdf16c9634c4aeb7611cf758b719299fedf786ac49c52b5d79e5a4b89d",
+              "69a4eb7fa0bd26508750f1950b230827ed7786c4cc6a33396c6c1f9345ffed94",
+              "1400e692d826e1a3a15cdc6ba593eb95ef8dc99c1e36b7b9d188fb552b99ffc7",
+              "bf2485b914998bddc610dd9f64c82f780065e1aa46469268a0dadede26f87679",
+              "6f44bd08b900dc1d46d0be83883b4f2cbf9f1c75268663534f421e63c064468f",
+              "bb77dcb26d0397fb5a00983e52b6b23af2a8b67f9c60dce180088d356d556041",
+              "1ec80c4fd8d43521d29a0b48ad7a14553c964d68a30bdd5b61e70df156a15ec1",
+              "a09e02f60d52ed1508c84e68f73f091bc595d541e85e710789a286b087bccfd4",
+              "8d8e54cf42699f4151961fe0a48455c48571916bf48789a416ce34958c7309f4",
+              "171ac367357c3444b5a2ee46593baf056bb10791e0853a23634aee549ab08706",
+              "17d1178bd116d733c7407d961668278133cb0210b2aaa8b60f06841eedf989fc",
+              "adaa9b321b82bd51fdcd24e9ade5d0beefd87fbee6159d0df4f4cc046312c818",
+              "82f68dd55360173f5bd0950b6b1159fea034d16998b2ccacd1878255b8861b39",
+              "68999cf0fa2887773f1bab898ec689d359eaca8296fca94424848436cfab56db",
+              "6322fdfdf16c9634c4aeb7611cf758b719299fedf786ac49c52b5d79e5a4b89d",
+              "fd60c81cea96ff954179a5fac9e6e70e94f20f6215e28d7c9cc70ac6d263f175",
+              "d6e8c53b81e59b826a5ceff71b309f7d3f709eb2284066c740c690a4162e276f"
+            ],
+            "new_top_level_definitions": [
+              "_constraint_fields"
+            ],
+            "org_specific_hunks": 1
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_NON_PARAMETER_NON_COSMETIC_TARGET_HUNK_IS_RECONCILED",
+          "failure_code": "ORG_SPECIFIC_BEHAVIOUR_UNRECONCILED",
+          "next_attempt": "rerun converge once every listed hunk_sha256 is reconciled in the manifest",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "for each hunk named in detail: port it into the baseline under the owning goal, or record its hunk_sha256 under targets.SV-011.reconciled_hunk_sha256 with the reason it is superseded; convergence never deletes it silently",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "absent": [
+              "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+              "org-boundary/runtime/manifest_selection.py",
+              "org-boundary/runtime/node_standing.py",
+              "org-boundary/runtime/origin_attestation.py",
+              "org-kernel/node_store.py",
+              "org-runtime/activation.json",
+              "resident-runtime/activation-manifest.json",
+              "tests/peer_organization.py"
+            ],
+            "absent_org_owned": [
+              "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+              "org-runtime/activation.json",
+              "resident-runtime/activation-manifest.json"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+          "failure_code": "BASELINE_DEPENDENCY_CLOSURE_ABSENT",
+          "next_attempt": "rerun converge once the closure resolves in the target",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "converge or declare each absent closure file (detail) in the target organization first; org-owned ones are that organization's own configuration and are not overwritten from the baseline",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "FileNotFoundError"
+            ],
+            "errors": 0,
+            "failures": 0,
+            "tests_run": 0,
+            "timed_out": false
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the failing tests' preconditions in the target (see evidence/tests.out); a refusal from an earlier predicate usually explains them",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "478911384c798d876a860eeff67e3d9dc981110694d8c924b6ef187038e3d762",
+          "before_lines": 509,
+          "after_sha256": "c680c1008e1457cdd813e6471956b100c861af6b2082acc1f31ec07993368ad9",
+          "after_lines": 964,
+          "after_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_lines": 1003,
+          "diff_sha256": "e8cefc782f6f8bff75092edd06937ad2892216787bf8f12c97a55baa0ad65880"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "235099ffd119a4a41dda2d99c63221161d7e7529c1bfe544f28e8628d84f827f",
+          "after_lines": 732,
+          "after_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_lines": 735,
+          "diff_sha256": "55c1995cb87dfc1a1abeddb52833e4f3251aaf17b35242085113e23d5c949aab"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "e5739233ee9f956f3635846a7e57cd447c56684786c0b6cd4c4c92c6c088f2c5",
+          "after_lines": 208,
+          "after_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_lines": 211,
+          "diff_sha256": "20e14b9793a700b590036f677faaa65c2b5858714a5dcaf5cbd27684a638ff1f"
+        }
+      ],
+      "hunk_counts": {
+        "COMMENT_OR_DOCSTRING_ONLY": 11,
+        "DIVERGENT_CODE": 35,
+        "ORG_SPECIFIC_BEHAVIOUR": 1
+      },
+      "org_specific_hunks": [
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            199,
+            207
+          ],
+          "hunk_sha256": "6e77293eb4337abb636d2963eb074f5ce8f94835d139593dcdcbef04875f1052",
+          "new_top_level_definitions": [
+            "_constraint_fields"
+          ]
+        }
+      ],
+      "module_symbols_only_in_target": [
+        "_constraint_fields"
+      ],
+      "module_symbols_only_in_baseline": [
+        "ATTESTATION_FIELDS",
+        "CREDENTIAL_AUTHORITY",
+        "FAIL_CLOSED",
+        "HB_ANCHOR_EPOCH",
+        "HB_EPOCH_INVALID",
+        "HB_EPOCH_NOT_SUPPLIED",
+        "HB_EPOCH_PREDICATE",
+        "INTR_PROTOCOL_GOAL",
+        "OWNING_EXISTING_GOAL",
+        "_attestation",
+        "_recorded_attestation",
+        "attestation_module",
+        "epoch_refusal",
+        "main",
+        "refusal_repair",
+        "supplied_epoch_failure"
+      ],
+      "closure_absent": [
+        "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+        "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+        "org-boundary/runtime/manifest_selection.py",
+        "org-boundary/runtime/node_standing.py",
+        "org-boundary/runtime/origin_attestation.py",
+        "org-kernel/node_store.py",
+        "org-runtime/activation.json",
+        "resident-runtime/activation-manifest.json",
+        "tests/peer_organization.py"
+      ],
+      "closure_different": [
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "org-boundary/registry/federation.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-boundary/runtime/process_boundary.py",
+        "org-kernel/kernel.py",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/runtime_boundary.py",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/ledger_store.py"
+      ],
+      "tests": {
+        "tests_run": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ],
+        "output_sha256": "a4dd7f46efde733fcc7e2ffd30d3f36e0ef0d8e511bd4f3c1dae826f7f706a22"
+      },
+      "pr186_close_globals_missing_in_target_module": [
+        "FAIL_CLOSED",
+        "INTR_PROTOCOL_GOAL",
+        "RESPONSE_ABSENT_FAILURE_CODE",
+        "RESPONSE_ABSENT_PREDICATE",
+        "_recorded_attestation",
+        "epoch_refusal"
+      ],
+      "pending_constant_present": true
+    },
+    "GCAT-BCAT-Engine": {
+      "disposition": "FAIL_CLOSED",
+      "refusals": [
+        {
+          "detail": {
+            "divergent_code_hunks": 38,
+            "hunk_sha256": [
+              "353e7da4bfb7d0e2e34e3c1ce87fe89ff3d8a896c6aaf06769961be9d2414fc0",
+              "f732a0899aa48af416646ae855c82f0a0144ed45f05326184d8e93ef9e4149e2",
+              "99bde6514d7112b26377c54b966183cbf9399957e9884daa0a4b1e8d18036434",
+              "2623989b93670a137c2df84e7600752b9a6ad43ee5ed9f7b5b1a347811d96f29",
+              "a3ec47d86a5189dfb4d56a4282e59a951f699ddac7365fd893a2a13754816767",
+              "6cee40f564c567f1875bcabe7dc5486330dcb8e52dd249ce0baaa57277c4b05b",
+              "4e5088b423f86d6f65fd3f5f56c9f8b7602b34c1f81c10833f1f15d67a2501cd",
+              "2c804857a9733f0851d92f9f7d098a387ca2500b61cb45a9420278d55aa07ac3",
+              "e681caf92791920e1781994d043b2b69beae1b609159c430b3d71f9869421f6a",
+              "7c56cbc3fa8582980f15df9c9dbb671148242113e8153d7bcba1dadde5c345fd",
+              "8f584c6075cd3918510358b24c2825741583f2aab293d8a08231d18335ddf57b",
+              "a5a1e172aecf39c3a8f389a5b577a0a1c8ee9f5406bb398cce0788c792effbbf",
+              "311f1202ec00363eff44c6eee4cbdaf87845c86a0ced91811647ccfb12cc8797",
+              "e0e6a97ddb430ff2662c53a1f34750442298b2b8e3dde627ccd1ffdded0c789b",
+              "33ab387584c97d2329af1fb746dc462ce8350279aaea26c25ecf0c38b78e5a40",
+              "477a6e9d9bdae3438c7ba6cd70dc441665ec702547d4ea7737460dd3e4503a2d",
+              "af3aa138cea76d80766d15ad651ef9960c6e97096ea12c5905b4a6e8ba596133",
+              "fcba4d16ff59ce8f6bf1b20be82c5a7e5eae262c4030b08c281c71968823de0f",
+              "477a6e9d9bdae3438c7ba6cd70dc441665ec702547d4ea7737460dd3e4503a2d",
+              "6d67657344c685c5106df2f844b5d72ab346abf986e8e6454a051c54a7c84add",
+              "3521c805e1ed321f499185194c92d0f9c4a79172fc64d0015a2f7e11471de455",
+              "665b2438faf31b11c2d5e1d4017d45ed0c2f7c4c5bbaf02292e6f5dec06eb137",
+              "99da4a0e576abeb413b3fdf4f6c4fbefbc56af6b01c6d5091e7774f3a80ec2c6",
+              "57d5c231b8597cf91d976bb25e9dba9e6bc83c0ac0a81aa8b0673971cf02bcc0",
+              "9a8af69070658be850b8a6c8af918ce2a1c894f5913a538c3dd863a6d512bd0e",
+              "cd6c1500d10177d9d0019c70740b592c3a06100d5fcbe445811c7d176d58e918",
+              "a119ae33f2abe6e551b3ef1d60c9da1a0173c217fbb8918bfe76cd731954f918",
+              "1ddad5dc709885c27dfc956caf1b4c4d9d40057572968c746687801d1fa577d0",
+              "0320b080492c5d496e73c1a8c2c397dec8772e97c3297464574f57f0c80dd18f",
+              "bb97f2b3aeaf7ec1fe469838affc2b388a1884bfefc9ecce8562406096682aa4",
+              "69a4eb7fa0bd26508750f1950b230827ed7786c4cc6a33396c6c1f9345ffed94",
+              "fbbff82c5f9343a19e77b85803bda3c896eb6a32c3a1328b13b4d2b5139a4a62",
+              "27e5749300ca5555ed9646aa77d28a6db86455a0662821abb171efbd8f4fe925",
+              "17d1178bd116d733c7407d961668278133cb0210b2aaa8b60f06841eedf989fc",
+              "9d08f4aa25ea243d4e8d16066c31b5e077fe9f08e07dc78239d3b4dc1fc2d12b",
+              "fa584d8b0b9e02c8d29e2af83ed77e31397a71dfda22872fb2b619429a75090c",
+              "04a6d90178f1ee081e0e7a385b6aaba12aa06a6b09e1053958997a2c44404b95",
+              "06d9a7c55437ac0b4d643deefd2e1fc7666bbfec954393d60849d47d16c54a1b",
+              "131f5e6bdd0862a108aef0c6996da106316b17bf441475c32ba9743ebef24a45",
+              "803f82c813dacc5d961202456773caa0c2ba42d9f4e7202631782b625c6cd65a",
+              "e3521553fe5af0c8969bd9ed326f0d38bd38dc026fbc59675e9312f1ca64c34e",
+              "8ef48ffb3e2db6adb4efeb7bc9ca640a18deabe17962df75d72816d828c19297"
+            ],
+            "new_top_level_definitions": [
+              "_boundary",
+              "_unattested",
+              "outbound_entries",
+              "select_outbound_binding"
+            ],
+            "org_specific_hunks": 4
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_NON_PARAMETER_NON_COSMETIC_TARGET_HUNK_IS_RECONCILED",
+          "failure_code": "ORG_SPECIFIC_BEHAVIOUR_UNRECONCILED",
+          "next_attempt": "rerun converge once every listed hunk_sha256 is reconciled in the manifest",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "for each hunk named in detail: port it into the baseline under the owning goal, or record its hunk_sha256 under targets.GCAT-BCAT-Engine.reconciled_hunk_sha256 with the reason it is superseded; convergence never deletes it silently",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "absent": [
+              "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+              "org-boundary/runtime/manifest_selection.py",
+              "org-boundary/runtime/node_standing.py",
+              "org-boundary/runtime/origin_attestation.py",
+              "org-kernel/node_store.py",
+              "tests/peer_organization.py"
+            ],
+            "absent_org_owned": [
+              "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+          "failure_code": "BASELINE_DEPENDENCY_CLOSURE_ABSENT",
+          "next_attempt": "rerun converge once the closure resolves in the target",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "converge or declare each absent closure file (detail) in the target organization first; org-owned ones are that organization's own configuration and are not overwritten from the baseline",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "FileNotFoundError"
+            ],
+            "errors": 0,
+            "failures": 0,
+            "tests_run": 0,
+            "timed_out": false
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the failing tests' preconditions in the target (see evidence/tests.out); a refusal from an earlier predicate usually explains them",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "48fb1d7c023eff5d1d3868daae231add74ea3ce1b640c916783d02043bc1c669",
+          "before_lines": 580,
+          "after_sha256": "49fe9d667849335d35dec830681fe9dc4d9c263f206354d8e5dead2c7a132f37",
+          "after_lines": 964,
+          "after_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_lines": 1052,
+          "diff_sha256": "e7b18606be57388e9d75e81a9ccbe3e5d66f37468358b44e12322fb94eec9512"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "2308c137cd390f501397f85d63f634cffcefd3afbab60e9b3388fefe82779070",
+          "after_lines": 732,
+          "after_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_lines": 735,
+          "diff_sha256": "104fd2c86b30a584a8138fb606595c53ec495c0ad38263b4b642e40f696dea52"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "e373a8ce1f1ae2cdaf00911042b7d339f8e7afd850d110312b365de6cd3f3336",
+          "after_lines": 208,
+          "after_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_lines": 211,
+          "diff_sha256": "9e4135fe8baa70de5cd30086c8e2b46bcfc5e50ce31639f4b369160b321c84b6"
+        }
+      ],
+      "hunk_counts": {
+        "COMMENT_OR_DOCSTRING_ONLY": 12,
+        "DIVERGENT_CODE": 38,
+        "ORG_SPECIFIC_BEHAVIOUR": 4
+      },
+      "org_specific_hunks": [
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            99,
+            102
+          ],
+          "hunk_sha256": "99bde6514d7112b26377c54b966183cbf9399957e9884daa0a4b1e8d18036434",
+          "new_top_level_definitions": [
+            "_boundary"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            110,
+            114
+          ],
+          "hunk_sha256": "a3ec47d86a5189dfb4d56a4282e59a951f699ddac7365fd893a2a13754816767",
+          "new_top_level_definitions": [
+            "outbound_entries"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            116,
+            124
+          ],
+          "hunk_sha256": "6cee40f564c567f1875bcabe7dc5486330dcb8e52dd249ce0baaa57277c4b05b",
+          "new_top_level_definitions": [
+            "select_outbound_binding"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            230,
+            235
+          ],
+          "hunk_sha256": "e0e6a97ddb430ff2662c53a1f34750442298b2b8e3dde627ccd1ffdded0c789b",
+          "new_top_level_definitions": [
+            "_unattested"
+          ]
+        }
+      ],
+      "module_symbols_only_in_target": [
+        "RESPONDED_REQUEST_CLASSES",
+        "_boundary",
+        "_unattested",
+        "ledger",
+        "outbound_entries",
+        "select_outbound_binding"
+      ],
+      "module_symbols_only_in_baseline": [
+        "ATTESTATION_FIELDS",
+        "CREDENTIAL_AUTHORITY",
+        "FAIL_CLOSED",
+        "HB_ANCHOR_EPOCH",
+        "HB_EPOCH_INVALID",
+        "HB_EPOCH_NOT_SUPPLIED",
+        "HB_EPOCH_PREDICATE",
+        "INTR_PROTOCOL_GOAL",
+        "OWNING_EXISTING_GOAL",
+        "_attestation",
+        "_recorded_attestation",
+        "attestation_module",
+        "destination_bindings",
+        "epoch_refusal",
+        "ledger_store",
+        "organization_ledger",
+        "refusal_repair",
+        "repository_ledger",
+        "supplied_epoch_failure"
+      ],
+      "closure_absent": [
+        "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+        "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+        "org-boundary/runtime/manifest_selection.py",
+        "org-boundary/runtime/node_standing.py",
+        "org-boundary/runtime/origin_attestation.py",
+        "org-kernel/node_store.py",
+        "tests/peer_organization.py"
+      ],
+      "closure_different": [
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/org-contract.json",
+        "org-boundary/registry/federation.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-boundary/runtime/process_boundary.py",
+        "org-kernel/kernel.py",
+        "org-runtime/activation.json",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/runtime_boundary.py",
+        "resident-runtime/activation-manifest.json",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/ledger_store.py"
+      ],
+      "tests": {
+        "tests_run": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ],
+        "output_sha256": "4093e33fe0e8d8b91fd5086235d53328a6da74550270e09a4acf883bc8e8d1e3"
+      },
+      "pr186_close_globals_missing_in_target_module": [
+        "FAIL_CLOSED",
+        "INTR_PROTOCOL_GOAL",
+        "RESPONSE_ABSENT_FAILURE_CODE",
+        "RESPONSE_ABSENT_PREDICATE",
+        "_recorded_attestation",
+        "epoch_refusal"
+      ],
+      "pending_constant_present": true
+    },
+    "Admissible-Existence": {
+      "disposition": "FAIL_CLOSED",
+      "refusals": [
+        {
+          "detail": {
+            "divergent_code_hunks": 36,
+            "hunk_sha256": [
+              "3727adff524e0616022eadd8f4af21a0778b29fc4c77bdfefd1afce2cbf5e4b7",
+              "dab8e24f866042ad569ac9237cd59bc1043eba6d551c5c2d9a2aa193c1ad4e54",
+              "7be0919618f46c2c76bee75c2ef08581a7a32030bfff4065e8e4762a77730e0c",
+              "98d50967ace4e8bf7795127e989c66eeaac5db442b2dda8d56b0b6e23bdf23ee",
+              "99bde6514d7112b26377c54b966183cbf9399957e9884daa0a4b1e8d18036434",
+              "2623989b93670a137c2df84e7600752b9a6ad43ee5ed9f7b5b1a347811d96f29",
+              "a3ec47d86a5189dfb4d56a4282e59a951f699ddac7365fd893a2a13754816767",
+              "6cee40f564c567f1875bcabe7dc5486330dcb8e52dd249ce0baaa57277c4b05b",
+              "4e5088b423f86d6f65fd3f5f56c9f8b7602b34c1f81c10833f1f15d67a2501cd",
+              "2c804857a9733f0851d92f9f7d098a387ca2500b61cb45a9420278d55aa07ac3",
+              "e681caf92791920e1781994d043b2b69beae1b609159c430b3d71f9869421f6a",
+              "7c56cbc3fa8582980f15df9c9dbb671148242113e8153d7bcba1dadde5c345fd",
+              "8f584c6075cd3918510358b24c2825741583f2aab293d8a08231d18335ddf57b",
+              "e0e6a97ddb430ff2662c53a1f34750442298b2b8e3dde627ccd1ffdded0c789b",
+              "33ab387584c97d2329af1fb746dc462ce8350279aaea26c25ecf0c38b78e5a40",
+              "477a6e9d9bdae3438c7ba6cd70dc441665ec702547d4ea7737460dd3e4503a2d",
+              "af3aa138cea76d80766d15ad651ef9960c6e97096ea12c5905b4a6e8ba596133",
+              "fcba4d16ff59ce8f6bf1b20be82c5a7e5eae262c4030b08c281c71968823de0f",
+              "477a6e9d9bdae3438c7ba6cd70dc441665ec702547d4ea7737460dd3e4503a2d",
+              "23d93e127abc40ca550d58ae02d1f58f8c09a7655e345be1885f180cf91d5e5b",
+              "f895193f3bd7381c926c19a54bdfe956af0f5ee1e1ed2f3b066aad06abbbdd5c",
+              "ef2845b54d9cc1fdb1962196e7600cf1574a9ad856cd0940b51875bb94abc4bb",
+              "31f5942720f2ee36e46589bc55c799f378ef4cfff86497d2143c6dd2e4300bb2",
+              "edd0f91782cd39cd75ec30e6487b172f1093f783b5deb415ab45561b0a82c981",
+              "744d22c32fe88604c482aa96b63acd4dd535f99d3f914bfa0b38c10f6061d995",
+              "9a8af69070658be850b8a6c8af918ce2a1c894f5913a538c3dd863a6d512bd0e",
+              "cd6c1500d10177d9d0019c70740b592c3a06100d5fcbe445811c7d176d58e918",
+              "a119ae33f2abe6e551b3ef1d60c9da1a0173c217fbb8918bfe76cd731954f918",
+              "c7ea30d087c7bed7e0da54b6b3fa8616c3721ddfd2048df09bad1a0a956c084d",
+              "bb97f2b3aeaf7ec1fe469838affc2b388a1884bfefc9ecce8562406096682aa4",
+              "69a4eb7fa0bd26508750f1950b230827ed7786c4cc6a33396c6c1f9345ffed94",
+              "fbbff82c5f9343a19e77b85803bda3c896eb6a32c3a1328b13b4d2b5139a4a62",
+              "17d1178bd116d733c7407d961668278133cb0210b2aaa8b60f06841eedf989fc",
+              "9d08f4aa25ea243d4e8d16066c31b5e077fe9f08e07dc78239d3b4dc1fc2d12b",
+              "fa584d8b0b9e02c8d29e2af83ed77e31397a71dfda22872fb2b619429a75090c",
+              "04a6d90178f1ee081e0e7a385b6aaba12aa06a6b09e1053958997a2c44404b95",
+              "06d9a7c55437ac0b4d643deefd2e1fc7666bbfec954393d60849d47d16c54a1b",
+              "131f5e6bdd0862a108aef0c6996da106316b17bf441475c32ba9743ebef24a45",
+              "803f82c813dacc5d961202456773caa0c2ba42d9f4e7202631782b625c6cd65a",
+              "e3521553fe5af0c8969bd9ed326f0d38bd38dc026fbc59675e9312f1ca64c34e",
+              "8ef48ffb3e2db6adb4efeb7bc9ca640a18deabe17962df75d72816d828c19297"
+            ],
+            "new_top_level_definitions": [
+              "_boundary",
+              "_require_ledger_roots",
+              "_unattested",
+              "outbound_entries",
+              "select_outbound_binding"
+            ],
+            "org_specific_hunks": 5
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_NON_PARAMETER_NON_COSMETIC_TARGET_HUNK_IS_RECONCILED",
+          "failure_code": "ORG_SPECIFIC_BEHAVIOUR_UNRECONCILED",
+          "next_attempt": "rerun converge once every listed hunk_sha256 is reconciled in the manifest",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "for each hunk named in detail: port it into the baseline under the owning goal, or record its hunk_sha256 under targets.Admissible-Existence.reconciled_hunk_sha256 with the reason it is superseded; convergence never deletes it silently",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "absent": [
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+              "org-boundary/runtime/manifest_selection.py",
+              "org-boundary/runtime/origin_attestation.py",
+              "org-kernel/node_store.py",
+              "tests/peer_organization.py"
+            ],
+            "absent_org_owned": [
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+          "failure_code": "BASELINE_DEPENDENCY_CLOSURE_ABSENT",
+          "next_attempt": "rerun converge once the closure resolves in the target",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "converge or declare each absent closure file (detail) in the target organization first; org-owned ones are that organization's own configuration and are not overwritten from the baseline",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "FileNotFoundError"
+            ],
+            "errors": 0,
+            "failures": 0,
+            "tests_run": 0,
+            "timed_out": false
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the failing tests' preconditions in the target (see evidence/tests.out); a refusal from an earlier predicate usually explains them",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "bf4ff06b7e52f22ac7440edb2534bba01787016cb91809f243b878cce41cf057",
+          "before_lines": 595,
+          "after_sha256": "a91e00c8beb79d11791ed2ab85001b41285f2f2e6d2d154220854cf5ce6cbb76",
+          "after_lines": 964,
+          "after_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_lines": 1039,
+          "diff_sha256": "364af5f68dcf8863ab37cb0b285e25ea86ae082b3fa055616f2fe5569c85def9"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "25a530d8adc300685190f1b07f0f4c66b44a27ed065d8b737c2629fc8c3959f5",
+          "after_lines": 732,
+          "after_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_lines": 735,
+          "diff_sha256": "acadd160c14a0d43aa036820848361182860794cbf3cb5eaa9997a8c2b20c5f1"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "0f5d8754416c0bf2bb35d283ab45273cc7d9c5568aa3ed67eb083ba1ec0e96a2",
+          "after_lines": 208,
+          "after_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_lines": 211,
+          "diff_sha256": "431a923d6ac46c42ce0acc28a65ebf535bd443dd353faaf08794934832470f81"
+        }
+      ],
+      "hunk_counts": {
+        "COMMENT_OR_DOCSTRING_ONLY": 12,
+        "DIVERGENT_CODE": 36,
+        "ORG_SPECIFIC_BEHAVIOUR": 5
+      },
+      "org_specific_hunks": [
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            102,
+            105
+          ],
+          "hunk_sha256": "99bde6514d7112b26377c54b966183cbf9399957e9884daa0a4b1e8d18036434",
+          "new_top_level_definitions": [
+            "_boundary"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            113,
+            117
+          ],
+          "hunk_sha256": "a3ec47d86a5189dfb4d56a4282e59a951f699ddac7365fd893a2a13754816767",
+          "new_top_level_definitions": [
+            "outbound_entries"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            119,
+            127
+          ],
+          "hunk_sha256": "6cee40f564c567f1875bcabe7dc5486330dcb8e52dd249ce0baaa57277c4b05b",
+          "new_top_level_definitions": [
+            "select_outbound_binding"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            233,
+            238
+          ],
+          "hunk_sha256": "e0e6a97ddb430ff2662c53a1f34750442298b2b8e3dde627ccd1ffdded0c789b",
+          "new_top_level_definitions": [
+            "_unattested"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            350,
+            372
+          ],
+          "hunk_sha256": "744d22c32fe88604c482aa96b63acd4dd535f99d3f914bfa0b38c10f6061d995",
+          "new_top_level_definitions": [
+            "_require_ledger_roots"
+          ]
+        }
+      ],
+      "module_symbols_only_in_target": [
+        "_boundary",
+        "_require_ledger_roots",
+        "_unattested",
+        "outbound_entries",
+        "select_outbound_binding"
+      ],
+      "module_symbols_only_in_baseline": [
+        "ATTESTATION_FIELDS",
+        "CREDENTIAL_AUTHORITY",
+        "FAIL_CLOSED",
+        "HB_ANCHOR_EPOCH",
+        "HB_EPOCH_INVALID",
+        "HB_EPOCH_NOT_SUPPLIED",
+        "HB_EPOCH_PREDICATE",
+        "INTR_PROTOCOL_GOAL",
+        "OWNING_EXISTING_GOAL",
+        "_attestation",
+        "_recorded_attestation",
+        "attestation_module",
+        "destination_bindings",
+        "epoch_refusal",
+        "refusal_repair",
+        "supplied_epoch_failure"
+      ],
+      "closure_absent": [
+        "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+        "org-boundary/runtime/manifest_selection.py",
+        "org-boundary/runtime/origin_attestation.py",
+        "org-kernel/node_store.py",
+        "tests/peer_organization.py"
+      ],
+      "closure_different": [
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "org-boundary/registry/federation.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-boundary/runtime/process_boundary.py",
+        "org-kernel/kernel.py",
+        "org-runtime/activation.json",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/runtime_boundary.py",
+        "resident-runtime/activation-manifest.json",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/ledger_store.py"
+      ],
+      "tests": {
+        "tests_run": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ],
+        "output_sha256": "e2c88c073038944195bc30e9e221180dc710d86c4e6a0e8b7f18dd54be3e6a90"
+      },
+      "pr186_close_globals_missing_in_target_module": [
+        "FAIL_CLOSED",
+        "INTR_PROTOCOL_GOAL",
+        "RESPONSE_ABSENT_FAILURE_CODE",
+        "RESPONSE_ABSENT_PREDICATE",
+        "_recorded_attestation",
+        "epoch_refusal"
+      ],
+      "pending_constant_present": true
+    },
+    "StegGhost": {
+      "disposition": "FAIL_CLOSED",
+      "refusals": [
+        {
+          "detail": {
+            "divergent_code_hunks": 57,
+            "hunk_sha256": [
+              "c55b672b0fc9e3e9d4599683a37eb2aaac90bb8847d7a4d322b1254c792dec22",
+              "3d9fadc9960b36144f45cd29c77f9752dbe93bde0f2c157b208464a0996ff111",
+              "b4eda0158801ce7558d8031168524858c89d6310cb51c84d349cec3b8c7dafda",
+              "d0ce6fda00953414688367769432644cc9007bc3d7cfd8cc806909474225833f",
+              "74ffe41b0af45a3827d11c52969698796f4ecf1e6a424bcddfb5b1592c422352",
+              "42bde30154aafaf09fddcda1cfb1567dbdf665c68299ae40e9a01caf3ba14254",
+              "73e4a484feadade21f4aab730e82f8b9ab5546ad821e2fc823f4f12bc7464f52",
+              "ad85b2f6ad665dab43687944a2e6c4230612a5ef12c4b1e91baee08917592474",
+              "1a617c2dc1aa5e771811e75b3f46fbee39dc245291c53b211eb228a3baad4aaf",
+              "b259a23e7a1b23cf11bc7717825366a07d1417e9038e7f7b7b74bb012784f777",
+              "12ad1f6f5102d24b13db3eb2e7e69028b23602c02b508d311567031caac6f2c2",
+              "a853b3a0409531f42f17c0ca74603d828b9d23d29df3e83632a7cfa68269c26d",
+              "32709b9c42fc110c9ec33cbe1a120f97a7188e92018f2f506076ceb8f98b4ca4",
+              "94e7559d77ecdd8434f7e51c5d0a3d280e2de83cfc1fc3a889014a7fc4335bff",
+              "0bfa5a8b6754da99ba31fe35270bc49fbd00a0ee484091aa7eb0624433514925",
+              "4b8bf54cbac954c27b3a3395b53d1280bc80256f51e4ef87fc428394e6d4068e",
+              "1c971dfe89f1215ff58f481fe918bdff1089198c10860ce64ba5a2a880f7c8c4",
+              "b96e9f74ed102b35895c223984bf4f3fea16cd7f037a42286dee7f3ba6e746a3",
+              "ba01e2eb6d55f6c97d71b64054a6a871d071290bde2af5462b6cf4cdc7e5736d",
+              "534913bf8ad0d5d6f399403576004c0a9650a461bcc0f386ebb7ff51b95deae5",
+              "3c34b0cff36cb46b6f6b4dc92612122b3ce15907a267d22fe175f35f997a4678",
+              "95ada8b41c4434ef7bbd452cf532d3887479e3f4dd54328e169a42f2c832bb09",
+              "cd6ce5bf35156be218cb5c54b5d7ce9d820516eb93b5592bd498acd7cf1bcefe",
+              "eb7f578994deed7a375ba5a2055cab478571e7955bd97bb16a34164bdcc0cd95",
+              "46b8e9bda0616f21ff45f31ce3060b0bd74ba77e3559c3fff8bc0946c950c59f",
+              "8a1fd610188b09c6d2cced67931e6238862e9a858600d752863b18896dfe602d",
+              "0e44d2bf890a727604487fa6de275a64e4d818f764b7b667c4418cfafc638efe",
+              "2460d990f0591bbbea046357f96d14c5dd1073a21070c0f80c35f09223c94dad",
+              "241cb40ca492a06a73b852ba07dbb51f39e3db280697c307c2972a7a35c9e93d",
+              "b0a7bc21ccb03235969a73fcb894e5bf8062e4883e2b9d1dcca53ac1452c649f",
+              "7dca19bfaa54af95804aa71f198f27f0832454b24d40d20dc8da36f804fefc81",
+              "25e1a237cedb79a68fc95363e48aa11780eefcecde9b7f04ab491e484dc30556",
+              "35a181b4171fcce7d0d4d051bcb73172b3beb771286ac4c6d0f2836a5ab4ca2f",
+              "289809f14c58c9fcb14a640a4a05f178cdfa022c237ff36396dfc3ded7b9afb6",
+              "d7598aa37b72fc30e5ec44dc1a84d42fd63957b4419530be8306b6f45ea633dd",
+              "cb72046899f77111874c811091105212be10afc4250a9de1eabe4876d4f54c89",
+              "c7ea30d087c7bed7e0da54b6b3fa8616c3721ddfd2048df09bad1a0a956c084d",
+              "a2eff53db8f4c509898bd9fc454a995cc0e84915533f3daa53819f63c0e5cf15",
+              "4ab7c62ec3feb9242ae7eac72a38470238227fa119c14be6055a465fa5ed7951",
+              "b137c2d8cf0ea86b849fdb436c05bafa0118e55135578446e9b169eda6f9fb14",
+              "84bb007629cd0bbf9a393fe5f3ae5d7e7b2619192044df27878b95915106185e",
+              "a254ee9e1b7a1c974820dffb368b2484a43919ebb3b2b88f4b8bdb97c8cbe6e8",
+              "e3fd76786481d2c2e90e218c766157310dc19e66e2f45308e6e22de2c85c2fb8",
+              "a9409e8adc02bd741ba4a38a8f1950761c65c66eb75781ea5ceb0686556de97d",
+              "a9409e8adc02bd741ba4a38a8f1950761c65c66eb75781ea5ceb0686556de97d",
+              "9d08f4aa25ea243d4e8d16066c31b5e077fe9f08e07dc78239d3b4dc1fc2d12b",
+              "bc7b40cd9fb4efa9ff10b74ff16edbc4ede914de71a527237072db20a4d6c6c5",
+              "91bedd1d36d06ac13ca22ea046c4402091a47cde06d03076349b681c3e6f3767",
+              "ebd39f3c9ed0238df4417082e41f261591e169a80d9cfe85a7da7a293cb5568d",
+              "d2cd8ef6412b6daba46b26384d5359ba5065dabf88b0a5f42364dc014836cbd2",
+              "3985e50e4c42c2c479f8ba7df007ed4b4580d88baaf901204eda088f143f41ea",
+              "4360827417e947ba47c091c96c539e6d6326a0610b15c1da61c3de68a3c97fff",
+              "558e6f2219b30fd75d504cc0310bad9e28e1e2d400bc04c52ee4a1296b08207e",
+              "8d9750fd4b6e3187e0127df61e68003906e9dbb647bb7006dc3890b5bb342465",
+              "8d9750fd4b6e3187e0127df61e68003906e9dbb647bb7006dc3890b5bb342465",
+              "32bdebfdc1caed310fa16c78ce42bd76e3d77bc49f010317127787700dc8ac7a",
+              "207a9539d296067d4e28fe7e6e2da0fdf0aa77c84493336e915201bb1042bb90",
+              "77f8d6e005d32e900d154b2be6a5950e3c3b75cd03696987df31e3ab2cd8419f",
+              "efe035c55fdae5fe675b557598fc3abec8fd962ea1fa09e8353b1eb6104d765a",
+              "60670f46b3cdf7504968e4f1a0235bc863a03ce9e81c82f063afbba1ee5d0bbf",
+              "f5e7abf361351149bb7381807748b3dc6d78b2e5b55ef4f3e07fce0d805dee77",
+              "9671835c131f7550dc41dcad77642f0eebbe3b3b860a488fe18da1aa799446b3"
+            ],
+            "new_top_level_definitions": [
+              "observe_bilateral_match",
+              "request_bilateral_match",
+              "resolve_standing"
+            ],
+            "org_specific_hunks": 5
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_NON_PARAMETER_NON_COSMETIC_TARGET_HUNK_IS_RECONCILED",
+          "failure_code": "ORG_SPECIFIC_BEHAVIOUR_UNRECONCILED",
+          "next_attempt": "rerun converge once every listed hunk_sha256 is reconciled in the manifest",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "for each hunk named in detail: port it into the baseline under the owning goal, or record its hunk_sha256 under targets.StegGhost.reconciled_hunk_sha256 with the reason it is superseded; convergence never deletes it silently",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "absent": [
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+              "org-kernel/node_store.py",
+              "tests/peer_organization.py"
+            ],
+            "absent_org_owned": [
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+          "failure_code": "BASELINE_DEPENDENCY_CLOSURE_ABSENT",
+          "next_attempt": "rerun converge once the closure resolves in the target",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "converge or declare each absent closure file (detail) in the target organization first; org-owned ones are that organization's own configuration and are not overwritten from the baseline",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "FileNotFoundError"
+            ],
+            "errors": 0,
+            "failures": 0,
+            "tests_run": 0,
+            "timed_out": false
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the failing tests' preconditions in the target (see evidence/tests.out); a refusal from an earlier predicate usually explains them",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "35b54677d6b36355c8efabca843f6c5c2b5580dbd89788de178044e30b9a21a7",
+          "before_lines": 898,
+          "after_sha256": "82320894a29c9d948efa1f2edfc2fe253f14bfbba778c7276eb7d0b07902e11b",
+          "after_lines": 964,
+          "after_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_lines": 1262,
+          "diff_sha256": "a5da0ded9fabe62c7e92850627cfab7a4c7ceea9b630763d128f1bfc7739b53a"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "f3110bd270b0b24d518d4e326dc1a401c177dd3ebb3522e32d7fa3f66e65c677",
+          "after_lines": 732,
+          "after_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_lines": 735,
+          "diff_sha256": "708a2c637b4a850702641842d680bd8f4aa2e346f11b9f6a98b6109a055e3b34"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "0caf696eaa28f9c95dcc028a5a6968e452215813a8afc0de8dc18c8586444ccb",
+          "before_lines": 186,
+          "after_sha256": "73d7bdfcea74f8816bc77f352a4a84432523785a56bdf0bb21d3baa54fcb758c",
+          "after_lines": 208,
+          "after_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_lines": 375,
+          "diff_sha256": "c775c73bc9a1f741bae7237ca8810a9e7a2da50b9c994015e4eea514f2fe9c7a"
+        }
+      ],
+      "hunk_counts": {
+        "COMMENT_OR_DOCSTRING_ONLY": 22,
+        "ORG_SPECIFIC_BEHAVIOUR": 5,
+        "DIVERGENT_CODE": 57
+      },
+      "org_specific_hunks": [
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            92,
+            94
+          ],
+          "hunk_sha256": "c55b672b0fc9e3e9d4599683a37eb2aaac90bb8847d7a4d322b1254c792dec22",
+          "new_top_level_definitions": []
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            105,
+            111
+          ],
+          "hunk_sha256": "3d9fadc9960b36144f45cd29c77f9752dbe93bde0f2c157b208464a0996ff111",
+          "new_top_level_definitions": []
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            286,
+            300
+          ],
+          "hunk_sha256": "94e7559d77ecdd8434f7e51c5d0a3d280e2de83cfc1fc3a889014a7fc4335bff",
+          "new_top_level_definitions": [
+            "resolve_standing"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            767,
+            898
+          ],
+          "hunk_sha256": "4360827417e947ba47c091c96c539e6d6326a0610b15c1da61c3de68a3c97fff",
+          "new_top_level_definitions": [
+            "observe_bilateral_match",
+            "request_bilateral_match"
+          ]
+        },
+        {
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "target_lines": [
+            62,
+            167
+          ],
+          "hunk_sha256": "60670f46b3cdf7504968e4f1a0235bc863a03ce9e81c82f063afbba1ee5d0bbf",
+          "new_top_level_definitions": []
+        }
+      ],
+      "module_symbols_only_in_target": [
+        "INTENDED_ACTION_MATCH",
+        "MATCH_REFUSED_CLASS",
+        "MATCH_SATISFIED_CLASS",
+        "MATCH_SCHEMA",
+        "disclosure_module",
+        "observe_bilateral_match",
+        "request_bilateral_match",
+        "resolve_standing"
+      ],
+      "module_symbols_only_in_baseline": [
+        "ATTESTATION_FIELDS",
+        "BOUNDARY_RELATIVE",
+        "CAPABILITY_ADDRESS_FORM",
+        "DESTINATION_BINDINGS_FIELD",
+        "FAIL_CLOSED",
+        "HB_ANCHOR_EPOCH",
+        "HB_EPOCH_INVALID",
+        "HB_EPOCH_NOT_SUPPLIED",
+        "HB_EPOCH_PREDICATE",
+        "INTR_PROTOCOL_GOAL",
+        "OWNING_EXISTING_GOAL",
+        "_recorded_attestation",
+        "destination_bindings",
+        "epoch_refusal",
+        "reconstruct_far_side_chain",
+        "refusal_repair",
+        "supplied_epoch_failure"
+      ],
+      "closure_absent": [
+        "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+        "org-kernel/node_store.py",
+        "tests/peer_organization.py"
+      ],
+      "closure_different": [
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "org-boundary/registry/federation.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-boundary/runtime/manifest_selection.py",
+        "org-boundary/runtime/process_boundary.py",
+        "org-kernel/kernel.py",
+        "org-runtime/activation.json",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/runtime_boundary.py",
+        "resident-runtime/activation-manifest.json",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/ledger_store.py"
+      ],
+      "tests": {
+        "tests_run": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ],
+        "output_sha256": "9e1cd87b6343156462700846a86ffed9e38a0fdbdbc8e06b68c79b37f1e9f34f"
+      },
+      "pr186_close_globals_missing_in_target_module": [
+        "FAIL_CLOSED",
+        "INTR_PROTOCOL_GOAL",
+        "RESPONSE_ABSENT_FAILURE_CODE",
+        "RESPONSE_ABSENT_PREDICATE",
+        "_recorded_attestation",
+        "epoch_refusal",
+        "reconstruct_far_side_chain"
+      ],
+      "pending_constant_present": true
+    },
+    "StegVerse-002": {
+      "disposition": "FAIL_CLOSED",
+      "refusals": [
+        {
+          "detail": {
+            "divergent_code_hunks": 43,
+            "hunk_sha256": [
+              "9dd009f17b4a63b23238f2431228d026f77299d73c0cd9d30f1a5f356f8ae83e",
+              "dab8e24f866042ad569ac9237cd59bc1043eba6d551c5c2d9a2aa193c1ad4e54",
+              "6fb6512b0916f357d7908b34c78232fc33961351096c102323bbb4d5b22ff31a",
+              "a3391f4b502cdc68dd2a850d633ebbce54c7ee06d18e58c7e7dfebbcffc7af07",
+              "99bde6514d7112b26377c54b966183cbf9399957e9884daa0a4b1e8d18036434",
+              "2623989b93670a137c2df84e7600752b9a6ad43ee5ed9f7b5b1a347811d96f29",
+              "a3ec47d86a5189dfb4d56a4282e59a951f699ddac7365fd893a2a13754816767",
+              "6cee40f564c567f1875bcabe7dc5486330dcb8e52dd249ce0baaa57277c4b05b",
+              "4e5088b423f86d6f65fd3f5f56c9f8b7602b34c1f81c10833f1f15d67a2501cd",
+              "2c804857a9733f0851d92f9f7d098a387ca2500b61cb45a9420278d55aa07ac3",
+              "e681caf92791920e1781994d043b2b69beae1b609159c430b3d71f9869421f6a",
+              "7c56cbc3fa8582980f15df9c9dbb671148242113e8153d7bcba1dadde5c345fd",
+              "8f584c6075cd3918510358b24c2825741583f2aab293d8a08231d18335ddf57b",
+              "78e3da43940b6690f5d948103de67cc3d76b4b7818b1d420f3e2b7dcaa4a65b2",
+              "88588d727e9297c647a2daa66caa6e997c8d7ae931cfda219ca302085e9e4093",
+              "e0e6a97ddb430ff2662c53a1f34750442298b2b8e3dde627ccd1ffdded0c789b",
+              "33ab387584c97d2329af1fb746dc462ce8350279aaea26c25ecf0c38b78e5a40",
+              "3cbe1ba2ca70ab9c72f775960cfcccb05a8093b228df1232c584e997bb67f1f0",
+              "477a6e9d9bdae3438c7ba6cd70dc441665ec702547d4ea7737460dd3e4503a2d",
+              "af3aa138cea76d80766d15ad651ef9960c6e97096ea12c5905b4a6e8ba596133",
+              "fcba4d16ff59ce8f6bf1b20be82c5a7e5eae262c4030b08c281c71968823de0f",
+              "477a6e9d9bdae3438c7ba6cd70dc441665ec702547d4ea7737460dd3e4503a2d",
+              "23d93e127abc40ca550d58ae02d1f58f8c09a7655e345be1885f180cf91d5e5b",
+              "1e2f938116862a44eafa04a1efdd66a084ef1b33fb555fa3485500a0a44db85a",
+              "64d2c78aa59f031c7b13aa9f755272c46f6a6f571dc1ab88864109aa6bb699fd",
+              "c276cc410683728269a79754a9bc43ecbfb5debf44ccdc057244e592e7b08903",
+              "665b2438faf31b11c2d5e1d4017d45ed0c2f7c4c5bbaf02292e6f5dec06eb137",
+              "99da4a0e576abeb413b3fdf4f6c4fbefbc56af6b01c6d5091e7774f3a80ec2c6",
+              "9a8af69070658be850b8a6c8af918ce2a1c894f5913a538c3dd863a6d512bd0e",
+              "977e708f546264dd25e78d80450c61b97b666d8479ca6bd5612b4ea8ae4097e1",
+              "a119ae33f2abe6e551b3ef1d60c9da1a0173c217fbb8918bfe76cd731954f918",
+              "1ddad5dc709885c27dfc956caf1b4c4d9d40057572968c746687801d1fa577d0",
+              "2e85dad01395413a04203d83440a0b241906e2ea6477da335eb6fde0e432eed0",
+              "bb97f2b3aeaf7ec1fe469838affc2b388a1884bfefc9ecce8562406096682aa4",
+              "69a4eb7fa0bd26508750f1950b230827ed7786c4cc6a33396c6c1f9345ffed94",
+              "fbbff82c5f9343a19e77b85803bda3c896eb6a32c3a1328b13b4d2b5139a4a62",
+              "e29278ce470a333e3c0aa85ad476a07162e19255676db79ddbcae8d19cbe4c95",
+              "d8005f97f2a8ac755e0dfd2ad6a56bf42c0ba75c43f9a08194d40deb9b19e922",
+              "83104f169e73b19b71bd15bfc2b37da233997ebff266fdbb1cd7b4a31eaaa4b8",
+              "17d1178bd116d733c7407d961668278133cb0210b2aaa8b60f06841eedf989fc",
+              "9d08f4aa25ea243d4e8d16066c31b5e077fe9f08e07dc78239d3b4dc1fc2d12b",
+              "fa584d8b0b9e02c8d29e2af83ed77e31397a71dfda22872fb2b619429a75090c",
+              "04a6d90178f1ee081e0e7a385b6aaba12aa06a6b09e1053958997a2c44404b95",
+              "06d9a7c55437ac0b4d643deefd2e1fc7666bbfec954393d60849d47d16c54a1b",
+              "131f5e6bdd0862a108aef0c6996da106316b17bf441475c32ba9743ebef24a45",
+              "803f82c813dacc5d961202456773caa0c2ba42d9f4e7202631782b625c6cd65a",
+              "e3521553fe5af0c8969bd9ed326f0d38bd38dc026fbc59675e9312f1ca64c34e",
+              "8ef48ffb3e2db6adb4efeb7bc9ca640a18deabe17962df75d72816d828c19297"
+            ],
+            "new_top_level_definitions": [
+              "_boundary",
+              "_publish_epoch",
+              "_unattested",
+              "outbound_entries",
+              "select_outbound_binding"
+            ],
+            "org_specific_hunks": 5
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_NON_PARAMETER_NON_COSMETIC_TARGET_HUNK_IS_RECONCILED",
+          "failure_code": "ORG_SPECIFIC_BEHAVIOUR_UNRECONCILED",
+          "next_attempt": "rerun converge once every listed hunk_sha256 is reconciled in the manifest",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "for each hunk named in detail: port it into the baseline under the owning goal, or record its hunk_sha256 under targets.StegVerse-002.reconciled_hunk_sha256 with the reason it is superseded; convergence never deletes it silently",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "absent": [
+              "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+              "org-boundary/runtime/manifest_selection.py",
+              "org-boundary/runtime/node_standing.py",
+              "org-boundary/runtime/origin_attestation.py",
+              "org-kernel/node_store.py",
+              "tests/peer_organization.py"
+            ],
+            "absent_org_owned": [
+              "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+          "failure_code": "BASELINE_DEPENDENCY_CLOSURE_ABSENT",
+          "next_attempt": "rerun converge once the closure resolves in the target",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "converge or declare each absent closure file (detail) in the target organization first; org-owned ones are that organization's own configuration and are not overwritten from the baseline",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "FileNotFoundError"
+            ],
+            "errors": 0,
+            "failures": 0,
+            "tests_run": 0,
+            "timed_out": false
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the failing tests' preconditions in the target (see evidence/tests.out); a refusal from an earlier predicate usually explains them",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "c585f6c79b915aec803ae41555d94507f076ef92e693e94806a1ea8ac7af51f6",
+          "before_lines": 616,
+          "after_sha256": "c0e14edc9f8b727e8b5999dad8818dd63516d4e5a7d58dd3395d8b0291451158",
+          "after_lines": 964,
+          "after_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_lines": 1082,
+          "diff_sha256": "bca04a7d8a16fc57d76771c9aaf7c245b85787f294a1efa421ecb3ced150778a"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "cd9a06c9429be07c15e5b11180dbe27d5cac60113344c06c0f7e310c599172eb",
+          "after_lines": 732,
+          "after_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_lines": 735,
+          "diff_sha256": "d871882a684eb15826eb4258f8424a18f14777263696cd327008c1be8acd5b2c"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "4c974aef9b14695d23e2555b9cd18e233cbe062300231ca52239b950bf16d5a1",
+          "after_lines": 208,
+          "after_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_lines": 211,
+          "diff_sha256": "1535f0ee3cac0bdf8ec5dfae3ee9228f176866b6a9aa0d88f3b7aa643bc7c316"
+        }
+      ],
+      "hunk_counts": {
+        "COMMENT_OR_DOCSTRING_ONLY": 13,
+        "DIVERGENT_CODE": 43,
+        "ORG_SPECIFIC_BEHAVIOUR": 5
+      },
+      "org_specific_hunks": [
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            107,
+            110
+          ],
+          "hunk_sha256": "99bde6514d7112b26377c54b966183cbf9399957e9884daa0a4b1e8d18036434",
+          "new_top_level_definitions": [
+            "_boundary"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            118,
+            122
+          ],
+          "hunk_sha256": "a3ec47d86a5189dfb4d56a4282e59a951f699ddac7365fd893a2a13754816767",
+          "new_top_level_definitions": [
+            "outbound_entries"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            124,
+            132
+          ],
+          "hunk_sha256": "6cee40f564c567f1875bcabe7dc5486330dcb8e52dd249ce0baaa57277c4b05b",
+          "new_top_level_definitions": [
+            "select_outbound_binding"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            238,
+            243
+          ],
+          "hunk_sha256": "e0e6a97ddb430ff2662c53a1f34750442298b2b8e3dde627ccd1ffdded0c789b",
+          "new_top_level_definitions": [
+            "_unattested"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            363,
+            365
+          ],
+          "hunk_sha256": "64d2c78aa59f031c7b13aa9f755272c46f6a6f571dc1ab88864109aa6bb699fd",
+          "new_top_level_definitions": [
+            "_publish_epoch"
+          ]
+        }
+      ],
+      "module_symbols_only_in_target": [
+        "ANSWERED_REQUEST_CLASSES",
+        "_boundary",
+        "_publish_epoch",
+        "_unattested",
+        "outbound_entries",
+        "select_outbound_binding"
+      ],
+      "module_symbols_only_in_baseline": [
+        "ATTESTATION_FIELDS",
+        "CREDENTIAL_AUTHORITY",
+        "FAIL_CLOSED",
+        "HB_ANCHOR_EPOCH",
+        "HB_EPOCH_INVALID",
+        "HB_EPOCH_NOT_SUPPLIED",
+        "HB_EPOCH_PREDICATE",
+        "INTR_PROTOCOL_GOAL",
+        "OWNING_EXISTING_GOAL",
+        "_attestation",
+        "_recorded_attestation",
+        "attestation_module",
+        "destination_bindings",
+        "epoch_refusal",
+        "refusal_repair",
+        "supplied_epoch_failure"
+      ],
+      "closure_absent": [
+        "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+        "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+        "org-boundary/runtime/manifest_selection.py",
+        "org-boundary/runtime/node_standing.py",
+        "org-boundary/runtime/origin_attestation.py",
+        "org-kernel/node_store.py",
+        "tests/peer_organization.py"
+      ],
+      "closure_different": [
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "org-boundary/registry/federation.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-boundary/runtime/process_boundary.py",
+        "org-kernel/kernel.py",
+        "org-runtime/activation.json",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/runtime_boundary.py",
+        "resident-runtime/activation-manifest.json",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/ledger_store.py"
+      ],
+      "tests": {
+        "tests_run": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ],
+        "output_sha256": "9307779db10c192ce815af89cd4d828894be0b92b4b691ac8e82df8e45336bed"
+      },
+      "pr186_close_globals_missing_in_target_module": [
+        "FAIL_CLOSED",
+        "INTR_PROTOCOL_GOAL",
+        "RESPONSE_ABSENT_FAILURE_CODE",
+        "RESPONSE_ABSENT_PREDICATE",
+        "_recorded_attestation",
+        "epoch_refusal"
+      ],
+      "pending_constant_present": true
+    },
+    "SV-LLM": {
+      "disposition": "FAIL_CLOSED",
+      "refusals": [
+        {
+          "detail": {
+            "divergent_code_hunks": 37,
+            "hunk_sha256": [
+              "3727adff524e0616022eadd8f4af21a0778b29fc4c77bdfefd1afce2cbf5e4b7",
+              "dab8e24f866042ad569ac9237cd59bc1043eba6d551c5c2d9a2aa193c1ad4e54",
+              "7be0919618f46c2c76bee75c2ef08581a7a32030bfff4065e8e4762a77730e0c",
+              "98d50967ace4e8bf7795127e989c66eeaac5db442b2dda8d56b0b6e23bdf23ee",
+              "99bde6514d7112b26377c54b966183cbf9399957e9884daa0a4b1e8d18036434",
+              "2623989b93670a137c2df84e7600752b9a6ad43ee5ed9f7b5b1a347811d96f29",
+              "a3ec47d86a5189dfb4d56a4282e59a951f699ddac7365fd893a2a13754816767",
+              "6cee40f564c567f1875bcabe7dc5486330dcb8e52dd249ce0baaa57277c4b05b",
+              "4e5088b423f86d6f65fd3f5f56c9f8b7602b34c1f81c10833f1f15d67a2501cd",
+              "2c804857a9733f0851d92f9f7d098a387ca2500b61cb45a9420278d55aa07ac3",
+              "e681caf92791920e1781994d043b2b69beae1b609159c430b3d71f9869421f6a",
+              "7c56cbc3fa8582980f15df9c9dbb671148242113e8153d7bcba1dadde5c345fd",
+              "8f584c6075cd3918510358b24c2825741583f2aab293d8a08231d18335ddf57b",
+              "e0e6a97ddb430ff2662c53a1f34750442298b2b8e3dde627ccd1ffdded0c789b",
+              "33ab387584c97d2329af1fb746dc462ce8350279aaea26c25ecf0c38b78e5a40",
+              "477a6e9d9bdae3438c7ba6cd70dc441665ec702547d4ea7737460dd3e4503a2d",
+              "af3aa138cea76d80766d15ad651ef9960c6e97096ea12c5905b4a6e8ba596133",
+              "fcba4d16ff59ce8f6bf1b20be82c5a7e5eae262c4030b08c281c71968823de0f",
+              "477a6e9d9bdae3438c7ba6cd70dc441665ec702547d4ea7737460dd3e4503a2d",
+              "23d93e127abc40ca550d58ae02d1f58f8c09a7655e345be1885f180cf91d5e5b",
+              "454790f879746f49944405d8eccbc840184fd179e178eef4e9ef34fefaa08527",
+              "ef2845b54d9cc1fdb1962196e7600cf1574a9ad856cd0940b51875bb94abc4bb",
+              "31f5942720f2ee36e46589bc55c799f378ef4cfff86497d2143c6dd2e4300bb2",
+              "edd0f91782cd39cd75ec30e6487b172f1093f783b5deb415ab45561b0a82c981",
+              "f73b7a2f05e850e5435d6fddd18624e041b499ec9bc8c054a9554b9afe1ba51b",
+              "9a8af69070658be850b8a6c8af918ce2a1c894f5913a538c3dd863a6d512bd0e",
+              "cd6c1500d10177d9d0019c70740b592c3a06100d5fcbe445811c7d176d58e918",
+              "a119ae33f2abe6e551b3ef1d60c9da1a0173c217fbb8918bfe76cd731954f918",
+              "28ecd671d82847f497a6bfd02808c33a02d1946231aca9cbb49276a49b34339f",
+              "bb97f2b3aeaf7ec1fe469838affc2b388a1884bfefc9ecce8562406096682aa4",
+              "69a4eb7fa0bd26508750f1950b230827ed7786c4cc6a33396c6c1f9345ffed94",
+              "fbbff82c5f9343a19e77b85803bda3c896eb6a32c3a1328b13b4d2b5139a4a62",
+              "e3fd76786481d2c2e90e218c766157310dc19e66e2f45308e6e22de2c85c2fb8",
+              "17d1178bd116d733c7407d961668278133cb0210b2aaa8b60f06841eedf989fc",
+              "9d08f4aa25ea243d4e8d16066c31b5e077fe9f08e07dc78239d3b4dc1fc2d12b",
+              "fa584d8b0b9e02c8d29e2af83ed77e31397a71dfda22872fb2b619429a75090c",
+              "04a6d90178f1ee081e0e7a385b6aaba12aa06a6b09e1053958997a2c44404b95",
+              "06d9a7c55437ac0b4d643deefd2e1fc7666bbfec954393d60849d47d16c54a1b",
+              "131f5e6bdd0862a108aef0c6996da106316b17bf441475c32ba9743ebef24a45",
+              "803f82c813dacc5d961202456773caa0c2ba42d9f4e7202631782b625c6cd65a",
+              "e3521553fe5af0c8969bd9ed326f0d38bd38dc026fbc59675e9312f1ca64c34e",
+              "8ef48ffb3e2db6adb4efeb7bc9ca640a18deabe17962df75d72816d828c19297"
+            ],
+            "new_top_level_definitions": [
+              "_boundary",
+              "_custody",
+              "_unattested",
+              "outbound_entries",
+              "select_outbound_binding"
+            ],
+            "org_specific_hunks": 5
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_NON_PARAMETER_NON_COSMETIC_TARGET_HUNK_IS_RECONCILED",
+          "failure_code": "ORG_SPECIFIC_BEHAVIOUR_UNRECONCILED",
+          "next_attempt": "rerun converge once every listed hunk_sha256 is reconciled in the manifest",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "for each hunk named in detail: port it into the baseline under the owning goal, or record its hunk_sha256 under targets.SV-LLM.reconciled_hunk_sha256 with the reason it is superseded; convergence never deletes it silently",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "absent": [
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+              "org-boundary/runtime/origin_attestation.py",
+              "resident-runtime/activation-manifest.json",
+              "tests/peer_organization.py"
+            ],
+            "absent_org_owned": [
+              "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+              "resident-runtime/activation-manifest.json"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+          "failure_code": "BASELINE_DEPENDENCY_CLOSURE_ABSENT",
+          "next_attempt": "rerun converge once the closure resolves in the target",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "converge or declare each absent closure file (detail) in the target organization first; org-owned ones are that organization's own configuration and are not overwritten from the baseline",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "FileNotFoundError"
+            ],
+            "errors": 0,
+            "failures": 0,
+            "tests_run": 0,
+            "timed_out": false
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the failing tests' preconditions in the target (see evidence/tests.out); a refusal from an earlier predicate usually explains them",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "b5e019bf4f2e86755ba83210cf7cde9d70b0e7c3d71f26003990bfce566e5861",
+          "before_lines": 603,
+          "after_sha256": "59344e0f5efe829efd4360bf6ff9407a55ba4e178f2c2a9041632a015e8d6c93",
+          "after_lines": 964,
+          "after_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_lines": 1049,
+          "diff_sha256": "cfecae1f464fca4e7d5dfe1400126b776d191af648f8b40e5a505f0e1cf3a45c"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "c05d1d63fc7f5d059c1cd5446c0e95e0d78dbde2fa58770be037464d3181d3f1",
+          "after_lines": 732,
+          "after_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_lines": 735,
+          "diff_sha256": "2aceaf9ecfbf2a1e3a9ddd59e0d5040553088290fcabf8460eb101b9466c8f80"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "before_lines": 0,
+          "after_sha256": "7ff466ac9e52989fa0c2e7cb096c666e61e866fe1a55ea53a1f61e520ddfc0a0",
+          "after_lines": 208,
+          "after_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_lines": 211,
+          "diff_sha256": "0d34032acff4cea2dcc38edb6961720bb1d17df5dd18a40334c58cc77db2a81f"
+        }
+      ],
+      "hunk_counts": {
+        "COMMENT_OR_DOCSTRING_ONLY": 12,
+        "DIVERGENT_CODE": 37,
+        "ORG_SPECIFIC_BEHAVIOUR": 5
+      },
+      "org_specific_hunks": [
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            103,
+            106
+          ],
+          "hunk_sha256": "99bde6514d7112b26377c54b966183cbf9399957e9884daa0a4b1e8d18036434",
+          "new_top_level_definitions": [
+            "_boundary"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            114,
+            118
+          ],
+          "hunk_sha256": "a3ec47d86a5189dfb4d56a4282e59a951f699ddac7365fd893a2a13754816767",
+          "new_top_level_definitions": [
+            "outbound_entries"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            120,
+            128
+          ],
+          "hunk_sha256": "6cee40f564c567f1875bcabe7dc5486330dcb8e52dd249ce0baaa57277c4b05b",
+          "new_top_level_definitions": [
+            "select_outbound_binding"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            234,
+            239
+          ],
+          "hunk_sha256": "e0e6a97ddb430ff2662c53a1f34750442298b2b8e3dde627ccd1ffdded0c789b",
+          "new_top_level_definitions": [
+            "_unattested"
+          ]
+        },
+        {
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "target_lines": [
+            350,
+            380
+          ],
+          "hunk_sha256": "f73b7a2f05e850e5435d6fddd18624e041b499ec9bc8c054a9554b9afe1ba51b",
+          "new_top_level_definitions": [
+            "_custody"
+          ]
+        }
+      ],
+      "module_symbols_only_in_target": [
+        "_boundary",
+        "_custody",
+        "_unattested",
+        "outbound_entries",
+        "select_outbound_binding"
+      ],
+      "module_symbols_only_in_baseline": [
+        "ATTESTATION_FIELDS",
+        "CREDENTIAL_AUTHORITY",
+        "FAIL_CLOSED",
+        "HB_ANCHOR_EPOCH",
+        "HB_EPOCH_INVALID",
+        "HB_EPOCH_NOT_SUPPLIED",
+        "HB_EPOCH_PREDICATE",
+        "INTR_PROTOCOL_GOAL",
+        "OWNING_EXISTING_GOAL",
+        "_attestation",
+        "_recorded_attestation",
+        "attestation_module",
+        "destination_bindings",
+        "epoch_refusal",
+        "refusal_repair",
+        "supplied_epoch_failure"
+      ],
+      "closure_absent": [
+        "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+        "org-boundary/runtime/origin_attestation.py",
+        "resident-runtime/activation-manifest.json",
+        "tests/peer_organization.py"
+      ],
+      "closure_different": [
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/org-contract.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-boundary/runtime/manifest_selection.py",
+        "org-kernel/kernel.py",
+        "org-kernel/node_store.py",
+        "org-runtime/activation.json",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/runtime_boundary.py",
+        "resident-runtime/aggregate_repo_transition.py"
+      ],
+      "tests": {
+        "tests_run": 0,
+        "failures": 0,
+        "errors": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ],
+        "output_sha256": "7f66b8e6c5619adfb2e99fdc85ed3c6f237c9ffd853f05dbf0699bef66d1b497"
+      },
+      "pr186_close_globals_missing_in_target_module": [
+        "FAIL_CLOSED",
+        "INTR_PROTOCOL_GOAL",
+        "RESPONSE_ABSENT_FAILURE_CODE",
+        "RESPONSE_ABSENT_PREDICATE",
+        "_recorded_attestation",
+        "epoch_refusal"
+      ],
+      "pending_constant_present": true
+    }
+  }
+}

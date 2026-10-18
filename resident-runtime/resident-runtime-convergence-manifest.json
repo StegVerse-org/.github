@@ -1,0 +1,134 @@
+{
+  "schema": "stegverse.resident-runtime-convergence-manifest/v1",
+  "operation_id": "RESIDENT_RUNTIME_CONVERGENCE",
+  "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+  "standard": "docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md (L59, L61)",
+  "baseline": {
+    "repository": "StegVerse-org/.github",
+    "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+    "note": "org main pre-#186; #186@1e2b453b07dfb85101f43658797ff12a9bda5832 is then byte-copied by InTr on top of this",
+    "files": {
+      "module": {
+        "path": "resident-runtime/organization_egress_boundary.py",
+        "sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+        "git_blob_sha": "a708c573c0e6f1560f9d4fed67449d1d83275cd3",
+        "lines": 964
+      },
+      "tests": {
+        "path": "tests/test_organization_egress_boundary.py",
+        "sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+        "git_blob_sha": "02cc19c5cef86716ccdc9a0804a64471846b5934",
+        "lines": 732
+      },
+      "workflow": {
+        "path": ".github/workflows/organization-egress-boundary-validation.yml",
+        "sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+        "git_blob_sha": "5b96243f941ebf4afc4ff85254f30797abf489ab",
+        "lines": 208
+      }
+    }
+  },
+  "parameters": [
+    {
+      "path": "resident-runtime/organization_egress_boundary.py",
+      "baseline_line": "OWNER_REPOSITORY = \"StegVerse-org/.github\"",
+      "template": "OWNER_REPOSITORY = \"{repository}\""
+    },
+    {
+      "path": "tests/test_organization_egress_boundary.py",
+      "baseline_line": "self.assertEqual(organization[\"source_repository\"], \"StegVerse-org/.github\")",
+      "template": "self.assertEqual(organization[\"source_repository\"], \"{repository}\")"
+    },
+    {
+      "path": ".github/workflows/organization-egress-boundary-validation.yml",
+      "baseline_line": "assert all(o[\"source_repository\"] == \"StegVerse-org/.github\" for o in organization)",
+      "template": "assert all(o[\"source_repository\"] == \"{repository}\" for o in organization)"
+    }
+  ],
+  "org_owned_closure_patterns": [
+    "org-boundary/registry/.*\\.json",
+    "org-runtime/.*\\.json",
+    "\\.stegverse/transition-ledger/.*\\.json",
+    "resident-runtime/.*\\.json",
+    "docs/.*",
+    "data/.*",
+    "org-kernel/kernel-manifest\\.json"
+  ],
+  "test_modules": [
+    "tests.test_organization_egress_boundary"
+  ],
+  "targets": {
+    "SV-011": {
+      "repository": "SV-011/.github",
+      "commit": "52cd447ea85d85b8240bf2c663a71a4a8d5ebfc2",
+      "branch": "main",
+      "before_sha256": {
+        "resident-runtime/organization_egress_boundary.py": "478911384c798d876a860eeff67e3d9dc981110694d8c924b6ef187038e3d762",
+        "tests/test_organization_egress_boundary.py": "ABSENT",
+        ".github/workflows/organization-egress-boundary-validation.yml": "ABSENT"
+      },
+      "reconciled_hunk_sha256": [],
+      "handoff": "H52"
+    },
+    "GCAT-BCAT-Engine": {
+      "repository": "GCAT-BCAT-Engine/.github",
+      "commit": "c3cf1b1ab171d0ea04a1d345e7567860f00519a3",
+      "branch": "main",
+      "before_sha256": {
+        "resident-runtime/organization_egress_boundary.py": "48fb1d7c023eff5d1d3868daae231add74ea3ce1b640c916783d02043bc1c669",
+        "tests/test_organization_egress_boundary.py": "ABSENT",
+        ".github/workflows/organization-egress-boundary-validation.yml": "ABSENT"
+      },
+      "reconciled_hunk_sha256": [],
+      "handoff": "H52"
+    },
+    "Admissible-Existence": {
+      "repository": "Admissible-Existence/.github",
+      "commit": "0d775cff33960935ab9b4031e27e2626d4b8333b",
+      "branch": "main",
+      "before_sha256": {
+        "resident-runtime/organization_egress_boundary.py": "bf4ff06b7e52f22ac7440edb2534bba01787016cb91809f243b878cce41cf057",
+        "tests/test_organization_egress_boundary.py": "ABSENT",
+        ".github/workflows/organization-egress-boundary-validation.yml": "ABSENT"
+      },
+      "reconciled_hunk_sha256": [],
+      "handoff": "H52"
+    },
+    "StegGhost": {
+      "repository": "StegGhost/.github",
+      "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+      "branch": "main",
+      "before_sha256": {
+        "resident-runtime/organization_egress_boundary.py": "35b54677d6b36355c8efabca843f6c5c2b5580dbd89788de178044e30b9a21a7",
+        "tests/test_organization_egress_boundary.py": "ABSENT",
+        ".github/workflows/organization-egress-boundary-validation.yml": "0caf696eaa28f9c95dcc028a5a6968e452215813a8afc0de8dc18c8586444ccb"
+      },
+      "reconciled_hunk_sha256": [],
+      "handoff": "H52"
+    },
+    "StegVerse-002": {
+      "repository": "StegVerse-002/.github",
+      "commit": "b122dfe4654630620cbf650661290da4518f45ba",
+      "branch": "main",
+      "before_sha256": {
+        "resident-runtime/organization_egress_boundary.py": "c585f6c79b915aec803ae41555d94507f076ef92e693e94806a1ea8ac7af51f6",
+        "tests/test_organization_egress_boundary.py": "ABSENT",
+        ".github/workflows/organization-egress-boundary-validation.yml": "ABSENT"
+      },
+      "reconciled_hunk_sha256": [],
+      "handoff": "H52"
+    },
+    "SV-LLM": {
+      "repository": "SV-LLM/.github",
+      "commit": "398326a27bc5816a5d06bffac8894a19d997ccdf",
+      "branch": "main",
+      "before_sha256": {
+        "resident-runtime/organization_egress_boundary.py": "b5e019bf4f2e86755ba83210cf7cde9d70b0e7c3d71f26003990bfce566e5861",
+        "tests/test_organization_egress_boundary.py": "ABSENT",
+        ".github/workflows/organization-egress-boundary-validation.yml": "ABSENT"
+      },
+      "reconciled_hunk_sha256": [],
+      "handoff": "H52"
+    }
+  }
+}
