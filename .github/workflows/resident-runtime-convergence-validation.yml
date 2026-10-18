@@ -1,11 +1,22 @@
 name: Validate Resident Runtime Convergence
 
-# Dispatch only. The transition is run on request, against target checkouts
+# The transition is run on request, against target checkouts
 # the materializer supplies; nothing here is scheduled, polls, or appends to a
 # durable ledger. The one append test points the repository ledger at the
 # runner's temporary directory.
 on:
   workflow_dispatch:
+  # Pull requests that change the transition, its manifest, receipts or tests
+  # run the same offline selftests, so admission input at a PR head includes
+  # them (a dispatch-only test is never evidence at that head). No network,
+  # no durable ledger append.
+  pull_request:
+    paths:
+      - "resident-runtime/resident_runtime_convergence.py"
+      - "resident-runtime/resident-runtime-convergence-manifest.json"
+      - "convergence/**"
+      - "tests/test_resident_runtime_convergence.py"
+      - ".github/workflows/resident-runtime-convergence-validation.yml"
 
 permissions:
   contents: read
