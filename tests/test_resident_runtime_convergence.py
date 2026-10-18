@@ -311,6 +311,73 @@ class Attribution(unittest.TestCase):
         self.assertEqual(found, {"missing_baseline_symbols": ["b"], "signature_differs": ["a"]})
 
 
+GOOD_CLOSE = '''
+FAIL_CLOSED = "FAIL_CLOSED"
+
+
+def refusal(code):
+    return {"failure_code": code, "failed_predicate": "p", "required_evidence_or_repair": "r",
+            "retry_entrypoint": "e", "owning_existing_goal": "g", "next_attempt": "n"}
+
+
+def close(packet_id, response=None):
+    if response is None:
+        return {"disposition": FAIL_CLOSED, **refusal("DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION")}
+    return {"disposition": "ALLOW", "packet_id": packet_id}
+'''
+
+
+class ClosePredicate(unittest.TestCase):
+    def test_a_close_that_answers_absence_with_six_fields_holds(self):
+        self.assertTrue(conv.evaluate_close_predicate(GOOD_CLOSE)["holds"])
+
+    def test_a_close_that_returns_pending_does_not_hold(self):
+        source = 'PENDING = "PENDING"\n' + GOOD_CLOSE.replace(
+            'return {"disposition": FAIL_CLOSED, **refusal(', 'return {"disposition": PENDING, **refusal(')
+        result = conv.evaluate_close_predicate(source)
+        self.assertFalse(result["holds"])
+        self.assertTrue(result["checks"]["returns_carrying_pending"])
+
+    def test_a_close_that_needs_a_name_the_module_lacks_does_not_hold(self):
+        result = conv.evaluate_close_predicate(GOOD_CLOSE.replace("**refusal(", "**epoch_refusal("))
+        self.assertFalse(result["holds"])
+        self.assertEqual(result["checks"]["unresolved_names"], ["epoch_refusal"])
+
+    def test_a_close_whose_refusal_lacks_the_six_fields_does_not_hold(self):
+        result = conv.evaluate_close_predicate(GOOD_CLOSE.replace('"next_attempt": "n"', '"later": "n"'))
+        self.assertEqual(result["checks"]["six_fields_missing"], ["next_attempt"])
+        self.assertFalse(result["holds"])
+
+    def test_a_missing_close_does_not_hold(self):
+        self.assertFalse(conv.evaluate_close_predicate("x = 1\n")["holds"])
+
+    def test_the_head_is_pinned_and_converged_is_recorded(self):
+        data = GOOD_CLOSE.encode()
+        manifest = {"owning_existing_goal": "g", "close_predicate_targets": {"Org": {
+            "repository": "Org/.github", "pull_request": "Org/.github#1", "head_sha": "a" * 40,
+            "module_path": "m.py", "module_sha256": hashlib.sha256(data).hexdigest()}}}
+        record = conv.close_predicate(manifest, "Org", data)
+        self.assertEqual(record["state"], conv.CONVERGED_ON_CLOSE)
+        self.assertEqual(record["evidence"]["pull_request"], "Org/.github#1")
+        moved = conv.close_predicate(manifest, "Org", data + b"\n")
+        self.assertEqual(moved["state"], conv.FAIL_CLOSED)
+        self.assertEqual([r["failure_code"] for r in moved["refusals"]], [conv.TARGET_DRIFTED])
+        for field in SIX:
+            self.assertTrue(moved["refusals"][0][field])
+
+    def test_the_repository_manifest_pins_six_close_port_heads(self):
+        manifest = json.loads((ROOT / conv.DEFAULT_MANIFEST).read_text())
+        targets = manifest["close_predicate_targets"]
+        self.assertEqual(len(targets), 6)
+        for entry in targets.values():
+            self.assertEqual(len(entry["head_sha"]), 40)
+            self.assertEqual(len(entry["module_sha256"]), 64)
+        states = {p["id"]: p["status"] for p in manifest["predicates"]}
+        self.assertEqual(states[conv.CLOSE_PREDICATE_ID], "DECLARED")
+        self.assertEqual(states["ORG_EGRESS_MODULE_BASELINE_PREFIX_NORMALIZED_SHA256"],
+                         "PROPOSED_JOINT_DISCOVERY_NOT_SETTLED")
+
+
 class Receipt(Fixture):
     def test_the_receipt_body_has_the_repository_ledger_shape(self):
         write(self.target, {FILES["module"]: MODULE.replace("StegVerse-org", "Fixture-Org"),

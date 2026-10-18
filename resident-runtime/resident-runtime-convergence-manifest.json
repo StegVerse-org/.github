@@ -5576,16 +5576,6 @@
     "egress\\.close\\("
   ],
   "close_port_owning_goal": "StegVerse-org/.github#162 (Lane B, InTr), H52 per-org close() port",
-  "proposed_predicates": [
-    {
-      "id": "ORG_EGRESS_MODULE_BASELINE_PREFIX_NORMALIZED_SHA256",
-      "status": "PROPOSED_JOINT_DISCOVERY_NOT_SETTLED",
-      "statement": "the converged module, with declared {repository} parameter lines put back and the declared org extension block removed, has sha256 dc70c6fe... (pre-#186) or 951437ce... (post-#186)",
-      "replaces_proposed": "ORG_EGRESS_MODULE_BYTE_IDENTICAL_TO_STEGVERSE_ORG_MAIN_PRE_FIX (InTr #162 6245649963)",
-      "result_field": "files[].baseline_prefix_normalized_sha256",
-      "decided_by": "INDEX JOINT DISCOVERY QUEUE; this manifest declares it and decides nothing"
-    }
-  ],
   "reconciliation_rules": {
     "record_fields": "a revised shared definition that writes record fields the baseline does not is ported (org-specific record content)",
     "COMMENT_OR_DOCSTRING_ONLY": "superseded by the baseline's own comment or docstring at the matching baseline lines",
@@ -5595,5 +5585,162 @@
     "required_by_port": "a revised shared definition a ported definition references is ported with it, so the port runs on the signatures it was written against",
     "divergent_revision": "otherwise the revised shared definition is superseded by the baseline definition of the same name",
     "workflow": "a non-cosmetic hunk of an org workflow is ported by preserving that workflow under an org-named path"
+  },
+  "close_predicate_targets": {
+    "SV-011": {
+      "repository": "SV-011/.github",
+      "pull_request": "SV-011/.github#13",
+      "head_sha": "5aca9cc21b6a001de8adfc0865cbf82a997d35de",
+      "module_path": "resident-runtime/organization_egress_boundary.py",
+      "module_sha256": "cb484ed94eecab1ca1182500a69402034c837ee10c5771841ebe6d476d0db969",
+      "ported_by": "InTr (Lane B, #162), function-level port of org#186 close() (StegVerse-org/.github#162 comment 6245852053)",
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_intr_destination_capability"
+          ]
+        }
+      ]
+    },
+    "GCAT-BCAT-Engine": {
+      "repository": "GCAT-BCAT-Engine/.github",
+      "pull_request": "GCAT-BCAT-Engine/.github#14",
+      "head_sha": "8a0190eb541543c880596bde7c70f969ab5542b3",
+      "module_path": "resident-runtime/organization_egress_boundary.py",
+      "module_sha256": "ca8f5392dac9858abaf6e01d6b4997e56f1efed422e2e536cddcde745cabc112",
+      "ported_by": "InTr (Lane B, #162), function-level port of org#186 close() (StegVerse-org/.github#162 comment 6245852053)",
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_intr_destination_capability"
+          ]
+        }
+      ]
+    },
+    "Admissible-Existence": {
+      "repository": "Admissible-Existence/.github",
+      "pull_request": "Admissible-Existence/.github#96",
+      "head_sha": "8f0825e2f7ec0fadc6a9d117494d1fcd482f3a72",
+      "module_path": "resident-runtime/organization_egress_boundary.py",
+      "module_sha256": "053c01fd52e90c97249e90f7591c6996fe21f3cab8d65afaa09cf6953eb65683",
+      "ported_by": "InTr (Lane B, #162), function-level port of org#186 close() (StegVerse-org/.github#162 comment 6245852053)",
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_intr_destination_capability"
+          ]
+        }
+      ]
+    },
+    "StegGhost": {
+      "repository": "StegGhost/.github",
+      "pull_request": "StegGhost/.github#22",
+      "head_sha": "fc73dd5d5aeeae2bc0918eefcb7aa0816bce3f05",
+      "module_path": "resident-runtime/organization_egress_boundary.py",
+      "module_sha256": "3d4832c4e9d100df0722c8a543eed1afde9030577c3130f69da958f14d793931",
+      "ported_by": "InTr (Lane B, #162), function-level port of org#186 close() (StegVerse-org/.github#162 comment 6245852053)",
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_intr_destination_capability"
+          ]
+        },
+        {
+          "id": "resident-runtime/tests/test_organization_egress_boundary.py",
+          "argv": [
+            "{python}",
+            "resident-runtime/tests/test_organization_egress_boundary.py"
+          ]
+        }
+      ]
+    },
+    "StegVerse-002": {
+      "repository": "StegVerse-002/.github",
+      "pull_request": "StegVerse-002/.github#48",
+      "head_sha": "a3eeab45607d8be3b097fd0e8a82a09792ae1148",
+      "module_path": "resident-runtime/organization_egress_boundary.py",
+      "module_sha256": "894ea72242cdbd3e567702016a84806eb7afa11542bef7b99c2035074cd537de",
+      "ported_by": "InTr (Lane B, #162), function-level port of org#186 close() (StegVerse-org/.github#162 comment 6245852053)",
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_intr_destination_capability"
+          ]
+        }
+      ]
+    },
+    "SV-LLM": {
+      "repository": "SV-LLM/.github",
+      "pull_request": "SV-LLM/.github#44",
+      "head_sha": "f3637474e753997a7f755a7c2963300db4f62dbb",
+      "module_path": "resident-runtime/organization_egress_boundary.py",
+      "module_sha256": "aa75a7af9cee0ead86bed2f374a4f4b4beab03829b9292534a96c9550e71e0b0",
+      "ported_by": "InTr (Lane B, #162), function-level port of org#186 close() (StegVerse-org/.github#162 comment 6245852053)",
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "argv": [
+            "{python}",
+            "-m",
+            "unittest",
+            "tests.test_intr_destination_capability"
+          ]
+        }
+      ]
+    }
+  },
+  "predicates": [
+    {
+      "id": "ORG_EGRESS_CLOSE_NEVER_RETURNS_PENDING_AND_ITS_NAMES_RESOLVE",
+      "status": "DECLARED",
+      "basis": "docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md L59 (unavailable receiver answered by DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION; nothing waits) and L61 (non-ALLOW carries the six fields; a bare PENDING is not a finding)",
+      "evaluated_by": "resident-runtime/resident_runtime_convergence.py::evaluate_close_predicate (static, module bytes) plus close_predicate_targets.<org>.tests at the pinned head",
+      "checks": [
+        "close() is defined",
+        "close() neither returns nor builds PENDING",
+        "every global name close() reads is bound in the module or is a builtin",
+        "the six ORRD L61 fields are spelled in close() or a module function it calls"
+      ],
+      "state_on_hold": "CONVERGED_ON_CLOSE_PREDICATE"
+    },
+    {
+      "id": "ORG_EGRESS_MODULE_BASELINE_PREFIX_NORMALIZED_SHA256",
+      "status": "PROPOSED_JOINT_DISCOVERY_NOT_SETTLED",
+      "statement": "with the declared {repository} parameter lines (OWNER_REPOSITORY in the module; source_repository in the test and the workflow) substituted back and any declared org extension block removed, the module's sha256 equals the baseline's (dc70c6fe... pre-#186; 951437ce... post-#186). Byte equality to StegVerse-org's file is not the predicate: it cannot hold for any other organization",
+      "parameters": [
+        "OWNER_REPOSITORY = \"StegVerse-org/.github\"",
+        "self.assertEqual(organization[\"source_repository\"], \"StegVerse-org/.github\")",
+        "assert all(o[\"source_repository\"] == \"StegVerse-org/.github\" for o in organization)"
+      ],
+      "replaces_proposed": "ORG_EGRESS_MODULE_BYTE_IDENTICAL_TO_STEGVERSE_ORG_MAIN_PRE_FIX (InTr #162 6245649963)",
+      "result_field": "files[].baseline_prefix_normalized_sha256",
+      "decided_by": "INDEX JOINT DISCOVERY QUEUE; this manifest declares the proposal and decides nothing",
+      "blocking": false
+    }
+  ],
+  "scope": {
+    "as_of": "2026-10-18T04:55Z (Coordination)",
+    "close_predicate": "evaluated against InTr's six close() port heads; that is the H52 convergence that counts",
+    "full_module_convergence": "recorded (hunk reconciliation, org extension, closure and config additions); per-org bundles stay HOLD as reference, no per-org PRs are built from them, and their remaining FAIL_CLOSED records do not block"
   }
 }

@@ -1,17 +1,7 @@
 {
-  "schema": "stegverse.resident-runtime-convergence-dry-run/v2",
+  "schema": "stegverse.resident-runtime-convergence-dry-run/v3",
   "baseline": "StegVerse-org/.github@0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
-  "run": "local dry run 2026-10-18, sandbox only, no append; round 2: hunk reconciliation, org extension, closure and config additions",
-  "proposed_predicates": [
-    {
-      "id": "ORG_EGRESS_MODULE_BASELINE_PREFIX_NORMALIZED_SHA256",
-      "status": "PROPOSED_JOINT_DISCOVERY_NOT_SETTLED",
-      "statement": "the converged module, with declared {repository} parameter lines put back and the declared org extension block removed, has sha256 dc70c6fe... (pre-#186) or 951437ce... (post-#186)",
-      "replaces_proposed": "ORG_EGRESS_MODULE_BYTE_IDENTICAL_TO_STEGVERSE_ORG_MAIN_PRE_FIX (InTr #162 6245649963)",
-      "result_field": "files[].baseline_prefix_normalized_sha256",
-      "decided_by": "INDEX JOINT DISCOVERY QUEUE; this manifest declares it and decides nothing"
-    }
-  ],
+  "run": "local dry run 2026-10-18, sandbox only, no append; round 2: hunk reconciliation, org extension, closure and config additions; round 3 (Coordination 04:55Z scope change): close() predicate evaluated on InTr's six close-port heads; full-module convergence kept as non-blocking record",
   "pr186_close_globals": [
     "CLOSED_CLASS",
     "CLOSURE_REFUSED_CLASS",
@@ -408,7 +398,8 @@
           "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
           "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
         }
-      ]
+      ],
+      "full_module_convergence_blocking": false
     },
     "GCAT-BCAT-Engine": {
       "disposition": "FAIL_CLOSED",
@@ -794,7 +785,8 @@
           "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
           "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
         }
-      ]
+      ],
+      "full_module_convergence_blocking": false
     },
     "Admissible-Existence": {
       "disposition": "FAIL_CLOSED",
@@ -1186,7 +1178,8 @@
           "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
           "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
         }
-      ]
+      ],
+      "full_module_convergence_blocking": false
     },
     "StegGhost": {
       "disposition": "FAIL_CLOSED",
@@ -1554,7 +1547,8 @@
           "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
           "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
         }
-      ]
+      ],
+      "full_module_convergence_blocking": false
     },
     "StegVerse-002": {
       "disposition": "FAIL_CLOSED",
@@ -1937,7 +1931,8 @@
           "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
           "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
         }
-      ]
+      ],
+      "full_module_convergence_blocking": false
     },
     "SV-LLM": {
       "disposition": "FAIL_CLOSED",
@@ -2282,7 +2277,218 @@
           "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
           "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
         }
-      ]
+      ],
+      "full_module_convergence_blocking": false
+    }
+  },
+  "predicates": [
+    {
+      "id": "ORG_EGRESS_CLOSE_NEVER_RETURNS_PENDING_AND_ITS_NAMES_RESOLVE",
+      "status": "DECLARED",
+      "basis": "docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md L59 (unavailable receiver answered by DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION; nothing waits) and L61 (non-ALLOW carries the six fields; a bare PENDING is not a finding)",
+      "evaluated_by": "resident-runtime/resident_runtime_convergence.py::evaluate_close_predicate (static, module bytes) plus close_predicate_targets.<org>.tests at the pinned head",
+      "checks": [
+        "close() is defined",
+        "close() neither returns nor builds PENDING",
+        "every global name close() reads is bound in the module or is a builtin",
+        "the six ORRD L61 fields are spelled in close() or a module function it calls"
+      ],
+      "state_on_hold": "CONVERGED_ON_CLOSE_PREDICATE"
+    },
+    {
+      "id": "ORG_EGRESS_MODULE_BASELINE_PREFIX_NORMALIZED_SHA256",
+      "status": "PROPOSED_JOINT_DISCOVERY_NOT_SETTLED",
+      "statement": "with the declared {repository} parameter lines (OWNER_REPOSITORY in the module; source_repository in the test and the workflow) substituted back and any declared org extension block removed, the module's sha256 equals the baseline's (dc70c6fe... pre-#186; 951437ce... post-#186). Byte equality to StegVerse-org's file is not the predicate: it cannot hold for any other organization",
+      "parameters": [
+        "OWNER_REPOSITORY = \"StegVerse-org/.github\"",
+        "self.assertEqual(organization[\"source_repository\"], \"StegVerse-org/.github\")",
+        "assert all(o[\"source_repository\"] == \"StegVerse-org/.github\" for o in organization)"
+      ],
+      "replaces_proposed": "ORG_EGRESS_MODULE_BYTE_IDENTICAL_TO_STEGVERSE_ORG_MAIN_PRE_FIX (InTr #162 6245649963)",
+      "result_field": "files[].baseline_prefix_normalized_sha256",
+      "decided_by": "INDEX JOINT DISCOVERY QUEUE; this manifest declares the proposal and decides nothing",
+      "blocking": false
+    }
+  ],
+  "scope": {
+    "as_of": "2026-10-18T04:55Z (Coordination)",
+    "close_predicate": "evaluated against InTr's six close() port heads; that is the H52 convergence that counts",
+    "full_module_convergence": "recorded (hunk reconciliation, org extension, closure and config additions); per-org bundles stay HOLD as reference, no per-org PRs are built from them, and their remaining FAIL_CLOSED records do not block"
+  },
+  "close_predicate": {
+    "SV-011": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "5aca9cc21b6a001de8adfc0865cbf82a997d35de",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "SV-011/.github#13",
+        "repository": "SV-011/.github"
+      },
+      "module_sha256": "cb484ed94eecab1ca1182500a69402034c837ee10c5771841ebe6d476d0db969",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "352cc780ec835f5eef9d37d05bb9e839f773b51d5acf5f287203c2b7d32ed335",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 37,
+          "output_sha256": "3edad3839612dc18fa98cb89efc46b8a785659ecac6452512f27dfde2877c9f0"
+        }
+      ],
+      "refusals": []
+    },
+    "GCAT-BCAT-Engine": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "8a0190eb541543c880596bde7c70f969ab5542b3",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "GCAT-BCAT-Engine/.github#14",
+        "repository": "GCAT-BCAT-Engine/.github"
+      },
+      "module_sha256": "ca8f5392dac9858abaf6e01d6b4997e56f1efed422e2e536cddcde745cabc112",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "246eae05bb34c1c4c02967e070e55944c9590b0a5b4a7ce244995c54db40e905",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 33,
+          "output_sha256": "3f58e387cf880e86667d2d4e86ccfcf2ad3235f71179144a1df77f05d694232b"
+        }
+      ],
+      "refusals": []
+    },
+    "Admissible-Existence": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "8f0825e2f7ec0fadc6a9d117494d1fcd482f3a72",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "Admissible-Existence/.github#96",
+        "repository": "Admissible-Existence/.github"
+      },
+      "module_sha256": "053c01fd52e90c97249e90f7591c6996fe21f3cab8d65afaa09cf6953eb65683",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "246eae05bb34c1c4c02967e070e55944c9590b0a5b4a7ce244995c54db40e905",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 33,
+          "output_sha256": "09e7ad67b8799c1541f4a5c2982284107b9e49c815c25c9b0813ecf1f4297dd8"
+        }
+      ],
+      "refusals": []
+    },
+    "StegGhost": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "fc73dd5d5aeeae2bc0918eefcb7aa0816bce3f05",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "StegGhost/.github#22",
+        "repository": "StegGhost/.github"
+      },
+      "module_sha256": "3d4832c4e9d100df0722c8a543eed1afde9030577c3130f69da958f14d793931",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "f26e24651c7a83bb43b8c3fd161542e5b178d3272eb6c66e3527e0b43f1c0440",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 38,
+          "output_sha256": "2f85e1e1617728b5c53d1c6cc92014e9d7ea23a2a783c1ba01a7b57651dab7f8"
+        },
+        {
+          "id": "resident-runtime/tests/test_organization_egress_boundary.py",
+          "passed": true,
+          "tests_run": null,
+          "output_sha256": "48f057da9e7fe1e5c87229813d4be071179223f48d49d31cfd4927c9da0c43b2"
+        }
+      ],
+      "refusals": []
+    },
+    "StegVerse-002": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "a3eeab45607d8be3b097fd0e8a82a09792ae1148",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "StegVerse-002/.github#48",
+        "repository": "StegVerse-002/.github"
+      },
+      "module_sha256": "894ea72242cdbd3e567702016a84806eb7afa11542bef7b99c2035074cd537de",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "246eae05bb34c1c4c02967e070e55944c9590b0a5b4a7ce244995c54db40e905",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 33,
+          "output_sha256": "7477a1ab9562bc1ea12dd8f10fe0822fdd49ec8b45c87acee57a819cd1bf9600"
+        }
+      ],
+      "refusals": []
+    },
+    "SV-LLM": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "f3637474e753997a7f755a7c2963300db4f62dbb",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "SV-LLM/.github#44",
+        "repository": "SV-LLM/.github"
+      },
+      "module_sha256": "aa75a7af9cee0ead86bed2f374a4f4b4beab03829b9292534a96c9550e71e0b0",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "246eae05bb34c1c4c02967e070e55944c9590b0a5b4a7ce244995c54db40e905",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 39,
+          "output_sha256": "62ac008da6c8e4289feb8b6746e8e9fedc51eef7abe5671ba31e9be8a3c6d480"
+        }
+      ],
+      "refusals": []
     }
   }
 }

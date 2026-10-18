@@ -972,6 +972,136 @@ def converge(manifest_path: Path, organization: str, target_root: Path, baseline
     return result
 
 
+
+# --------------------------------------------------------------------- close() predicate
+
+CLOSE_PREDICATE_ID = "ORG_EGRESS_CLOSE_NEVER_RETURNS_PENDING_AND_ITS_NAMES_RESOLVE"
+CLOSE_PREDICATE_FAILED = "ORG_EGRESS_CLOSE_PREDICATE_NOT_MET"
+CONVERGED_ON_CLOSE = "CONVERGED_ON_CLOSE_PREDICATE"
+SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+              "retry_entrypoint", "owning_existing_goal", "next_attempt")
+
+
+def _bound_names(tree: ast.Module) -> set[str]:
+    names: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names.add(node.name)
+        elif isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for target in targets:
+                names.update(n.id for n in ast.walk(target) if isinstance(n, ast.Name))
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            names.update((a.asname or a.name.split(".")[0]) for a in node.names)
+        elif isinstance(node, (ast.If, ast.Try, ast.With)):
+            names.update(n.id for n in ast.walk(node) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store))
+            names.update(n.name for n in ast.walk(node) if isinstance(n, (ast.FunctionDef, ast.ClassDef)))
+    return names
+
+
+def _local_names(function: ast.FunctionDef) -> set[str]:
+    args = function.args
+    names = {a.arg for a in args.posonlyargs + args.args + args.kwonlyargs}
+    names.update(a.arg for a in (args.vararg, args.kwarg) if a is not None)
+    for node in ast.walk(function):
+        if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
+            names.add(node.id)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node is not function:
+            names.add(node.name)
+        elif isinstance(node, ast.ExceptHandler) and node.name:
+            names.add(node.name)
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            names.update((a.asname or a.name.split(".")[0]) for a in node.names)
+        elif isinstance(node, ast.arg):
+            names.add(node.arg)
+    return names
+
+
+def _mentions_pending(node: ast.AST) -> bool:
+    return any((isinstance(n, ast.Name) and n.id == "PENDING")
+               or (isinstance(n, ast.Constant) and n.value == "PENDING")
+               or (isinstance(n, ast.Attribute) and n.attr == "PENDING") for n in ast.walk(node))
+
+
+def evaluate_close_predicate(module_source: str) -> dict[str, Any]:
+    """`close()` never returns PENDING (ORRD L59/L61) and every name it needs resolves.
+
+    Static, on the module's own bytes: close() is defined; no return statement in
+    it, and no value it builds, carries PENDING; every global name it reads is
+    bound at module level or is a builtin; and the six ORRD L61 fields are spelled
+    in close() or in a module-level function it calls, so its non-ALLOW carries them.
+    """
+    import builtins
+    tree = ast.parse(module_source)
+    functions = {n.name: n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    close = functions.get("close")
+    checks: dict[str, Any] = {"close_defined": close is not None}
+    if close is None:
+        return {"predicate": CLOSE_PREDICATE_ID, "holds": False, "checks": checks}
+    lines = module_source.splitlines(keepends=True)
+    segment = "".join(lines[close.lineno - 1:close.end_lineno])
+    checks["close_sha256"] = sha256_bytes(segment.encode("utf-8"))
+    checks["close_mentions_pending"] = _mentions_pending(close)
+    checks["returns_carrying_pending"] = [r.lineno for r in ast.walk(close)
+                                          if isinstance(r, ast.Return) and r.value is not None and _mentions_pending(r.value)]
+    free = {n.id for n in ast.walk(close) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
+    free -= _local_names(close)
+    unresolved = sorted(free - _bound_names(tree) - set(dir(builtins)))
+    checks["unresolved_names"] = unresolved
+    called = {n.id for n in ast.walk(close) if isinstance(n, ast.Name) and n.id in functions}
+    spelled = segment + "".join("".join(lines[functions[c].lineno - 1:functions[c].end_lineno]) for c in called)
+    checks["six_fields_missing"] = [f for f in SIX_FIELDS if f not in spelled]
+    checks["module_still_defines_pending"] = any(
+        isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "PENDING" for t in n.targets)
+        for n in tree.body)
+    holds = (not checks["close_mentions_pending"] and not checks["returns_carrying_pending"]
+             and not unresolved and not checks["six_fields_missing"])
+    return {"predicate": CLOSE_PREDICATE_ID, "holds": holds, "checks": checks}
+
+
+def close_predicate(manifest: Mapping[str, Any], organization: str, module_source: bytes,
+                    tree: Path | None = None, timeout: int = 900) -> dict[str, Any]:
+    """Evaluate the close() predicate on one organization's module, pinned by the manifest."""
+    goal = manifest["owning_existing_goal"]
+    entry = (manifest.get("close_predicate_targets") or {}).get(organization)
+    record: dict[str, Any] = {"organization": organization, "predicate": CLOSE_PREDICATE_ID,
+                              "module_sha256": sha256_bytes(module_source), "refusals": []}
+    if entry is None:
+        record["refusals"].append(fail_closed(
+            ORG_NOT_DECLARED, "ORGANIZATION_IS_A_DECLARED_CLOSE_PREDICATE_TARGET",
+            f"declare {organization} under close_predicate_targets", goal, "rerun once declared"))
+    else:
+        record["evidence"] = {k: entry.get(k) for k in ("repository", "pull_request", "head_sha", "module_path")}
+        if entry.get("module_sha256") != record["module_sha256"]:
+            record["refusals"].append(fail_closed(
+                TARGET_DRIFTED, "CLOSE_PREDICATE_MODULE_BYTES_MATCH_MANIFEST_PIN",
+                f"re-pin close_predicate_targets.{organization}.module_sha256 from the head named in evidence",
+                goal, "rerun on the manifest revision that pins the current head",
+                detail={"expected": entry.get("module_sha256"), "observed": record["module_sha256"]}))
+    evaluation = evaluate_close_predicate(module_source.decode("utf-8"))
+    record.update(evaluation)
+    if not evaluation["holds"]:
+        record["refusals"].append(fail_closed(
+            CLOSE_PREDICATE_FAILED, CLOSE_PREDICATE_ID,
+            "close() must answer an absent response with a six-field non-ALLOW (ORRD L59/L61), never PENDING, "
+            "and every name it reads must be bound in the module; see checks",
+            manifest.get("close_port_owning_goal") or goal,
+            "rerun on the head that carries the corrected close() port", detail=evaluation["checks"]))
+    if tree is not None and entry is not None:
+        record["tests"] = []
+        for test in entry.get("tests") or []:
+            run = run_command(Path(tree), test["argv"], timeout)
+            record["tests"].append({"id": test["id"], **{k: v for k, v in run.items() if k != "output"}})
+            if not run["passed"]:
+                record["refusals"].append(fail_closed(
+                    TESTS_FAILED, "THE_CLOSE_PORT_TESTS_PASS_AT_THE_PINNED_HEAD",
+                    f"{test['id']} fails at the pinned head", manifest.get("close_port_owning_goal") or goal,
+                    "rerun once the test passes at the head", detail={"test": test["id"]}))
+    record["disposition"] = ALLOW if not record["refusals"] else FAIL_CLOSED
+    record["state"] = CONVERGED_ON_CLOSE if record["disposition"] == ALLOW else FAIL_CLOSED
+    return record
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--manifest", default=str(ROOT / DEFAULT_MANIFEST))
@@ -985,7 +1115,21 @@ def main(argv: list[str] | None = None) -> int:
                         help="append the receipt through --target-root's own emitter to STEGVERSE_REPO_LEDGER_ROOT")
     parser.add_argument("--hb-epoch", type=int, default=None)
     parser.add_argument("--timeout", type=int, default=900)
+    parser.add_argument("--close-predicate", action="store_true",
+                        help="evaluate only the close() predicate on --target-root's module (read-only)")
     args = parser.parse_args(argv)
+    if args.close_predicate:
+        manifest = load_manifest(Path(args.manifest))
+        module_rel = ((manifest.get("close_predicate_targets") or {}).get(args.organization) or {}).get(
+            "module_path", "resident-runtime/organization_egress_boundary.py")
+        record = close_predicate(manifest, args.organization, (Path(args.target_root) / module_rel).read_bytes(),
+                                 None if args.no_tests else Path(args.target_root), args.timeout)
+        out = Path(args.out) / args.organization
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "close_predicate.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        print(json.dumps({"organization": args.organization, "state": record["state"],
+                          "refusals": [r["failure_code"] for r in record["refusals"]]}, sort_keys=True))
+        return 0 if record["disposition"] == ALLOW else 1
     try:
         result = converge(Path(args.manifest), args.organization, Path(args.target_root),
                           Path(args.baseline_root), Path(args.out), apply=args.apply,
