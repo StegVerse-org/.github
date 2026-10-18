@@ -6,7 +6,6 @@ No GitHub, hosted scheduler, provider, or carrier grants authority.
 """
 from __future__ import annotations
 import base64, hashlib, importlib.util, json, os, subprocess, tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +52,19 @@ def validate_hb_reference(ref:dict[str,Any])->dict[str,Any]:
         raise ValueError("heartbeat_progression_not_oscillator")
     return ref
 
+class HbEpochNotSupplied(ValueError):
+    """hb_reference was given neither a supplied epoch nor a sample; `.refusal` carries the six fields. No clock is read."""
+    def __init__(self):
+        self.refusal={"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_NOT_SUPPLIED",
+          "failed_predicate":"SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+          "detail":"no hb_epoch was supplied and no clock is read",
+          "required_evidence_or_repair":"pass epoch= as the carrier supplied it: ASCII digits with value >= 32; it is never derived from a clock",
+          "retry_entrypoint":"org-kernel/kernel.py::hb_reference",
+          "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
+          "next_attempt":"call again with the supplied epoch; nothing was stamped",
+          "derived_from_clock":False,"consequence_committed":False}
+        super().__init__("HB_EPOCH_NOT_SUPPLIED:no hb_epoch was supplied and no clock is read")
+
 def hb_reference(now_ns:int|None=None, *, epoch:int|None=None)->dict[str,Any]:
     """Build the heartbeat reference for a crossing.
 
@@ -74,7 +86,10 @@ def hb_reference(now_ns:int|None=None, *, epoch:int|None=None)->dict[str,Any]:
                 "phase_offset_ns":0,"frequency_hz":HB_HZ,"progression_dependency":"OSCILLATOR_ONLY",
                 "derived_from_clock":False,"authority_effect":"NONE"})
     if now_ns is None:
-        now_ns=int(datetime.now(timezone.utc).timestamp()*1_000_000_000)
+        # No clock fallback: an epoch is supplied by the carrier or nothing is
+        # stamped (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH). A caller with
+        # neither fails closed here instead of reading this host's clock.
+        raise HbEpochNotSupplied()
     if now_ns<HB_ANCHOR_UNIX_NS:
         raise ValueError("sample_precedes_hb32_anchor")
     q,phase=divmod(now_ns-HB_ANCHOR_UNIX_NS,HB_PERIOD_NS)
