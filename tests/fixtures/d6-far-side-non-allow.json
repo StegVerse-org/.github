@@ -1,0 +1,27 @@
+{
+  "schema": "stegverse.test-fixture.d6-far-side-non-allow/v1",
+  "purpose": "A live CI trigger for the far-side branch of sdk_manifest_crossing.cross with an ADMITTED pair. D7 fails the unadmitted pair closed at the ingress, so the far-side branch needs a pair some service admits and whose far side still does not complete. Each case adds one admits_processing row to a copy of the committed registry; the committed registry is never edited.",
+  "authority_effect": "NONE_TEST_FIXTURE_ONLY",
+  "registry": "org-boundary/registry/services.json",
+  "manifest": "tests/fixtures/sdk-manifests/unadmitted-capability-to-llm-adapter.json",
+  "standing": "tests/fixtures/crossing-standing-genesis.json",
+  "admitted_pair": {
+    "capability": "purpose_bound_worker",
+    "route_id": "stegverse.route.purpose-bound-worker.v1"
+  },
+  "cases": {
+    "receiver-unavailable": {
+      "admit_on_service": "stegverse-org.tvc",
+      "expected_failure_code": "FAR_SIDE_RECEIVER_UNAVAILABLE",
+      "expected_failed_predicate": "RESOLVED_SERVICE_HAS_AN_INSTALLED_ENDPOINT_ADAPTER",
+      "expected_endpoint_adapter_installed": false,
+      "expected_next_attempt_prefix": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION"
+    },
+    "installed-adapter-refuses": {
+      "admit_on_service": "stegverse-org.llm-adapter",
+      "expected_failure_code": "FAR_SIDE_REFUSED_THE_CROSSING",
+      "expected_failed_predicate": "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT",
+      "expected_endpoint_adapter_installed": true
+    }
+  }
+}

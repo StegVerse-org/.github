@@ -83,16 +83,18 @@ class NonAllowReceiptTests(unittest.TestCase):
         self.assertEqual(len(organization), 1)
         return repository[0], organization[0]
 
-    def assert_receipt_on_both_ledgers(self, out):
-        self.assertEqual(out["disposition"], "FAIL_CLOSED")
+    def assert_receipt_on_both_ledgers(self, out, *, stored, failure_code,
+                                       owning_goal="ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001",
+                                       retry="resident-runtime/organization_manifest_ingress.py::receive"):
+        # The returned disposition is the stored one (REFUSAL_DISPOSITIONS).
+        self.assertEqual(out["disposition"], stored)
         self.assertIs(out["received"], False)
         self.assertIs(out["refusal_recorded"], True)
         self.assertIs(out["organization_receipt_observed"], False)
         self.assertEqual(out["authority_effect"], "NONE_REFUSAL_ONLY")
-        self.assertEqual(out["failure_code"], "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
-        self.assertEqual(out["owning_existing_goal"], "ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001")
-        self.assertEqual(out["retry_entrypoint"],
-                         "resident-runtime/organization_manifest_ingress.py::receive")
+        self.assertEqual(out["failure_code"], failure_code)
+        self.assertEqual(out["owning_existing_goal"], owning_goal)
+        self.assertIn(retry, out["retry_entrypoint"])
         for field in SIX_FIELDS:
             self.assertTrue(out.get(field), field)
         self.assertNotIn("remediation_fork", out)
@@ -106,13 +108,14 @@ class NonAllowReceiptTests(unittest.TestCase):
 
         repository, organization = self.refusal_pair(out)
         self.assertEqual(repository["receipt_sha256"], out["refusal_repository_receipt_sha256"])
-        self.assertEqual(repository["evidence"]["disposition"], "DENY")
+        self.assertEqual(repository["evidence"]["disposition"], stored)
+        self.assertEqual(out["refusal_stored_disposition"], stored)
         self.assertEqual(repository["evidence"]["failed_predicate"], out["failed_predicate"])
         self.assertEqual(organization["receipt_sha256"], out["refusal_organization_receipt_sha256"])
         self.assertEqual(organization["repo_receipt_sha256"], repository["receipt_sha256"])
         self.assertEqual(organization["source_repository"], "StegVerse-org/.github")
         self.assertEqual(organization["org_transition_class"], "REPO_STATE_PROPAGATION")
-        self.assertEqual(organization["boundary_evidence"]["disposition"], "DENY")
+        self.assertEqual(organization["boundary_evidence"]["disposition"], stored)
         self.assertEqual(organization["boundary_evidence"]["failed_predicate"], out["failed_predicate"])
 
     def calculated_route(self, manifest):
@@ -122,8 +125,8 @@ class NonAllowReceiptTests(unittest.TestCase):
             {"disposition": "FAIL_CLOSED", "organization": "StegVerse-org",
              "evaluation_boundary": ingress.OPERATION_ID,
              "request_sha256": request["request_sha256"],
-             "failure_code": "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED",
-             "failed_predicate": "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT"},
+             "failure_code": "PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE",
+             "failed_predicate": "CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE"},
             original_route_id=request["route_id"],
             original_processing_capability=request["processing_capability"],
             original_destination=request["manifest_declared_destination"])
@@ -132,8 +135,13 @@ class NonAllowReceiptTests(unittest.TestCase):
         """Receipt on both ledgers, emitted on the calculated route, nothing consumed back."""
         manifest = json.loads(UNADMITTED.read_text(encoding="utf-8"))
         out = self.receive(manifest)
-        self.assertEqual(out["failed_predicate"], "ADMITTED_CROSSING_REACHES_ITS_INTERNAL_ENDPOINT")
-        self.assert_receipt_on_both_ledgers(out)
+        # D7: the unadmitted pair fails closed at the ingress, stored as FAIL_CLOSED,
+        # with its own six fields passed through to the delivered disposition.
+        self.assertEqual(out["failed_predicate"], "CONSUMER_ROUTE_RESOLVES_TO_A_DECLARED_PROCESSING_SERVICE")
+        self.assert_receipt_on_both_ledgers(
+            out, stored="FAIL_CLOSED",
+            failure_code="PROCESSING_SERVICE_NOT_DECLARED_FOR_CONSUMER_ROUTE",
+            owning_goal="INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001")
         self.assertIs(out["disposition_delivered"], True)
         self.assertIs(out["classification_consumed"], False)
 
@@ -220,7 +228,8 @@ class NonAllowReceiptTests(unittest.TestCase):
         """
         out = self.receive({"not": "a manifest"})
         self.assertEqual(out["failed_predicate"], "ORGANIZATION_RESOLVES_ITS_OWN_INGRESS_DESTINATION")
-        self.assert_receipt_on_both_ledgers(out)
+        self.assert_receipt_on_both_ledgers(
+            out, stored="FAIL_CLOSED", failure_code="ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         self.assertNotIn("disposition_delivered", out)
         self.assertNotIn("disposition_packet_id", out)
         self.assertEqual(self.frames(), [])

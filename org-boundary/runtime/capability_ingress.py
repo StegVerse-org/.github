@@ -99,6 +99,84 @@ def _refuse(predicate: str, detail: str) -> SystemExit:
     return SystemExit(predicate + ":" + detail)
 
 
+#: The shared supplied-epoch rule (consumers Q3; P1 #163). The receiving
+#: operation appends at both ledger levels, so it is handed the epoch of the
+#: frame being consumed; none is HB_EPOCH_NOT_SUPPLIED, anything other than an
+#: integer at or above the HB32 anchor is HB_EPOCH_INVALID. No clock is read and
+#: the operation is not loaded, so nothing is appended.
+HB_EPOCH_NOT_SUPPLIED = "HB_EPOCH_NOT_SUPPLIED"
+HB_EPOCH_INVALID = "HB_EPOCH_INVALID"
+HB_EPOCH_PREDICATE = "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+HB_ANCHOR_EPOCH = 32
+INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
+RETRY_ENTRYPOINT = "org-kernel/kernel.py::ingest_frame"
+
+
+class EpochRefused(SystemExit):
+    """A FAIL_CLOSED epoch refusal; `.refusal` carries the six fields."""
+
+    def __init__(self, refusal: Mapping[str, Any]):
+        super().__init__(refusal["failure_code"] + ":" + refusal["detail"])
+        self.refusal = dict(refusal)
+
+
+def supplied_epoch_failure(hb_epoch: Any, reference: Any = None) -> tuple[str, str] | None:
+    """The shared supplied-epoch rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH).
+
+    Byte-identical in StegVerse-org/.github#185 and StegVerse-Labs/.github#3212
+    and #3213. `hb_epoch` absent (None) is HB_EPOCH_NOT_SUPPLIED. Otherwise it
+    must be ASCII [0-9]+ only -- an int is read as its decimal text; a bool, a
+    float or anything coerced ('+33', ' 33', '3_3', '33.0') is refused -- with
+    integer value >= 32 (the HB32 anchor). `reference`, the carrier frame's
+    heartbeat reference when there is one, must be an object, and a
+    `derived_from_clock` it carries must be exactly false. Any failure is
+    HB_EPOCH_INVALID. Returns (failure_code, detail), or None when the epoch is
+    supplied. No clock is read.
+    """
+    if reference is not None and not isinstance(reference, dict):
+        return "HB_EPOCH_INVALID", "the carrier's heartbeat reference is not an object"
+    if hb_epoch is None:
+        return "HB_EPOCH_NOT_SUPPLIED", "no hb_epoch was supplied and no clock is read"
+    if isinstance(hb_epoch, bool):
+        text = None
+    elif isinstance(hb_epoch, int):
+        text = str(hb_epoch)
+    elif isinstance(hb_epoch, str):
+        text = hb_epoch
+    else:
+        text = None
+    if text is None or not text.isascii() or not text.isdigit():
+        return "HB_EPOCH_INVALID", "hb_epoch " + repr(hb_epoch) + " is not ASCII [0-9]+"
+    if int(text) < 32:
+        return "HB_EPOCH_INVALID", "hb_epoch " + text + " is below the HB32 anchor (32)"
+    if reference is not None and "derived_from_clock" in reference \
+            and reference["derived_from_clock"] is not False:
+        return "HB_EPOCH_INVALID", ("the carrier's derived_from_clock is not exactly false; "
+                                    "a clock-derived epoch is not a supplied one")
+    return None
+
+
+def epoch_refusal(hb_epoch: Any) -> dict[str, Any] | None:
+    """The six-field FAIL_CLOSED refusal of an epoch not supplied or invalid, or None."""
+    failure = supplied_epoch_failure(hb_epoch)
+    if failure is None:
+        return None
+    code, detail = failure
+    return {
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": HB_EPOCH_PREDICATE,
+        "detail": detail,
+        "required_evidence_or_repair": (
+            "consume the frame with its heartbeat_reference epoch (ASCII digits with value >= "
+            + str(HB_ANCHOR_EPOCH) + "); it is never derived from a clock"),
+        "retry_entrypoint": RETRY_ENTRYPOINT,
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "offer the same frame again with its epoch; the receiving operation was "
+                        "not loaded and nothing was appended",
+    }
+
+
 def boundary(root: Path) -> dict[str, Any]:
     path = Path(root) / BOUNDARY_PATH
     if not path.is_file():
@@ -256,13 +334,19 @@ def declared_manifest(payload: Any) -> dict[str, Any]:
 
 
 def receive(root: Path, service: Mapping[str, Any], packet: Mapping[str, Any], *, registry: Mapping[str, Any],
-            mesh_root: Path | None = None) -> dict[str, Any]:
+            mesh_root: Path | None = None, hb_epoch: int | None = None) -> dict[str, Any]:
     """Hand an addressed submission to the receiving operation the overlay binds.
 
     The operation records its own dispositions at both ledger levels; this
     returns what it reported. A refusal is returned as the operation stated it,
-    not retried into an admission.
+    not retried into an admission. `hb_epoch` is the epoch of the frame being
+    consumed and is passed through to the operation's ledger appends; without a
+    valid one this raises `EpochRefused` before the operation is loaded.
     """
+    refused_epoch = epoch_refusal(hb_epoch)
+    if refused_epoch is not None:
+        raise EpochRefused(refused_epoch)
+    hb_epoch = int(str(hb_epoch))  # admitted as ASCII digits
     resolved = resolve(root, service)
     # The overlay says how this capability's submission is read. A payload the
     # binding does not admit is refused before the operation is loaded, so a
@@ -273,7 +357,7 @@ def receive(root: Path, service: Mapping[str, Any], packet: Mapping[str, Any], *
     module = load_operation(resolved)
     result = module.receive(submission, registry=registry, standing=packet.get("standing"),
                             packet_id=str(packet.get("packet_id") or resolved["receiving_operation_id"]),
-                            mesh_root=mesh_root)
+                            hb_epoch=hb_epoch, mesh_root=mesh_root)
     return {
         "capability_received": True,
         "capability_profile_id": resolved["capability_profile_id"],

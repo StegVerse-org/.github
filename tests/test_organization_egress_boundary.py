@@ -129,11 +129,14 @@ class EgressBoundaryTests(EgressHarness):
         self.assertEqual(len(self.frames()), 1)
         self.assertEqual(len(self.repo_receipts(egress.EMITTED_CLASS)), 1)
 
-    def test_an_emission_without_a_supplied_epoch_is_recorded_each_time(self):
-        """Not reproducible, so not deduplicated: each frame keeps its own record."""
-        self.emit(hb_epoch=None)
-        self.emit(hb_epoch=None)
-        self.assertEqual(len(self.repo_receipts(egress.EMITTED_CLASS)), 2)
+    def test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing(self):
+        """The shared epoch rule: no clock-derived frame, so nothing published or appended."""
+        refused = self.emit(hb_epoch=None)
+        self.assertEqual(refused["disposition"], "FAIL_CLOSED")
+        self.assertEqual(refused["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+        self.assertIs(refused["emitted"], False)
+        self.assertEqual(self.frames(), [])
+        self.assertEqual(len(self.repo_receipts(egress.EMITTED_CLASS)), 0)
 
     # --- a peer is addressed at the service it declares -------------------
 
