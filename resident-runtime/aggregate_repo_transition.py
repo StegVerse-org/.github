@@ -31,6 +31,7 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ledger_store import HEAD_KEY, RECEIPT_PREFIX, SOURCE_PREFIX, open_store, parse_locator, receipt_key, source_key  # noqa: E402
@@ -41,6 +42,51 @@ C = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_te
 _spec = importlib.util.spec_from_file_location("kernel", ROOT / "org-kernel/kernel.py")
 kernel = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(kernel)  # noqa: E402
+
+#: The shared supplied-epoch rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH),
+#: vendored byte-identical from org-boundary/runtime/capability_ingress.py
+#: (PR-1c). This module is also bound from a standalone ledger component
+#: (`bind_ledger_writers`), where the capability boundary is not present, so
+#: the rule is carried here rather than loaded from it.
+HB_EPOCH_PREDICATE = "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+HB_ANCHOR_EPOCH = 32
+INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
+
+
+def supplied_epoch_failure(hb_epoch: Any, reference: Any = None) -> tuple[str, str] | None:
+    """The shared supplied-epoch rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH).
+
+    Byte-identical in StegVerse-org/.github#185 and StegVerse-Labs/.github#3212
+    and #3213. `hb_epoch` absent (None) is HB_EPOCH_NOT_SUPPLIED. Otherwise it
+    must be ASCII [0-9]+ only -- an int is read as its decimal text; a bool, a
+    float or anything coerced ('+33', ' 33', '3_3', '33.0') is refused -- with
+    integer value >= 32 (the HB32 anchor). `reference`, the carrier frame's
+    heartbeat reference when there is one, must be an object, and a
+    `derived_from_clock` it carries must be exactly false. Any failure is
+    HB_EPOCH_INVALID. Returns (failure_code, detail), or None when the epoch is
+    supplied. No clock is read.
+    """
+    if reference is not None and not isinstance(reference, dict):
+        return "HB_EPOCH_INVALID", "the carrier's heartbeat reference is not an object"
+    if hb_epoch is None:
+        return "HB_EPOCH_NOT_SUPPLIED", "no hb_epoch was supplied and no clock is read"
+    if isinstance(hb_epoch, bool):
+        text = None
+    elif isinstance(hb_epoch, int):
+        text = str(hb_epoch)
+    elif isinstance(hb_epoch, str):
+        text = hb_epoch
+    else:
+        text = None
+    if text is None or not text.isascii() or not text.isdigit():
+        return "HB_EPOCH_INVALID", "hb_epoch " + repr(hb_epoch) + " is not ASCII [0-9]+"
+    if int(text) < 32:
+        return "HB_EPOCH_INVALID", "hb_epoch " + text + " is below the HB32 anchor (32)"
+    if reference is not None and "derived_from_clock" in reference \
+            and reference["derived_from_clock"] is not False:
+        return "HB_EPOCH_INVALID", ("the carrier's derived_from_clock is not exactly false; "
+                                    "a clock-derived epoch is not a supplied one")
+    return None
 
 
 
@@ -64,6 +110,39 @@ class OrgLedgerAppendRefused(SystemExit):
         super().__init__(failed_predicate)
         self.disposition = disposition
         self.failed_predicate = failed_predicate
+
+
+class OrgLedgerEpochRefused(OrgLedgerAppendRefused):
+    """An append refused because its epoch was not supplied or is invalid.
+
+    `refusal` carries the six-field FAIL_CLOSED. Raised before the store is
+    opened, so nothing is written and no clock is read.
+    """
+
+    def __init__(self, refusal):
+        super().__init__(refusal["disposition"], refusal["failed_predicate"])
+        self.code = refusal["failure_code"] + ":" + refusal["detail"]
+        self.refusal = dict(refusal)
+
+
+def epoch_refusal(hb_epoch):
+    """The six-field FAIL_CLOSED refusal of an append's epoch, or None."""
+    failure = supplied_epoch_failure(hb_epoch)
+    if failure is None:
+        return None
+    code, detail = failure
+    return {
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": HB_EPOCH_PREDICATE,
+        "detail": detail,
+        "required_evidence_or_repair": (
+            "append with hb_epoch= (or --hb-epoch) as supplied: ASCII digits with value >= "
+            + str(HB_ANCHOR_EPOCH) + "; it is never derived from a clock"),
+        "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "append again with the supplied epoch; nothing was written",
+    }
 
 
 def require_state_digest(field, value):
@@ -305,10 +384,14 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
         require_state_digest("predecessor_org_state_sha256", predecessor_state)
     require_state_digest("successor_org_state_sha256", successor_state)
     retained = {source_key(source["source_transition_sha256"]): source_receipt}
-    # Ordering is a heartbeat count, not a clock reading. A supplied tick keeps
-    # the receipt reproducible; deriving one from the host clock is permitted
-    # but marks itself so the two can be told apart.
-    heartbeat = kernel.hb_reference(epoch=hb_epoch) if hb_epoch is not None else kernel.hb_reference()
+    # Ordering is a heartbeat count, not a clock reading. The tick is supplied
+    # and checked by the shared rule; an absent or invalid one is refused
+    # six-field FAIL_CLOSED before the store is opened (PR-1c). It used to be
+    # derived from the host clock and marked as derived.
+    refusal = epoch_refusal(hb_epoch)
+    if refusal is not None:
+        raise OrgLedgerEpochRefused(refusal)
+    heartbeat = kernel.hb_reference(epoch=int(str(hb_epoch)))
     target = store or open_store(ledger_root())
     target.initialize()
     # The storage substrate owns serialization. A lost comparison writes
@@ -379,7 +462,7 @@ def main():
     parser.add_argument("--boundary-evidence-json", default="{}")
     parser.add_argument("--authority-effect", default="NONE")
     parser.add_argument("--hb-epoch", type=int, default=None,
-                        help="heartbeat epoch; derived from the host clock, and marked as derived, when absent")
+                        help="heartbeat epoch, supplied; absent or invalid is refused HB_EPOCH_NOT_SUPPLIED/HB_EPOCH_INVALID")
     args = parser.parse_args()
     source_path = args.transition_receipt or args.repo_receipt
     if not source_path:
@@ -395,6 +478,9 @@ def main():
                         hb_epoch=args.hb_epoch)
     except LedgerLocationRequired as exc:
         print(json.dumps(location_refusal(exc), sort_keys=True))
+        raise SystemExit(1)
+    except OrgLedgerEpochRefused as exc:
+        print(json.dumps(exc.refusal, sort_keys=True))
         raise SystemExit(1)
     print(json.dumps(result, sort_keys=True))
 

@@ -82,7 +82,7 @@ def supplied_ledger(variable):
     return LS.parse_locator(value) if value else None
 
 def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
-         repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None):
+         repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None, hb_epoch=None):
     if node_state_root is None:
         raise SystemExit("NODE_STATE_LOCATION_REQUIRED_FROM_MATERIALIZER")
     # The carrier is the declared one: kernel frames over the mesh this node
@@ -144,7 +144,12 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     # repository ledger location it fails closed here and says so; the frames
     # above were already handled and are not undone or withheld by it.
     try:
-        propagation=PR.propagate_all()
+        propagation=PR.propagate_all(hb_epoch=hb_epoch)
+    except PR.organization_ledger.OrgLedgerEpochRefused as exc:
+        receipt["repository_propagation"]={**exc.refusal,
+          "consequence_committed":False,
+          "crossed_an_organization_boundary":False,
+          "interlock_intr_involved":False}
     except PR.organization_ledger.LedgerLocationRequired as exc:
         receipt["repository_propagation"]={
           "disposition":"FAIL_CLOSED",
@@ -181,5 +186,6 @@ if __name__=="__main__":
     ap=argparse.ArgumentParser()
     ap.add_argument("--mesh-root", type=Path, default=None)
     ap.add_argument("--node-state-root", type=Path, required=True)
+    ap.add_argument("--hb-epoch", default=None, help="supplied carrier heartbeat epoch (never sampled)")
     args=ap.parse_args()
-    main(mesh_root=args.mesh_root,node_state_root=args.node_state_root)
+    main(mesh_root=args.mesh_root,node_state_root=args.node_state_root,hb_epoch=args.hb_epoch)

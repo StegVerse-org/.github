@@ -73,10 +73,13 @@ class SnapshotTests(unittest.TestCase):
     def test_a_supplied_epoch_is_not_clock_derived(self):
         self.assertFalse(opened()["epoch_derived_from_clock"])
 
-    def test_a_sampled_epoch_says_it_sampled(self):
-        # No epoch supplied: the kernel samples, and the weaker claim is
-        # carried rather than dropped.
-        self.assertTrue(opened(epoch=None)["epoch_derived_from_clock"])
+    def test_an_absent_epoch_is_refused_not_sampled(self):
+        # PR-1c (owner decision: this used to pin the clock fallback, where the
+        # kernel sampled and the window said so). No epoch is now six-field
+        # FAIL_CLOSED HB_EPOCH_NOT_SUPPLIED and no snapshot is taken.
+        with self.assertRaises(OW.WindowEpochRefused) as refused:
+            opened(epoch=None)
+        self.assertEqual(refused.exception.refusal["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
 
     def test_ordering_is_the_contracts_and_wall_clock_is_refused(self):
         snapshot = opened()
