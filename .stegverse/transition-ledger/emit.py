@@ -110,7 +110,14 @@ def append(transition_id,transition_class,predecessor_state_sha256,successor_sta
  raise SystemExit("REPO_LEDGER_APPEND_CONTENTION_EXHAUSTED")
 
 def main():
- p=argparse.ArgumentParser();p.add_argument("--transition-id",required=True);p.add_argument("--transition-class",required=True);p.add_argument("--predecessor-state-sha256",required=True);p.add_argument("--successor-state-sha256",required=True);p.add_argument("--evidence-json",default="{}");p.add_argument("--authority-effect",default="NONE");p.add_argument("--hb-epoch",type=int,default=None,help="heartbeat epoch; derived from the host clock, and marked as derived, when absent");a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument("--transition-id",required=True);p.add_argument("--transition-class",required=True);p.add_argument("--predecessor-state-sha256",required=True);p.add_argument("--successor-state-sha256",required=True);p.add_argument("--evidence-json",default="{}");p.add_argument("--authority-effect",default="NONE");p.add_argument("--hb-epoch",type=str,default=None,help="heartbeat epoch as supplied (ASCII digits >= 32, checked by the shared rule); derived from the host clock, and marked as derived, when absent");a=p.parse_args()
+ if a.hb_epoch is not None:
+  # H39 (decided by the shared rule, Q14): the supplied text is checked by the shared rule, not coerced by int().
+  _espec=importlib.util.spec_from_file_location("capability_ingress_cli_epoch",ROOT/"org-boundary/runtime/capability_ingress.py")
+  rule=importlib.util.module_from_spec(_espec);_espec.loader.exec_module(rule)
+  refusal=rule.direct_epoch_refusal(a.hb_epoch,".stegverse/transition-ledger/emit.py::main")
+  if refusal:print(json.dumps(refusal,sort_keys=True));raise SystemExit(1)
+  a.hb_epoch=rule.supplied_epoch(a.hb_epoch)
  try:r=append(a.transition_id,a.transition_class,a.predecessor_state_sha256,a.successor_state_sha256,json.loads(a.evidence_json),a.authority_effect,a.hb_epoch)
  except RepoLedgerChainBreak as exc:
   print(json.dumps(chain_break_refusal(exc),sort_keys=True));raise SystemExit(1)
