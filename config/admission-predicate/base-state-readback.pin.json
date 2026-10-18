@@ -1,15 +1,15 @@
 {
-  "_note": "Pin of the B1 base-state readback producer (RTC-SV-CHANGE-BASE-STATE-READBACK-014, StegVerse-Labs/.github draft PR 3266). The producer runs git, so P4 does not vendor or execute it; admission_predicate.py consumes only its sealed receipt (--base-state-receipt) and verifies it as TVC#519 @af754807 sv_change_base_state.base_state_from_readback does. git_blob_sha and sha256 verified against bytes fetched at PR head 78a0c78e on 2026-10-18 (re-pinned from c431bfb0, as TVC@af754807 did). 78a0c78e does not fill hb_epoch: it stays caller-supplied or null.",
+  "_note": "Pin of the B1 base-state readback producer (RTC-SV-CHANGE-BASE-STATE-READBACK-014, StegVerse-Labs/.github draft PR 3266). The producer runs git, so P4 does not vendor it or execute it in admission (two receipt fixtures were produced by running the pinned bytes unmodified outside this repo, see fixtures[].produced_by); admission_predicate.py consumes only its sealed receipt (--base-state-receipt) and verifies it as TVC#519 @af754807 sv_change_base_state.base_state_from_readback does, plus the 641f4b03 hb_epoch_source and DENY HB_EPOCH_MISMATCH shapes. git_blob_sha and sha256 verified against bytes fetched at PR head 641f4b03 on 2026-10-18 (raw.githubusercontent and git cat-file agree; re-pinned from 78a0c78e). 641f4b03 seals the bound ledger head receipt's $.hb_reference.epoch as hb_epoch with hb_epoch_source {ledger_head, receipt, field}.",
   "producer": {
     "repository": "StegVerse-Labs/.github",
     "pull_request": 3266,
     "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
     "path": "resident-runtime/sv_change_base_state_readback.py",
-    "ref": "78a0c78e1f1313bd11ff916b26a3ab467f2f54e2",
-    "git_blob_sha": "2c369c8e6db39c6ef1e6a55e953f16a66bd36c77",
-    "tests_git_blob_sha": "1ea61d90280dfc9843dac08b03a8909dc9031b99"
+    "ref": "641f4b03e612d07047e15f2384d24780e2af86c0",
+    "git_blob_sha": "fbd453e531fc8d8f62261d2a72bc7a596798a445",
+    "tests_git_blob_sha": "234867df6cbeb68ab82d9c346761d96e80e56167"
   },
-  "sha256": "11c52bb7c6e4bb404b63d47d28ec66c9015ace38221d2b2fcc5ca8026068f344",
+  "sha256": "c78026fdab4450c953f8cb475f3b20052acce818258340ad8031863ab0fb45ed",
   "result_schema": "stegverse.sv-change-base-state-readback/v1",
   "result_seal_field": "result_sha256",
   "verifier_reference": {
@@ -21,7 +21,7 @@
     "sha256": "a96b1c562e59d5523d24b10f26502878f836da33b858333532c2bb5d4226a1de",
     "function": "base_state_from_readback"
   },
-  "hb_epoch_slot": "caller-supplied or null (open as JD-P4-3); P4 never takes hb_epoch from this receipt",
+  "hb_epoch_slot": "observed: the epoch on the org-ledger head receipt the base is bound to ($.hb_reference.epoch), sealed with hb_epoch_source {ledger_head, receipt, field}; HB_EPOCH_SUPPLIED takes it only when hb_epoch_source.ledger_head == base_ref.ledger_head (ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH); a contradicting or invalid --hb-epoch is DENY HB_EPOCH_MISMATCH",
   "fixtures": [
     {
       "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880.json",
@@ -37,6 +37,16 @@
       "path": "tests/fixtures/admission-predicate/base-state-readback/org-main-40a5d235-producer-78a0c78e.json",
       "copied_verbatim_from": "StegVerse-Labs/TVC@af7548076f4d4af89e5762dcec618e2f5229e0f5 tests/fixtures/base-state-readback/org-main-40a5d235-producer-78a0c78e.json",
       "git_blob_sha": "8192e3081fdc9c8da13cb85c77caef10f8b017eb"
+    },
+    {
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-641f4b03.json",
+      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@641f4b03, blob fbd453e5, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
+      "git_blob_sha": "94fdd06210d4588fc22d88500155f0ccae4136d5"
+    },
+    {
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-641f4b03-hb-epoch-469411751-deny.json",
+      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@641f4b03, blob fbd453e5, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main --hb-epoch 469411751; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
+      "git_blob_sha": "5e1df13d78377a5a5d3c199da1b23a5c477dc78b"
     }
   ],
   "registry_paths": {
@@ -46,11 +56,19 @@
   "registry_generation_joint_item": "Q-ORG-REGISTRY-GENERATION",
   "superseded": [
     {
+      "ref": "78a0c78e1f1313bd11ff916b26a3ab467f2f54e2",
+      "git_blob_sha": "2c369c8e6db39c6ef1e6a55e953f16a66bd36c77",
+      "sha256": "11c52bb7c6e4bb404b63d47d28ec66c9015ace38221d2b2fcc5ca8026068f344",
+      "tests_git_blob_sha": "1ea61d90280dfc9843dac08b03a8909dc9031b99",
+      "reason": "hb_epoch caller-supplied or null (JD-P4-3 open); no hb_epoch_source; a contradicting --hb-epoch had no DENY"
+    },
+    {
       "ref": "c431bfb038f064b29b6b8ba7c68409f0057ea9e7",
       "git_blob_sha": "2d63993121d91e963e95808dad8e973e216b6a3c",
       "sha256": "2e2b8be9659112cac9649a250ddf466c4633d2ab892923541fe6d76226440d14",
       "tests_git_blob_sha": "56892c8b75b65413f21baf4ca4cf12e342bf8b9c",
       "reason": "hard-coded data/canonical-task-registry.json; StegVerse-org/.github returned REGISTRY_GENERATION_UNREADABLE"
     }
-  ]
+  ],
+  "hb_epoch_source_field": "$.hb_reference.epoch"
 }
