@@ -78,6 +78,21 @@ class FederationCycleSuppliedEpochTests(unittest.TestCase):
                 self.assertIsNone(receipt["heartbeat_reference"])
                 self.assertEqual(receipt["heartbeat_reference_refusal"]["failure_code"], "HB_EPOCH_INVALID")
 
+    def test_the_supplied_epoch_times_propagation_and_no_epoch_adds_no_fallback(self):
+        for supplied, expected in (("446655631", 446655631), (None, None), ("+33", None)):
+            with self.subTest(supplied=supplied), tempfile.TemporaryDirectory() as work, \
+                    mock.patch.object(FC.K, "consume_and_respond", return_value=[]), \
+                    mock.patch.object(FC, "returns_for_consumed", return_value=[]), \
+                    mock.patch.object(FC.PR, "propagate_all", return_value={
+                        "repositories_declared": 0, "repositories_present": 0,
+                        "receipts_propagated": 0, "receipts_already_carried": 0}) as propagate, \
+                    mock.patch.object(FC.K, "record_federation_cycle", return_value=Path(work) / "cycle.json"), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                FC.main(mesh_root=Path(work) / "mesh", node_state_root=Path(work) / "state",
+                        repo_ledger_root=Path(work) / "repo", org_ledger_root=Path(work) / "org",
+                        hb_epoch=supplied)
+                propagate.assert_called_once_with(hb_epoch=expected)
+
     def test_the_cycle_and_executor_sources_hold_no_clock_read(self):
         for rel in ("resident-runtime/federation_cycle.py", "resident-runtime/resident_executor.py"):
             source = (ROOT / rel).read_text(encoding="utf-8")

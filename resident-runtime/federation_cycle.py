@@ -121,6 +121,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     # recorded on both ledgers before it is answered or marked. Without both
     # locations nothing is consumed: the frames stay in the mesh, which is the
     # durable queue, and the cycle says why rather than aborting.
+    heartbeat,heartbeat_refusal=cycle_heartbeat(hb_epoch)
     consumption={"disposition":"ALLOW"}
     try:
         results=K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
@@ -148,7 +149,6 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
     governance_returns=returns_for_consumed(results, mesh_root=mesh_root)
-    heartbeat,heartbeat_refusal=cycle_heartbeat(hb_epoch)
     receipt={
       "schema_version":"stegverse.org-federation-cycle.v1",
       "organization":K.load_registry(ROOT)["organization"],
@@ -173,7 +173,9 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     # repository ledger location it fails closed here and says so; the frames
     # above were already handled and are not undone or withheld by it.
     try:
-        propagation=PR.propagate_all()
+        # The supplied epoch, when valid, times the propagated receipts too; the
+        # cycle adds no fallback of its own when it is absent.
+        propagation=PR.propagate_all(hb_epoch=heartbeat["epoch"] if heartbeat else None)
     except PR.organization_ledger.LedgerLocationRequired as exc:
         receipt["repository_propagation"]={
           "disposition":"FAIL_CLOSED",
