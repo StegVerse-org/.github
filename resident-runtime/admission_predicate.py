@@ -21,13 +21,13 @@ UTF-8, ensure_ascii=False; value ``"sha256:" + hex``).
 
 Order: BASE_STATE_RECEIPT_BOUND, then HB_EPOCH_SUPPLIED, then the rest (nothing else is evaluated while the
 epoch is unobserved); ADMISSION_INPUT_READY only if every one is ALLOW.
-  HB_EPOCH_SUPPLIED              ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH: hb_epoch is taken from the
-      verified base-state receipt (the epoch on the org-ledger head receipt the base is bound to), never from
-      a clock or the flag; the receipt must name where it read it (hb_epoch_source {ledger_head == base_ref
-      ledger_head, receipt, field "$.hb_reference.epoch"}, #3266 @641f4b03). Absent receipt, null epoch or an
-      epoch with no hb_epoch_source -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED. --hb-epoch is a cross-check only:
-      invalid (not ASCII [0-9]+ >= 32) or != the observed epoch -> DENY HB_EPOCH_MISMATCH (P1, #3266, Lane B #46;
-      detail flag_failure_code HB_EPOCH_FLAG_MISMATCH). A sealed #3266 DENY HB_EPOCH_MISMATCH receipt is the same DENY.
+  HB_EPOCH_SUPPLIED              ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH, aligned to P1's
+      verify_admission_hb_epoch (StegVerse-Labs/.github#3264): the source is the epoch the verified #3266 receipt sealed
+      with hb_epoch_source {ledger_head == base_ref ledger_head, receipt, field "$.hb_reference.epoch"}, never a clock or
+      the flag; the supplied --hb-epoch must equal it. Source unobserved, or --hb-epoch absent, null or
+      UNKNOWN_NOT_AUTHENTICALLY_OBSERVED -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED. Any other malformed value (kernel
+      supplied_epoch_failure 726248a5) or a differing value -> DENY HB_EPOCH_MISMATCH. A sealed #3266 DENY
+      HB_EPOCH_MISMATCH receipt is the same DENY.
   PR_AUTHOR_SESSION_DECLARED     --session-id matches the SV_CHANGE session pattern.
   BRANCH_WRITER_IS_BRANCH_OWNER  (own code; the only predicate that reads git) branch
       created in this clone; every move of the remote-tracking ref is "update by push"
@@ -548,55 +548,77 @@ def p_binder(a, head: str) -> dict:
 HB_EPOCH_INVARIANT = "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH"
 
 
-def flag_epoch_failure(value: Any) -> str | None:
-    """P1 / kernel.py supplied_epoch_failure text rule for a supplied --hb-epoch: ASCII [0-9]+ with value >= 32."""
+SUPPLIED_EPOCH_UNOBSERVED_VALUES = (None, "", "null", UNKNOWN)  # absent / null / sentinel (contract invariant, 15:59Z)
+P1_REFERENCE = ("StegVerse-Labs/.github#3264 @7d940851 resident-runtime/sv_work_items.py (blob 20b03916) "
+                "verify_admission_hb_epoch; supplied-value rule org-kernel/kernel.py::supplied_epoch_failure (sha256 726248a5)")
+
+
+def supplied_epoch_failure(value: Any) -> tuple[str, str] | None:
+    """org-kernel/kernel.py::supplied_epoch_failure (sha256 726248a5, reference None), reproduced for the CLI's text value:
+    None -> HB_EPOCH_NOT_SUPPLIED; not ASCII [0-9]+ (bool, float, '+33', ' 33', '3_3', '33.0', ...) or < 32 -> HB_EPOCH_INVALID."""
     if value is None:
-        return None
-    if not (isinstance(value, str) and HB_EPOCH.fullmatch(value)):
-        return f"--hb-epoch {value!r} is not ASCII [0-9]+"
-    if int(value) < HB_EPOCH_MINIMUM:
-        return f"--hb-epoch {value} is below the HB32 anchor ({HB_EPOCH_MINIMUM})"
+        return "HB_EPOCH_NOT_SUPPLIED", "no hb_epoch was supplied and no clock is read"
+    if isinstance(value, bool):
+        text = None
+    elif isinstance(value, int):
+        text = str(value)
+    else:
+        text = value if isinstance(value, str) else None
+    if text is None or not text.isascii() or not text.isdigit():
+        return "HB_EPOCH_INVALID", "hb_epoch " + repr(value) + " is not ASCII [0-9]+"
+    if int(text) < HB_EPOCH_MINIMUM:
+        return "HB_EPOCH_INVALID", "hb_epoch " + text + " is below the HB32 anchor (32)"
     return None
 
 
 def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
-    """HB_EPOCH_SUPPLIED under ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH: the admission hb_epoch is the epoch
-    on the org-ledger head receipt the base is bound to, sealed in the verified #3266 base-state receipt together with
-    hb_epoch_source naming that head (BASE_STATE_RECEIPT_BOUND). Never a clock, never the flag. --hb-epoch is a
-    cross-check: invalid or contradicting -> DENY HB_EPOCH_MISMATCH (P1, #3266 @641f4b03, Lane B #46)."""
+    """HB_EPOCH_SUPPLIED under ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH, in P1 verify_admission_hb_epoch's order
+    (StegVerse-Labs/.github#3264): the sealed source first, then the supplied value. Never a clock, never the flag as source.
+      FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED: no verified #3266 receipt, a null sealed epoch, no hb_epoch_source naming
+        $.hb_reference.epoch at base_ref.ledger_head; or (contract invariant, 15:59Z) the supplied --hb-epoch is absent,
+        null ('' or 'null') or the sentinel UNKNOWN_NOT_AUTHENTICALLY_OBSERVED.
+      DENY HB_EPOCH_MISMATCH: any other supplied value failing kernel supplied_epoch_failure (726248a5), or one not equal by
+        integer value to the sealed epoch; detail {ledger_head, expected, hb_epoch, supplied_epoch_rule} as P1."""
     bound = (receipt_row or {}).get("receipts", {}).get("base", {}).get("binds") if receipt_row and receipt_row["holds"] else None
     source = bound.get("hb_epoch") if bound else None
     where = bound.get("hb_epoch_source") if bound else None
-    r = row("HB_EPOCH_SUPPLIED", invariant=HB_EPOCH_INVARIANT,
+    head = bound.get("ledger_head") if bound else None
+    supplied = a.hb_epoch
+    r = row("HB_EPOCH_SUPPLIED", invariant=HB_EPOCH_INVARIANT, aligned_to=P1_REFERENCE,
             source="BASE_STATE_RECEIPT_BOUND base receipt hb_epoch + hb_epoch_source (#3266 @641f4b03)", receipt_hb_epoch=source,
             receipt_hb_epoch_source=where, receipt_result_sha256=bound.get("result_sha256") if bound else None,
-            flag_hb_epoch=a.hb_epoch)
-    deny_next = "rerun with --hb-epoch omitted or equal to the bound ledger head receipt's epoch; nothing is written"
-    bad_flag = flag_epoch_failure(a.hb_epoch if a.hb_epoch != "" else None)
-    if bad_flag is not None:  # an invalid supplied epoch is refused whatever the source (ruling 15:41Z)
-        r["flag_failure_code"] = "HB_EPOCH_FLAG_MISMATCH"
-        return refuse(r, a, "HB_EPOCH_MISMATCH", f"{HB_EPOCH_INVARIANT}: --hb-epoch, when given, is ASCII [0-9]+ >= 32 and equals "
-                      f"the bound receipt's hb_epoch, or is omitted ({bad_flag})", deny_next, disposition="DENY"), None
+            flag_hb_epoch=supplied, ledger_head=head)
+    deny_next = "propose a successor at the observed epoch: rerun with --hb-epoch equal to the bound ledger head receipt's epoch"
     if receipt_row is not None and receipt_row.get("failure_code") == "HB_EPOCH_MISMATCH":
         r["flag_failure_code"] = "HB_EPOCH_FLAG_MISMATCH"
         return refuse(r, a, "HB_EPOCH_MISMATCH", f"{HB_EPOCH_INVARIANT}: the base-state receipt seals DENY HB_EPOCH_MISMATCH "
                       "(the readback's expected epoch contradicts the observed one)", deny_next, disposition="DENY"), None
-    observed = (isinstance(source, str) and HB_EPOCH.fullmatch(source) and int(source) >= HB_EPOCH_MINIMUM
-                and isinstance(where, Mapping) and where.get("ledger_head") == bound.get("ledger_head"))
+    observed = (isinstance(source, str) and supplied_epoch_failure(source) is None
+                and isinstance(where, Mapping) and where.get("ledger_head") == head and where.get("field") == HB_EPOCH_SOURCE_FIELD)
     if not observed:
         why = ("no verified --base-state-receipt" if bound is None else "the verified receipt's hb_epoch is null"
                if source is None else "the verified receipt's hb_epoch carries no hb_epoch_source naming the bound ledger head "
                "(a pre-641f4b03 caller-supplied epoch is not the bound ledger head epoch)")
+        r["detail"] = why
         return refuse(r, a, "HB_EPOCH_SOURCE_UNOBSERVED",
                       f"{HB_EPOCH_INVARIANT}: a verified #3266 base-state receipt (--base-state-receipt) whose hb_epoch is the "
                       f"epoch of the org-ledger head receipt the base is bound to ({why}); no clock is read and the flag is never the source",
-                      "rerun with a fresh #3266 @641f4b03 readback receipt once the bound ledger head receipt carries "
-                      "$.hb_reference.epoch"), None
-    if a.hb_epoch not in (None, "") and int(a.hb_epoch) != int(source):
-        r["flag_failure_code"] = "HB_EPOCH_FLAG_MISMATCH"
+                      "rerun with a fresh #3266 readback receipt once it seals the bound ledger head receipt's "
+                      "$.hb_reference.epoch; no epoch is minted"), None
+    if supplied in SUPPLIED_EPOCH_UNOBSERVED_VALUES:
+        r["detail"] = ("--hb-epoch absent" if supplied is None else f"--hb-epoch is {'null' if supplied in ('', 'null') else 'the sentinel'} {supplied!r}")
+        return refuse(r, a, "HB_EPOCH_SOURCE_UNOBSERVED",
+                      f"{HB_EPOCH_INVARIANT}: --hb-epoch supplied as the admission's declared epoch (ASCII [0-9]+ >= 32), equal "
+                      f"to the bound receipt's hb_epoch ({source}); absent, null or {UNKNOWN} is not an observed epoch ({r['detail']})",
+                      "rerun with --hb-epoch supplied; nothing was admitted"), None
+    failure = supplied_epoch_failure(supplied)
+    if failure is not None or int(supplied) != int(source):
+        r.update({"expected": source, "hb_epoch": supplied, "flag_failure_code": "HB_EPOCH_FLAG_MISMATCH"})
+        if failure is not None:
+            r["supplied_epoch_rule"] = failure[0] + ": " + failure[1]
         return refuse(r, a, "HB_EPOCH_MISMATCH",
-                      f"{HB_EPOCH_INVARIANT}: --hb-epoch ({a.hb_epoch}) equals the bound receipt's hb_epoch ({source}), or omit the flag",
-                      deny_next, disposition="DENY"), None
+                      f"{HB_EPOCH_INVARIANT}: --hb-epoch ({supplied!r}) is ASCII [0-9]+ >= 32 equal by integer value to the epoch "
+                      f"the base-state readback sealed at base_ref.ledger_head ({source})", deny_next, disposition="DENY"), None
     return r, source
 
 
@@ -677,7 +699,8 @@ def parse(argv: list[str]):
     p.add_argument("--branch", required=True)
     p.add_argument("--session-id", required=True, help="declared authoring session (declared input)")
     p.add_argument("--hb-epoch", default=None,
-                   help="optional cross-check only: must equal the verified base-state receipt's hb_epoch (invalid/differs -> DENY HB_EPOCH_MISMATCH)")
+                   help="the admission's declared epoch: must equal the verified base-state receipt's hb_epoch (the source); absent/null/sentinel -> "
+                        "FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED, malformed or differing -> DENY HB_EPOCH_MISMATCH")
     p.add_argument("--check-runs", default=None, help="check-runs JSON for the head, passed to Lane A's evaluator")
     p.add_argument("--expect", action="append", default=None, help="expected job name for Lane A (repeatable)")
     p.add_argument("--base-sha", default=None, help="B1 base_ref: the PR's merge-base the head was built on")

@@ -76,9 +76,12 @@ class Fixture:
             for n, c in conclusions.items()]}))
         return str(path)
 
-    def args(self, *extra: str, checks: str | None = None, epoch: str | None = None, session: str = SESSION,
+    def args(self, *extra: str, checks: str | None = None, epoch: Any = "auto", session: str = SESSION,
              current: tuple | None = None, expect: tuple = ("a",), identity: bool = True, receipt: Any = "default"):
-        """By default a sealed #3266-shape base-state receipt for the base commit carries hb_epoch 1000 (the source)."""
+        """By default a sealed #3266-shape base-state receipt for the base commit carries hb_epoch 1000 (the source).
+        epoch="auto" supplies --hb-epoch equal to the receipt's hb_epoch (omitted when it has none); None omits the flag."""
+        if epoch == "auto":
+            epoch = "1000" if receipt == "default" else (receipt or {}).get("hb_epoch")
         c = current or (self.base, self.base_time)
         rec = []
         if receipt is not None:
@@ -452,7 +455,7 @@ class BaseStateReceiptTest(unittest.TestCase):
         path.write_text(json.dumps(receipt), encoding="utf-8")
         return str(path)
 
-    def evaluate(self, receipt: dict, *extra: str, epoch: str | None = None) -> dict:
+    def evaluate(self, receipt: dict, *extra: str, epoch: Any = "auto") -> dict:
         return ap.evaluate(self.f.args("--repository", "Example/lane", *extra, epoch=epoch, identity=False, receipt=receipt))
 
     def test_tvc_fixture_receipt_verifies_as_tvc_binds_it(self) -> None:
@@ -576,17 +579,42 @@ class BaseStateReceiptTest(unittest.TestCase):
         self.assertEqual("ALLOW", self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch="04242")["disposition"])
 
     def test_invalid_supplied_epoch_is_deny_hb_epoch_mismatch(self) -> None:
-        """An invalid --hb-epoch (not ASCII [0-9]+ >= 32, kernel.py supplied_epoch_failure text rule) is DENY HB_EPOCH_MISMATCH,
-        with or without an observed source; HB_EPOCH_FLAG_MISMATCH is no longer emitted as a failure_code."""
-        for flag in ("12", "31", "x", "+33", " 33", "3_3", "33.0", "-40", "\uff14\uff12", "4242\n"):
-            for receipt in (readback_receipt(self.f.base, epoch="4242"), readback_receipt(self.f.base, epoch=None), None):
+        """A malformed --hb-epoch other than absent/null/sentinel fails kernel supplied_epoch_failure (726248a5) and is
+        DENY HB_EPOCH_MISMATCH with P1's detail {ledger_head, expected, hb_epoch, supplied_epoch_rule}."""
+        for flag in ("12", "31", "0", "x", "+33", " 33", "3_3", "33.0", "-40", "\uff14\uff12", "4242\n", "unknown", "NULL", "None"):
+            with self.subTest(flag=flag):
+                out = self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch=flag)
+                hb = pred(out, "HB_EPOCH_SUPPLIED")
+                self.assertEqual(("DENY", "HB_EPOCH_MISMATCH"), (out["disposition"], out["failure_code"]))
+                self.assertTrue(SIX <= hb.keys() and all(hb[f] for f in SIX))
+                self.assertEqual((LEDGER, "4242", flag), (hb["ledger_head"], hb["expected"], hb["hb_epoch"]))
+                self.assertTrue(hb["supplied_epoch_rule"].startswith("HB_EPOCH_INVALID: "))
+                self.assertEqual("HB_EPOCH_FLAG_MISMATCH", hb["flag_failure_code"])
+                self.assertNotIn("HB_EPOCH_FLAG_MISMATCH", [p.get("failure_code") for p in out["predicates"]])
+                self.assertTrue(ap.seal_verifies(out))
+
+    def test_absent_null_or_sentinel_supplied_epoch_fails_closed(self) -> None:
+        """Contract invariant (15:59Z): an absent, null or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED supplied epoch is FAIL_CLOSED
+        HB_EPOCH_SOURCE_UNOBSERVED, even when the sealed source is observed."""
+        for flag in (None, "", "null", "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"):
+            with self.subTest(flag=flag):
+                out = self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch=flag)
+                hb = pred(out, "HB_EPOCH_SUPPLIED")
+                self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED"), (out["disposition"], out["failure_code"]))
+                self.assertEqual("HB_EPOCH_SUPPLIED", out["failed_predicate"])
+                self.assertTrue(SIX <= hb.keys() and all(hb[f] for f in SIX))
+                self.assertNotIn("supplied_epoch_rule", hb)
+                self.assertIsNone(out["hb_epoch"])
+                self.assertEqual(2, len(out["predicates"]))
+
+    def test_source_is_checked_before_the_supplied_value(self) -> None:
+        """P1 order: an unobserved sealed source is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED whatever was supplied."""
+        for flag in ("x", "12", "4243", "4242", None, "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"):
+            for receipt in (readback_receipt(self.f.base, epoch=None), None):
                 with self.subTest(flag=flag, receipt=bool(receipt)):
                     out = ap.evaluate(self.f.args(epoch=flag, receipt=receipt))
-                    hb = pred(out, "HB_EPOCH_SUPPLIED")
-                    self.assertEqual(("DENY", "HB_EPOCH_MISMATCH"), (hb["disposition"], hb["failure_code"]))
-                    self.assertEqual("DENY", out["disposition"])
-                    self.assertTrue(SIX <= hb.keys() and all(hb[f] for f in SIX))
-                    self.assertNotIn("HB_EPOCH_FLAG_MISMATCH", [p.get("failure_code") for p in out["predicates"]])
+                    self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED"),
+                                     (pred(out, "HB_EPOCH_SUPPLIED")["disposition"], pred(out, "HB_EPOCH_SUPPLIED")["failure_code"]))
 
     def test_receipt_deny_hb_epoch_mismatch_is_deny(self) -> None:
         """#3266 @641f4b03 seals DENY HB_EPOCH_MISMATCH when its --hb-epoch contradicts the observed epoch."""
