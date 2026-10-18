@@ -439,10 +439,11 @@ class Standard(unittest.TestCase):
         for forbidden in ("urllib", "socket", "http.client", "requests", "AI_SESSION_GATE", "time.time("):
             self.assertNotIn(forbidden, source)
 
-    def test_the_workflow_is_dispatch_only(self):
+    def test_the_workflow_runs_on_request_and_pull_request_only(self):
         workflow = (ROOT / ".github/workflows/resident-runtime-convergence-validation.yml").read_text()
         self.assertIn("workflow_dispatch:", workflow)
-        for trigger in ("schedule:", "cron", "push:", "pull_request:"):
+        self.assertIn("pull_request:", workflow)
+        for trigger in ("schedule:", "cron", "push:", "pull_request_target:", "workflow_run:"):
             self.assertNotIn(trigger, workflow)
 
     def test_the_repository_manifest_validates(self):
