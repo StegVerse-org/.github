@@ -35,7 +35,8 @@ Predicates (all evaluated after HB_EPOCH_SUPPLIED; ADMISSION_INPUT_READY only if
       base_ref (--base-sha, the merge-base the head was built on, and its commit
       time) against the observed current base (--current-base-sha and its commit
       time), plus registry_generation / ledger_head when both sides are supplied
-      (TVC B1: unchanged since VERIFIED, else BASE_STALE).
+      (TVC B1: unchanged since VERIFIED, else BASE_STALE); a value supplied on one
+      side only is FAIL_CLOSED BASE_STATE_NOT_OBSERVED.
   BINDER_PINS_MATCH              (own code; with --pin) pinned sha256s still match the bytes at head.
 """
 
@@ -82,6 +83,17 @@ def seal(body: Mapping[str, Any], field: str = SEAL_FIELD) -> dict:
 
 def seal_verifies(record: Any, field: str = SEAL_FIELD) -> bool:
     return isinstance(record, Mapping) and record.get(field) == digest({k: v for k, v in record.items() if k != field})
+
+
+WRITER_EVIDENCE_CLASSES = ("DECLARED", "OBSERVED_COMMIT_TRAILER", UNKNOWN)  # TVC D7
+
+
+def writer_session(session: str | None) -> dict:
+    """TVC D7 content[].writer_session = {session|null, evidence_class}. P4 asserts DECLARED only when the
+    declared session and the reflog writer evidence both hold; otherwise {null, UNKNOWN_NOT_AUTHENTICALLY_OBSERVED}."""
+    if session is None:
+        return {"session": None, "evidence_class": UNKNOWN}
+    return {"session": session, "evidence_class": "DECLARED"}
 
 
 def change_digest(content: list) -> str:
@@ -285,7 +297,12 @@ def p_base(a) -> dict:
     if a.current_base_sha != a.base_sha:
         moved["sha"] = {"verified": a.base_sha, "current": a.current_base_sha}
     for key in ("registry_generation", "ledger_head"):
-        if base[key] is not None and current[key] is not None and base[key] != current[key]:
+        if (base[key] is None) != (current[key] is None):
+            side = "base_ref" if base[key] is None else "current_base"
+            return refuse(r, a, "BASE_STATE_NOT_OBSERVED",
+                          f"{key} supplied on both sides or neither ({side} is missing it); a one-sided value is never compared away",
+                          f"rerun with --base-{key.replace('_', '-')} and --current-{key.replace('_', '-')} both supplied")
+        if base[key] is not None and base[key] != current[key]:
             moved[key] = {"verified": base[key], "current": current[key]}
     if a.stale_days is not None:
         if a.base_commit_time is None or a.current_base_commit_time is None:
@@ -370,7 +387,7 @@ def evaluate(a) -> dict:
             for path, deleted in changed_paths(a.clone, range_base, head):
                 content.append({"path": path, "deleted": deleted,
                                 "blob_digest": None if deleted else blob_digest(a.clone, head, path),
-                                "writer_session": a.session_id if sess_ok else UNKNOWN})
+                                "writer_session": writer_session(a.session_id if sess_ok else None)})
         jobs, job_record = p_jobs(a, head, change_digest(content) if content else None)
         predicates += [jobs, p_base(a)]
         if a.pin:

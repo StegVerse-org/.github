@@ -115,7 +115,7 @@ class AdmissionPredicateTest(unittest.TestCase):
         self.assertTrue(content["old.txt"]["deleted"])
         self.assertIsNone(content["old.txt"]["blob_digest"])
         self.assertEqual("sha256:" + hashlib.sha256(self.f.vendored).hexdigest(), content["vendor/v.txt"]["blob_digest"])
-        self.assertEqual({SESSION}, {e["writer_session"] for e in out["content"]})
+        self.assertEqual([{"session": SESSION, "evidence_class": "DECLARED"}] * 3, [e["writer_session"] for e in out["content"]])
         self.assertEqual({"path", "blob_digest", "writer_session", "deleted"}, set(out["content"][0]))
         # deterministic, TVC rule: digest over content sorted by path
         expected = "sha256:" + hashlib.sha256(json.dumps(sorted(out["content"], key=lambda e: e["path"]),
@@ -145,7 +145,7 @@ class AdmissionPredicateTest(unittest.TestCase):
     def test_session_not_declared(self) -> None:
         out = ap.evaluate(self.f.args(session="x"))
         self.assertEqual("AUTHOR_SESSION_NOT_DECLARED", out["failure_code"])
-        self.assertEqual({ap.UNKNOWN}, {e["writer_session"] for e in out["content"]})
+        self.assertTrue(all(e["writer_session"] == {"session": None, "evidence_class": ap.UNKNOWN} for e in out["content"]))
 
     def test_skipped_job_is_never_a_pass_via_lane_a(self) -> None:
         out = ap.evaluate(self.f.args(checks=self.f.checks({"a": "success", "scan": "skipped"}), expect=("a", "scan")))
@@ -241,7 +241,7 @@ class AdmissionPredicateTest(unittest.TestCase):
         p = pred(out, "BRANCH_WRITER_IS_BRANCH_OWNER")
         self.assertEqual("BRANCH_HAS_FOREIGN_WRITER", p["failure_code"])
         self.assertTrue(SIX <= p.keys())
-        self.assertEqual({ap.UNKNOWN}, {e["writer_session"] for e in out["content"]})
+        self.assertTrue(all(e["writer_session"] == {"session": None, "evidence_class": ap.UNKNOWN} for e in out["content"]))
 
     def test_server_push_without_local_push_fails_closed(self) -> None:
         act = self.f.td / "act.json"
@@ -265,6 +265,21 @@ class AdmissionPredicateTest(unittest.TestCase):
         p = pred(out, "HEAD_CURRENT_WITH_BASE")
         self.assertEqual("BASE_STALE", p["failure_code"])
         self.assertEqual({"registry_generation"}, set(p["moved"]))
+
+    def test_one_sided_registry_generation_fails_closed(self) -> None:
+        for extra in (("--base-registry-generation", "319"), ("--current-registry-generation", "319")):
+            with self.subTest(extra):
+                p = pred(ap.evaluate(self.f.args(*extra)), "HEAD_CURRENT_WITH_BASE")
+                self.assertEqual("BASE_STATE_NOT_OBSERVED", p["failure_code"])
+                self.assertEqual("FAIL_CLOSED", p["disposition"])
+                self.assertTrue(SIX <= p.keys())
+
+    def test_one_sided_ledger_head_fails_closed(self) -> None:
+        for extra in (("--base-ledger-head", "a" * 40), ("--current-ledger-head", "a" * 40)):
+            with self.subTest(extra):
+                p = pred(ap.evaluate(self.f.args(*extra)), "HEAD_CURRENT_WITH_BASE")
+                self.assertEqual("BASE_STATE_NOT_OBSERVED", p["failure_code"])
+                self.assertEqual("FAIL_CLOSED", p["disposition"])
 
     def test_base_state_not_observed(self) -> None:
         a = self.f.args()
@@ -300,6 +315,65 @@ class AdmissionPredicateTest(unittest.TestCase):
         src = SCRIPT.read_text()
         for forbidden in ("import time", "datetime", "urllib", "socket", "http.client", "AI_SESSION_GATE"):
             self.assertNotIn(forbidden, src)
+
+
+# Known-answer vectors for change_digest (TVC rule, D7 writer_session shape).
+# Source 1-2: StegVerse-Labs/TVC@735c9548c4746dfa28a8b26b8992f3f29a27b7a8
+#   tests/fixtures/admission-scenarios/scenarios.jsonl (git blob 1e207c2773ececf7da0730bdb2f8c00c793c709c),
+#   sv_change.content and sv_change.head.change_digest of the named scenarios, copied verbatim.
+# Source 3: TVC@735c9548 tvc_request_digest.digest (blob ac242efac0c3f2020f95fc47b9690938e3b044e6) applied as
+#   sv_change_admission.change_digest (blob 76003e3c56f423e554c71cae9fabfb4a81400b40) to the input below,
+#   run on the box; covers a deleted entry and an UNKNOWN writer_session.
+WS_A = {"evidence_class": "DECLARED", "session": "b699e0c0-3b4e-4a24-945f-6f521c282268"}
+KAT = [
+    ("SCN-LABS-3246-POSITIVE-CONTROL", [
+        {"blob_digest": "sha256:85caa915309ffc2e6c4b3f84eb21b436b977660d0001d48b883cfdba7b0f0007", "deleted": False,
+         "path": "scripts/consume_sdk_evaluator_governance_posture_request.py",
+         "writer_session": {"evidence_class": "DECLARED", "session": "6329a668"}},
+        {"blob_digest": "sha256:0489e69eb154e5a8c04afb400ac44860f22cf9361825db8bca30c430cfe8bee3", "deleted": False,
+         "path": "tests/test_sdk_evaluator_governance_posture_resident.py",
+         "writer_session": {"evidence_class": "DECLARED", "session": "6329a668"}}],
+     "sha256:9cfbc87b37b3ca5d2abd91e3948e2af057fb070eef15f4ae5e2a7c638e6b064f"),
+    ("SCN-LABS-3241-SKIPPED-TRANSITION", [
+        {"blob_digest": "sha256:c0c27c3e8e879e757195152e8806edc15986bb13eebb513bf2de8f2a48f0099d", "deleted": False,
+         "path": ".github/workflows/organization-claim-allocator-transition.yml", "writer_session": WS_A},
+        {"blob_digest": "sha256:6d27fddf4d9c3fdfa4355c67cc8c1b242ae0cebe4cf862e38298fb241caedd5b", "deleted": False,
+         "path": "control/workflow-surface-registry.json",
+         "writer_session": {"evidence_class": "OBSERVED_COMMIT_TRAILER", "session": "session_013aXjQ22ZG7VKiewGKyCd4T"}},
+        {"blob_digest": "sha256:1f31062afcd948b407e49d336b47a55275da3e7b3b60092ee9885c84d99e4eb1", "deleted": False,
+         "path": "docs/RESIDENT_ORG_CLAIM_ALLOCATOR_MIRROR_HANDOFF.md",
+         "writer_session": {"evidence_class": "OBSERVED_COMMIT_TRAILER", "session": "session_01QryfB2bHgHftfiBdLzx5cG"}},
+        {"blob_digest": "sha256:d152791869a4a77ca3c9d176d4f23be6d294eb0a2012c95ad473f13df0d5322a", "deleted": False,
+         "path": "receipts/sovereign-host/resident-request-dispatch.latest.json",
+         "writer_session": {"evidence_class": "OBSERVED_COMMIT_TRAILER", "session": "session_01QryfB2bHgHftfiBdLzx5cG"}},
+        {"blob_digest": "sha256:43764f3d60a85c225a53bdc93c02bbbb06c18f8764cae6c92ae7165256fa40eb", "deleted": False,
+         "path": "scripts/consume_org_claim_allocator_request.py", "writer_session": WS_A},
+        {"blob_digest": "sha256:0d5b6576f0a899eeb8b74e7bdfe5fc49f4a2ac86ebe6bdfa7aef15a66be1b95a", "deleted": False,
+         "path": "tests/test_org_claim_custody.py", "writer_session": WS_A},
+        {"blob_digest": "sha256:f8f6856ff2da446dc5ee07f52c172cebe3ebbb27b4a3a13a32d80c6b35eb0266", "deleted": False,
+         "path": "tests/test_resident_org_claim_allocator.py", "writer_session": WS_A}],
+     "sha256:2bf1f7b83c5ae879f389aa69833c1fb9aea90f006c229f93d684725105856c50"),
+    ("TVC-IMPL-735c9548-DELETED-AND-UNKNOWN", [
+        {"path": "b/old.txt", "blob_digest": None, "deleted": True,
+         "writer_session": {"session": "grok:p4-maintenance-lane/a65c67bf", "evidence_class": "DECLARED"}},
+        {"path": "a/new.txt", "blob_digest": "sha256:" + "ab" * 32, "deleted": False,
+         "writer_session": {"session": None, "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"}}],
+     "sha256:76a4f1116df7d6cc12b629c00de13c50a85c11a5e2f4e4ba574407f212fa0c09"),
+]
+
+
+class ChangeDigestKnownAnswerTest(unittest.TestCase):
+    def test_change_digest_equals_tvc_byte_for_byte(self) -> None:
+        for name, content, expected in KAT:
+            with self.subTest(name):
+                self.assertEqual(expected, ap.change_digest(content))
+
+    def test_writer_session_shape_is_tvc_d7(self) -> None:
+        self.assertEqual({"session": SESSION, "evidence_class": "DECLARED"}, ap.writer_session(SESSION))
+        self.assertEqual({"session": None, "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"}, ap.writer_session(None))
+        for ws in (ap.writer_session(SESSION), ap.writer_session(None)):
+            self.assertEqual({"session", "evidence_class"}, set(ws))
+            self.assertIn(ws["evidence_class"], ap.WRITER_EVIDENCE_CLASSES)
 
 
 if __name__ == "__main__":
