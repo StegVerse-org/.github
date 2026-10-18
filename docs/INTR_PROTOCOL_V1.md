@@ -26,5 +26,6 @@ organization's default-branch documents at the `source_commit` recorded in `mani
 with sha256 per file; altered bytes fail closed. It is conformance evidence only, not an
 authentic receipt and not proof that a live peer serves the capability.
 
-Snapshot result: 7 ALLOW, 1 FAIL_CLOSED — SV-011's `intr-destination` binding does not declare
-`authority_effect` (`BINDING_AUTHORITY_EFFECT_IS_NONE`).
+Snapshot result: 8 ALLOW. The SV-011 row pins the head of SV-011/.github#14, which declares
+`authority_effect: NONE_BINDING_ONLY` on its `intr-destination` binding; that commit is not yet
+SV-011's default branch, so admission of this snapshot depends on SV-011/.github#14.

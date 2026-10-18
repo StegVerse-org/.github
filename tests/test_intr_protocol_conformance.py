@@ -15,10 +15,9 @@ spec.loader.exec_module(intr)
 
 ORGS = ["StegVerse-org", "StegVerse-Labs", "SV-011", "GCAT-BCAT-Engine",
         "Admissible-Existence", "StegGhost", "StegVerse-002", "SV-LLM"]
-# Pinned expectations for the snapshot. SV-011's intr-destination binding does
-# not declare authority_effect, so its destination is unobserved, not allowed.
+# Pinned expectations for the snapshot. SV-011's row pins SV-011/.github#14,
+# which declares authority_effect on its intr-destination binding.
 EXPECTED = {org: ("ALLOW", None) for org in ORGS}
-EXPECTED["SV-011"] = ("FAIL_CLOSED", "BINDING_AUTHORITY_EFFECT_IS_NONE")
 
 
 def snapshot(org):
@@ -77,7 +76,7 @@ class MeshSnapshot(unittest.TestCase):
         got = {r["subject"]["organization"]: (r["disposition"], r.get("failed_predicate"))
                for r in report["results"]}
         self.assertEqual(got, EXPECTED)
-        self.assertEqual(report["counts"], {"ALLOW": 7, "DENY": 0, "FAIL_CLOSED": 1})
+        self.assertEqual(report["counts"], {"ALLOW": 8, "DENY": 0, "FAIL_CLOSED": 0})
 
     def test_mesh_report_is_deterministic(self):
         self.assertEqual(intr.canon(intr.conform_mesh(SNAPSHOT)), intr.canon(intr.conform_mesh(SNAPSHOT)))
