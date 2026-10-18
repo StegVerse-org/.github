@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Merge-admission input predicates for one PR head branch, from git data only.
+"""Merge-admission input predicates for one PR head branch.
 
-Stdlib only. No network request and no clock read: the inputs are the local clone
-(reflogs and objects) plus values the caller supplies — the declared session id,
-the hb_epoch, the check-run JSON for the head (required), the B1 base_ref (sha and
-commit time) and optionally GitHub branch activity. The output is one sealed JSON
+Stdlib only. No network request and no clock read. Only the branch-writer and
+binder predicates read the writing clone (reflogs and objects); everything else
+comes from values the caller supplies: the declared session id, the hb_epoch, the
+check-run JSON and expected jobs (passed to Lane A's pinned evaluator), the B1
+base_ref and the observed current base, and optionally GitHub branch activity. The output is one sealed JSON
 document (schema ``stegverse.admission-predicate-result/v2``). Every non-ALLOW
 predicate carries the six fields (failure_code, failed_predicate,
 required_evidence_or_repair, retry_entrypoint, owning_existing_goal, next_attempt).
@@ -17,15 +18,23 @@ UTF-8, ensure_ascii=False; value ``"sha256:" + hex``).
 
 Predicates (all evaluated after HB_EPOCH_SUPPLIED; ADMISSION_INPUT_READY only if every one is ALLOW)
   PR_AUTHOR_SESSION_DECLARED     --session-id matches the SV_CHANGE session pattern.
-  BRANCH_WRITER_IS_BRANCH_OWNER  branch created in this clone; every move of the
-      remote-tracking ref is "update by push" from this clone; last push == head;
-      every commit of range_base..head is in the local branch reflog; with
-      --activity, every server push/creation sha matches a local push.
-  ALL_JOBS_RAN_AND_PASSED        every check run in --check-runs is for the head and
-      completed/success; skipped, neutral, pending or absent is never a pass.
-  HEAD_CURRENT_WITH_BASE         head contains the supplied base_ref sha, and the head
-      commit is not older than --stale-days against the supplied base commit time.
-  BINDER_PINS_MATCH              (with --pin) pinned sha256s still match the bytes at head.
+  BRANCH_WRITER_IS_BRANCH_OWNER  (own code; the only predicate that reads git) branch
+      created in this clone; every move of the remote-tracking ref is "update by push"
+      from this clone; last push == head; every commit of range_base..head is in the
+      local branch reflog; with --activity, every server push/creation sha matches a
+      local push.
+  ALL_JOBS_RAN_AND_PASSED        DELEGATED to Lane A's job-observation predicate
+      (StegVerse-Labs/.github#3262), vendored at vendor/lane_a/ and loaded only when
+      its git blob sha and sha256 equal config/admission-predicate/lane-a-job-observation.pin.json
+      (TVC#519 pattern). P4 keeps no classifier: Lane A READY -> ALLOW, any FAIL ->
+      DENY REQUIRED_CHECK_DENIED, otherwise FAIL_CLOSED CHECK_SKIPPED_OR_UNOBSERVED
+      (TVC sv_change_job_observation mapping).
+  HEAD_CURRENT_WITH_BASE         judged only from supplied inputs, no git: the PR's
+      base_ref (--base-sha, the merge-base the head was built on, and its commit
+      time) against the observed current base (--current-base-sha and its commit
+      time), plus registry_generation / ledger_head when both sides are supplied
+      (TVC B1: unchanged since VERIFIED, else BASE_STALE).
+  BINDER_PINS_MATCH              (own code; with --pin) pinned sha256s still match the bytes at head.
 """
 
 from __future__ import annotations
@@ -37,6 +46,7 @@ import posixpath
 import re
 import subprocess
 import sys
+import types
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -193,64 +203,96 @@ def p_writer(a, head: str, range_base: str) -> dict:
     return r
 
 
-def p_jobs(a, head: str, runs_raw: bytes) -> dict:
-    data = json.loads(runs_raw.decode("utf-8"))
-    runs = data.get("check_runs", []) if isinstance(data, dict) else data
-    jobs, unobserved, denied = [], [], []
-    for x in runs:
-        sha = x.get("head_sha")
-        ok = x.get("status") == "completed" and x.get("conclusion") == "success" and (not sha or sha == head)
-        jobs.append({"name": x.get("name"), "head_sha": sha, "status": x.get("status"),
-                     "conclusion": x.get("conclusion"), "url": x.get("html_url"), "pass": ok})
-        if sha and sha != head:
-            unobserved.append(f"{x.get('name')}: check run is for {sha[:12]}, not head")
-        elif x.get("status") == "completed" and x.get("conclusion") in ("failure", "timed_out", "action_required"):
-            denied.append(f"{x.get('name')}: {x.get('conclusion')}")
-        elif not ok:
-            unobserved.append(f"{x.get('name')}: {x.get('status')}/{x.get('conclusion')} is not a pass")
-    names = {j["name"] for j in jobs}
-    unobserved += [f"required job {n} has no check run at head" for n in (a.required or []) if n not in names]
-    if not jobs:
-        unobserved.append("no check runs at head")
-    r = row("ALL_JOBS_RAN_AND_PASSED", head=head, jobs=jobs,
-            required=a.required or "every check run at head", problems=denied + unobserved)
-    if denied:
-        refuse(r, a, "REQUIRED_CHECK_DENIED", "every job at the exact head concludes success",
-               "a repair pushed to the head branch; checks rerun on pull_request", disposition="DENY")
-    elif unobserved:
-        refuse(r, a, "CHECK_SKIPPED_OR_UNOBSERVED",
-               "every job at the exact head runs and concludes success (a PR-safe variant for dispatch-only jobs), "
-               "or a declared transition removes the job from the required set",
-               "rerun this predicate on the head's check runs once every job has run")
-    return r
+LANE_A_PIN = Path(__file__).resolve().parents[1] / "config" / "admission-predicate" / "lane-a-job-observation.pin.json"
 
 
-def p_base(a, head: str) -> dict:
+def git_blob_sha(data: bytes) -> str:
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+
+
+def load_job_observation_reference(pin_path: Path | None = None):
+    """Lane A's module iff the vendored bytes equal the pin (git blob sha AND sha256); else (None, reason)."""
+    pin_path = pin_path if pin_path is not None else LANE_A_PIN
+    try:
+        pin = json.loads(pin_path.read_text(encoding="utf-8"))
+        want = (pin.get("producer") or {}).get("git_blob_sha")
+        path = pin_path.resolve().parents[2] / pin["vendored_path"]
+        data = path.read_bytes()
+        got_blob, got_sha = git_blob_sha(data), hashlib.sha256(data).hexdigest()
+        ref = {"pin_file": str(pin_path.relative_to(pin_path.resolve().parents[2])), "producer": pin.get("producer"),
+               "vendored_path": pin["vendored_path"], "pinned_sha256": pin.get("sha256"), "vendored_sha256": got_sha,
+               "pinned_git_blob_sha": want, "vendored_git_blob_sha": got_blob}
+        if not isinstance(want, str) or len(want) != 40 or got_blob != want or got_sha != pin.get("sha256"):
+            return None, ref, "vendored bytes do not equal the pin (git blob sha / sha256)"
+        mod = types.ModuleType("lane_a_evaluate_admission_job_observation")
+        exec(compile(data, str(path), "exec"), mod.__dict__)  # noqa: S102 - pinned bytes only
+        if mod.__dict__.get("SCHEMA") != pin.get("result_schema"):
+            return None, ref, "vendored module schema != pin result_schema"
+        return mod, ref, None
+    except Exception as exc:  # unreadable pin or bytes -> unavailable, fail closed
+        return None, {"pin_file": str(pin_path)}, f"reference unreadable: {exc}"
+
+
+def p_jobs(a, head: str) -> tuple[dict, dict | None]:
+    r = row("ALL_JOBS_RAN_AND_PASSED", delegated_to="StegVerse-Labs/.github#3262 scripts/evaluate_admission_job_observation.py")
+    mod, ref, why = load_job_observation_reference()
+    r["reference"] = ref
+    if mod is None:
+        return refuse(r, a, "JOB_OBSERVATION_REFERENCE_UNAVAILABLE",
+                      f"vendored Lane A evaluator bytes equal to its pin ({why})",
+                      "re-vendor the pinned bytes or re-pin to a new #3262 head"), None
+    try:
+        doc = json.loads(Path(a.check_runs).read_text(encoding="utf-8")) if a.check_runs else None
+        if doc is None:
+            raise ValueError("no --check-runs document supplied")
+        record = mod.evaluate(doc, head, list(a.expect or []))
+    except (ValueError, OSError, json.JSONDecodeError) as exc:
+        return refuse(r, a, "CHECK_SKIPPED_OR_UNOBSERVED",
+                      f"a check-runs document for the head and a declared --expect list (Lane A refused: {exc})",
+                      "rerun with --check-runs and --expect supplied"), None
+    r["lane_a_decision"] = record["decision"]
+    if record["decision"] == mod.READY:
+        return r, record
+    if record["counts"].get(mod.FAIL):
+        return refuse(r, a, "REQUIRED_CHECK_DENIED", "every expected job at the exact head concludes success",
+                      "a repair pushed to the head branch; checks rerun on pull_request", disposition="DENY"), record
+    return refuse(r, a, "CHECK_SKIPPED_OR_UNOBSERVED",
+                  "every expected job at the exact head runs and concludes success (a skipped, pending, "
+                  "path-filtered or other-head run is never a pass)",
+                  "rerun on the head's check runs once every expected job has run"), record
+
+
+def p_base(a) -> dict:
+    """B1 currency from supplied inputs only; no git is read."""
     base = {"sha": a.base_sha, "commit_time": a.base_commit_time,
             "registry_generation": a.base_registry_generation, "ledger_head": a.base_ledger_head}
-    r = row("HEAD_CURRENT_WITH_BASE", base_ref=base, stale_days_limit=a.stale_days,
-            time_source="supplied base_ref commit_time vs head committer timestamp (no clock read)")
-    if not a.base_sha or a.base_commit_time is None:
-        return refuse(r, a, "BASE_STATE_NOT_OBSERVED", "supply --base-sha and --base-commit-time (B1 base_ref)",
-                      "rerun with the base_ref supplied")
-    if git(a.clone, "cat-file", "-t", a.base_sha, check=False).strip() != "commit":
-        return refuse(r, a, "BASE_STATE_NOT_OBSERVED", f"base_ref sha {a.base_sha} present in the clone (fetch it)",
-                      "rerun after the base_ref commit is fetched")
-    contains = subprocess.run(["git", "-C", str(a.clone), "merge-base", "--is-ancestor", a.base_sha, head]).returncode == 0
-    behind = int(git(a.clone, "rev-list", "--count", f"{head}..{a.base_sha}").strip() or 0)
-    head_ct = int(git(a.clone, "show", "-s", "--format=%ct", head).strip())
-    age_days = round(max(0, a.base_commit_time - head_ct) / 86400, 2)
-    r.update(head_contains_base=contains, behind_base=behind, head_commit_time=head_ct,
-             head_age_days_vs_base=age_days)
-    problems = []
-    if not contains:
-        problems.append(f"head is {behind} commit(s) behind base_ref {a.base_sha[:12]}")
-    if a.stale_days is not None and age_days > a.stale_days:
-        problems.append(f"head commit is {age_days} days older than base_ref commit_time (limit {a.stale_days})")
-    r["problems"] = problems
-    if problems:
-        refuse(r, a, "BASE_STALE", "re-base or merge the base_ref into the head branch and re-run checks",
-               "BASE_ADVANCED_REVALIDATE: rerun this predicate after the head moves", disposition="DENY")
+    current = {"sha": a.current_base_sha, "commit_time": a.current_base_commit_time,
+               "registry_generation": a.current_registry_generation, "ledger_head": a.current_ledger_head}
+    r = row("HEAD_CURRENT_WITH_BASE", base_ref=base, current_base=current, stale_days_limit=a.stale_days,
+            evidence_source="supplied inputs only (no git, no clock)")
+    if not a.base_sha or not a.current_base_sha:
+        return refuse(r, a, "BASE_STATE_NOT_OBSERVED",
+                      "supply --base-sha (the PR's merge-base / base_ref) and --current-base-sha (observed base tip)",
+                      "rerun with both base inputs supplied")
+    moved = {}
+    if a.current_base_sha != a.base_sha:
+        moved["sha"] = {"verified": a.base_sha, "current": a.current_base_sha}
+    for key in ("registry_generation", "ledger_head"):
+        if base[key] is not None and current[key] is not None and base[key] != current[key]:
+            moved[key] = {"verified": base[key], "current": current[key]}
+    if a.stale_days is not None:
+        if a.base_commit_time is None or a.current_base_commit_time is None:
+            return refuse(r, a, "BASE_STATE_NOT_OBSERVED",
+                          "supply --base-commit-time and --current-base-commit-time for the --stale-days limit",
+                          "rerun with both commit times supplied")
+        age = round(max(0, a.current_base_commit_time - a.base_commit_time) / 86400, 2)
+        r["base_age_days"] = age
+        if age > a.stale_days:
+            moved["age_days"] = {"limit": a.stale_days, "observed": age}
+    r["moved"] = moved
+    if moved:
+        refuse(r, a, "BASE_STALE", "base_ref unchanged since the head was built (re-base or merge the base and re-run checks)",
+               "BASE_ADVANCED_REVALIDATE: rerun with the new merge-base after the head moves", disposition="DENY")
     return r
 
 
@@ -302,7 +344,8 @@ def evaluate(a) -> dict:
     range_base = a.range_base or a.base_sha
     if range_base and git(a.clone, "cat-file", "-t", range_base, check=False).strip() != "commit":
         range_base = None  # unresolvable range: the writer predicate fails closed, content stays empty
-    runs_raw = Path(a.check_runs).read_bytes()
+    runs_raw = Path(a.check_runs).read_bytes() if a.check_runs else None
+    job_record = None
     epoch_fail = hb_epoch_refusal(a)
     content: list = []
     if epoch_fail is not None:
@@ -312,7 +355,8 @@ def evaluate(a) -> dict:
         predicates = [p_session(a)]
         if writer is not None:
             predicates.append(writer)
-        predicates += [p_jobs(a, head, runs_raw), p_base(a, head)]
+        jobs, job_record = p_jobs(a, head)
+        predicates += [jobs, p_base(a)]
         if writer is None:
             predicates.insert(1, refuse(row("BRANCH_WRITER_IS_BRANCH_OWNER"), a, "BRANCH_HAS_FOREIGN_WRITER",
                                         "supply a --range-base/--base-sha commit present in the clone so the PR's own range is defined",
@@ -336,10 +380,14 @@ def evaluate(a) -> dict:
         "head": head,
         "base_ref": {"sha": a.base_sha, "commit_time": a.base_commit_time,
                      "registry_generation": a.base_registry_generation, "ledger_head": a.base_ledger_head},
+        "current_base": {"sha": a.current_base_sha, "commit_time": a.current_base_commit_time,
+                         "registry_generation": a.current_registry_generation, "ledger_head": a.current_ledger_head},
         "range_base": range_base,
         "content": sorted(content, key=lambda e: e["path"]),
         "change_digest": change_digest(content) if content else None,
-        "check_runs_input": {"path": str(a.check_runs), "digest": digest(runs_raw)},
+        "check_runs_input": {"path": str(a.check_runs), "digest": digest(runs_raw)} if runs_raw is not None else None,
+        "expected_jobs": sorted(set(a.expect or [])),
+        "job_observation": job_record,
         "hb_epoch": int(a.hb_epoch) if epoch_fail is None else None,
         "owning_existing_goal": a.goal,
         "admission_input": "admission-input-ready" if not failed else "not-ready",
@@ -358,15 +406,19 @@ def parse(argv: list[str]):
     p.add_argument("--branch", required=True)
     p.add_argument("--session-id", required=True, help="declared authoring session (declared input)")
     p.add_argument("--hb-epoch", required=True, help="carrier-supplied epoch, ASCII digits >= 32; no clock is read")
-    p.add_argument("--check-runs", required=True, help="GitHub check-runs JSON for the head (input, not fetched)")
-    p.add_argument("--base-sha", default=None, help="B1 base_ref sha")
-    p.add_argument("--base-commit-time", type=int, default=None, help="B1 base_ref commit time (unix seconds, supplied)")
-    p.add_argument("--base-registry-generation", type=int, default=None, help="B1 registry generation (carried, not evaluated)")
-    p.add_argument("--base-ledger-head", default=None, help="B1 ledger head (carried, not evaluated)")
+    p.add_argument("--check-runs", default=None, help="check-runs JSON for the head, passed to Lane A's evaluator")
+    p.add_argument("--expect", action="append", default=None, help="expected job name for Lane A (repeatable)")
+    p.add_argument("--base-sha", default=None, help="B1 base_ref: the PR's merge-base the head was built on")
+    p.add_argument("--base-commit-time", type=int, default=None, help="base_ref commit time (unix seconds, supplied)")
+    p.add_argument("--base-registry-generation", type=int, default=None)
+    p.add_argument("--base-ledger-head", default=None)
+    p.add_argument("--current-base-sha", default=None, help="observed current base tip (supplied)")
+    p.add_argument("--current-base-commit-time", type=int, default=None, help="current base tip commit time (supplied)")
+    p.add_argument("--current-registry-generation", type=int, default=None)
+    p.add_argument("--current-ledger-head", default=None)
     p.add_argument("--repository", default=None, help="target repository, e.g. owner/name")
     p.add_argument("--remote", default="origin")
     p.add_argument("--range-base", default=None, help="start of the PR's own range (stacked PRs); default --base-sha")
-    p.add_argument("--required", nargs="*", default=None)
     p.add_argument("--activity", default=None)
     p.add_argument("--stale-days", type=float, default=None)
     p.add_argument("--pin", nargs="*", default=[])

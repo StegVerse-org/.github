@@ -75,11 +75,13 @@ class Fixture:
         return str(path)
 
     def args(self, *extra: str, checks: str | None = None, epoch: str = "1000", session: str = SESSION,
-             base: tuple | None = None):
-        b = base or (self.base, self.base_time)
+             current: tuple | None = None, expect: tuple = ("a",)):
+        c = current or (self.base, self.base_time)
+        exp = [x for e in expect for x in ("--expect", e)]
         return ap.parse(["--clone", str(self.clone), "--branch", "lane/x", "--session-id", session,
-                         "--hb-epoch", epoch, "--check-runs", checks or self.checks({"a": "success"}),
-                         "--base-sha", b[0], "--base-commit-time", str(b[1]), *extra])
+                         "--hb-epoch", epoch, "--check-runs", checks or self.checks({"a": "success"}), *exp,
+                         "--base-sha", self.base, "--base-commit-time", str(self.base_time),
+                         "--current-base-sha", c[0], "--current-base-commit-time", str(c[1]), *extra])
 
 
 def pred(out: dict, name: str) -> dict:
@@ -128,8 +130,9 @@ class AdmissionPredicateTest(unittest.TestCase):
         path = self.f.checks({"a": "success"})
         out = ap.evaluate(self.f.args(checks=path))
         self.assertEqual("sha256:" + hashlib.sha256(Path(path).read_bytes()).hexdigest(), out["check_runs_input"]["digest"])
-        with self.assertRaises(SystemExit):
-            ap.parse(["--clone", "x", "--branch", "y", "--session-id", SESSION, "--hb-epoch", "100"])
+        self.assertEqual("stegverse.admission-job-observation/v1", out["job_observation"]["schema"])
+        self.assertEqual("ADMISSION_INPUT_READY", out["job_observation"]["decision"])
+        self.assertNotIn("jobs", pred(out, "ALL_JOBS_RAN_AND_PASSED"))  # no own classification rows
 
     def test_hb_epoch_missing_or_invalid_fails_closed(self) -> None:
         for epoch, code in (("", "HB_EPOCH_NOT_SUPPLIED"), ("12", "HB_EPOCH_INVALID"), ("1e3", "HB_EPOCH_INVALID")):
@@ -144,18 +147,53 @@ class AdmissionPredicateTest(unittest.TestCase):
         self.assertEqual("AUTHOR_SESSION_NOT_DECLARED", out["failure_code"])
         self.assertEqual({ap.UNKNOWN}, {e["writer_session"] for e in out["content"]})
 
-    def test_skipped_job_is_never_a_pass(self) -> None:
-        out = ap.evaluate(self.f.args(checks=self.f.checks({"a": "success", "scan": "skipped"})))
+    def test_skipped_job_is_never_a_pass_via_lane_a(self) -> None:
+        out = ap.evaluate(self.f.args(checks=self.f.checks({"a": "success", "scan": "skipped"}), expect=("a", "scan")))
         p = pred(out, "ALL_JOBS_RAN_AND_PASSED")
         self.assertEqual("CHECK_SKIPPED_OR_UNOBSERVED", p["failure_code"])
+        self.assertEqual("NOT_ADMISSION_INPUT_READY", out["job_observation"]["decision"])
         self.assertTrue(SIX <= p.keys())
         self.assertEqual("not-ready", out["admission_input"])
+
+    def test_path_filtered_expected_job_is_unobserved(self) -> None:
+        out = ap.evaluate(self.f.args(expect=("a", "never-triggered")))
+        self.assertEqual("CHECK_SKIPPED_OR_UNOBSERVED", pred(out, "ALL_JOBS_RAN_AND_PASSED")["failure_code"])
 
     def test_failed_job_is_denied_and_wrong_head_unobserved(self) -> None:
         out = ap.evaluate(self.f.args(checks=self.f.checks({"a": "failure"})))
         self.assertEqual("REQUIRED_CHECK_DENIED", pred(out, "ALL_JOBS_RAN_AND_PASSED")["failure_code"])
+        self.assertEqual("DENY", pred(out, "ALL_JOBS_RAN_AND_PASSED")["disposition"])
         out = ap.evaluate(self.f.args(checks=self.f.checks({"a": "success"}, sha="1" * 40)))
         self.assertEqual("CHECK_SKIPPED_OR_UNOBSERVED", pred(out, "ALL_JOBS_RAN_AND_PASSED")["failure_code"])
+
+    def test_no_expectation_or_no_document_fails_closed(self) -> None:
+        out = ap.evaluate(self.f.args(expect=()))
+        self.assertEqual("CHECK_SKIPPED_OR_UNOBSERVED", pred(out, "ALL_JOBS_RAN_AND_PASSED")["failure_code"])
+
+    def test_lane_a_pin_verified_and_tamper_fails_closed(self) -> None:
+        mod, ref, why = ap.load_job_observation_reference()
+        self.assertIsNotNone(mod, why)
+        self.assertEqual(ref["pinned_sha256"], ref["vendored_sha256"])
+        self.assertEqual(ref["pinned_git_blob_sha"], ref["vendored_git_blob_sha"])
+        root = Path(self._td.name) / "repo"
+        (root / "config" / "admission-predicate").mkdir(parents=True)
+        (root / "vendor" / "lane_a").mkdir(parents=True)
+        pin = json.loads(ap.LANE_A_PIN.read_text())
+        (root / "config" / "admission-predicate" / "p.json").write_text(json.dumps(pin))
+        src = (ap.LANE_A_PIN.resolve().parents[2] / pin["vendored_path"]).read_bytes()
+        (root / pin["vendored_path"]).write_bytes(src + b"# tampered\n")
+        mod, ref, why = ap.load_job_observation_reference(root / "config" / "admission-predicate" / "p.json")
+        self.assertIsNone(mod)
+        self.assertIn("do not equal the pin", why)
+        saved = ap.LANE_A_PIN
+        try:
+            ap.LANE_A_PIN = root / "config" / "admission-predicate" / "p.json"
+            out = ap.evaluate(self.f.args())
+        finally:
+            ap.LANE_A_PIN = saved
+        p = pred(out, "ALL_JOBS_RAN_AND_PASSED")
+        self.assertEqual("JOB_OBSERVATION_REFERENCE_UNAVAILABLE", p["failure_code"])
+        self.assertIsNone(out["job_observation"])
 
     def test_foreign_writer_fails_closed(self) -> None:
         other = self.f.td / "other"
@@ -176,23 +214,43 @@ class AdmissionPredicateTest(unittest.TestCase):
         out = ap.evaluate(self.f.args("--activity", str(act)))
         self.assertEqual("BRANCH_HAS_FOREIGN_WRITER", pred(out, "BRANCH_WRITER_IS_BRANCH_OWNER")["failure_code"])
 
-    def test_base_stale_against_supplied_base_ref(self) -> None:
-        moved = commit(self.f.seed, "README", b"moved\n", "base moves", "2026-10-20T00:00:00Z")
-        run(self.f.seed, "push", "-q", "origin", "HEAD:main")
-        run(self.f.clone, "fetch", "-q", "origin", "main")
-        moved_time = int(run(self.f.clone, "show", "-s", "--format=%ct", moved))
-        out = ap.evaluate(self.f.args("--stale-days", "7", base=(moved, moved_time)))
+    def test_base_stale_from_supplied_inputs_only(self) -> None:
+        later = self.f.base_time + 10 * 86400
+        out = ap.evaluate(self.f.args("--stale-days", "7", current=("9" * 40, later)))
         p = pred(out, "HEAD_CURRENT_WITH_BASE")
         self.assertEqual("BASE_STALE", p["failure_code"])
         self.assertEqual("DENY", p["disposition"])
-        self.assertEqual(1, p["behind_base"])
-        self.assertGreater(p["head_age_days_vs_base"], 7)
-        # the old supplied base_ref still holds, whatever the local branch state is
+        self.assertEqual({"sha", "age_days"}, set(p["moved"]))
+        # the current base sha need not exist in the clone: staleness reads no git
         self.assertTrue(pred(ap.evaluate(self.f.args()), "HEAD_CURRENT_WITH_BASE")["holds"])
 
-    def test_base_ref_not_observed(self) -> None:
-        out = ap.evaluate(self.f.args(base=("2" * 40, 1)))
-        self.assertEqual("BASE_STATE_NOT_OBSERVED", pred(out, "HEAD_CURRENT_WITH_BASE")["failure_code"])
+    def test_registry_generation_and_ledger_head_compared_when_supplied(self) -> None:
+        out = ap.evaluate(self.f.args("--base-registry-generation", "319", "--current-registry-generation", "320",
+                                      "--base-ledger-head", "L1", "--current-ledger-head", "L1"))
+        p = pred(out, "HEAD_CURRENT_WITH_BASE")
+        self.assertEqual("BASE_STALE", p["failure_code"])
+        self.assertEqual({"registry_generation"}, set(p["moved"]))
+
+    def test_base_state_not_observed(self) -> None:
+        a = self.f.args()
+        a.current_base_sha = None
+        self.assertEqual("BASE_STATE_NOT_OBSERVED", pred(ap.evaluate(a), "HEAD_CURRENT_WITH_BASE")["failure_code"])
+        out = ap.evaluate(self.f.args("--stale-days", "7"))
+        self.assertTrue(pred(out, "HEAD_CURRENT_WITH_BASE")["holds"])
+
+    def test_staleness_makes_no_git_call(self) -> None:
+        import subprocess as sp
+        calls = []
+        real = sp.run
+        def spy(cmd, *a, **k):
+            calls.append(cmd)
+            return real(cmd, *a, **k)
+        ap.subprocess.run = spy
+        try:
+            ap.p_base(self.f.args("--stale-days", "7"))
+        finally:
+            ap.subprocess.run = real
+        self.assertEqual([], calls)
 
     def test_binder_pin_mismatch(self) -> None:
         commit(self.f.clone, "vendor/v.txt", b"tampered\n", "tamper", "2026-10-02T00:02:00Z")

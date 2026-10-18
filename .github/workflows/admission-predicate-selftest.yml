@@ -8,6 +8,8 @@ on:
     paths:
       - "resident-runtime/admission_predicate.py"
       - "tests/test_admission_predicate.py"
+      - "vendor/lane_a/**"
+      - "config/admission-predicate/**"
       - ".github/workflows/admission-predicate-selftest.yml"
 
 permissions:
