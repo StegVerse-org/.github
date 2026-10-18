@@ -135,7 +135,7 @@ class StatementTests(unittest.TestCase):
             payload=payload, standing=GENESIS,
             transition_reference="intr:transition:reconstruct",
             authority_effect="NONE", packet_id="reconstruct-1")
-        recovered = kernel.recover_packet(kernel.carrier_frame(packet))
+        recovered = kernel.recover_packet(kernel.carrier_frame(packet, epoch=kernel.HB_ANCHOR_EPOCH + 1))
         self.assertEqual(
             attestation.statement_from_packet(packet, kernel.sha(payload)),
             attestation.statement_from_packet(recovered, kernel.sha(recovered["payload"])))

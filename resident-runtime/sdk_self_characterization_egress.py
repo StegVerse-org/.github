@@ -223,9 +223,22 @@ def build_packet(req):
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--request",type=Path,required=True); ap.add_argument("--packet-out",type=Path,required=True); ap.add_argument("--frame-out",type=Path); ap.add_argument("--submit",action="store_true"); ap.add_argument("--mesh-root",type=Path,default=None)
+    ap.add_argument("--hb-epoch",type=str,default=None,help="the carrier's epoch as supplied; never derived from a clock")
     a=ap.parse_args(); req=json.loads(a.request.read_text())
+    ispec=importlib.util.spec_from_file_location("sdk_egress_epoch_rule",ROOT/"org-boundary/runtime/capability_ingress.py")
+    rule=importlib.util.module_from_spec(ispec); ispec.loader.exec_module(rule)
+    failure=rule.supplied_epoch_failure(a.hb_epoch)
+    if failure is not None:
+        print(json.dumps({"status":"FAIL_CLOSED","disposition":"FAIL_CLOSED","failure_code":failure[0],"detail":failure[1],
+            "failed_predicate":rule.HB_EPOCH_PREDICATE,
+            "required_evidence_or_repair":"supply --hb-epoch from the carrier: ASCII digits with value >= 32; it is never derived from a clock",
+            "retry_entrypoint":"resident-runtime/sdk_self_characterization_egress.py (--hb-epoch)",
+            "owning_existing_goal":rule.INTR_PROTOCOL_GOAL,
+            "next_attempt":"build again with the supplied epoch; no packet or frame was written",
+            "derived_from_clock":False,"consequence_committed":False},sort_keys=True))
+        return 1
     manifest,transport=validate_request(req)
-    packet=build_packet(req); frame=K.carrier_frame(packet)
+    packet=build_packet(req); frame=K.carrier_frame(packet,epoch=int(a.hb_epoch))
     a.packet_out.parent.mkdir(parents=True,exist_ok=True); a.packet_out.write_text(json.dumps(packet,indent=2,sort_keys=True)+"\n")
     if a.frame_out:
         a.frame_out.parent.mkdir(parents=True,exist_ok=True); a.frame_out.write_text(json.dumps(frame,indent=2,sort_keys=True)+"\n")

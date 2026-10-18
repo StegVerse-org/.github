@@ -47,7 +47,25 @@ def refusal(failed_predicate: str, repair: str) -> dict:
             "consequence_committed":False,"authority_effect":"NONE_REFUSAL_ONLY"}
 
 
-def submit(*, sdk_root: Path, mesh_root: Path, state_root: Path, authority_ref: str) -> dict:
+def epoch_refusal(hb_epoch) -> dict | None:
+    """The shared supplied-epoch rule; a six-field FAIL_CLOSED refusal or None. No clock is read."""
+    spec=importlib.util.spec_from_file_location("sv002_epoch_rule",ROOT/"org-boundary/runtime/capability_ingress.py")
+    rule=importlib.util.module_from_spec(spec); spec.loader.exec_module(rule)
+    failure=rule.supplied_epoch_failure(hb_epoch)
+    if failure is None:
+        return None
+    return {**refusal(rule.HB_EPOCH_PREDICATE,
+                      "supply --hb-epoch from the carrier: ASCII digits with value >= 32; it is never derived from a clock"),
+            "failure_code":failure[0],"detail":failure[1],
+            "owning_existing_goal":rule.INTR_PROTOCOL_GOAL,
+            "next_attempt":"submit again with the supplied epoch; nothing was published",
+            "derived_from_clock":False}
+
+
+def submit(*, sdk_root: Path, mesh_root: Path, state_root: Path, authority_ref: str, hb_epoch=None) -> dict:
+    refused=epoch_refusal(hb_epoch)
+    if refused is not None:
+        return refused
     if not (Path(sdk_root)/SDK_BOOTSTRAP).is_file():
         return refusal("STEGVERSE_SDK_SOURCE_SUPPLIED", "supply --sdk-root containing "+SDK_BOOTSTRAP)
     boot=load_module("sv002_sdk_bootstrap",Path(sdk_root)/SDK_BOOTSTRAP)
@@ -55,7 +73,7 @@ def submit(*, sdk_root: Path, mesh_root: Path, state_root: Path, authority_ref: 
     kernel=egress.K
     request=boot.build_sv002_first_interlock_request(authority_ref)
     packet=egress.build_packet(request)
-    frame=kernel.carrier_frame(packet)
+    frame=kernel.carrier_frame(packet,epoch=int(str(hb_epoch)))
     published=kernel.publish_frame(frame,root=mesh_root)
     state=Path(state_root).expanduser().resolve(); state.mkdir(parents=True,exist_ok=True)
     for name,value in (("SDK_REQUEST.json",request),("SDK_EGRESS_PACKET.json",packet),("SDK_EGRESS_FRAME.json",frame)):
@@ -87,13 +105,14 @@ def main() -> int:
     ap.add_argument("--sdk-root",type=Path,required=True)
     ap.add_argument("--mesh-root",type=Path,required=True)
     ap.add_argument("--state-root",type=Path,required=True)
+    ap.add_argument("--hb-epoch",type=str,default=None,help="the carrier's epoch as supplied; never derived from a clock")
     args=ap.parse_args()
     hosted=[k for k in HOSTED_ENV if truthy(os.getenv(k))]
     if hosted: raise SystemExit("hosted runtime prohibited: "+",".join(hosted))
     creds=[k for k in FORBIDDEN_CREDENTIAL_ENV if truthy(os.getenv(k))]
     if creds: raise SystemExit("credential-bearing hosted/runtime environment prohibited: "+",".join(creds))
     receipt=submit(sdk_root=args.sdk_root,mesh_root=args.mesh_root,state_root=args.state_root,
-                   authority_ref=args.authority_ref)
+                   authority_ref=args.authority_ref,hb_epoch=args.hb_epoch)
     print(json.dumps(receipt,sort_keys=True))
     return 0 if receipt["disposition"]=="ALLOW" else 1
 
