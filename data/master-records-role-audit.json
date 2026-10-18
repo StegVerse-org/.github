@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 152,
+      "PROPER": 155,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 20,
-      "total": 191
+      "total": 194
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1398,6 +1398,27 @@
       "text": "\"MASTER_RECORDS_RECONSTRUCTED\", \"END_TO_END\")",
       "classification": "NAMING_ONLY",
       "reason": "Registry-wide completion evidence class, named so terminal tasks can be held to it; renaming it is a registry-wide vocabulary migration requiring its own registration. Classified, not renamed."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+      "line": 240,
+      "text": "\"master_records_in_path\": false,",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of StegVerse-Labs/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+      "line": 240,
+      "text": "\"master_records_in_path\": false,",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of StegVerse-org/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+      "line": 262,
+      "text": "\"master_records_in_path\": false,",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of StegVerse-org/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
     }
   ]
 }
