@@ -1,0 +1,25 @@
+name: Admission Predicate Selftest
+
+# Offline selftests for resident-runtime/admission_predicate.py: temporary git
+# repositories only, no network, no ledger, no schedule.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "resident-runtime/admission_predicate.py"
+      - "tests/test_admission_predicate.py"
+      - ".github/workflows/admission-predicate-selftest.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Admission predicate selftests
+        run: python -m unittest -v tests.test_admission_predicate
