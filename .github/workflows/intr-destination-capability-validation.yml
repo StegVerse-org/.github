@@ -12,6 +12,7 @@ on:
       - 'resident-runtime/intr_destination_ingress.py'
       - 'resident-runtime/organization_egress_boundary.py'
       - 'tests/test_intr_destination_capability.py'
+      - 'tests/test_egress_close_response_absent_fail_closed.py'
       - 'docs/INTR_DESTINATION_CAPABILITY_MIRROR_HANDOFF.md'
       - '.github/workflows/intr-destination-capability-validation.yml'
   push:
@@ -25,6 +26,7 @@ on:
       - 'resident-runtime/intr_destination_ingress.py'
       - 'resident-runtime/organization_egress_boundary.py'
       - 'tests/test_intr_destination_capability.py'
+      - 'tests/test_egress_close_response_absent_fail_closed.py'
       - 'docs/INTR_DESTINATION_CAPABILITY_MIRROR_HANDOFF.md'
       - '.github/workflows/intr-destination-capability-validation.yml'
   workflow_dispatch:
@@ -64,3 +66,12 @@ jobs:
           STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
         run: python -m unittest tests.test_intr_destination_capability -v
+
+      # A close with no response in the mesh fails closed with
+      # DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION and the six fields,
+      # and appends nothing at either ledger level.
+      - name: Validate that close with no response fails closed and records nothing
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/org-ledger
+        run: python -m unittest tests.test_egress_close_response_absent_fail_closed -v
