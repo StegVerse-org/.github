@@ -126,10 +126,14 @@ class OrganizationReceiptTests(unittest.TestCase):
             b = self._append(second, hb_epoch=EPOCH + 1)
             self.assertNotEqual(a["receipt_sha256"], b["receipt_sha256"])
 
-    def test_an_organization_receipt_without_a_tick_marks_itself_derived(self):
+    def test_an_organization_receipt_without_a_tick_is_refused_and_writes_nothing(self):
+        # PR-1c (owner decision: this used to pin the clock fallback, which
+        # derived the epoch and marked it derived_from_clock true).
         with tempfile.TemporaryDirectory() as root:
-            receipt = self._append(root, hb_epoch=None)
-            self.assertIs(receipt["hb_reference"]["derived_from_clock"], True)
+            with self.assertRaises(org.OrgLedgerEpochRefused) as refused:
+                self._append(root, hb_epoch=None)
+            self.assertEqual(refused.exception.refusal["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+            self.assertEqual(list(Path(root).iterdir()), [])
 
     def test_the_chain_still_links_and_validates_across_appends(self):
         """Replacing the time field must not disturb the hash chain."""
