@@ -7,14 +7,17 @@ organization binds merge_transfer.py, unchanged.
 
 The git-store tests here use a contract whose pin also names this organization, and Lane D's modules as pinned
 byte copies in a checkout layout (tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/:
-ledger_gitstore.py sha256 3c3ec97d..., merge_transfer_gitstore.py sha256 bf9f1c15...), so the real
+ledger_gitstore.py sha256 258e1cf5..., merge_transfer_gitstore.py sha256 bf9f1c15...), so the real
 ledger_gitstore.append runs on this organization's own writer surface over temporary ledgers at the pinned tip.
 Every receipt written is NOT LEDGERED and NOT AUTHENTIC.
 """
 from __future__ import annotations
 
 import copy
+import os
+import subprocess
 import tempfile
+from unittest import mock
 import importlib.util
 import json
 import sys
@@ -107,7 +110,7 @@ class Selection(unittest.TestCase):
             self.assertEqual((pin["path"], pin["mode"]), ("resident-runtime/merge_transfer_gitstore.py", "dual"))
             self.assertEqual(pin["ledger_module"]["path"], "resident-runtime/ledger_gitstore.py")
             self.assertEqual(pin["ledger_module"]["sha256"],
-                             "sha256:3c3ec97dcc10aa17afb8858b03d5ac7261290e84efb52576fbabc1370d8d917c")
+                             "sha256:258e1cf555d8080a3174ac1962dff2d735ccbb1caa01a4966c1bddd3e2e09241")
             chosen = pl.binding(ROOT, organization=org, module_root=CHECKOUT)
             self.assertEqual((chosen.kind, chosen.mode, chosen.verifier, chosen.writer_module),
                              ("MERGE_TRANSFER_GITSTORE", "dual", "resident-runtime/merge_transfer_gitstore.py verify",
@@ -224,6 +227,98 @@ class GitstoreBackend(unittest.TestCase):
             finally:
                 bound.close()
         self.run_both(check)
+
+
+
+class TwoLevelPreflight(unittest.TestCase):
+    """ledger_gitstore.py (258e1cf5) checks both halves' locations before either is written, and rolls back by
+    compare-and-swap. Its refusals reach the path results with six fields, and both halves' tips stay where they
+    were (in this layout the repository chain lives on the organization ledger ref, so every ref and every
+    document of the temporary ledger is compared)."""
+
+    PREFLIGHT = "LEDGER_TWO_LEVEL_PREFLIGHT_REFUSED"
+    ROLLBACK = "LEDGER_TWO_LEVEL_ROLLBACK_FAILED"
+
+    def setUp(self):
+        self.ledger = TempLedger(ROOT, EXPECTED["ledger_tip"], NAMESPACE, git=True)
+        self.addCleanup(self.ledger.close)
+        self.binding = gitstore()
+        self.bound = Bound(self.binding)
+        self.addCleanup(self.bound.close)
+        for commit in EXPECTED.get("temp_merge_transfers") or []:   # temp copies only; not ledgered
+            self.assertEqual(pt.ledger.append_merge_transfer(commit)["disposition"], "ALLOW")
+
+    def tips(self):
+        refs = subprocess.run(["git", "--git-dir", str(self.ledger.root), "for-each-ref",
+                               "--format=%(refname) %(objectname)"], check=True, capture_output=True, text=True).stdout
+        return refs, self.ledger.files()
+
+    def six(self, result):
+        for field in SIX:
+            self.assertTrue(result.get(field), (field, result))
+
+    def broken(self, env):
+        saved = {k: os.environ.get(k) for k in env}
+        os.environ.update(env)
+
+        def restore():
+            for k, v in saved.items():
+                os.environ.pop(k, None)
+                if v is not None:
+                    os.environ[k] = v
+        self.addCleanup(restore)
+        return restore
+
+    def test_preflight_refusals_surface_with_six_fields_and_both_tips_stay_unchanged(self):
+        commit = EXPECTED["verified_transfer_commit"]
+        cases = {
+            "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF":
+                {"STEGVERSE_ORG_LEDGER_GIT_REF": "refs/heads/organization-ledger/elsewhere"},
+            "REPOSITORY_LEDGER_REF_IS_THE_DECLARED_REF":
+                {"STEGVERSE_REPO_LEDGER_ROOT": "git+%s#refs/heads/organization-ledger/elsewhere:%s"
+                                               % (self.ledger.root, NAMESPACE)},
+            "ORGANIZATION_LEDGER_GIT_DIR_EXISTS":
+                {"STEGVERSE_ORG_LEDGER_ROOT": "git+%s#refs/stegverse/organization-ledger" % (Path(self.ledger.dir.name) / "absent.git"),
+                 "STEGVERSE_ORG_LEDGER_GIT_DIR": str(Path(self.ledger.dir.name) / "absent.git")},
+        }
+        for predicate, env in cases.items():
+            with self.subTest(predicate=predicate):
+                before = self.tips()
+                restore = self.broken(env)
+                try:
+                    merge = pt.ledger.append_merge_transfer(commit)
+                    paths = pt.append_transfers(commit)
+                finally:
+                    restore()
+                self.assertEqual((merge["disposition"], merge["failure_code"], merge["failed_predicate"]),
+                                 ("FAIL_CLOSED", self.PREFLIGHT, predicate), merge)
+                self.six(merge)
+                # one transfer-level refusal when the broken location also hides the transfer from the readers,
+                # else one refusal per declared path
+                self.assertIn(len(paths), (1, 7))
+                for result in paths:
+                    self.assertEqual(result["disposition"], "FAIL_CLOSED", result)
+                    self.six(result)
+                if predicate == "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF":
+                    # the readers still find the transfer, so the refusal is the writer's own preflight
+                    self.assertEqual({(r["failure_code"], r["failed_predicate"]) for r in paths},
+                                     {(self.PREFLIGHT, predicate)})
+                self.assertEqual(self.tips(), before)
+
+    def test_a_rollback_that_cannot_restore_a_tip_surfaces_with_six_fields(self):
+        lg = self.binding.lg
+        failed = lg.TwoLevelAppendRefused(lg._refusal(
+            self.ROLLBACK, "A_FAILED_TWO_LEVEL_APPEND_LEAVES_BOTH_REFS_AT_THEIR_PRIOR_TIPS",
+            "a ref moved by the failed append could not be compare-and-swapped back; inspect " + str(self.ledger.root),
+            "restore the listed refs to their prior tips before any further append"))
+        before = self.tips()
+        with mock.patch.object(lg, "append", side_effect=failed):
+            paths = pt.append_transfers(EXPECTED["verified_transfer_commit"])
+        self.assertEqual(len(paths), 7)
+        for result in paths:
+            self.assertEqual((result["disposition"], result["failure_code"]), ("FAIL_CLOSED", self.ROLLBACK), result)
+            self.six(result)
+        self.assertEqual(self.tips(), before)
 
 
 if __name__ == "__main__":

@@ -232,12 +232,23 @@ class GitstoreBinding:
                 "evidence, hb_epoch, *, operation, profile_id, boundary_extra, root)",
                 WRITER_ENTRYPOINT, "re-run once the writer lands in this organization; nothing was written",
                 detail=self.pin["path"] + " is carried without resident-runtime/ledger_gitstore.py"))
-        appended, replayed = self.lg.append(transition_class, packet_id, dict(evidence), epoch, operation=operation,
-                                            profile_id=profile_id, boundary_extra=dict(boundary_extra), root=self.root)
+        # ledger_gitstore's two-level preflight (LEDGER_TWO_LEVEL_PREFLIGHT_REFUSED, before either half is written)
+        # and its compare-and-swap rollback (LEDGER_TWO_LEVEL_ROLLBACK_FAILED) surface with their six fields.
+        two_level = getattr(self.lg, "TwoLevelAppendRefused", ())
+        try:
+            appended, replayed = self.lg.append(transition_class, packet_id, dict(evidence), epoch,
+                                                operation=operation, profile_id=profile_id,
+                                                boundary_extra=dict(boundary_extra), root=self.root)
+        except two_level as exc:
+            raise Refused(dict(exc.refusal)) from exc
         return appended, bool(replayed)
 
     def append_merge_transfer(self, commit: str) -> dict[str, Any]:
-        return self.gs.append_merge_transfer(self.gs.commit_facts(commit, self.root), root=self.root)
+        """ledger_gitstore.append_merge_transfer (all or nothing) where the writer carries it."""
+        facts = self.gs.commit_facts(commit, self.root)
+        if self.lg is not None and callable(getattr(self.lg, "append_merge_transfer", None)):
+            return self.lg.append_merge_transfer(facts, root=self.root)
+        return self.gs.append_merge_transfer(facts, root=self.root)
 
 
 class UnboundBinding:
