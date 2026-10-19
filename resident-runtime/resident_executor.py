@@ -15,7 +15,6 @@ invoked as its own action.
 """
 from __future__ import annotations
 import argparse, json, os, subprocess, sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -95,7 +94,10 @@ def main():
     state={
         "schema":"stegverse.organization-resident-executor/v2",
         "organization":"StegVerse-org",
-        "observed_at":datetime.now(timezone.utc).isoformat(),
+        # The cycle's supplied heartbeat reference, not a host-clock reading:
+        # an unmarked wall-clock observed_at used to be stamped here. A refused
+        # cycle has none, and the record says so with null.
+        "heartbeat_reference":(fed or {}).get("heartbeat_reference"),
         "materialization":"ONE_CYCLE_PER_INVOCATION",
         "disposition":"ALLOW" if allowed else "FAIL_CLOSED",
         "failed_predicate":(None if allowed else

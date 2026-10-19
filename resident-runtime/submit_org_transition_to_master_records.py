@@ -52,6 +52,7 @@ REFUSALS={
  "ORGANIZATION_RECEIPT_SELF_DIGEST_MATCHES":("MASTER_RECORDS_RELEASE_RECEIPT_DIGEST_MISMATCH","supply the receipt bytes exactly as appended to the organization ledger; only an appended receipt is released"),
  "ORGANIZATION_RECEIPT_CHAIN_SEGMENT_IS_CONTIGUOUS":("MASTER_RECORDS_RELEASE_SEGMENT_NOT_CONTIGUOUS","supply a contiguous segment in chain order: each receipt's previous_receipt_sha256 names the receipt before it"),
  "STANDING_DECLARES_PREDECESSOR":("MASTER_RECORDS_RELEASE_STANDING_UNDECLARED","standing must declare the predecessor key; null is explicit genesis"),
+ "RELEASED_SEGMENT_HEAD_CARRIES_A_SUPPLIED_EPOCH":("MASTER_RECORDS_RELEASE_HEAD_EPOCH_NOT_CARRIED","release a segment whose head receipt carries a supplied epoch (hb_reference.epoch an int >= 32, derived_from_clock false); a clock-derived or absent one is never stamped on the frame as supplied"),
  "PACKET_PUBLISHED_TO_SUPPLIED_MESH":("MASTER_RECORDS_RELEASE_NOT_PUBLISHED","repair the packet or mesh the kernel refused"),
 }
 class ReleaseRefused(Exception):
@@ -94,6 +95,16 @@ def build_released_batch_packet(receipts,predecessor_ecosystem_state_sha256,succ
   "predecessor_ecosystem_state_sha256":predecessor_ecosystem_state_sha256,"successor_ecosystem_state_sha256":successor_ecosystem_state_sha256,
   "relation_evidence":relation_evidence,"authority_transfer":False,"gates_organization_runtime_reality":False,"awaited_by_organization":False}
  return K.build_packet(origin_org=ORGANIZATION,origin_service=ORIGIN_SERVICE,destination_org=DESTINATION_ORG,destination_service=DESTINATION_SERVICE,payload=payload,standing=standing,transition_reference=TRANSITION_REFERENCE,authority_effect="NONE")
+def carried_head_epoch(head):
+ """The supplied epoch the segment's head receipt carries, or ReleaseRefused. No clock is read."""
+ reference=head.get("hb_reference")
+ epoch=reference.get("epoch") if isinstance(reference,dict) else None
+ failure=AGG.supplied_epoch_failure(epoch,reference)
+ if failure is None and reference.get("derived_from_clock") is not False:
+  failure=("HB_EPOCH_INVALID","the head heartbeat reference does not say derived_from_clock false")
+ if failure is not None:
+  raise ReleaseRefused("RELEASED_SEGMENT_HEAD_CARRIES_A_SUPPLIED_EPOCH",failure[0]+": "+failure[1])
+ return int(str(epoch))
 def release(a):
  if a.mesh_root is None:raise ReleaseRefused("MESH_ROOT_SUPPLIED","no --mesh-root")
  try:
@@ -106,7 +117,14 @@ def release(a):
  # segment again publishes the same frame -- a write-once no-op -- instead of a
  # second record request stamped by the host clock. Publication is
  # fire-and-forget evidence: no answer is requested and nothing waits for it.
- try:published=K.publish_packet(packet,root=a.mesh_root,epoch=(receipts[-1].get("hb_reference") or {}).get("epoch"))
+ # That epoch is CARRIED, not supplied: it is used only when the head receipt
+ # says it was supplied, and the frame payload names where it came from. A
+ # clock-derived or absent head epoch is refused rather than stamped on the
+ # frame as derived_from_clock false (or sampled from this host's clock).
+ epoch=carried_head_epoch(receipts[-1])
+ packet["payload"]["hb_epoch_provenance"]={"source":"CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT",
+  "head_receipt_sha256":receipts[-1]["receipt_sha256"],"derived_from_clock":False}
+ try:published=K.publish_packet(packet,root=a.mesh_root,epoch=epoch)
  except (OSError,ValueError,KeyError,TypeError) as exc:raise ReleaseRefused("PACKET_PUBLISHED_TO_SUPPLIED_MESH",str(exc))
  return {"status":"PUBLISHED_FOR_ORGANIZATION_RECORD","disposition":"ALLOW","packet_id":packet["packet_id"],"receipt_count":len(receipts),
   "frame_sha256":published["frame"]["frame_sha256"],"organization_transition_blocked":False,"master_records_awaited":False,

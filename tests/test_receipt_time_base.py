@@ -458,6 +458,81 @@ class IngressEpochProvenanceProbe(unittest.TestCase):
         self.assertEqual(self.org_receipts(), [])
 
 
+class ClockProbeTests(unittest.TestCase):
+    """B-P36g marker rule: under a fixed clock, no writer route reads it, and every clock value is marked."""
+
+    def test_supplied_routes_read_no_clock_and_every_reference_is_supplied_or_marked(self):
+        hosted = ("GITHUB_ACTIONS", "CI", "RENDER", "VERCEL", "CF_PAGES", "CLOUDFLARE_WORKERS")
+        env = {k: v for k, v in os.environ.items() if k not in hosted and not k.startswith("STEGVERSE_")}
+        env["PROBE_FIXED_CLOCK_NS"] = str(FIXED_CLOCK_NS)
+        completed = subprocess.run([sys.executable, "-I", str(ROOT / "tests/fixtures/clock-probe/probe.py"), str(ROOT)],
+                                   capture_output=True, text=True, env=env, timeout=180)
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        probe = json.loads(completed.stdout.splitlines()[-1])
+        self.assertEqual(probe["phases"]["supplied_writer_clock_calls"], 0)
+        self.assertEqual(probe["phases"]["frame_only_clock_calls"], 1)
+        self.assertTrue(probe["references"])
+        for reference in probe["references"]:
+            if reference.get("derived_from_clock") is False:
+                self.assertEqual(reference["epoch"], 4096, reference)
+                self.assertNotIn("sampled_unix_ns", reference)
+            else:
+                self.assertIs(reference.get("derived_from_clock"), True, reference)
+                self.assertEqual(reference.get("sampled_unix_ns"), FIXED_CLOCK_NS, reference)
+
+
+SUBMITTER = ROOT / "resident-runtime/submit_org_transition_to_master_records.py"
+
+
+class ReleasedSegmentHeadEpochTests(unittest.TestCase):
+    """The downstream release stamps its frame with the head receipt's epoch only when it was supplied."""
+
+    def head(self, reference):
+        body = {"schema": "stegverse.organization-transition-receipt/v1", "organization": "StegVerse-org",
+                "transition_id": "T-head", "previous_receipt_sha256": None, "hb_reference": reference}
+        return {**body, "receipt_sha256": org.sha(body)}
+
+    def release(self, work, reference):
+        receipt = Path(work) / "head.json"
+        receipt.write_text(json.dumps(self.head(reference)))
+        standing = Path(work) / "standing.json"
+        standing.write_text(json.dumps({"mode": "GENESIS", "node_ref": "t", "predecessor": None}))
+        mesh = Path(work) / "mesh"
+        completed = subprocess.run([sys.executable, str(SUBMITTER), "--org-receipt", str(receipt),
+                                    "--predecessor-ecosystem-state-sha256", "sha256:" + "1" * 64,
+                                    "--successor-ecosystem-state-sha256", "sha256:" + "2" * 64,
+                                    "--standing", str(standing), "--mesh-root", str(mesh)],
+                                   capture_output=True, text=True, cwd=str(ROOT))
+        frames = [json.loads(p.read_text()) for p in mesh.rglob("*.json")] if mesh.exists() else []
+        return completed, frames
+
+    def test_a_clock_flagged_absent_or_invalid_head_epoch_is_refused_and_nothing_published(self):
+        clocked = org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
+        for reference in (clocked, None, {"epoch": 31, "derived_from_clock": False},
+                          {k: v for k, v in org.kernel.hb_reference(epoch=4096).items() if k != "derived_from_clock"}):
+            with self.subTest(reference=reference), tempfile.TemporaryDirectory() as work:
+                completed, frames = self.release(work, reference)
+                self.assertEqual(completed.returncode, 3, completed.stderr)
+                refusal = json.loads(completed.stdout)
+                self.assertEqual(refusal["failed_predicate"], "RELEASED_SEGMENT_HEAD_CARRIES_A_SUPPLIED_EPOCH")
+                for field in SIX_FIELDS:
+                    self.assertTrue(refusal[field], field)
+                self.assertEqual(frames, [])
+
+    def test_a_supplied_head_epoch_is_carried_with_its_provenance(self):
+        with tempfile.TemporaryDirectory() as work:
+            head = self.head(org.kernel.hb_reference(epoch=4096))
+            completed, frames = self.release(work, head["hb_reference"])
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(len(frames), 1)
+            self.assertEqual(frames[0]["heartbeat_reference"]["epoch"], 4096)
+            self.assertIs(frames[0]["heartbeat_reference"]["derived_from_clock"], False)
+            payload = org.kernel.recover_packet(frames[0])["payload"]
+            self.assertEqual(payload["hb_epoch_provenance"],
+                             {"source": "CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT",
+                              "head_receipt_sha256": head["receipt_sha256"], "derived_from_clock": False})
+
+
 class EgressCloseCliEpochTests(unittest.TestCase):
     """--close checks the epoch before resolving the destination or the mesh."""
 

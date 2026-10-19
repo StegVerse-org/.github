@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 155,
+      "PROPER": 156,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
-      "NAMING_ONLY": 20,
-      "total": 194
+      "NAMING_ONLY": 21,
+      "total": 196
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -785,6 +785,13 @@
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 55,
+      "text": "\"RELEASED_SEGMENT_HEAD_CARRIES_A_SUPPLIED_EPOCH\":(\"MASTER_RECORDS_RELEASE_HEAD_EPOCH_NOT_CARRIED\",\"release a segment whose head receipt carries a supplied epoch (hb_reference.epoch an int >= 32, derived_from_clock false); a clock-derived or",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
       "line": 54,
       "text": "\"STANDING_DECLARES_PREDECESSOR\":(\"MASTER_RECORDS_RELEASE_STANDING_UNDECLARED\",\"standing must declare the predecessor key; null is explicit genesis\"),",
       "classification": "PROPER",
@@ -792,21 +799,21 @@
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 55,
+      "line": 56,
       "text": "\"PACKET_PUBLISHED_TO_SUPPLIED_MESH\":(\"MASTER_RECORDS_RELEASE_NOT_PUBLISHED\",\"repair the packet or mesh the kernel refused\"),",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 65,
+      "line": 66,
       "text": "\"detail\":detail[:240],\"organization_transition_blocked\":False,\"master_records_awaited\":False,",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "resident-runtime/submit_org_transition_to_master_records.py",
-      "line": 112,
+      "line": 130,
       "text": "\"frame_sha256\":published[\"frame\"][\"frame_sha256\"],\"organization_transition_blocked\":False,\"master_records_awaited\":False,",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
@@ -1419,6 +1426,13 @@
       "text": "\"master_records_in_path\": false,",
       "classification": "PROPER",
       "reason": "Byte snapshot of StegVerse-org/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
+    },
+    {
+      "file": "tests/test_receipt_time_base.py",
+      "line": 484,
+      "text": "SUBMITTER = ROOT / \"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     }
   ]
 }
