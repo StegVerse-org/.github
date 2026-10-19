@@ -8,6 +8,8 @@
   "later_verified_transfer_commit": "f160ac7d61891ee8b187368fbf05372eacc8064c",
   "unledgered_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
   "unledgered_note": "a main merge with no main-merge transfer receipt at ledger_tip",
+  "temp_merge_transfers": [],
+  "temp_merge_transfers_note": "main merges whose main-merge transfer receipts the tests and the PR dry-run append to their temporary ledger copies first (for an organization whose ledger has no main-merge transfer receipt yet); those receipts are NOT LEDGERED and NOT AUTHENTIC",
   "authentic_receipt": false,
   "counts": {
     "ALLOW": 0,
