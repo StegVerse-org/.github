@@ -1,0 +1,34 @@
+{
+  "schema": "stegverse.intr-main-merge-transfer-snapshot/v1",
+  "protocol": "stegverse.intr-protocol/v1",
+  "snapshot_rule": "readbacks of each organization's current main merge from its published organization ledger ref at ledger_tip, read with merge_transfer_gitstore.py's GitTreeReader; checks read this file only, never the ledger or network",
+  "authentic_receipt": false,
+  "readbacks": [
+    {
+      "schema": "stegverse.intr-main-merge-transfer-readback/v1",
+      "organization": "StegVerse-Labs",
+      "repository": "StegVerse-Labs/.github",
+      "merge_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+      "pull_request": 3246,
+      "ledger_ref": "refs/stegverse/organization-ledger",
+      "ledger_tip": "a5bb54d81893b392a3ce28182986fc39857807e1",
+      "observation": "read at ledger_tip with merge_transfer_gitstore.py verify (dual and single): no organization receipt names ORGANIZATION_MAIN_MERGE_TRANSFER for this merge; the same tip and verdict Lane D pinned in tests/fixtures/merge-transfer-gitstore/pin.json",
+      "organization_receipt": null,
+      "repository_receipt": null,
+      "retained_repository_receipt": null
+    },
+    {
+      "schema": "stegverse.intr-main-merge-transfer-readback/v1",
+      "organization": "GCAT-BCAT-Engine",
+      "repository": "GCAT-BCAT-Engine/.github",
+      "merge_commit": "c3cf1b1ab171d0ea04a1d345e7567860f00519a3",
+      "pull_request": 12,
+      "ledger_ref": "refs/stegverse/organization-ledger",
+      "ledger_tip": "ba0098da45beb277c514fd9625e453ea2b640fbc",
+      "observation": "read at ledger_tip with merge_transfer_gitstore.py verify (dual and single): no organization receipt names ORGANIZATION_MAIN_MERGE_TRANSFER for this merge; the same tip and verdict Lane D pinned in tests/fixtures/merge-transfer-gitstore/pin.json",
+      "organization_receipt": null,
+      "repository_receipt": null,
+      "retained_repository_receipt": null
+    }
+  ]
+}
