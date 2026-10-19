@@ -202,7 +202,12 @@ def _organization_store(surface: Any) -> Any:
     aggregate = surface.aggregate
     if callable(getattr(aggregate, "organization_store", None)):
         return aggregate.organization_store()
-    return aggregate.open_store(aggregate.ledger_root())
+    # A checkout without organization_store: the location its append opens, open_store(ledger_root()), which is
+    # STEGVERSE_ORG_LEDGER_ROOT as parse_locator reads it (no host path is filled in when it is unset).
+    supplied = os.environ.get("STEGVERSE_ORG_LEDGER_ROOT")
+    if not supplied:
+        raise LookupError("ledger_location_required_from_materializer: STEGVERSE_ORG_LEDGER_ROOT")
+    return aggregate.open_store(aggregate.parse_locator(supplied))
 
 
 def _repository_store(surface: Any) -> Any:
