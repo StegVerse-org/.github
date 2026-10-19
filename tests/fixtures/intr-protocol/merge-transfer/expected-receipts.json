@@ -1,6 +1,6 @@
 {
   "schema": "stegverse.intr-main-merge-transfer-expected-receipts/v1",
-  "rule": "the receipts the merge-transfer append (resident-runtime/merge_transfer.py at sha256 6d41ff20...) writes for each merge over a temporary copy of the ledger at ledger_tip, copied from the fixtures of StegVerse-org/.github#202 and SV-011/.github#15; computed in a test, not ledgered, not authentic receipts",
+  "rule": "the receipts the merge-transfer append (resident-runtime/merge_transfer.py at sha256 032ed727...) writes for each merge over a temporary copy of the ledger at ledger_tip, copied from the fixtures of StegVerse-org/.github#202 and SV-011/.github#15; computed in a test, not ledgered, not authentic receipts",
   "authentic_receipt": false,
   "ledgered": false,
   "receipts": [

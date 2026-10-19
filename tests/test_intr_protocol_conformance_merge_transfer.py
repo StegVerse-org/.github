@@ -80,7 +80,9 @@ class Contract(unittest.TestCase):
         self.assertEqual(constant("MAIN_REF"), mt["ref"])
         self.assertEqual(constant("NOT_LEDGERED"), intr.NOT_LEDGERED)
         self.assertEqual(constant("LINK_UNVERIFIED"), intr.LINK_UNVERIFIED)
-        self.assertEqual(constant("RECEIPT_UNSEALED"), intr.RECEIPT_UNSEALED)
+        self.assertNotIn("ORGANIZATION_LEDGER_RECEIPT_UNSEALED", text)
+        self.assertIn('"' + intr.LEDGERED_PREDICATE + '"', text)
+        self.assertIn('"' + intr.LINK_PREDICATE + '"', text)
         digest = "sha256:" + hashlib.sha256(VERIFIER.read_bytes()).hexdigest()
         if digest != mt["verifier"]["sha256"]:
             self.fail("resident-runtime/merge_transfer.py is " + digest + "; re-pin main_merge_transfer.verifier.sha256")
@@ -110,11 +112,15 @@ class RealState(unittest.TestCase):
         got = {r["subject"]["merge_commit"]: (r["disposition"], r["failure_code"], r["failed_predicate"])
                for r in dimension["results"]}
         self.assertEqual(got, {
-            ORG_MERGE: ("FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED"),
-            SV011_MERGE: ("FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED")})
+            ORG_MERGE: ("FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT"),
+            SV011_MERGE: ("FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT")})
         self.assertEqual(dimension["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 2})
         for result in dimension["results"]:
             self.assertEqual(result["transfer"], "UNVERIFIED")
+            self.assertEqual(result["destination_predicate"], "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED")
+            # the same detail merge_transfer.py verify records at the ledger tip (#202 / SV-011#15 fixtures)
+            self.assertEqual(result["detail"], "no organization receipt names ORGANIZATION_MAIN_MERGE_TRANSFER for "
+                             + result["subject"]["repository"] + "@" + result["subject"]["merge_commit"])
             for field in SIX:
                 self.assertTrue(result.get(field), field)
             self.assertEqual(result["retry_entrypoint"],
@@ -136,68 +142,84 @@ class Refusals(unittest.TestCase):
         self.assertEqual((result["disposition"], result["failure_code"], result["failed_predicate"]),
                          (disposition, code, predicate), result)
         self.assertEqual(result["transfer"], "UNVERIFIED")
+        self.assertEqual(result["destination_predicate"], "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED")
         for field in SIX:
             self.assertTrue(result.get(field), field)
+        return result
 
-    def test_absent_or_unobserved_evidence_fails_closed(self):
+    def not_ledgered(self, value):
+        return self.check(value, "FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED",
+                          "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT")
+
+    def contradicted(self, value):
+        return self.check(value, "DENY", "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED",
+                          "ORGANIZATION_RECEIPT_LINKS_TO_THE_MERGE_COMMIT")
+
+    def relinked(self, edit):
+        """Edit the repository receipt evidence, reseal it, and re-link a resealed organization receipt to it."""
+        value = readback()
+        edit(value["repository_receipt"]["evidence"])
+        value["repository_receipt"] = reseal(value["repository_receipt"])
+        value["organization_receipt"]["repo_receipt_sha256"] = value["repository_receipt"]["receipt_sha256"]
+        value["organization_receipt"] = reseal(value["organization_receipt"])
+        return value
+
+    def test_unnamed_subject_fails_closed(self):
         self.check(None, "FAIL_CLOSED", "MERGE_TRANSFER_SUBJECT_UNOBSERVED", "READBACK_NAMES_THE_MERGE")
         self.check(readback(merge_commit="f160ac7d"), "FAIL_CLOSED",
                    "MERGE_TRANSFER_SUBJECT_UNOBSERVED", "READBACK_NAMES_THE_MERGE")
-        self.check(readback(organization_receipt=None), "FAIL_CLOSED",
-                   "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED")
-        self.check(readback(repository_receipt=None), "FAIL_CLOSED",
-                   "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED", "REPOSITORY_RECEIPT_IS_SEALED")
 
-    def test_another_operations_receipt_is_not_a_transfer(self):
+    def test_absent_receipts_fail_closed_not_ledgered(self):
+        self.not_ledgered(readback(organization_receipt=None))
+        self.not_ledgered(readback(repository_receipt=None))
+
+    def test_unsealed_receipts_fail_closed_not_ledgered(self):
+        value = readback()
+        value["organization_receipt"]["hb_reference"]["epoch"] += 1
+        self.not_ledgered(value)
+        value = readback()
+        value["repository_receipt"]["evidence"]["tree"] = "0" * 40
+        self.not_ledgered(value)
+
+    def test_a_receipt_that_is_not_this_merges_transfer_fails_closed(self):
+        # merge_transfer.py skips these on the chain; they are not this merge's transfer receipt.
         value = readback()
         value["organization_receipt"]["boundary_evidence"]["operation"] = "DIAGNOSTIC_CROSSING"
         value["organization_receipt"] = reseal(value["organization_receipt"])
-        self.check(value, "FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED")
+        self.not_ledgered(value)
+        self.not_ledgered(readback(merge_commit=SV011_MERGE))
+        self.not_ledgered(readback(repository="SV-011/.github"))
 
-    def test_unsealed_receipts_fail_closed(self):
+    def test_organization_receipt_naming_another_repository_is_denied(self):
         value = readback()
-        value["organization_receipt"]["hb_reference"]["epoch"] += 1
-        self.check(value, "FAIL_CLOSED", "ORGANIZATION_LEDGER_RECEIPT_UNSEALED", "ORGANIZATION_RECEIPT_IS_SEALED")
-        value = readback()
-        value["repository_receipt"]["evidence"]["tree"] = "0" * 40
-        self.check(value, "FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED", "REPOSITORY_RECEIPT_IS_SEALED")
-
-    def test_unknown_evidence_version_fails_closed(self):
-        value = readback()
-        value["repository_receipt"]["evidence"]["schema"] = "stegverse.main-merge-transfer-evidence/v2"
-        value["repository_receipt"] = reseal(value["repository_receipt"])
-        value["organization_receipt"]["repo_receipt_sha256"] = value["repository_receipt"]["receipt_sha256"]
+        value["organization_receipt"]["source_repository"] = "SV-011/.github"
         value["organization_receipt"] = reseal(value["organization_receipt"])
-        self.check(value, "FAIL_CLOSED", "MERGE_TRANSFER_EVIDENCE_VERSION_UNKNOWN",
-                   "REPOSITORY_RECEIPT_EVIDENCE_SCHEMA_IS_V1")
-
-    def test_receipt_for_another_merge_is_denied(self):
-        # The organization receipt is sealed and real-shaped but names SV-011's merge.
-        self.check(readback(merge_commit=SV011_MERGE), "DENY",
-                   "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED", "ORGANIZATION_RECEIPT_NAMES_THE_MERGE")
-        self.check(readback(repository="SV-011/.github"), "DENY",
-                   "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED", "ORGANIZATION_RECEIPT_NAMES_THE_MERGE")
+        self.assertIn("organization receipt names repository", self.contradicted(value)["detail"])
 
     def test_link_to_a_different_repository_receipt_is_denied(self):
         other = readback(1)["repository_receipt"]
-        self.check(readback(repository_receipt=other), "DENY",
-                   "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED", "ORGANIZATION_RECEIPT_LINKS_THE_REPOSITORY_RECEIPT")
+        result = self.contradicted(readback(repository_receipt=other))
+        self.assertIn("is sealed as", result["detail"])
 
-    def test_repository_receipt_carrying_another_merge_is_denied(self):
-        value = readback()
-        evidence = value["repository_receipt"]["evidence"]
-        evidence["merge_commit"] = SV011_MERGE
-        evidence["payload_sha256"] = intr._evidence_payload_digest(evidence)
-        value["repository_receipt"] = reseal(value["repository_receipt"])
-        value["organization_receipt"]["repo_receipt_sha256"] = value["repository_receipt"]["receipt_sha256"]
-        value["organization_receipt"] = reseal(value["organization_receipt"])
-        self.check(value, "DENY", "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED", "REPOSITORY_RECEIPT_CARRIES_THE_MERGE")
-        value = readback()
-        value["repository_receipt"]["evidence"]["pull_request"] = 999
-        value["repository_receipt"] = reseal(value["repository_receipt"])
-        value["organization_receipt"]["repo_receipt_sha256"] = value["repository_receipt"]["receipt_sha256"]
-        value["organization_receipt"] = reseal(value["organization_receipt"])
-        self.check(value, "DENY", "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED", "REPOSITORY_RECEIPT_CARRIES_THE_MERGE")
+    def test_evidence_contradicting_the_merge_is_denied(self):
+        cases = {
+            "merge_commit": lambda e: e.update(merge_commit=SV011_MERGE),
+            "repository": lambda e: e.update(repository="SV-011/.github"),
+            "ref": lambda e: e.update(ref="refs/heads/laneb/other"),
+            "schema": lambda e: e.update(schema="stegverse.main-merge-transfer-evidence/v2"),
+        }
+        for field, edit in cases.items():
+            with self.subTest(field=field):
+                def apply(evidence, edit=edit):
+                    edit(evidence)
+                    evidence["payload_sha256"] = intr._evidence_payload_digest(evidence)
+                result = self.contradicted(self.relinked(apply))
+                self.assertIn("evidence " + field + " is", result["detail"])
+
+    def test_evidence_digest_mismatch_is_denied(self):
+        value = self.relinked(lambda e: e.update(pull_request=999))
+        result = self.contradicted(value)
+        self.assertIn("does not carry the digest it claims", result["detail"])
 
 
 if __name__ == "__main__":

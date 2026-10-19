@@ -268,9 +268,11 @@ def conform_message(payload: Any, destination_organization: Any,
 MERGE_TRANSFER_RESULT_SCHEMA = "stegverse.intr-main-merge-transfer-result/v1"
 NOT_LEDGERED = "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED"
 LINK_UNVERIFIED = "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED"
-RECEIPT_UNSEALED = "ORGANIZATION_LEDGER_RECEIPT_UNSEALED"
 SUBJECT_UNOBSERVED = "MERGE_TRANSFER_SUBJECT_UNOBSERVED"
-EVIDENCE_VERSION_UNKNOWN = "MERGE_TRANSFER_EVIDENCE_VERSION_UNKNOWN"
+# failed_predicate ids, as resident-runtime/merge_transfer.py verify names them
+LEDGERED_PREDICATE = "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT"
+LINK_PREDICATE = "ORGANIZATION_RECEIPT_LINKS_TO_THE_MERGE_COMMIT"
+SUBJECT_PREDICATE = "READBACK_NAMES_THE_MERGE"
 _HEX = set("0123456789abcdef")
 
 
@@ -295,92 +297,97 @@ def verify_merge_transfer_evidence(readback: Any, contract: Mapping[str, Any] | 
     ``readback`` (stegverse.intr-main-merge-transfer-readback/v1) names repository
     and merge_commit and carries the organization receipt and repository receipt
     read back from the organization's ledger, or null where none was found.
-    ALLOW (transfer VERIFIED) only when the organization receipt is sealed, names
-    the operation, repository and merge, and links (repo_receipt_sha256) a sealed
-    repository receipt whose evidence carries the same merge on refs/heads/main.
-    Absent or unsealed evidence is FAIL_CLOSED; evidence naming a different merge,
-    repository or link is DENY. No ledger, clock, network or git is read.
+
+    ALLOW (transfer VERIFIED) only when the organization receipt is sealed, its
+    boundary_evidence names the operation, repository and merge, and its
+    repo_receipt_sha256 is the seal of a sealed repository receipt whose evidence
+    carries the same merge on refs/heads/main with the digest it claims.
+    FAIL_CLOSED MERGE_TRANSFER_RECEIPT_NOT_LEDGERED: a receipt is absent or
+    unsealed, or the organization receipt is not this merge's transfer receipt.
+    DENY MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED: present, sealed evidence that
+    contradicts the merge (repository, link, evidence schema, merge_commit,
+    repository, ref, or evidence digest). No ledger, clock, network or git is read.
     """
     contract = contract or load_contract()
     spec = contract["main_merge_transfer"]
     operation, ref = spec["operation"], spec["ref"]
     retry = spec["retry_entrypoint"]
+    destination_predicate = spec["destination_predicates"][0]["id"]
     subject: dict[str, Any] = {"dimension": spec["result_dimension"], "operation": operation}
     if isinstance(readback, Mapping):
         subject.update({"repository": readback.get("repository"),
                         "merge_commit": readback.get("merge_commit"),
                         "ledger_tip": readback.get("ledger_tip")})
 
-    def refuse(disposition: str, code: str, predicate: str, repair: str, next_attempt: str) -> dict[str, Any]:
+    def refuse(disposition: str, code: str, predicate: str, repair: str, next_attempt: str,
+               detail: str) -> dict[str, Any]:
         return _refusal(contract, disposition, code, predicate, repair, subject,
                         retry_entrypoint=retry, next_attempt=next_attempt,
-                        extra={"schema": MERGE_TRANSFER_RESULT_SCHEMA, "transfer": "UNVERIFIED"})
+                        extra={"schema": MERGE_TRANSFER_RESULT_SCHEMA, "transfer": "UNVERIFIED",
+                               "destination_predicate": destination_predicate, "detail": detail})
 
     if not isinstance(readback, Mapping) or readback.get("schema") != spec["readback_schema"]:
-        return refuse(FAIL_CLOSED, SUBJECT_UNOBSERVED, "READBACK_NAMES_THE_MERGE",
-                      "supply a " + spec["readback_schema"] + " object", "re-check with a readback object; nothing was verified")
+        return refuse(FAIL_CLOSED, SUBJECT_UNOBSERVED, SUBJECT_PREDICATE,
+                      "supply a " + spec["readback_schema"] + " object",
+                      "re-check with a readback object; nothing was verified", "no readback object")
     repo, merge = readback.get("repository"), readback.get("merge_commit")
     if not isinstance(repo, str) or not repo.endswith("/.github") or not _sha40(merge):
-        return refuse(FAIL_CLOSED, SUBJECT_UNOBSERVED, "READBACK_NAMES_THE_MERGE",
+        return refuse(FAIL_CLOSED, SUBJECT_UNOBSERVED, SUBJECT_PREDICATE,
                       "name repository (<ORG>/.github) and merge_commit (40 lowercase hex)",
-                      "re-check with the merge named; nothing was verified")
-    wanted = ("an organization receipt on " + repo.split("/")[0] + "'s ledger with boundary_evidence.operation "
-              + operation + ", repository " + repo + " and merge_commit " + merge
-              + ", linked to a sealed repository receipt carrying the same merge")
-    after_append = ("the next push to main runs " + retry + ", which appends the pending merge; "
-                    "read the ledger back and re-check")
+                      "re-check with the merge named; nothing was verified",
+                      "repository " + repr(repo) + ", merge_commit " + repr(merge))
+
+    def not_ledgered(detail: str) -> dict[str, Any]:
+        return refuse(FAIL_CLOSED, NOT_LEDGERED, LEDGERED_PREDICATE,
+                      "a sealed organization receipt on " + repo.split("/")[0] + "'s ledger with "
+                      "boundary_evidence.operation " + operation + ", repository " + repo + " and merge_commit "
+                      + merge + ", linked to a sealed repository receipt carrying the same merge",
+                      "the next push to main runs " + retry + ", which appends the pending merge; "
+                      "read the ledger back and re-check", detail)
+
     org_receipt = readback.get("organization_receipt")
     if org_receipt is None:
-        return refuse(FAIL_CLOSED, NOT_LEDGERED, "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED", wanted, after_append)
+        return not_ledgered("no organization receipt names " + operation + " for " + repo + "@" + merge)
     if not receipt_sealed(org_receipt):
-        return refuse(FAIL_CLOSED, RECEIPT_UNSEALED, "ORGANIZATION_RECEIPT_IS_SEALED",
-                      "the organization receipt's receipt_sha256 must be the digest of its other fields",
-                      "re-read the receipt from the ledger and re-check; nothing was verified")
-    if org_receipt.get("schema") != spec["organization_receipt_schema"]:
-        return refuse(FAIL_CLOSED, EVIDENCE_VERSION_UNKNOWN, "ORGANIZATION_RECEIPT_IS_SEALED",
-                      "organization receipt schema must be " + spec["organization_receipt_schema"],
-                      "re-check with a receipt the ledger writer produced; nothing was verified")
+        return not_ledgered("the organization receipt is absent or its seal does not verify")
     boundary = org_receipt.get("boundary_evidence", org_receipt.get("evidence"))
     boundary = boundary if isinstance(boundary, Mapping) else {}
-    if boundary.get("operation") != operation:
-        # Another operation's receipt is not a merge-transfer receipt: the transfer stays unobserved.
-        return refuse(FAIL_CLOSED, NOT_LEDGERED, "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED", wanted, after_append)
-    named_repo = org_receipt.get("repository", org_receipt.get("source_repository"))
-    if boundary.get("merge_commit") != merge or boundary.get("repository") != repo or named_repo != repo:
-        return refuse(DENY, LINK_UNVERIFIED, "ORGANIZATION_RECEIPT_NAMES_THE_MERGE",
-                      "the organization receipt names merge " + repr(boundary.get("merge_commit"))
-                      + " in " + repr(boundary.get("repository")) + " (receipt repository " + repr(named_repo)
-                      + "); it must name " + merge + " in " + repo,
-                      "supply the organization receipt for this merge; nothing was verified")
+    if boundary.get("operation") != operation or boundary.get("merge_commit") != merge \
+            or boundary.get("repository") != repo:
+        # merge_transfer.py skips such a receipt on the chain: it is not this merge's transfer receipt.
+        return not_ledgered("the organization receipt's boundary_evidence names "
+                            + repr((boundary.get("operation"), boundary.get("repository"), boundary.get("merge_commit")))
+                            + ", not this merge's transfer")
+    linked = org_receipt.get("repo_receipt_sha256")
     repo_receipt = readback.get("repository_receipt")
-    if repo_receipt is None or not receipt_sealed(repo_receipt):
-        return refuse(FAIL_CLOSED, LINK_UNVERIFIED, "REPOSITORY_RECEIPT_IS_SEALED",
-                      "supply the sealed repository receipt " + str(org_receipt.get("repo_receipt_sha256"))
-                      + " from " + repo + "'s repository ledger",
-                      "read the repository receipt back and re-check; nothing was verified")
-    if org_receipt.get("repo_receipt_sha256") != repo_receipt["receipt_sha256"]:
-        return refuse(DENY, LINK_UNVERIFIED, "ORGANIZATION_RECEIPT_LINKS_THE_REPOSITORY_RECEIPT",
-                      "organization receipt links " + repr(org_receipt.get("repo_receipt_sha256"))
-                      + " but the supplied repository receipt is " + repo_receipt["receipt_sha256"],
-                      "supply the repository receipt the organization receipt links; nothing was verified")
+    if not receipt_sealed(repo_receipt):
+        return not_ledgered("repository receipt " + str(linked) + " is absent or unsealed")
     evidence = repo_receipt.get("evidence")
-    if (repo_receipt.get("schema") != spec["repository_receipt_schema"]
-            or not isinstance(evidence, Mapping) or evidence.get("schema") != spec["schema_ref"]):
-        return refuse(FAIL_CLOSED, EVIDENCE_VERSION_UNKNOWN, "REPOSITORY_RECEIPT_EVIDENCE_SCHEMA_IS_V1",
-                      "repository receipt " + spec["repository_receipt_schema"] + " carrying evidence "
-                      + spec["schema_ref"], "re-check with evidence of the known version; nothing was verified")
-    if (evidence.get("merge_commit") != merge or evidence.get("repository") != repo
-            or evidence.get("ref") != ref or repo_receipt.get("repository") != repo
-            or evidence.get("payload_sha256") != _evidence_payload_digest(evidence)):
-        return refuse(DENY, LINK_UNVERIFIED, "REPOSITORY_RECEIPT_CARRIES_THE_MERGE",
-                      "the repository receipt evidence must carry merge_commit " + merge + ", repository " + repo
-                      + ", ref " + ref + " and a payload_sha256 equal to its digest",
-                      "supply the repository receipt for this merge; nothing was verified")
-    checked = [p["id"] for p in spec["evidence_predicates"]]
-    result = _allow(contract, subject, checked)
+    evidence = evidence if isinstance(evidence, Mapping) else {}
+    contradictions = []
+    named = org_receipt.get("repository", org_receipt.get("source_repository"))
+    if named != repo:
+        contradictions.append("organization receipt names repository " + repr(named))
+    if repo_receipt["receipt_sha256"] != linked:
+        contradictions.append("organization receipt links " + repr(linked) + " but the repository receipt is sealed as "
+                              + repo_receipt["receipt_sha256"])
+    for field, want in (("schema", spec["schema_ref"]), ("merge_commit", merge), ("repository", repo), ("ref", ref)):
+        if evidence.get(field) != want:
+            contradictions.append("repository receipt evidence " + field + " is " + repr(evidence.get(field)))
+    if evidence.get("payload_sha256") != _evidence_payload_digest(evidence):
+        contradictions.append("repository receipt evidence does not carry the digest it claims")
+    if contradictions:
+        return refuse(DENY, LINK_UNVERIFIED, LINK_PREDICATE,
+                      "the organization receipt's repository receipt must carry evidence schema " + spec["schema_ref"]
+                      + ", merge_commit " + merge + ", repository " + repo + " and ref " + ref
+                      + " with its claimed digest; the supplied evidence contradicts it",
+                      "inspect organization receipt " + org_receipt["receipt_sha256"] + " and repository receipt "
+                      + str(linked) + "; nothing was verified", "; ".join(contradictions))
+    result = _allow(contract, subject, [SUBJECT_PREDICATE, LEDGERED_PREDICATE, LINK_PREDICATE])
     result.pop("result_digest")
     hb = org_receipt.get("hb_reference")
     result.update({"schema": MERGE_TRANSFER_RESULT_SCHEMA, "transfer": "VERIFIED",
+                   "destination_predicate": destination_predicate,
                    "organization_receipt_sha256": org_receipt["receipt_sha256"],
                    "repository_receipt_sha256": repo_receipt["receipt_sha256"],
                    "pull_request": evidence.get("pull_request"),

@@ -40,12 +40,21 @@ Snapshot result: 8 ALLOW. The SV-011 row pins the head of SV-011/.github#14 (mer
 - **VERIFIED / ALLOW** only when a sealed organization receipt (`receipt_sha256` is the digest of
   its other fields) has `boundary_evidence` naming the operation, the repository and the merge
   commit, and its `repo_receipt_sha256` is the seal of a sealed repository receipt whose evidence
-  carries the same `merge_commit` and `repository` on `refs/heads/main` with a matching `payload_sha256`.
-- **FAIL_CLOSED** when the evidence is absent or unobserved: no receipt
-  (`MERGE_TRANSFER_RECEIPT_NOT_LEDGERED`), an unsealed receipt (`ORGANIZATION_LEDGER_RECEIPT_UNSEALED`,
-  or `MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED` for the repository receipt), or an unknown evidence version.
-- **DENY** when the evidence contradicts the merge: a receipt naming another merge or repository,
-  or a link to a different repository receipt (`MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED`).
+  carries the same `merge_commit` and `repository` on `refs/heads/main` with the `payload_sha256` it claims.
+- **FAIL_CLOSED `MERGE_TRANSFER_RECEIPT_NOT_LEDGERED`** (failed predicate
+  `MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT`) when the evidence is absent or unsealed: no
+  organization receipt, an unsealed organization or repository receipt, or an organization receipt
+  whose `boundary_evidence` is not this merge's transfer (another operation, merge or repository;
+  `merge_transfer.py` skips such receipts on the chain).
+- **DENY `MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED`** (failed predicate
+  `ORGANIZATION_RECEIPT_LINKS_TO_THE_MERGE_COMMIT`) when present, sealed evidence contradicts the
+  merge: the organization receipt names another repository or links a different repository receipt,
+  or the repository receipt evidence names another schema, merge commit, repository or ref, or does
+  not carry the digest it claims. `detail` lists every contradiction.
+- **FAIL_CLOSED `MERGE_TRANSFER_SUBJECT_UNOBSERVED`** (`READBACK_NAMES_THE_MERGE`) when the readback
+  does not name a repository and a 40-hex merge commit; this is the readback's own precondition
+  (the verifier's CLI reads the commit object instead).
+- Every refusal also carries `destination_predicate: MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED`.
 - `retry_entrypoint` is `.github/workflows/organization-ledger-merge-transfer.yml (push to main)`.
 
 `org-runtime/intr_protocol.py` checks a supplied readback
@@ -56,8 +65,8 @@ Snapshot result: 8 ALLOW. The SV-011 row pins the head of SV-011/.github#14 (mer
         --merge-transfer tests/fixtures/intr-protocol/merge-transfer/manifest.json
 
 `merge_transfer.py` is not on main yet. The contract pins it by sha256
-(`6d41ff20...7946`, byte-identical at StegVerse-org/.github#202 head `c7ff2b07` and SV-011/.github#15
-head `1dfe0a10`), so admission of this predicate depends on #202 (and SV-011#15 for SV-011). Once the
+(`032ed727...e20e`, byte-identical at StegVerse-org/.github#202 head `b590fb0a` and SV-011/.github#15
+head `2e74ecb3`), so admission of this predicate depends on #202 (and SV-011#15 for SV-011). Once the
 file is on main, the conformance test checks that its names agree with the contract and its digest
 equals the pin.
 
