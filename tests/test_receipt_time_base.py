@@ -49,7 +49,7 @@ def repo_receipt(transition_id="time-base-1"):
     return {**body, "receipt_sha256": org.sha(body)}
 
 
-def emit_repo_receipt(root, transition_id="t-1", hb_epoch=EPOCH):
+def run_emit(root, transition_id="t-1", hb_epoch=EPOCH):
     command = [sys.executable, str(EMIT),
                "--transition-id", transition_id, "--transition-class", "TEST",
                "--predecessor-state-sha256", STATE_BEFORE,
@@ -57,7 +57,11 @@ def emit_repo_receipt(root, transition_id="t-1", hb_epoch=EPOCH):
     if hb_epoch is not None:
         command += ["--hb-epoch", str(hb_epoch)]
     environment = dict(os.environ, STEGVERSE_REPO_LEDGER_ROOT=str(root))
-    completed = subprocess.run(command, capture_output=True, text=True, env=environment, cwd=str(ROOT))
+    return subprocess.run(command, capture_output=True, text=True, env=environment, cwd=str(ROOT))
+
+
+def emit_repo_receipt(root, transition_id="t-1", hb_epoch=EPOCH):
+    completed = run_emit(root, transition_id, hb_epoch)
     if completed.returncode != 0:
         raise AssertionError("emit failed: " + completed.stderr)
     return json.loads(completed.stdout.splitlines()[-1])
@@ -93,11 +97,74 @@ class RepositoryReceiptTests(unittest.TestCase):
             b = emit_repo_receipt(second)
             self.assertEqual(a["receipt_sha256"], b["receipt_sha256"])
 
-    def test_a_repository_receipt_without_a_tick_marks_itself_derived(self):
+    def test_a_repository_receipt_without_a_tick_is_refused_and_nothing_written(self):
+        """It used to be minted from the host clock and marked derived_from_clock."""
         with tempfile.TemporaryDirectory() as root:
-            receipt = emit_repo_receipt(root, hb_epoch=None)
-            self.assertIs(receipt["hb_reference"]["derived_from_clock"], True)
-            self.assertIn("sampled_unix_ns", receipt["hb_reference"])
+            completed = run_emit(root, hb_epoch=None)
+            self.assertEqual(completed.returncode, 1)
+            refusal = json.loads(completed.stdout.splitlines()[-1])
+            self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+            self.assertEqual(refusal["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+            for field in SIX_FIELDS:
+                self.assertTrue(refusal[field], field)
+            self.assertNotIn("hb_reference", refusal)
+            self.assertEqual(list(Path(root).iterdir()), [])
+
+
+SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+              "retry_entrypoint", "owning_existing_goal", "next_attempt")
+
+
+class RepositoryAppendEpochTests(unittest.TestCase):
+    """emit.append refuses an absent or invalid epoch before the store opens; no clock is read."""
+
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location("repo_emit_time", EMIT)
+        cls.emit = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.emit)
+
+    def _refused(self, hb_epoch):
+        class Unopenable:
+            def __getattr__(self, name):
+                raise AssertionError("store touched: " + name)
+
+        class NoClock:
+            @staticmethod
+            def now(*_):
+                raise AssertionError("clock read")
+
+        clock = self.emit.kernel.datetime
+        self.emit.kernel.datetime = NoClock
+        try:
+            with self.assertRaises(self.emit.RepoLedgerEpochRefused) as caught:
+                self.emit.append("t-1", "TEST", STATE_BEFORE, STATE_AFTER, hb_epoch=hb_epoch,
+                                 store=Unopenable())
+        finally:
+            self.emit.kernel.datetime = clock
+        refusal = caught.exception.refusal
+        self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+        self.assertEqual(refusal["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
+        self.assertEqual(refusal["retry_entrypoint"], ".stegverse/transition-ledger/emit.py::append")
+        for field in SIX_FIELDS:
+            self.assertTrue(refusal[field], field)
+        return refusal
+
+    def test_an_absent_epoch_is_not_supplied(self):
+        self.assertEqual(self._refused(None)["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+
+    def test_an_invalid_epoch_is_refused(self):
+        for epoch in (True, 31, "+33", " 33", "33.0", 33.0):
+            with self.subTest(epoch=epoch):
+                self.assertEqual(self._refused(epoch)["failure_code"], "HB_EPOCH_INVALID")
+
+    def test_a_supplied_epoch_as_ascii_digits_is_admitted(self):
+        with tempfile.TemporaryDirectory() as root:
+            store = self.emit.ledger_store.open_store(self.emit.ledger_store.parse_locator(root))
+            receipt = self.emit.append("t-1", "TEST", STATE_BEFORE, STATE_AFTER, hb_epoch=str(EPOCH),
+                                       store=store)
+            self.assertEqual(receipt["hb_reference"]["epoch"], EPOCH)
+            self.assertIs(receipt["hb_reference"]["derived_from_clock"], False)
 
 
 class OrganizationReceiptTests(unittest.TestCase):

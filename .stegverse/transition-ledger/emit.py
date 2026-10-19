@@ -36,6 +36,28 @@ class RepoLedgerChainBreak(ValueError):
 def chain_break_refusal(exc):
  """The append attempt's own disposition when the chain it would extend is broken."""
  return {"schema":"stegverse.repo-ledger-append-refusal/v1","repository":C["repository"],"disposition":"FAIL_CLOSED","failed_predicate":exc.failed_predicate,"detail":exc.detail,"receipt_sha256":exc.receipt_sha256,"failure_code":"REPO_LEDGER_CHAIN_BROKEN","required_evidence_or_repair":"restore the receipt addressed by receipt_sha256, byte-for-byte as minted; a chain is never re-minted over a break","retry_entrypoint":".stegverse/transition-ledger/emit.py::append","owning_existing_goal":"REPO-LEDGER-DURABILITY-001","next_attempt":"rerun the same append once the addressed receipt is restored; nothing was appended","consequence_committed":False,"authority_effect":"NONE_REFUSAL_ONLY"}
+# The heartbeat epoch is supplied, never read off a clock. An append with no
+# hb_epoch used to fall back to kernel.hb_reference(), which derives the epoch
+# from the host clock (derived_from_clock true), so a receipt's ordering
+# depended on that host's clock discipline. The rule is the shared one
+# (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH), vendored from
+# resident-runtime/aggregate_repo_transition.py because this writer is also
+# bound from a standalone ledger component; the refusal is six-field
+# FAIL_CLOSED and raised before the store is opened, so nothing is written.
+HB_EPOCH_PREDICATE="SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH";HB_ANCHOR_EPOCH=32
+INTR_PROTOCOL_GOAL="INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
+def supplied_epoch_failure(hb_epoch):
+ """(failure_code, detail) for an absent or invalid hb_epoch, or None. No clock is read."""
+ if hb_epoch is None:return "HB_EPOCH_NOT_SUPPLIED","no hb_epoch was supplied and no clock is read"
+ text=str(hb_epoch) if isinstance(hb_epoch,int) and not isinstance(hb_epoch,bool) else hb_epoch if isinstance(hb_epoch,str) else None
+ if text is None or not text.isascii() or not text.isdigit():return "HB_EPOCH_INVALID","hb_epoch "+repr(hb_epoch)+" is not ASCII [0-9]+"
+ if int(text)<HB_ANCHOR_EPOCH:return "HB_EPOCH_INVALID","hb_epoch "+text+" is below the HB32 anchor (32)"
+ return None
+class RepoLedgerEpochRefused(SystemExit):
+ """An append refused for its epoch; `.refusal` carries the six-field FAIL_CLOSED."""
+ def __init__(self,code,detail):
+  super().__init__(code+":"+detail)
+  self.refusal={"schema":"stegverse.repo-ledger-append-refusal/v1","repository":C["repository"],"disposition":"FAIL_CLOSED","failure_code":code,"failed_predicate":HB_EPOCH_PREDICATE,"detail":detail,"required_evidence_or_repair":"append with hb_epoch= (or --hb-epoch) as supplied: ASCII digits with value >= "+str(HB_ANCHOR_EPOCH)+"; it is never derived from a clock","retry_entrypoint":".stegverse/transition-ledger/emit.py::append","owning_existing_goal":INTR_PROTOCOL_GOAL,"next_attempt":"append again with the supplied epoch; nothing was written","consequence_committed":False,"authority_effect":"NONE_REFUSAL_ONLY"}
 def node(target,cursor):
  """The receipt `cursor` addresses, recomputed and proven to be that receipt."""
  if not isinstance(cursor,str) or not DIGEST.match(cursor):raise RepoLedgerChainBreak(cursor,"malformed_receipt_address")
@@ -88,6 +110,9 @@ def append(transition_id,transition_class,predecessor_state_sha256,successor_sta
  from HEAD and raises `RepoLedgerChainBreak` on a missing or corrupted node,
  so no receipt is ever minted on top of a broken chain.
  """
+ failure=supplied_epoch_failure(hb_epoch)
+ if failure is not None:raise RepoLedgerEpochRefused(*failure)
+ heartbeat=kernel.hb_reference(epoch=int(str(hb_epoch)))
  target=store or ledger_store.open_store(lr());target.initialize()
  for _attempt in range(128):
   expected_head=target.get(ledger_store.HEAD_KEY)
@@ -102,7 +127,7 @@ def append(transition_id,transition_class,predecessor_state_sha256,successor_sta
        or any(theirs.get(k,_ABSENT)!=mine.get(k,_ABSENT) for k in idempotent_on)):
     raise ValueError("ledger_receipt_collision")
    return prior
-  b={"schema":"stegverse.repo-transition-receipt/v1","repository":C["repository"],"transition_id":transition_id,"transition_class":transition_class,"predecessor_state_sha256":predecessor_state_sha256,"successor_state_sha256":successor_state_sha256,"evidence":evidence if evidence is not None else {},"authority_effect":authority_effect,"hb_reference":kernel.hb_reference(epoch=hb_epoch) if hb_epoch is not None else kernel.hb_reference(),"previous_receipt_sha256":prev}
+  b={"schema":"stegverse.repo-transition-receipt/v1","repository":C["repository"],"transition_id":transition_id,"transition_class":transition_class,"predecessor_state_sha256":predecessor_state_sha256,"successor_state_sha256":successor_state_sha256,"evidence":evidence if evidence is not None else {},"authority_effect":authority_effect,"hb_reference":heartbeat,"previous_receipt_sha256":prev}
   dg=sha(b);r={**b,"receipt_sha256":dg};key=ledger_store.receipt_key(dg)
   new_head={"repository":C["repository"],"receipt_sha256":dg,"receipt_path":target.locator(key)}
   if target.append_transaction(key,r,expected_head,new_head):
@@ -110,9 +135,11 @@ def append(transition_id,transition_class,predecessor_state_sha256,successor_sta
  raise SystemExit("REPO_LEDGER_APPEND_CONTENTION_EXHAUSTED")
 
 def main():
- p=argparse.ArgumentParser();p.add_argument("--transition-id",required=True);p.add_argument("--transition-class",required=True);p.add_argument("--predecessor-state-sha256",required=True);p.add_argument("--successor-state-sha256",required=True);p.add_argument("--evidence-json",default="{}");p.add_argument("--authority-effect",default="NONE");p.add_argument("--hb-epoch",type=int,default=None,help="heartbeat epoch; derived from the host clock, and marked as derived, when absent");a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument("--transition-id",required=True);p.add_argument("--transition-class",required=True);p.add_argument("--predecessor-state-sha256",required=True);p.add_argument("--successor-state-sha256",required=True);p.add_argument("--evidence-json",default="{}");p.add_argument("--authority-effect",default="NONE");p.add_argument("--hb-epoch",default=None,help="heartbeat epoch, as supplied (ASCII digits >= 32); refused FAIL_CLOSED when absent, never derived from a clock");a=p.parse_args()
  try:r=append(a.transition_id,a.transition_class,a.predecessor_state_sha256,a.successor_state_sha256,json.loads(a.evidence_json),a.authority_effect,a.hb_epoch)
  except RepoLedgerChainBreak as exc:
   print(json.dumps(chain_break_refusal(exc),sort_keys=True));raise SystemExit(1)
+ except RepoLedgerEpochRefused as exc:
+  print(json.dumps(exc.refusal,sort_keys=True));raise SystemExit(1)
  print(json.dumps(r,sort_keys=True))
 if __name__=="__main__":main()
