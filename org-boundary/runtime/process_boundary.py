@@ -151,6 +151,11 @@ def cli():
   code,detail,terminal,status="PROCESS_BOUNDARY_INPUT_FAULT",str(exc.code),True,INPUT_FAULT_EXIT
  except WriteFault as exc:
   code,detail,terminal,status="PROCESS_BOUNDARY_WRITE_FAULT",str(exc),False,WRITE_FAULT_EXIT
+ except OSError as exc:
+  # Any other OSError is this boundary's own write or working space (a temporary
+  # directory for the adapter's result, ENOSPC): non-terminal, 75. Input reads
+  # were already turned into InputFault above.
+  code,detail,terminal,status="PROCESS_BOUNDARY_WRITE_FAULT",type(exc).__name__+": "+str(exc),False,WRITE_FAULT_EXIT
  except Exception as exc:  # noqa: BLE001 -- a frame this boundary cannot process is the frame's
   code,detail,terminal,status="PROCESS_BOUNDARY_INPUT_FAULT",type(exc).__name__+": "+str(exc),True,INPUT_FAULT_EXIT
  print(json.dumps(fault_record(code,detail,terminal),sort_keys=True),flush=True)

@@ -309,12 +309,8 @@ def cross(manifest, *, registry, origin=None, packet_id="sdk-manifest-crossing",
             # of the manifest: nothing is recorded as refused, and the caller's
             # writer wrapper reports a non-terminal WRITE_FAILED to rerun.
             raise RuntimeError("PROCESS_BOUNDARY_WRITE_FAULT: " + (completed.stderr or "").strip()[-400:])
-        if completed.returncode != 0 or not execution.is_file():
-            # The far side refused or could not be reached (65 is the boundary's
-            # terminal input refusal). Say which, and say
-            # it as a disposition rather than as a crossing that happened.
-            detail = (completed.stderr or completed.stdout or "").strip().splitlines()
-            far_side_disposition = detail[-1] if detail else "FAR_SIDE_UNREACHABLE"
+        def not_completed(far_side_disposition):
+            # The crossing did not complete: a terminal far-side FAIL_CLOSED, recorded.
             return {
                 "schema": "stegverse.sdk-manifest-crossing-result/v1",
                 "declared_transition_surface": destination["surface"],
@@ -326,12 +322,26 @@ def cross(manifest, *, registry, origin=None, packet_id="sdk-manifest-crossing",
                 "endpoint_adapter_installed": bool(service.get("endpoint_adapter")),
                 "ingress_packet_id": ingress["packet_id"],
                 "disposition": "FAIL_CLOSED",
+                "terminal": True,
                 **far_side_fields(service, far_side_disposition),
                 "receiver_unavailable_disposition": RECEIVER_UNAVAILABLE_DISPOSITION,
                 "awaits_the_receiver": False,
                 "authority_effect": "NONE_CROSSING_ATTEMPT_ONLY",
             }
-        result = json.loads(execution.read_text())
+
+        if completed.returncode != 0 or not execution.is_file():
+            # The far side refused or could not be reached (65, 1, an unknown code or a
+            # crash are terminal). Say which, and say it as a disposition rather than as
+            # a crossing that happened.
+            detail = (completed.stderr or completed.stdout or "").strip().splitlines()
+            return not_completed(detail[-1] if detail else "FAR_SIDE_UNREACHABLE")
+        # An unreadable result is the boundary's terminal refusal, never a traceback.
+        try:
+            result = json.loads(execution.read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, ValueError, RecursionError, MemoryError) as exc:
+            return not_completed("PROCESS_BOUNDARY_RESULT_UNREADABLE: " + type(exc).__name__)
+        if not isinstance(result, dict):
+            return not_completed("PROCESS_BOUNDARY_RESULT_UNREADABLE: " + type(result).__name__)
 
     egress = intr_transport.build_egress(ingress, result)
     intr_transport.validate_org_crossing(egress, "EGRESS")
@@ -383,4 +393,8 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/sdk_manifest_crossing.py",
+                         inputs=("--manifest", "--registry", "--standing")))

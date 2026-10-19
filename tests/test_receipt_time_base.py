@@ -1178,7 +1178,11 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
         self.assertEqual({r["failure_code"] for r in binding["open_records"]},
                          {"MERGE_TRANSFER_PROVENANCE_PENDING_206", "PROPAGATE_MISSING_LEDGER_ROOT_IS_SILENT",
                           "IDENTICAL_REQUEST_AT_TWO_EPOCHS_ANSWERED_TWICE",
-                          "DIRECT_KERNEL_CONSUME_STAMPS_THE_FRAME_EPOCH", "KERNEL_LEGACY_DIRECT_CALL_PATHS"})
+                          "DIRECT_KERNEL_CONSUME_STAMPS_THE_FRAME_EPOCH", "KERNEL_LEGACY_DIRECT_CALL_PATHS",
+                          "PROCESS_BOUNDARY_FAULT_SEMANTICS_DEFERRED"})
+        boundary, = [r for r in binding["open_records"] if r["failure_code"] == "PROCESS_BOUNDARY_FAULT_SEMANTICS_DEFERRED"]
+        self.assertEqual(boundary["process_boundary_sha256"], __import__("hashlib").sha256(
+            (ROOT / "org-boundary/runtime/process_boundary.py").read_bytes()).hexdigest())
         pending, = [r for r in binding["open_records"] if r["failure_code"] == "MERGE_TRANSFER_PROVENANCE_PENDING_206"]
         self.assertEqual((pending["state"], pending["owning_existing_goal"]), ("OPEN", "StegVerse-org/.github#206"))
         for field in SIX_FIELDS:
@@ -1334,6 +1338,28 @@ class WriterCliTraceTests(unittest.TestCase):
             self.assertEqual((record["failure_code"], record["terminal"]), ("LEDGER_RECEIPT_COLLISION", True))
             self.assertEqual(len(list((ledger / "receipts").glob("*.json"))), 1)
 
+    def test_a_too_deep_inline_json_argument_is_a_terminal_input_refusal(self):
+        """F-SCAN-RECURSION row 5: a deep --hb-epoch-source-json is the input's fault, never WRITE_FAILED 75."""
+        if importlib.util.find_spec("stegverse") is None:
+            self.skipTest("manifest ingress imports the pinned SDK at module load")
+        with tempfile.TemporaryDirectory() as work:
+            manifest = Path(work) / "manifest.json"
+            manifest.write_text("{}")
+            env = {k: v for k, v in os.environ.items() if not k.startswith("STEGVERSE_")}
+            env["STEGVERSE_ORG_LEDGER_ROOT"] = str(Path(work) / "ledger")
+            completed = subprocess.run(
+                [sys.executable, str(ROOT / "resident-runtime/organization_manifest_ingress.py"),
+                 "--manifest", str(manifest), "--registry", str(ROOT / "org-boundary/registry/services.json"),
+                 "--hb-epoch", "4096", "--hb-epoch-source-json", '{"a":' + "[" * 100000],
+                capture_output=True, text=True, cwd=str(ROOT), env=env)
+            self.assertNotEqual(completed.returncode, 75)
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertNotIn("Traceback", completed.stderr)
+            record = json.loads(completed.stdout.strip().splitlines()[-1])
+            self.assertIs(record.get("terminal", True), True)
+            self.assertNotEqual(record.get("failure_code"), "WRITE_FAILED")
+            self.assertFalse((Path(work) / "ledger").exists())
+
     def test_an_unusable_input_file_is_terminal_and_writes_nothing(self):
         """F-INPUT-TRACE: a missing, non-JSON, non-UTF-8, directory or non-object input; six fields, terminal."""
         clis = {"resident-runtime/aggregate_repo_transition.py": ["--repo-receipt"],
@@ -1389,7 +1415,8 @@ class WriterCliTraceTests(unittest.TestCase):
                          "resident-runtime/organization_manifest_ingress.py",
                          "resident-runtime/propagate_repository_receipts.py", "resident-runtime/resident_dispatch.py",
                          "resident-runtime/resident_executor.py",
-                         "resident-runtime/submit_org_transition_to_master_records.py"):
+                         "resident-runtime/submit_org_transition_to_master_records.py",
+                         "resident-runtime/sdk_manifest_crossing.py", "resident-runtime/run_once.py"):
             with self.subTest(cli=relative):
                 main_block = (ROOT / relative).read_text().split('__name__', )[-1]
                 self.assertIn("_writer.run(", main_block)
@@ -1496,11 +1523,20 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
             payload={"manifest": {"processing": {"capability": "ecosystem_diagnostic",
                                                  "route_id": "stegverse.route.ecosystem-diagnostic.v1"}}},
             standing={"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None})
-        for status, stderr in ((75, "PROCESS_BOUNDARY_WRITE_FAULT"), (65, "refused"), (1, "missing:payload"),
-                               (3, "unknown"), (1, "Traceback (most recent call last):\n  boom"), (0, "")):
-            with self.subTest(exit=status, stderr=stderr[:12]), mock.patch.object(
-                    org.kernel.subprocess, "run",
-                    return_value=subprocess.CompletedProcess([], status, stdout="", stderr=stderr)):
+        def child(status, stderr, result=None):
+            def run(command, **kwargs):
+                if result is not None:
+                    Path(command[command.index("--out") + 1]).write_text(result)
+                return subprocess.CompletedProcess(command, status, stdout="", stderr=stderr)
+            return run
+
+        for status, stderr, result in ((75, "PROCESS_BOUNDARY_WRITE_FAULT", None), (65, "refused", None),
+                                       (1, "missing:payload", None), (3, "unknown", None),
+                                       (1, "Traceback (most recent call last):\n  boom", None), (0, "", None),
+                                       # PB_UNREADABLE_RESULT_NOT_SPLIT: exit 0, result unreadable.
+                                       (0, "", "{not json"), (0, "", "[1, 2]"), (0, "", '{"a":' + "[" * 200000)):
+            with self.subTest(exit=status, stderr=stderr[:12], result=(result or "")[:8]), mock.patch.object(
+                    org.kernel.subprocess, "run", side_effect=child(status, stderr, result)):
                 with self.assertRaises(Exception) as raised:
                     org.kernel.dispatch(ROOT, packet)
                 if status == 75:
@@ -1510,6 +1546,82 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
                     self.assertIsInstance(raised.exception, ValueError)
                     self.assertFalse(org.kernel.writer_fault(raised.exception))
                     self.assertEqual(org.kernel.refusal_disposition(str(raised.exception)), "DENY")
+
+    def test_an_oserror_in_its_own_working_space_is_75(self):
+        """PB_OWN_WRITE_FAULT_MARKED_TERMINAL: ENOSPC creating the adapter's temporary directory."""
+        with tempfile.TemporaryDirectory() as work:
+            completed = subprocess.run(
+                [sys.executable, "-c", "import runpy,sys,tempfile\n"
+                 "class Full:\n"
+                 "    def __init__(self,*a,**k): raise OSError(28,'No space left on device (injected)')\n"
+                 "tempfile.TemporaryDirectory=Full\n"
+                 "sys.argv=sys.argv[1:];runpy.run_path(sys.argv[0],run_name='__main__')",
+                 str(self.BOUNDARY), "--envelope", str(self.envelope(work)),
+                 "--registry", str(ROOT / "org-boundary/registry/services.json"),
+                 "--out", str(Path(work) / "execution.json")],
+                capture_output=True, text=True, cwd=str(ROOT))
+            self.assertEqual(completed.returncode, 75, completed.stderr)
+            self.assert_record(completed, "PROCESS_BOUNDARY_WRITE_FAULT", False)
+
+    def test_the_crossing_cli_prints_six_fields_for_every_outcome(self):
+        """PB_CALLER_TRACEBACK_OR_NO_RECORD: sdk_manifest_crossing main -- 75 is WRITE_FAILED exit 75;
+        an unreadable result is a terminal far-side refusal; never a traceback."""
+        writer = load_module("pb_writer_cli", "resident-runtime/writer_cli.py")
+        crossing = load_module("pb_crossing_cli", "resident-runtime/sdk_manifest_crossing.py")
+        manifest = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+        with tempfile.TemporaryDirectory() as work:
+            standing = Path(work) / "standing.json"
+            standing.write_text(json.dumps({"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None}))
+            argv = ["sdk_manifest_crossing.py", "--manifest", str(manifest), "--registry",
+                    str(ROOT / "org-boundary/registry/services.json"), "--standing", str(standing)]
+            for status, result, exit_code, code, terminal in ((75, None, 75, "WRITE_FAILED", False),
+                                                               (0, "{not json", 1, "FAR_SIDE_REFUSED_THE_CROSSING", True),
+                                                               (0, "[1]", 1, "FAR_SIDE_REFUSED_THE_CROSSING", True),
+                                                               (1, None, 1, "FAR_SIDE_REFUSED_THE_CROSSING", True)):
+                def run(command, **kwargs):
+                    if result is not None:
+                        Path(command[command.index("--out") + 1]).write_text(result)
+                    return subprocess.CompletedProcess(command, status, stdout="", stderr="boundary said no\n")
+                with self.subTest(exit=status, result=result), mock.patch.object(crossing.subprocess, "run", run), \
+                        mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()) as out, \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(writer.run(crossing.main, "entry"), exit_code)
+                    record = json.loads(out.getvalue().strip().splitlines()[-1])
+                    self.assertEqual((record["failure_code"], record["terminal"]), (code, terminal))
+                    for field in SIX_FIELDS:
+                        self.assertTrue(record[field], field)
+
+    def test_run_once_prints_six_fields_for_every_boundary_outcome(self):
+        """PB_CALLER_TRACEBACK_OR_NO_RECORD: run_once -- 75 is WRITE_FAILED exit 75; 1, 3, a missing,
+        non-JSON or list result are terminal six-field refusals, exit 1; never a traceback."""
+        writer = load_module("pb_run_once_writer", "resident-runtime/writer_cli.py")
+        sys.path.insert(0, str(ROOT / "resident-runtime"))
+        self.addCleanup(sys.path.remove, str(ROOT / "resident-runtime"))
+        run_once = load_module("pb_run_once", "resident-runtime/run_once.py")
+        with tempfile.TemporaryDirectory() as work:
+            ingress = Path(work) / "ingress.json"
+            ingress.write_text(json.dumps({"packet_id": "pb"}))
+            argv = ["run_once.py", "--ingress", str(ingress), "--egress", str(Path(work) / "egress.json")]
+            for status, result, exit_code, code, terminal in ((75, None, 75, "WRITE_FAILED", False),
+                                                               (1, None, 1, "PROCESS_BOUNDARY_REFUSED", True),
+                                                               (3, None, 1, "PROCESS_BOUNDARY_REFUSED", True),
+                                                               (0, None, 1, "PROCESS_BOUNDARY_RESULT_UNREADABLE", True),
+                                                               (0, "{not json", 1, "PROCESS_BOUNDARY_RESULT_UNREADABLE", True),
+                                                               (0, "[1]", 1, "PROCESS_BOUNDARY_RESULT_UNREADABLE", True)):
+                def run(command, **kwargs):
+                    if result is not None:
+                        Path(command[command.index("--out") + 1]).write_text(result)
+                    return subprocess.CompletedProcess(command, status, stdout="", stderr="boundary said no\n")
+                with self.subTest(exit=status, result=result), mock.patch.object(run_once.subprocess, "run", run), \
+                        mock.patch.object(run_once, "validate_org_crossing", lambda *a: None), \
+                        mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()) as out, \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(writer.run(run_once.main, "entry", inputs=("--ingress",)), exit_code)
+                    record = json.loads(out.getvalue().strip().splitlines()[-1])
+                    self.assertEqual((record["failure_code"], record["terminal"]), (code, terminal))
+                    for field in SIX_FIELDS:
+                        self.assertTrue(record[field], field)
+            self.assertFalse((Path(work) / "egress.json").exists())
 
     def test_every_caller_keeps_75_and_65_apart(self):
         kernel = (ROOT / "org-kernel/kernel.py").read_text()
@@ -1533,7 +1645,7 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
                     self.assertEqual((refused["crossing_completed"], refused["disposition"]), (False, "FAIL_CLOSED"))
         run_once = (ROOT / "resident-runtime/run_once.py").read_text()
         self.assertNotIn("check=True", run_once)
-        self.assertIn("return completed.returncode", run_once)
+        self.assertIn("_writer.run(main", run_once)
 
 
 class OrganizationReceiptTests(unittest.TestCase):

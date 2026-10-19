@@ -292,8 +292,17 @@ def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None,
             if completed.returncode!=0 or not out.is_file():
                 raise ValueError("PROCESS_BOUNDARY_INPUT_FAULT:exit "+str(completed.returncode)
                                  +":endpoint_adapter_execution_failed:"+completed.stderr[-512:])
-            result=json.loads(out.read_text())
-            if not isinstance(result,dict): raise ValueError("endpoint_adapter_result_invalid")
+            # A result that is not a readable JSON object is the crossing's terminal
+            # refusal too (PB_UNREADABLE_RESULT_NOT_SPLIT): recorded DENY and marked,
+            # never retried into a second transition for the same frame.
+            try:
+                result=json.loads(out.read_text(encoding="utf-8"))
+            except (UnicodeDecodeError,ValueError,RecursionError,MemoryError) as exc:
+                raise ValueError("PROCESS_BOUNDARY_INPUT_FAULT:endpoint_adapter_result_invalid:"
+                                 +type(exc).__name__) from None
+            if not isinstance(result,dict):
+                raise ValueError("PROCESS_BOUNDARY_INPUT_FAULT:endpoint_adapter_result_invalid:"
+                                 +type(result).__name__)
             return {**result,**standing}
     if role not in {"BOUNDARY_LOCAL_DIAGNOSTIC","BOUNDARY_LOCAL_CONTROL",CAPABILITY_INGRESS_ROLE}:
         raise ValueError("endpoint_adapter_not_installed")

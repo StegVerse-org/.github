@@ -155,8 +155,9 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
                     "packet_id":(x.get("result") or {}).get("packet_id"),
                     "disposition":(x.get("result") or {}).get("disposition"),
                     "failed_predicate":(x.get("result") or {}).get("failed_predicate")}
-                   for x in results if (x.get("result") or {}).get("status")=="REFUSED"
-                   and (x.get("result") or {}).get("disposition")!="DENY"]
+                   for x in results if (x.get("result") or {}).get("status") in ("REFUSED","PENDING")
+                   and (x.get("result") or {}).get("disposition")!="DENY"
+                   and not (x.get("result") or {}).get("quarantined")]
     if consumption.get("disposition")=="ALLOW" and failed_frames:
         consumption={"disposition":"FAIL_CLOSED",
                      "failed_predicate":"FEDERATION_FRAME_CONSUMPTION_NOT_COMPLETED",

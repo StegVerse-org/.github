@@ -130,6 +130,17 @@
         "retry_entrypoint": "org-kernel/kernel.py (ingest_frame, consume_and_respond now_ns, publish_ecosystem_from_directory)",
         "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
         "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "PROCESS_BOUNDARY_FAULT_SEMANTICS_DEFERRED",
+        "failed_predicate": "PROCESS_BOUNDARY_IS_THE_CANONICAL_DC_BYTES",
+        "detail": "org-boundary/runtime/process_boundary.py carries the Data-Continuation/.github#10 exit-code split (own write or working-space OSError: non-terminal 75; everything else: terminal 65; no traceback) and every caller treats only 75 as non-terminal, but it is a locally diverged copy, not the DC bytes (a1fd6681...d7681); the tree's process_boundary_sha256 below is checked by a test",
+        "process_boundary_sha256": "cc0ff9145fc46b1ef621c6ef0bbaecb0507f5a4c7c19d1b2c51348786b94497a",
+        "required_evidence_or_repair": "re-pin to the Data-Continuation/.github#10 bytes once it merges, keeping the caller-side split (only 75 non-terminal) and valid-input output byte-identical",
+        "retry_entrypoint": "python3 org-boundary/runtime/process_boundary.py --envelope ... --registry ... --out ...",
+        "owning_existing_goal": "Data-Continuation/.github#10 merge",
+        "next_attempt": "on DC#10 merge"
       }
     ]
   }
