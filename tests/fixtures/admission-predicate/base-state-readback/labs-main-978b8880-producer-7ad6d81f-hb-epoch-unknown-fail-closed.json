@@ -6,6 +6,7 @@
   },
   "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
   "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+  "cross_checked": false,
   "disposition": "FAIL_CLOSED",
   "failed_predicate": "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH",
   "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
@@ -18,7 +19,7 @@
   "readback_writes": false,
   "repository": "StegVerse-Labs/.github",
   "required_evidence_or_repair": "--hb-epoch, when given, carries the epoch (ASCII digits); \"\", \"null\" or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED is unobserved",
-  "result_sha256": "sha256:a4eb2493b6861e2f86a47a0a754e9e3c3da4b647213cdb130dd128ad3f545d17",
+  "result_sha256": "sha256:025e46a2ccab4e0bfae85b0554b0fe348f92e546a7b74203d660bdd90d1a0946",
   "retry_entrypoint": "resident-runtime/sv_change_base_state_readback.py::evaluate",
   "schema": "stegverse.sv-change-base-state-readback/v1",
   "sources": [

@@ -27,8 +27,8 @@ epoch is unobserved); ADMISSION_INPUT_READY only if every one is ALLOW.
       the flag; --hb-epoch is an optional cross-check (omitted -> none). Source unobserved, or an explicit --hb-epoch
       of '' / 'null' / UNKNOWN_NOT_AUTHENTICALLY_OBSERVED -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED. Any other malformed value (kernel
       supplied_epoch_failure 726248a5) or a differing value -> DENY HB_EPOCH_MISMATCH. --hb-epoch omitted ->
-      ALLOW with P1's NOT_CROSS_CHECKED_MARKER {cross_checked: false, detail: HB_EPOCH_NOT_CROSS_CHECKED}, both absent when
-      the cross-check ran. Only an ALLOW #3266 receipt binds (TVC; ruling 17:07Z): a DENY receipt is
+      ALLOW with P1's NOT_CROSS_CHECKED_MARKER {cross_checked: false, detail: HB_EPOCH_NOT_CROSS_CHECKED}; a held
+      cross-check -> ALLOW with cross_checked true + supplied_hb_epoch (P1 @e65ee21b). Only an ALLOW #3266 receipt binds (TVC; ruling 17:07Z): a DENY receipt is
       BASE_STATE_NOT_OBSERVED, and a void readback shape is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED under
       READBACK_SHAPE_MATCHES_PINNED_PRODUCER.
   PR_AUTHOR_SESSION_DECLARED     --session-id matches the SV_CHANGE session pattern.
@@ -46,7 +46,7 @@ epoch is unobserved); ADMISSION_INPUT_READY only if every one is ALLOW.
       Lane A FAIL_CLOSED -> FAIL_CLOSED with Lane A's own code, otherwise FAIL_CLOSED
       CHECK_SKIPPED_OR_UNOBSERVED (TVC sv_change_job_observation mapping).
   BASE_STATE_RECEIPT_BOUND       (with --base-state-receipt) the sealed StegVerse-Labs/.github#3266
-      readback receipt verifies as TVC#519 @39afe092 sv_change_base_state checks it (schema,
+      readback receipt verifies as TVC#519 @fe768899 sv_change_base_state checks it (schema,
       component, seal, ALLOW, well-formed base_ref/sources/hb_epoch), is bound to --base-sha
       and agrees with any explicit flag; it then supplies registry_generation / ledger_head
       for change identity and HEAD_CURRENT_WITH_BASE, and its hb_epoch is the HB_EPOCH_SUPPLIED source.
@@ -299,7 +299,7 @@ def load_job_observation_reference(pin_path: Path | None = None):
 
 
 # ---- B1 base-state readback receipt (StegVerse-Labs/.github#3266 RTC-SV-CHANGE-BASE-STATE-READBACK-014) ----
-# Verified exactly as TVC#519 @39afe092 sv_change_base_state.base_state_from_readback (blob 94b13f34) does; producer pinned in
+# Verified exactly as TVC#519 @fe768899 sv_change_base_state.base_state_from_readback (blob d4308a06) does; producer pinned in
 # config/admission-predicate/base-state-readback.pin.json (traceability: P4 consumes only the sealed receipt).
 BASE_STATE_SCHEMA = "stegverse.sv-change-base-state-readback/v1"
 BASE_STATE_COMPONENT = "RTC-SV-CHANGE-BASE-STATE-READBACK-014"
@@ -326,17 +326,54 @@ def _pinned_producer_ref() -> str:
 BASE_STATE_PRODUCER = "StegVerse-Labs/.github#3266 @" + _pinned_producer_ref()[:8]
 
 
-# Ruling (P1 via Lane C, 17:07Z): a readback whose shape the pinned #3266 producer (9c9b9f51) never emits is void:
-# FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED with failed_check/failed_predicate READBACK_SHAPE_MATCHES_PINNED_PRODUCER.
+# P1 #3264 @e65ee21b invariants.json NOT_CROSS_CHECKED_MARKER (amended ~17:15Z) and readback_shape_violation: the pinned
+# #3266 producer ALWAYS emits cross_checked. A readback in any other shape is void: FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED with
+# failed_check/failed_predicate READBACK_SHAPE_MATCHES_PINNED_PRODUCER (a self-seal cannot prove which producer path ran).
 READBACK_SHAPE_PREDICATE = "READBACK_SHAPE_MATCHES_PINNED_PRODUCER"
+READBACK_SUPPLIED_FIELD = "supplied_hb_epoch"  # == P1 READBACK_SUPPLIED_FIELD; #3266 seals the supplied --hb-epoch under it
+
+
+def readback_shape_violation(rb: Mapping) -> str | None:
+    """== P1 #3264 @e65ee21b sv_work_items.readback_shape_violation, logic for logic (TVC#519 @fe768899 reproduces it too).
+      omitted-flag ALLOW:   exactly cross_checked false + detail HB_EPOCH_NOT_CROSS_CHECKED, no supplied_hb_epoch;
+      cross-checked ALLOW:  cross_checked true + supplied_hb_epoch (ASCII digits equal by integer value to the sealed
+                            hb_epoch), no not-cross-checked detail;
+      DENY HB_EPOCH_MISMATCH: cross_checked true, no not-cross-checked detail;
+      any other disposition: cross_checked a JSON boolean.
+    No cross_checked key (incl. stripped and resealed), an hb_epoch_cross_check key, or any other combination is void.
+    Returns the reason, or None."""
+    if "hb_epoch_cross_check" in rb:
+        return "carries hb_epoch_cross_check, which the producer never emits (void superseded-producer shape)"
+    if "cross_checked" not in rb:
+        return "no cross_checked key: the producer always emits it, and a self-seal cannot prove which producer path ran"
+    cc = rb["cross_checked"]
+    if not isinstance(cc, bool):
+        return "cross_checked is not a JSON boolean"
+    if rb.get("disposition") == "DENY" and rb.get("failure_code") == "HB_EPOCH_MISMATCH":
+        if cc is not True or rb.get("detail") == HB_EPOCH_NOT_CROSS_CHECKED:
+            return "a DENY HB_EPOCH_MISMATCH readback that does not carry cross_checked true (only a cross-check can mismatch)"
+        return None
+    if rb.get("disposition") != "ALLOW":
+        return None
+    if cc is False:
+        if rb.get("detail") != HB_EPOCH_NOT_CROSS_CHECKED or READBACK_SUPPLIED_FIELD in rb:
+            return ("an omitted-flag ALLOW whose marker is not exactly the canonical top-level "
+                    "{cross_checked: false, detail: HB_EPOCH_NOT_CROSS_CHECKED}")
+        return None
+    sv, ep = rb.get(READBACK_SUPPLIED_FIELD), rb.get("hb_epoch")
+    if rb.get("detail") == HB_EPOCH_NOT_CROSS_CHECKED or not (isinstance(sv, str) and HB_EPOCH.fullmatch(sv)) \
+            or not (isinstance(ep, str) and HB_EPOCH.fullmatch(ep)) or int(sv) != int(ep):
+        return ("a cross-checked ALLOW that does not carry cross_checked true with the supplied value (" + READBACK_SUPPLIED_FIELD
+                + ", ASCII digits equal to the sealed hb_epoch) and no not-cross-checked detail")
+    return None
 
 
 def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str | None]:
     """(state, None, None) when TVC's adapter would bind the receipt; else (None, failure_code, reason).
-    Only an ALLOW receipt binds (TVC sv_change_base_state @39afe092; ruling 17:07Z). A DENY HB_EPOCH_MISMATCH receipt
+    Only an ALLOW receipt binds (TVC sv_change_base_state @fe768899; ruling 17:07Z). A DENY HB_EPOCH_MISMATCH receipt
     is BASE_STATE_NOT_OBSERVED here: TVC and P1 accept it only as a raw hb_epoch readback, which P4 does not take.
-    A void shape (hb_epoch_cross_check key, i.e. superseded #3266 producers; or an ALLOW whose top-level marker is not
-    exactly P1's NOT_CROSS_CHECKED_MARKER) is (None, HB_EPOCH_SOURCE_UNOBSERVED, reason) under READBACK_SHAPE_PREDICATE.
+    The shape is checked first, for every disposition (P1 order): a void shape (readback_shape_violation) is
+    (None, HB_EPOCH_SOURCE_UNOBSERVED, reason) under READBACK_SHAPE_PREDICATE.
     hb_epoch_source is carried as-is and judged by HB_EPOCH_SUPPLIED (P1: a bad source is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED)."""
     if not isinstance(receipt, Mapping):
         return None, "BASE_STATE_RECEIPT_UNREADABLE", "receipt is not a JSON object"
@@ -344,9 +381,9 @@ def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str
         return None, "BASE_STATE_RECEIPT_SCHEMA_MISMATCH", f"schema/component_id != {BASE_STATE_SCHEMA}/{BASE_STATE_COMPONENT}"
     if not isinstance(receipt.get(SEAL_FIELD), str) or not seal_verifies(receipt):
         return None, "BASE_STATE_RECEIPT_SEAL_INVALID", "result_sha256 does not verify over the canonical receipt"
-    if "hb_epoch_cross_check" in receipt:
-        return None, "HB_EPOCH_SOURCE_UNOBSERVED", (READBACK_SHAPE_PREDICATE + ": the readback carries hb_epoch_cross_check, "
-                                                    "a void shape (superseded #3266 producers) the pinned producer never emits")
+    shape = readback_shape_violation(receipt)
+    if shape is not None:
+        return None, "HB_EPOCH_SOURCE_UNOBSERVED", READBACK_SHAPE_PREDICATE + ": " + shape
     if receipt.get("disposition") != "ALLOW":
         return None, "BASE_STATE_NOT_OBSERVED", f"receipt disposition {receipt.get('disposition')} ({receipt.get('failure_code')})"
     base = receipt.get("base_ref")
@@ -367,15 +404,9 @@ def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str
             or not all(isinstance(files.get(f), str) and GIT_SHA.match(files[f]) for f in (registry_file, BASE_STATE_LEDGER_HEAD_FILE))
             or (epoch is not None and not (isinstance(epoch, str) and epoch.isascii() and epoch.isdigit() and int(epoch) >= HB_EPOCH_MINIMUM))):
         return None, "BASE_STATE_RECEIPT_MALFORMED", "base_ref, bound_main_commit, sources or hb_epoch not well formed"
-    # The receipt's own not-cross-checked marker (top level, P1 NOT_CROSS_CHECKED_MARKER): on an ALLOW either exactly
-    # {cross_checked: false, detail: HB_EPOCH_NOT_CROSS_CHECKED} (its --hb-epoch was omitted) or both absent (it ran).
-    # A partial or altered marker (an omitted-flag ALLOW without the canonical marker) is a void shape. It is readback
-    # evidence only: the admission's own cross-check is HB_EPOCH_SUPPLIED's.
-    marker = {k: receipt[k] for k in ("cross_checked", "detail") if k in receipt}
-    if marker and not (marker == NOT_CROSS_CHECKED_MARKER and type(marker.get("cross_checked")) is bool):
-        return None, "HB_EPOCH_SOURCE_UNOBSERVED", (READBACK_SHAPE_PREDICATE + ": the ALLOW's top-level marker %r is not exactly "
-                                                    "P1's NOT_CROSS_CHECKED_MARKER (cross_checked false + detail "
-                                                    "HB_EPOCH_NOT_CROSS_CHECKED) and not absent" % (marker,))
+    # The receipt's own cross-check marker (shape already verified): readback evidence only; the admission's own
+    # cross-check is HB_EPOCH_SUPPLIED's.
+    marker = {k: receipt[k] for k in ("cross_checked", "detail", READBACK_SUPPLIED_FIELD) if k in receipt}
     source = receipt.get("hb_epoch_source")
     key = source.get("receipt") if isinstance(source, Mapping) else None
     return {"registry_generation": gen, "ledger_head": head, "bound_main_commit": commit,
@@ -384,7 +415,7 @@ def base_state_from_readback(receipt: Any) -> tuple[dict | None, str | None, str
             "registry_file": registry_file, "hb_epoch_source": dict(source) if isinstance(source, Mapping) else source,
             "hb_epoch_source_receipt_blob": files.get(BASE_STATE_LEDGER_REF + ":" + key) if isinstance(key, str) else None,
             "readback_disposition": receipt.get("disposition"), "fixture_only": receipt.get("fixture_only") is True,
-            "readback_not_cross_checked_marker": marker or None}, None, None
+            "readback_marker": marker}, None, None
 
 
 def p_base_state(a) -> dict:
@@ -393,7 +424,7 @@ def p_base_state(a) -> dict:
     (--base-sha / --current-base-sha), and agree with any explicit flag. The base receipt also observes the
     current side when --current-base-sha is its bound commit and no current receipt is supplied."""
     r = row("BASE_STATE_RECEIPT_BOUND", producer=BASE_STATE_PRODUCER + " " + BASE_STATE_COMPONENT,
-            verifier="TVC#519 @39afe092 sv_change_base_state.base_state_from_readback (reproduced)", receipts={})
+            verifier="TVC#519 @fe768899 sv_change_base_state.base_state_from_readback (reproduced)", receipts={})
     sides = [("base", a.base_state_receipt, a.base_sha), ("current", a.current_base_state_receipt, a.current_base_sha)]
     for side, path, sha in sides:
         if not path:
@@ -574,18 +605,19 @@ HB_EPOCH_INVARIANT = "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH"
 
 
 HB_EPOCH_NOT_CROSS_CHECKED = "HB_EPOCH_NOT_CROSS_CHECKED"  # P1 NOT_CROSS_CHECKED_DETAIL: the optional cross-check was left out
-# P1 invariants.json NOT_CROSS_CHECKED_MARKER (DECIDED 16:30Z): canonical marker on an ALLOW whose optional cross-check was left
-# out; both fields absent when the cross-check ran. #3266 seals the same marker at top level on its own omitted-flag ALLOW.
+# P1 invariants.json NOT_CROSS_CHECKED_MARKER (DECIDED 16:30Z, amended ~17:15Z): canonical marker on an ALLOW whose optional
+# cross-check was left out; a held cross-check carries cross_checked true + supplied_hb_epoch (P1 @e65ee21b output).
 NOT_CROSS_CHECKED_MARKER = {"cross_checked": False, "detail": HB_EPOCH_NOT_CROSS_CHECKED}
 # P1 SUPPLIED_EPOCH_UNOBSERVED_VALUES (None, "", "null", UNKNOWN): explicit unobserved values -> FAIL_CLOSED, never DENY.
 # The CLI cannot pass JSON null; an omitted --hb-epoch is HB_EPOCH_NOT_CROSS_CHECKED, never None.
 SUPPLIED_EPOCH_UNOBSERVED_VALUES = (None, "", "null", UNKNOWN)
 LEDGER_BINDING_INVARIANT = "CHANGE_BINDS_TARGET_REPOSITORY_LEDGER"  # P1: base_ref.ledger_head is the TARGET repository's own ledger head
-P1_REFERENCE = {"repository": "StegVerse-Labs/.github", "pull_request": 3264, "ref": "7898cedba1400c8545cebcb463fd26deb25f7d5a",
-                "path": "resident-runtime/sv_work_items.py", "git_blob_sha": "4c2aa6ef97b5e4e6f055a2a904e42e0487ed5a9a",
+P1_REFERENCE = {"repository": "StegVerse-Labs/.github", "pull_request": 3264, "ref": "e65ee21bbd68c4005cecabcc7d05f6d4802460e1",
+                "path": "resident-runtime/sv_work_items.py", "git_blob_sha": "6d3a0d3a2722c97f39e27eb38ecb8e58a5ea01a3",
                 "contract_pins": {"path": "data/sv-work-items/contract-pins.json",
-                                  "git_blob_sha": "9827749685f71748b640a76909b0662c259eb33a",
-                                  "sha256": "317aef68d7a875b84633361a25b000810457fbc89b96f735dde3259008b897d7"},
+                                  "git_blob_sha": "2f3a2ca2f4b4dd359e06ece32f6420c4e4b96010",
+                                  "sha256": "eec74d30cd3fef40292a5626244cd2d9713380a2cd64f5da3e58e82e6c20a092"},
+                "readback_shape": "readback_shape_violation (READBACK_SHAPE_MATCHES_PINNED_PRODUCER)",
                 "function": "verify_admission_hb_epoch",
                 "supplied_epoch_rule": "org-kernel/kernel.py::supplied_epoch_failure (source segment sha256 726248a5)",
                 "ledger_binding": LEDGER_BINDING_INVARIANT + " (evaluate_admission passes target_repository or UNKNOWN)"}
@@ -615,7 +647,7 @@ def supplied_epoch_failure(value: Any, reference: Any = None) -> tuple[str, str]
 
 
 def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
-    """HB_EPOCH_SUPPLIED = P1 verify_admission_hb_epoch (StegVerse-Labs/.github#3264 @7898cedb, sv_work_items.py blob 4c2aa6ef, listed in its contract-pins.json 98277496; checked 17:07Z, still the head)
+    """HB_EPOCH_SUPPLIED = P1 verify_admission_hb_epoch (StegVerse-Labs/.github#3264 @e65ee21b, sv_work_items.py blob 6d3a0d3a, listed in its contract-pins.json 2f3a2ca2)
     over the receipt BASE_STATE_RECEIPT_BOUND verified (schema, seal, ALLOW only, pinned-producer shape, bound commit/flags):
       FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED: no bound receipt; fixture_only; the readback's repository is not the target
         repository (--repository, else UNKNOWN; CHANGE_BINDS_TARGET_REPOSITORY_LEDGER: an org change never binds a Labs
@@ -626,7 +658,7 @@ def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
       ALLOW {hb_epoch, ledger_head, cross_checked: false, detail: HB_EPOCH_NOT_CROSS_CHECKED}: --hb-epoch omitted.
       DENY HB_EPOCH_MISMATCH {ledger_head, expected, hb_epoch (supplied), supplied_epoch_rule?}: any other value failing
         726248a5, or not equal by integer value to the sealed epoch.
-      ALLOW {hb_epoch, ledger_head}: the cross-check held (NOT_CROSS_CHECKED_MARKER absent when the cross-check ran)."""
+      ALLOW {hb_epoch, ledger_head, cross_checked: true, supplied_hb_epoch}: the cross-check held (P1 @e65ee21b)."""
     bound = (receipt_row or {}).get("receipts", {}).get("base", {}).get("binds") if receipt_row and receipt_row["holds"] else None
     head = bound.get("ledger_head") if bound else None
     target = a.repository or UNKNOWN  # P1 evaluate_admission: target_repository or UNKNOWN
@@ -637,7 +669,7 @@ def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
             receipt_hb_epoch_source=bound.get("hb_epoch_source") if bound else None,
             receipt_result_sha256=bound.get("result_sha256") if bound else None,
             readback_disposition=bound.get("readback_disposition") if bound else None,
-            readback_not_cross_checked_marker=bound.get("readback_not_cross_checked_marker") if bound else None)
+            readback_marker=bound.get("readback_marker") if bound else None)
 
     def unobserved(why: str) -> tuple[dict, None]:
         r["detail"] = why
@@ -685,7 +717,8 @@ def p_hb_epoch(a, receipt_row: dict | None) -> tuple[dict, str | None]:
         return refuse(r, a, "HB_EPOCH_MISMATCH",
                       "the SV_CHANGE's hb_epoch (--hb-epoch) equals the epoch the base-state readback sealed at base_ref.ledger_head",
                       "propose a successor SV_CHANGE at the observed epoch; nothing was admitted", disposition="DENY"), None
-    r["hb_epoch"] = str(want)
+    # P1 @e65ee21b (ruling ~17:15Z): a held cross-check carries cross_checked true plus the supplied value
+    r.update({"hb_epoch": str(want), "cross_checked": True, READBACK_SUPPLIED_FIELD: supplied})
     return r, str(want)
 
 

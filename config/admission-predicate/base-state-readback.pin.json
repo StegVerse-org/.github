@@ -1,15 +1,15 @@
 {
-  "_note": "Pin of the B1 base-state readback producer (RTC-SV-CHANGE-BASE-STATE-READBACK-014, StegVerse-Labs/.github draft PR 3266). The producer runs git, so P4 does not vendor it or execute it in admission (receipt fixtures were produced by running the pinned bytes unmodified outside this repo, see fixtures[].produced_by); admission_predicate.py consumes only its sealed receipt (--base-state-receipt), verifies it as TVC#519 @39afe092 sv_change_base_state.base_state_from_readback does (only an ALLOW binds; a DENY readback is BASE_STATE_NOT_OBSERVED; a void shape, i.e. an hb_epoch_cross_check key or a non-canonical top-level marker, is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED under READBACK_SHAPE_MATCHES_PINNED_PRODUCER, ruling 17:07Z), and judges the epoch as P1 verify_admission_hb_epoch does. git_blob_sha and sha256 verified against bytes fetched at PR head 9c9b9f51 on 2026-10-18 (confirmed the PR's current head; re-pinned from 2ba0e329). Omitted --hb-epoch ALLOW carries P1's NOT_CROSS_CHECKED_MARKER at top level (cross_checked false + detail HB_EPOCH_NOT_CROSS_CHECKED), absent when the cross-check ran; explicit '', 'null' or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED; other malformed or differing is DENY HB_EPOCH_MISMATCH.",
+  "_note": "Pin of the B1 base-state readback producer (RTC-SV-CHANGE-BASE-STATE-READBACK-014, StegVerse-Labs/.github draft PR 3266). The producer runs git, so P4 does not vendor it or execute it in admission (receipt fixtures were produced by running the pinned bytes unmodified outside this repo, see fixtures[].produced_by); admission_predicate.py consumes only its sealed receipt (--base-state-receipt), verifies it as TVC#519 @fe768899 sv_change_base_state.base_state_from_readback does (only an ALLOW binds; a DENY readback is BASE_STATE_NOT_OBSERVED; a void shape (P1 @e65ee21b readback_shape_violation: no cross_checked, an hb_epoch_cross_check key, or a non-canonical marker), is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED under READBACK_SHAPE_MATCHES_PINNED_PRODUCER, ruling 17:07Z), and judges the epoch as P1 verify_admission_hb_epoch does. git_blob_sha and sha256 verified against bytes fetched at PR head 7ad6d81f on 2026-10-19 (confirmed the PR's current head; re-pinned from 9c9b9f51). The producer always emits top-level cross_checked (P1 NOT_CROSS_CHECKED_MARKER amended ~17:15Z): omitted --hb-epoch ALLOW = cross_checked false + detail HB_EPOCH_NOT_CROSS_CHECKED; cross-checked ALLOW and DENY HB_EPOCH_MISMATCH = cross_checked true + supplied_hb_epoch; FAIL_CLOSED = cross_checked false (+ supplied_hb_epoch when given); explicit '', 'null' or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED; other malformed or differing is DENY HB_EPOCH_MISMATCH.",
   "producer": {
     "repository": "StegVerse-Labs/.github",
     "pull_request": 3266,
     "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
     "path": "resident-runtime/sv_change_base_state_readback.py",
-    "ref": "9c9b9f51ba658d94c8998985d4bf3783edb45f52",
-    "git_blob_sha": "035352f6dd729724b095c0dcf320b8c1b559f235",
-    "tests_git_blob_sha": "c7228fcac8a82d8a1756edb6d5e61de4d4b25d2c"
+    "ref": "7ad6d81fb6715b68b79dac6c3cbc2f484004ab2d",
+    "git_blob_sha": "17ef44016411852dde7c142e3faaa803f4ee63bd",
+    "tests_git_blob_sha": "81cf78b9dff646859b3f017e83966ac25b8fc222"
   },
-  "sha256": "de5f8b5a7c5da09759f387ff511793c9681e78e60f49ec2f972c72c4fd3667ef",
+  "sha256": "c0365226ddc4fa2bf97ad2ebd1c089b2c8b51034df27783d99164e5f26d5c637",
   "result_schema": "stegverse.sv-change-base-state-readback/v1",
   "result_seal_field": "result_sha256",
   "verifier_reference": {
@@ -39,28 +39,38 @@
       "git_blob_sha": "8192e3081fdc9c8da13cb85c77caef10f8b017eb"
     },
     {
-      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-9c9b9f51.json",
-      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@9c9b9f51, blob 035352f6, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-7ad6d81f.json",
+      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@7ad6d81f, blob 17ef4401, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
       "git_blob_sha": "cfaaec20bbf05e12826be99a89b3befa1c3e30a7",
-      "result_sha256": "sha256:0653c219f8025891a9c7617b5a845c0e5a5b4d387e2002697c9d3998ca392a6e"
+      "result_sha256": "sha256:0653c219f8025891a9c7617b5a845c0e5a5b4d387e2002697c9d3998ca392a6e",
+      "byte_identical_to": "StegVerse-Labs/TVC@fe76889929f8f16dd61155cd865af72943ed4888 tests/fixtures/base-state-readback/labs-main-978b8880-producer-7ad6d81f.json (same git blob; re-minted here and compared)"
     },
     {
-      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-9c9b9f51-hb-epoch-469411750-cross-checked.json",
-      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@9c9b9f51, blob 035352f6, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main --hb-epoch 469411750; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
-      "git_blob_sha": "94fdd06210d4588fc22d88500155f0ccae4136d5",
-      "result_sha256": "sha256:ec20c103be08495132ff1cd42cb967ce8e1c0cbf0ff8cfa4f1a18d24d149cbc7"
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-7ad6d81f-hb-epoch-469411750-cross-checked.json",
+      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@7ad6d81f, blob 17ef4401, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main --hb-epoch 469411750; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
+      "git_blob_sha": "8198608bab67ef88ed52df98f24ef9bcb6223335",
+      "result_sha256": "sha256:24ea962bc6da85c53af0472603b1989a9c54100506e263fa4a25e19db5f2ebd9",
+      "byte_identical_to": "StegVerse-Labs/TVC@fe76889929f8f16dd61155cd865af72943ed4888 tests/fixtures/base-state-readback/labs-main-978b8880-producer-7ad6d81f-hb-epoch-469411750-cross-checked.json (same git blob; re-minted here and compared)"
     },
     {
-      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-9c9b9f51-hb-epoch-469411751-deny.json",
-      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@9c9b9f51, blob 035352f6, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main --hb-epoch 469411751; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
-      "git_blob_sha": "02eca4168d56d97fbd96a6b5d569afdf6ae0398b",
-      "result_sha256": "sha256:f94b73c8216a470743ec8e49b4489237aa1b5c576bafb9d2043a34b57fb035fe"
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-7ad6d81f-hb-epoch-469411751-mismatch.json",
+      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@7ad6d81f, blob 17ef4401, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main --hb-epoch 469411751; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
+      "git_blob_sha": "5adff78869c158e95a1457ffa77e2d19494a998f",
+      "result_sha256": "sha256:6b63449489e717fe1cc4ca9161e290857eed6d8f73a4496d980c74b1ce556613",
+      "byte_identical_to": "StegVerse-Labs/TVC@fe76889929f8f16dd61155cd865af72943ed4888 tests/fixtures/base-state-readback/labs-main-978b8880-producer-7ad6d81f-hb-epoch-469411751-mismatch.json (same git blob; re-minted here and compared)"
     },
     {
-      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-9c9b9f51-hb-epoch-unknown-fail-closed.json",
-      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@9c9b9f51, blob 035352f6, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main --hb-epoch UNKNOWN_NOT_AUTHENTICALLY_OBSERVED; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
-      "git_blob_sha": "b0189ee380849634be2a94efd126190eb19603b7",
-      "result_sha256": "sha256:a4eb2493b6861e2f86a47a0a754e9e3c3da4b647213cdb130dd128ad3f545d17"
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-7ad6d81f-hb-epoch-null-string.json",
+      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@7ad6d81f, blob 17ef4401, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main --hb-epoch null; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
+      "git_blob_sha": "f1090adab56890c3bb8a30f4519b67640256620b",
+      "result_sha256": "sha256:f0db9599a2c7b1a241a8d0dc0106cc094200813efe386ce692cca6145a63da8a",
+      "byte_identical_to": "StegVerse-Labs/TVC@fe76889929f8f16dd61155cd865af72943ed4888 tests/fixtures/base-state-readback/labs-main-978b8880-producer-7ad6d81f-hb-epoch-null-string.json (same git blob; re-minted here and compared)"
+    },
+    {
+      "path": "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-7ad6d81f-hb-epoch-unknown-fail-closed.json",
+      "produced_by": "python3 sv_change_base_state_readback.py (StegVerse-Labs/.github@7ad6d81f, blob 17ef4401, run unmodified from a scratch copy, not vendored) --repository <read-only clone of StegVerse-Labs/.github> --bound-main-commit 978b8880d238dc3e3a8b690c0675d8bb0e9d6985 --repository-name StegVerse-Labs/.github --main-ref refs/remotes/origin/main --hb-epoch UNKNOWN_NOT_AUTHENTICALLY_OBSERVED; ledger head a5bb54d8 (the producer's KAT head, epoch 469411750); stdout bytes as written",
+      "git_blob_sha": "dc33369ac212795d09f45ac46e54a79c47ea7a16",
+      "result_sha256": "sha256:025e46a2ccab4e0bfae85b0554b0fe348f92e546a7b74203d660bdd90d1a0946"
     }
   ],
   "registry_paths": {
@@ -69,6 +79,13 @@
   },
   "registry_generation_joint_item": "Q-ORG-REGISTRY-GENERATION",
   "superseded": [
+    {
+      "ref": "9c9b9f51ba658d94c8998985d4bf3783edb45f52",
+      "git_blob_sha": "035352f6dd729724b095c0dcf320b8c1b559f235",
+      "sha256": "de5f8b5a7c5da09759f387ff511793c9681e78e60f49ec2f972c72c4fd3667ef",
+      "tests_git_blob_sha": "c7228fcac8a82d8a1756edb6d5e61de4d4b25d2c",
+      "reason": "emitted no cross_checked on a cross-checked ALLOW / DENY / FAIL_CLOSED; void under P1 NOT_CROSS_CHECKED_MARKER amended ~17:15Z (7ad6d81f always emits cross_checked)"
+    },
     {
       "ref": "2ba0e329c224c94863dac15de3f8011f777cb34f",
       "git_blob_sha": "2c730142254b78a5b9e1c05566fe6f5111b7d571",

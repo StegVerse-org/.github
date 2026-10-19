@@ -437,6 +437,7 @@ def readback_receipt(bound: str, generation: int = 319, ledger: str = LEDGER, ep
             body["open_questions"] = [{"id": "JD-P4-3", "slot": "hb_epoch", "status": "OPEN"}]
         return ap.seal(body)
     body["repository"] = repository  # the target repository's own ledger (CHANGE_BINDS_TARGET_REPOSITORY_LEDGER)
+    body.update(ap.NOT_CROSS_CHECKED_MARKER)  # #3266 @7ad6d81f always emits cross_checked: the omitted-flag ALLOW shape
     body["hb_epoch_source"] = None
     if epoch is not None:
         body["sources"].append({"file": "refs/stegverse/organization-ledger:" + HEAD_RECEIPT_KEY, "blob_sha": "4" * 40})
@@ -461,22 +462,29 @@ class BaseStateReceiptTest(unittest.TestCase):
         return ap.evaluate(self.f.args("--repository", TARGET, *extra, epoch=epoch, identity=False, receipt=receipt))
 
     def test_tvc_fixture_receipt_verifies_as_tvc_binds_it(self) -> None:
+        """The TVC-copied legacy receipts (producers c431bfb0, 78a0c78e) carry no cross_checked: void shapes now, as in TVC
+        @fe768899 (UNKNOWN) and P1 @e65ee21b. The pinned producer's ALLOW binds."""
         receipt = json.loads(BASE_STATE_FIXTURE.read_text(encoding="utf-8"))
-        state, code, _ = ap.base_state_from_readback(receipt)
+        self.assertEqual("sha256:04ae0f6e40cacf885bb9bce0b466e5cc3dfd4a48783596188eefa7bfbd516a20", receipt["result_sha256"])
+        state, code, why = ap.base_state_from_readback(receipt)
+        self.assertEqual((None, "HB_EPOCH_SOURCE_UNOBSERVED"), (state, code))
+        self.assertTrue(why.startswith(ap.READBACK_SHAPE_PREDICATE + ": no cross_checked key"), why)
+        current = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-7ad6d81f.json").read_text(encoding="utf-8"))
+        state, code, _ = ap.base_state_from_readback(current)
         self.assertIsNone(code)
-        self.assertEqual({"registry_generation": 319, "ledger_head": LEDGER,
+        self.assertEqual({"registry_generation": 319, "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
                           "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
-                          "result_sha256": "sha256:04ae0f6e40cacf885bb9bce0b466e5cc3dfd4a48783596188eefa7bfbd516a20",
-                          "hb_epoch": None, "hb_epoch_open": True,
-                          "registry_blob_sha": "8d3ff1902412ab85c0fafcdb4c2f11cc0b0afbef",
-                          "repository": None, "registry_file": "data/canonical-task-registry.json",
-                          "hb_epoch_source": None, "hb_epoch_source_receipt_blob": None,
-                          "readback_disposition": "ALLOW", "fixture_only": False,
-                      "readback_not_cross_checked_marker": None}, state)
+                          "result_sha256": "sha256:0653c219f8025891a9c7617b5a845c0e5a5b4d387e2002697c9d3998ca392a6e",
+                          "hb_epoch": "469411750", "hb_epoch_open": False, "repository": "StegVerse-Labs/.github",
+                          "registry_file": "data/canonical-task-registry.json", "readback_disposition": "ALLOW", "fixture_only": False,
+                          "readback_marker": ap.NOT_CROSS_CHECKED_MARKER},
+                         {k: state[k] for k in ("registry_generation", "ledger_head", "bound_main_commit", "result_sha256", "hb_epoch",
+                                                "hb_epoch_open", "repository", "registry_file", "readback_disposition", "fixture_only",
+                                                "readback_marker")})
         pin = json.loads(ap.BASE_STATE_PIN.read_text(encoding="utf-8"))
-        self.assertEqual("9c9b9f51ba658d94c8998985d4bf3783edb45f52", pin["producer"]["ref"])
-        self.assertEqual("035352f6dd729724b095c0dcf320b8c1b559f235", pin["producer"]["git_blob_sha"])
-        self.assertEqual(["2ba0e329c224c94863dac15de3f8011f777cb34f", "641f4b03e612d07047e15f2384d24780e2af86c0", "78a0c78e1f1313bd11ff916b26a3ab467f2f54e2", "c431bfb038f064b29b6b8ba7c68409f0057ea9e7"],
+        self.assertEqual("7ad6d81fb6715b68b79dac6c3cbc2f484004ab2d", pin["producer"]["ref"])
+        self.assertEqual("17ef44016411852dde7c142e3faaa803f4ee63bd", pin["producer"]["git_blob_sha"])
+        self.assertEqual(["9c9b9f51ba658d94c8998985d4bf3783edb45f52", "2ba0e329c224c94863dac15de3f8011f777cb34f", "641f4b03e612d07047e15f2384d24780e2af86c0", "78a0c78e1f1313bd11ff916b26a3ab467f2f54e2", "c431bfb038f064b29b6b8ba7c68409f0057ea9e7"],
                          [x["ref"] for x in pin["superseded"]])
         self.assertEqual(ap.BASE_STATE_SCHEMA, pin["result_schema"])
         self.assertEqual(ap.BASE_STATE_REGISTRY_PATHS, pin["registry_paths"])
@@ -485,17 +493,19 @@ class BaseStateReceiptTest(unittest.TestCase):
             data = (root / fx["path"]).read_bytes()
             self.assertEqual(hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest(), fx["git_blob_sha"])
         labs = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-78a0c78e.json").read_text(encoding="utf-8"))
-        state, code, _ = ap.base_state_from_readback(labs)
-        self.assertIsNone(code)
-        self.assertEqual(("StegVerse-Labs/.github", "data/canonical-task-registry.json", 319),
-                         (state["repository"], state["registry_file"], state["registry_generation"]))
-        unmapped = ap.seal(dict(labs, repository="Other/repo"))
+        self.assertEqual("HB_EPOCH_SOURCE_UNOBSERVED", ap.base_state_from_readback(labs)[1])
+        unmapped = ap.seal(dict({k: v for k, v in current.items() if k != "result_sha256"}, repository="Other/repo"))
         self.assertEqual("BASE_STATE_RECEIPT_MALFORMED", ap.base_state_from_readback(unmapped)[1])
 
     def test_org_registry_without_generation_names_the_joint_item(self) -> None:
+        """The 78a0c78e org receipt predates the always-emitted cross_checked and is a void shape now; the same receipt in the
+        pinned producer's shape (cross_checked false on a FAIL_CLOSED) is BASE_STATE_NOT_OBSERVED naming the joint item."""
         receipt = json.loads((BASE_STATE_FIXTURE.parent / "org-main-40a5d235-producer-78a0c78e.json").read_text(encoding="utf-8"))
         self.assertEqual("REGISTRY_GENERATION_NOT_DECLARED", receipt["failure_code"])
-        receipt = ap.seal(dict(receipt, bound_main_commit=self.f.base))
+        legacy = self.evaluate(ap.seal(dict(receipt, bound_main_commit=self.f.base)))
+        self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED", ap.READBACK_SHAPE_PREDICATE),
+                         (legacy["disposition"], legacy["failure_code"], legacy["failed_predicate"]))
+        receipt = ap.seal(dict(receipt, bound_main_commit=self.f.base, cross_checked=False))
         out = self.evaluate(receipt)
         p = pred(out, "BASE_STATE_RECEIPT_BOUND")
         self.assertEqual(("FAIL_CLOSED", "BASE_STATE_NOT_OBSERVED", "REGISTRY_GENERATION_NOT_DECLARED"),
@@ -557,12 +567,16 @@ class BaseStateReceiptTest(unittest.TestCase):
         self.assertEqual("ALLOW", self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch="4242")["disposition"])
 
     def test_null_receipt_epoch_is_source_unobserved(self) -> None:
-        for receipt in (readback_receipt(self.f.base, epoch=None), readback_receipt(self.f.base, epoch=None, legacy=True),
-                        readback_receipt(self.f.base, epoch="4242", legacy=True)):  # a caller-supplied epoch is not observed
+        """A null sealed epoch binds the base state but not the epoch; the legacy shapes (no cross_checked, caller-supplied
+        epoch) are void readback shapes (P1 @e65ee21b): FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED either way."""
+        for receipt, binds in ((readback_receipt(self.f.base, epoch=None), True), (readback_receipt(self.f.base, epoch=None, legacy=True), False),
+                               (readback_receipt(self.f.base, epoch="4242", legacy=True), False)):  # a caller-supplied epoch is not observed
           for epoch in (None, "4242"):
             out = self.evaluate(receipt, epoch=epoch)
             self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED"), (out["disposition"], out["failure_code"]))
-            self.assertTrue(pred(out, "BASE_STATE_RECEIPT_BOUND")["holds"])
+            self.assertEqual(binds, pred(out, "BASE_STATE_RECEIPT_BOUND")["holds"])
+            if not binds:
+                self.assertEqual(ap.READBACK_SHAPE_PREDICATE, out["failed_predicate"])
             self.assertEqual(["BASE_STATE_RECEIPT_BOUND", "HB_EPOCH_SUPPLIED"], [p["predicate"] for p in out["predicates"]])
             self.assertIsNone(out["hb_epoch"])
             self.assertTrue(SIX <= out.keys())
@@ -615,10 +629,10 @@ class BaseStateReceiptTest(unittest.TestCase):
                 self.assertEqual(2, len(out["predicates"]))
 
     def test_omitted_flag_runs_no_cross_check_and_reaches_allow(self) -> None:
-        """P1 @7898cedb: --hb-epoch omitted -> ALLOW {hb_epoch, ledger_head} + NOT_CROSS_CHECKED_MARKER {cross_checked: false,
-        detail: HB_EPOCH_NOT_CROSS_CHECKED}, on the sealed epoch of the real 9c9b9f51 ALLOW receipt; a held cross-check is ALLOW
-        with the marker absent (absent_when the cross-check ran)."""
-        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-9c9b9f51.json").read_text(encoding="utf-8"))
+        """P1 @e65ee21b: --hb-epoch omitted -> ALLOW {hb_epoch, ledger_head} + NOT_CROSS_CHECKED_MARKER {cross_checked: false,
+        detail: HB_EPOCH_NOT_CROSS_CHECKED}, on the sealed epoch of the real 7ad6d81f ALLOW receipt; a held cross-check is ALLOW
+        with cross_checked true + supplied_hb_epoch and no detail."""
+        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-7ad6d81f.json").read_text(encoding="utf-8"))
         receipt = ap.seal(dict({k: v for k, v in allow.items() if k != "result_sha256"}, bound_main_commit=self.f.base))
         out = self.evaluate(receipt, epoch=None)
         hb = pred(out, "HB_EPOCH_SUPPLIED")
@@ -632,7 +646,7 @@ class BaseStateReceiptTest(unittest.TestCase):
         self.assertTrue(ap.seal_verifies(out))
         checked = self.evaluate(receipt, epoch="469411750")
         self.assertEqual("ALLOW", checked["disposition"])
-        self.assertNotIn("cross_checked", pred(checked, "HB_EPOCH_SUPPLIED"))
+        self.assertEqual((True, "469411750"), (pred(checked, "HB_EPOCH_SUPPLIED")["cross_checked"], pred(checked, "HB_EPOCH_SUPPLIED")["supplied_hb_epoch"]))
         self.assertNotIn("detail", pred(checked, "HB_EPOCH_SUPPLIED"))
         self.assertEqual(("DENY", "HB_EPOCH_MISMATCH"), tuple(self.evaluate(receipt, epoch="469411751")[k] for k in ("disposition", "failure_code")))
         self.assertEqual("ALLOW", self.evaluate(readback_receipt(self.f.base, epoch="4242"), epoch=None)["disposition"])
@@ -647,13 +661,15 @@ class BaseStateReceiptTest(unittest.TestCase):
                                      (pred(out, "HB_EPOCH_SUPPLIED")["disposition"], pred(out, "HB_EPOCH_SUPPLIED")["failure_code"]))
 
     def test_receipt_deny_readback_does_not_bind(self) -> None:
-        """Ruling 17:07Z (TVC sv_change_base_state @39afe092): only an ALLOW readback binds. A #3266 DENY HB_EPOCH_MISMATCH
+        """Ruling 17:07Z (TVC sv_change_base_state @fe768899): only an ALLOW readback binds. A #3266 DENY HB_EPOCH_MISMATCH
         readback is BASE_STATE_NOT_OBSERVED at BASE_STATE_RECEIPT_BOUND (TVC/P1 accept it only raw, which P4 does not take),
         and HB_EPOCH_SUPPLIED is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED whatever is supplied."""
         body = {k: v for k, v in readback_receipt(self.f.base, epoch="4242").items() if k != "result_sha256"}
         body.update(disposition="DENY", failure_code="HB_EPOCH_MISMATCH", failed_predicate=ap.HB_EPOCH_INVARIANT,
                     required_evidence_or_repair="r", retry_entrypoint="e", owning_existing_goal="StegVerse-org/.github#164",
-                    next_attempt="n", expected_hb_epoch="4243", flag_failure_code="HB_EPOCH_FLAG_MISMATCH")
+                    next_attempt="n", expected_hb_epoch="4243", flag_failure_code="HB_EPOCH_FLAG_MISMATCH",
+                    cross_checked=True, supplied_hb_epoch="4243")
+        body.pop("detail")  # the pinned producer's DENY shape: cross_checked true, no not-cross-checked detail
         receipt = ap.seal(body)
         self.assertEqual((None, "BASE_STATE_NOT_OBSERVED"), ap.base_state_from_readback(receipt)[:2])
         for flag in (None, "4242", "4243", "x"):
@@ -668,11 +684,11 @@ class BaseStateReceiptTest(unittest.TestCase):
         other = ap.seal(dict(body, failure_code="REGISTRY_GENERATION_NOT_DECLARED"))
         self.assertEqual("BASE_STATE_NOT_OBSERVED", ap.base_state_from_readback(other)[1])
 
-    def test_real_9c9b9f51_receipts_bind_the_kat_epoch(self) -> None:
-        """Receipts produced by the pinned producer @9c9b9f51 at the Labs ledger head a5bb54d8 (its KAT): both ALLOW receipts
+    def test_real_7ad6d81f_receipts_bind_the_kat_epoch(self) -> None:
+        """Receipts produced by the pinned producer @7ad6d81f at the Labs ledger head a5bb54d8 (its KAT): both ALLOW receipts
         (flag omitted and cross-checked) seal hb_epoch 469411750 with hb_epoch_source and bind it; the --hb-epoch 469411751
         DENY receipt seals the same epoch but does not bind (only an ALLOW binds, ruling 17:07Z)."""
-        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-9c9b9f51.json").read_text(encoding="utf-8"))
+        allow = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-7ad6d81f.json").read_text(encoding="utf-8"))
         state, code, why = ap.base_state_from_readback(allow)
         self.assertIsNone(code, why)
         self.assertEqual(("469411750", "a5bb54d81893b392a3ce28182986fc39857807e1", 319),
@@ -683,69 +699,98 @@ class BaseStateReceiptTest(unittest.TestCase):
         out = self.evaluate(ap.seal(dict({k: v for k, v in allow.items() if k != "result_sha256"}, bound_main_commit=self.f.base)))
         self.assertEqual("ALLOW", pred(out, "HB_EPOCH_SUPPLIED")["disposition"], out["fail_closed"])
         self.assertEqual(469411750, out["hb_epoch"])
-        deny = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-9c9b9f51-hb-epoch-469411751-deny.json").read_text(encoding="utf-8"))
+        deny = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-7ad6d81f-hb-epoch-469411751-mismatch.json").read_text(encoding="utf-8"))
         self.assertEqual("469411750", deny["hb_epoch"])
         self.assertEqual((None, "BASE_STATE_NOT_OBSERVED"), ap.base_state_from_readback(deny)[:2])
         resealed = ap.seal(dict({k: v for k, v in deny.items() if k != "result_sha256"}, bound_main_commit=self.f.base))
         for flag in (None, "469411750", "469411751"):
             out = self.evaluate(resealed, epoch=flag)
             self.assertEqual(("FAIL_CLOSED", "BASE_STATE_NOT_OBSERVED"), (out["disposition"], out["failure_code"]))
-        checked = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-9c9b9f51-hb-epoch-469411750-cross-checked.json").read_text(encoding="utf-8"))
+        checked = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-7ad6d81f-hb-epoch-469411750-cross-checked.json").read_text(encoding="utf-8"))
         state, code, why = ap.base_state_from_readback(checked)
         self.assertIsNone(code, why)
         self.assertEqual(("ALLOW", "469411750"), (state["readback_disposition"], state["hb_epoch"]))
 
-    def test_9c9b9f51_receipt_seals_marker_and_sentinel(self) -> None:
-        """Re-minted at #3266 @9c9b9f51: the omitted --hb-epoch ALLOW seal is 0653c219 and carries P1's NOT_CROSS_CHECKED_MARKER
-        at top level (cross_checked false + detail HB_EPOCH_NOT_CROSS_CHECKED); the cross-checked ALLOW (ec20c103), DENY
-        (f94b73c8) and FAIL_CLOSED (a4eb2493) seals are unchanged and carry no marker; --hb-epoch UNKNOWN_NOT_AUTHENTICALLY_OBSERVED
-        is a sealed FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED receipt with hb_epoch and hb_epoch_source null, which binds nothing here."""
+    def test_7ad6d81f_receipt_seals_and_marker_shapes(self) -> None:
+        """Re-minted at #3266 @7ad6d81f (the producer always emits cross_checked): omitted-flag ALLOW 0653c219 (cross_checked
+        false + detail HB_EPOCH_NOT_CROSS_CHECKED), cross-checked ALLOW 24ea962b and DENY 6b634494 (cross_checked true +
+        supplied_hb_epoch, no detail), '--hb-epoch null' f0db9599 and sentinel 025e46a2 FAIL_CLOSED (cross_checked false +
+        supplied_hb_epoch, no detail, hb_epoch/hb_epoch_source null). The first four are byte-identical to TVC#519 @fe768899."""
         d = BASE_STATE_FIXTURE.parent
-        allow = json.loads((d / "labs-main-978b8880-producer-9c9b9f51.json").read_text(encoding="utf-8"))
-        self.assertEqual("sha256:0653c219f8025891a9c7617b5a845c0e5a5b4d387e2002697c9d3998ca392a6e", allow["result_sha256"])
-        self.assertTrue(ap.seal_verifies(allow))
-        self.assertEqual((False, "HB_EPOCH_NOT_CROSS_CHECKED"), (allow["cross_checked"], allow["detail"]))
-        self.assertNotIn("hb_epoch_cross_check", allow)
-        self.assertEqual(ap.NOT_CROSS_CHECKED_MARKER, ap.base_state_from_readback(allow)[0]["readback_not_cross_checked_marker"])
-        for name, seal in (("hb-epoch-469411750-cross-checked", "ec20c103be08495132ff1cd42cb967ce8e1c0cbf0ff8cfa4f1a18d24d149cbc7"),
-                           ("hb-epoch-469411751-deny", "f94b73c8216a470743ec8e49b4489237aa1b5c576bafb9d2043a34b57fb035fe"),
-                           ("hb-epoch-unknown-fail-closed", "a4eb2493b6861e2f86a47a0a754e9e3c3da4b647213cdb130dd128ad3f545d17")):
-            with self.subTest(name=name):
-                r = json.loads((d / f"labs-main-978b8880-producer-9c9b9f51-{name}.json").read_text(encoding="utf-8"))
-                self.assertEqual("sha256:" + seal, r["result_sha256"])
+        want = {"": ("ALLOW", None, "0653c219f8025891a9c7617b5a845c0e5a5b4d387e2002697c9d3998ca392a6e",
+                     {"cross_checked": False, "detail": "HB_EPOCH_NOT_CROSS_CHECKED"}),
+                "-hb-epoch-469411750-cross-checked": ("ALLOW", None, "24ea962bc6da85c53af0472603b1989a9c54100506e263fa4a25e19db5f2ebd9",
+                                                      {"cross_checked": True, "supplied_hb_epoch": "469411750"}),
+                "-hb-epoch-469411751-mismatch": ("DENY", "HB_EPOCH_MISMATCH", "6b63449489e717fe1cc4ca9161e290857eed6d8f73a4496d980c74b1ce556613",
+                                                 {"cross_checked": True, "supplied_hb_epoch": "469411751"}),
+                "-hb-epoch-null-string": ("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED", "f0db9599a2c7b1a241a8d0dc0106cc094200813efe386ce692cca6145a63da8a",
+                                          {"cross_checked": False, "supplied_hb_epoch": "null"}),
+                "-hb-epoch-unknown-fail-closed": ("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED", "025e46a2ccab4e0bfae85b0554b0fe348f92e546a7b74203d660bdd90d1a0946",
+                                                  {"cross_checked": False, "supplied_hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"})}
+        for suffix, (disp, code, seal, marker) in want.items():
+            with self.subTest(suffix=suffix):
+                r = json.loads((d / f"labs-main-978b8880-producer-7ad6d81f{suffix}.json").read_text(encoding="utf-8"))
                 self.assertTrue(ap.seal_verifies(r))
-                for k in ("cross_checked", "detail", "hb_epoch_cross_check"):
-                    self.assertNotIn(k, r)
-        checked = json.loads((d / "labs-main-978b8880-producer-9c9b9f51-hb-epoch-469411750-cross-checked.json").read_text(encoding="utf-8"))
-        self.assertIsNone(ap.base_state_from_readback(checked)[0]["readback_not_cross_checked_marker"])
-        sentinel = json.loads((d / "labs-main-978b8880-producer-9c9b9f51-hb-epoch-unknown-fail-closed.json").read_text(encoding="utf-8"))
-        self.assertTrue(ap.seal_verifies(sentinel))
-        self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED", None, None),
-                         (sentinel["disposition"], sentinel["failure_code"], sentinel["hb_epoch"], sentinel["hb_epoch_source"]))
-        self.assertEqual("BASE_STATE_NOT_OBSERVED", ap.base_state_from_readback(sentinel)[1])
+                self.assertEqual(("sha256:" + seal, disp, code), (r["result_sha256"], r["disposition"], r.get("failure_code")))
+                self.assertEqual(marker, {k: r[k] for k in ("cross_checked", "detail", "supplied_hb_epoch") if k in r})
+                self.assertNotIn("hb_epoch_cross_check", r)
+                self.assertIsNone(ap.readback_shape_violation(r))
+                state, got, _ = ap.base_state_from_readback(r)
+                self.assertEqual(None if disp == "ALLOW" else "BASE_STATE_NOT_OBSERVED", got)
+                if state:
+                    self.assertEqual(marker, state["readback_marker"])
+        sentinel = json.loads((d / "labs-main-978b8880-producer-7ad6d81f-hb-epoch-unknown-fail-closed.json").read_text(encoding="utf-8"))
+        self.assertEqual((None, None), (sentinel["hb_epoch"], sentinel["hb_epoch_source"]))
         out = self.evaluate(ap.seal(dict({k: v for k, v in sentinel.items() if k != "result_sha256"}, bound_main_commit=self.f.base)), epoch=None)
         self.assertEqual("HB_EPOCH_SOURCE_UNOBSERVED", pred(out, "BASE_STATE_RECEIPT_BOUND")["receipt_failure_code"])
         self.assertEqual(("FAIL_CLOSED", "HB_EPOCH_SOURCE_UNOBSERVED"),
                          (pred(out, "HB_EPOCH_SUPPLIED")["disposition"], pred(out, "HB_EPOCH_SUPPLIED")["failure_code"]))
 
+    def test_valid_cross_checked_true_readback_reaches_allow(self) -> None:
+        """The reported bug (#192 @be38e05c refused it): the real #3266 @7ad6d81f cross-checked ALLOW (cross_checked true +
+        supplied_hb_epoch 469411750) binds and reaches ALLOW, with or without the admission's own cross-check."""
+        r = json.loads((BASE_STATE_FIXTURE.parent / "labs-main-978b8880-producer-7ad6d81f-hb-epoch-469411750-cross-checked.json").read_text(encoding="utf-8"))
+        self.assertEqual((True, "469411750"), (r["cross_checked"], r["supplied_hb_epoch"]))
+        state, code, why = ap.base_state_from_readback(r)
+        self.assertIsNone(code, why)
+        receipt = ap.seal(dict({k: v for k, v in r.items() if k != "result_sha256"}, bound_main_commit=self.f.base))
+        for flag, cc in ((None, False), ("469411750", True)):
+            with self.subTest(flag=flag):
+                out = self.evaluate(receipt, epoch=flag)
+                self.assertTrue(pred(out, "BASE_STATE_RECEIPT_BOUND")["holds"])
+                self.assertEqual({"cross_checked": True, "supplied_hb_epoch": "469411750"},
+                                 pred(out, "HB_EPOCH_SUPPLIED")["readback_marker"])
+                self.assertEqual(("ALLOW", "admission-input-ready", 469411750), (out["disposition"], out["admission_input"], out["hb_epoch"]))
+                self.assertEqual(cc, pred(out, "HB_EPOCH_SUPPLIED")["cross_checked"])
+        self.assertEqual(("DENY", "HB_EPOCH_MISMATCH"), tuple(self.evaluate(receipt, epoch="469411751")[k] for k in ("disposition", "failure_code")))
+
     def test_void_readback_shapes_fail_closed_under_readback_shape(self) -> None:
-        """Ruling 17:07Z: a void readback shape is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED with failed_check/failed_predicate
-        READBACK_SHAPE_MATCHES_PINNED_PRODUCER (not BASE_STATE_RECEIPT_MALFORMED): a 2ba0e329/5ffd8d68-shape readback
-        (hb_epoch_cross_check key), and an omitted-flag ALLOW without the canonical marker (partial or altered top-level
-        marker; the pinned producer emits exactly P1's NOT_CROSS_CHECKED_MARKER or none). A marker on a DENY is moot: a DENY
-        never binds (BASE_STATE_NOT_OBSERVED). The receipt's marker never stands in for the admission's own cross-check."""
+        """P1 @e65ee21b readback_shape_violation: every void shape is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED with
+        failed_check/failed_predicate READBACK_SHAPE_MATCHES_PINNED_PRODUCER (never DENY, never BASE_STATE_RECEIPT_MALFORMED):
+        the marker stripped and resealed (from each real 7ad6d81f receipt), an hb_epoch_cross_check key, cross_checked not a JSON
+        boolean, and partial or altered markers on the omitted-flag ALLOW, the cross-checked ALLOW and the DENY."""
         d = BASE_STATE_FIXTURE.parent
-        allow = json.loads((d / "labs-main-978b8880-producer-9c9b9f51.json").read_text(encoding="utf-8"))
-        body = {k: v for k, v in allow.items() if k != "result_sha256"}
-        nomark = {k: v for k, v in body.items() if k not in ("cross_checked", "detail")}
-        void = {"2ba0e329": dict(body, hb_epoch_cross_check="HB_EPOCH_NOT_CROSS_CHECKED"),
-                "2ba0e329-exact": dict({k: v for k, v in body.items() if k != "detail"}, hb_epoch_cross_check="HB_EPOCH_NOT_CROSS_CHECKED"),
-                "5ffd8d68": dict(nomark, cross_checked=False, hb_epoch_cross_check=dict(ap.NOT_CROSS_CHECKED_MARKER)),
-                "partial-cross_checked": dict(nomark, cross_checked=False), "partial-detail": dict(nomark, detail="HB_EPOCH_NOT_CROSS_CHECKED"),
-                "altered-true": dict(body, cross_checked=True), "altered-detail": dict(body, detail="X"),
-                "altered-string": dict(body, cross_checked="false"), "altered-zero": dict(body, cross_checked=0)}
+        def body(suffix):
+            r = json.loads((d / f"labs-main-978b8880-producer-7ad6d81f{suffix}.json").read_text(encoding="utf-8"))
+            return {k: v for k, v in r.items() if k != "result_sha256"}
+        allow, checked, deny, fc = body(""), body("-hb-epoch-469411750-cross-checked"), body("-hb-epoch-469411751-mismatch"), body("-hb-epoch-null-string")
+        strip = lambda b, *ks: {k: v for k, v in b.items() if k not in ks}
+        void = {"allow-stripped": strip(allow, "cross_checked", "detail"), "allow-cross_checked-stripped": strip(allow, "cross_checked"),
+                "checked-stripped": strip(checked, "cross_checked", "supplied_hb_epoch"), "checked-cross_checked-stripped": strip(checked, "cross_checked"),
+                "deny-stripped": strip(deny, "cross_checked", "supplied_hb_epoch"), "fail-closed-stripped": strip(fc, "cross_checked"),
+                "2ba0e329": dict(allow, hb_epoch_cross_check="HB_EPOCH_NOT_CROSS_CHECKED"),
+                "5ffd8d68": dict(strip(allow, "detail"), hb_epoch_cross_check=dict(ap.NOT_CROSS_CHECKED_MARKER)),
+                "checked-plus-old-key": dict(checked, hb_epoch_cross_check="x"),
+                "allow-partial-detail": strip(allow, "detail"), "allow-altered-detail": dict(allow, detail="X"),
+                "allow-with-supplied": dict(allow, supplied_hb_epoch="469411750"), "allow-string": dict(allow, cross_checked="false"),
+                "allow-zero": dict(allow, cross_checked=0), "allow-true-no-supplied": dict(strip(allow, "detail"), cross_checked=True),
+                "checked-no-supplied": strip(checked, "supplied_hb_epoch"), "checked-other-supplied": dict(checked, supplied_hb_epoch="469411751"),
+                "checked-int-supplied": dict(checked, supplied_hb_epoch=469411750), "checked-plus-detail": dict(checked, detail="HB_EPOCH_NOT_CROSS_CHECKED"),
+                "checked-false": dict(checked, cross_checked=False), "deny-false": dict(deny, cross_checked=False),
+                "deny-plus-detail": dict(deny, detail="HB_EPOCH_NOT_CROSS_CHECKED"), "fail-closed-string": dict(fc, cross_checked="false")}
         for name, rec in void.items():
             with self.subTest(name=name):
+                self.assertIsNotNone(ap.readback_shape_violation(rec))
                 state, code, why = ap.base_state_from_readback(ap.seal(rec))
                 self.assertEqual((None, "HB_EPOCH_SOURCE_UNOBSERVED"), (state, code))
                 self.assertTrue(why.startswith("READBACK_SHAPE_MATCHES_PINNED_PRODUCER"), why)
@@ -760,18 +805,12 @@ class BaseStateReceiptTest(unittest.TestCase):
                                          (row_["disposition"], row_["failure_code"], row_["failed_predicate"], row_["failed_check"]))
                         self.assertTrue(SIX <= row_.keys() and all(row_[f] for f in SIX))
                     self.assertIsNone(out["hb_epoch"])
-        self.assertEqual(ap.READBACK_SHAPE_PREDICATE, "READBACK_SHAPE_MATCHES_PINNED_PRODUCER")
-        deny = json.loads((d / "labs-main-978b8880-producer-9c9b9f51-hb-epoch-469411751-deny.json").read_text(encoding="utf-8"))
-        dbody = dict({k: v for k, v in deny.items() if k != "result_sha256"}, **ap.NOT_CROSS_CHECKED_MARKER)
-        self.assertEqual("BASE_STATE_NOT_OBSERVED", ap.base_state_from_readback(ap.seal(dbody))[1])
-        # the canonical marker and no marker both bind; the marker is readback evidence only
-        self.assertIsNone(ap.base_state_from_readback(ap.seal(nomark))[1])
-        receipt = ap.seal(dict(body, bound_main_commit=self.f.base))
-        checked = self.evaluate(receipt, epoch="469411750")
-        self.assertEqual(ap.NOT_CROSS_CHECKED_MARKER,
-                         pred(checked, "BASE_STATE_RECEIPT_BOUND")["receipts"]["base"]["binds"]["readback_not_cross_checked_marker"])
-        self.assertEqual(ap.NOT_CROSS_CHECKED_MARKER, pred(checked, "HB_EPOCH_SUPPLIED")["readback_not_cross_checked_marker"])
-        self.assertNotIn("cross_checked", pred(checked, "HB_EPOCH_SUPPLIED"))
+        # the shapes the pinned producer emits are not void; the receipt's marker never stands in for the admission's cross-check
+        for rec in (allow, checked, deny, fc):
+            self.assertIsNone(ap.readback_shape_violation(rec))
+        out = self.evaluate(ap.seal(dict(allow, bound_main_commit=self.f.base)), epoch="469411750")
+        self.assertEqual(ap.NOT_CROSS_CHECKED_MARKER, pred(out, "HB_EPOCH_SUPPLIED")["readback_marker"])
+        self.assertEqual(True, pred(out, "HB_EPOCH_SUPPLIED")["cross_checked"])
 
     def test_row_text_cites_only_the_current_3266_head(self) -> None:
         pin = json.loads(ap.BASE_STATE_PIN.read_text(encoding="utf-8"))
@@ -789,11 +828,11 @@ class BaseStateReceiptTest(unittest.TestCase):
 
     def test_change_binds_target_repository_ledger(self) -> None:
         """P1 #3264 @76407068 CHANGE_BINDS_TARGET_REPOSITORY_LEDGER: the readback must have read the target repository's own
-        ledger. An org target (StegVerse-org/.github) with the real 9c9b9f51 Labs ALLOW readbacks is FAIL_CLOSED
+        ledger. An org target (StegVerse-org/.github) with the real 7ad6d81f Labs ALLOW readbacks is FAIL_CLOSED
         HB_EPOCH_SOURCE_UNOBSERVED whatever is supplied; no --repository is UNKNOWN (P1: target_repository or UNKNOWN), also
         FAIL_CLOSED; the matching repository still reaches ALLOW."""
         d = BASE_STATE_FIXTURE.parent
-        for name in ("labs-main-978b8880-producer-9c9b9f51.json", "labs-main-978b8880-producer-9c9b9f51-hb-epoch-469411750-cross-checked.json"):
+        for name in ("labs-main-978b8880-producer-7ad6d81f.json", "labs-main-978b8880-producer-7ad6d81f-hb-epoch-469411750-cross-checked.json"):
             real = json.loads((d / name).read_text(encoding="utf-8"))
             self.assertEqual("StegVerse-Labs/.github", real["repository"])
             receipt = ap.seal(dict({k: v for k, v in real.items() if k != "result_sha256"}, bound_main_commit=self.f.base))
@@ -817,8 +856,8 @@ class BaseStateReceiptTest(unittest.TestCase):
             self.assertEqual(("ALLOW", False), (pred(ok, "HB_EPOCH_SUPPLIED")["disposition"], pred(ok, "HB_EPOCH_SUPPLIED")["cross_checked"]))
             ok = self.evaluate(receipt, "--repository", "StegVerse-Labs/.github", epoch="469411750")
             self.assertEqual("ALLOW", pred(ok, "HB_EPOCH_SUPPLIED")["disposition"])
-            self.assertNotIn("cross_checked", pred(ok, "HB_EPOCH_SUPPLIED"))
-        full = self.evaluate(ap.seal(dict({k: v for k, v in json.loads((d / "labs-main-978b8880-producer-9c9b9f51.json").read_text(
+            self.assertEqual(True, pred(ok, "HB_EPOCH_SUPPLIED")["cross_checked"])
+        full = self.evaluate(ap.seal(dict({k: v for k, v in json.loads((d / "labs-main-978b8880-producer-7ad6d81f.json").read_text(
             encoding="utf-8")).items() if k != "result_sha256"}, bound_main_commit=self.f.base)), "--repository", "StegVerse-Labs/.github", epoch=None)
         self.assertEqual(("ALLOW", "admission-input-ready", 469411750), (full["disposition"], full["admission_input"], full["hb_epoch"]))
 

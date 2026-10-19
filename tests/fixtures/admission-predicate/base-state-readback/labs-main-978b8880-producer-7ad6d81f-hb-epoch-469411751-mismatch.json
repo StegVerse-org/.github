@@ -6,6 +6,7 @@
   },
   "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
   "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+  "cross_checked": true,
   "disposition": "DENY",
   "expected_hb_epoch": "469411751",
   "failed_predicate": "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH",
@@ -24,7 +25,7 @@
   "readback_writes": false,
   "repository": "StegVerse-Labs/.github",
   "required_evidence_or_repair": "--hb-epoch, when supplied, is ASCII digits equal to the bound ledger head receipt's epoch 469411750, or omit it (it is a cross-check only)",
-  "result_sha256": "sha256:f94b73c8216a470743ec8e49b4489237aa1b5c576bafb9d2043a34b57fb035fe",
+  "result_sha256": "sha256:6b63449489e717fe1cc4ca9161e290857eed6d8f73a4496d980c74b1ce556613",
   "retry_entrypoint": "resident-runtime/sv_change_base_state_readback.py::evaluate",
   "schema": "stegverse.sv-change-base-state-readback/v1",
   "sources": [
@@ -41,5 +42,6 @@
       "file": "refs/stegverse/organization-ledger:receipts/35810b6598e99cef32d9a0f1f97d07394d9f21c540ed7d3a395d9d78b753db3d.json"
     }
   ],
+  "supplied_hb_epoch": "469411751",
   "supplied_hb_epoch_well_formed": true
 }
