@@ -773,8 +773,7 @@ def record_refusal(custody:dict[str,Any], item:dict[str,Any], reason:str, dispos
         repository_receipt,"REPO_STATE_PROPAGATION",predecessor,successor,
         {"operation":CROSSING_REFUSED_CLASS,"packet_id":packet_id,
          "disposition":disposition,"failed_predicate":reason},
-        "NONE",hb_epoch=organization_ledger.carried_epoch(
-            repository_receipt,retry_entrypoint="org-kernel/kernel.py::consume_and_respond"),
+        "NONE",hb_epoch=epoch,
         store=custody["organization_store"],idempotent=True)
     return {"repository_receipt_sha256":repository_receipt["receipt_sha256"],
             "organization_receipt_sha256":organization_receipt["receipt_sha256"],
@@ -838,8 +837,7 @@ def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,A
         repository_receipt,"REPO_STATE_PROPAGATION",predecessor,successor,
         {"operation":CROSSING_CONSUMED_CLASS,"packet_id":packet["packet_id"],
          "service_id":execution.get("service_id"),"disposition":"ALLOW"},
-        "NONE",hb_epoch=organization_ledger.carried_epoch(
-            repository_receipt,retry_entrypoint="org-kernel/kernel.py::consume_and_respond"),
+        "NONE",hb_epoch=epoch,
         store=custody["organization_store"],idempotent=True)
     return {"repository_receipt_sha256":repository_receipt["receipt_sha256"],
             "organization_receipt_sha256":organization_receipt["receipt_sha256"]}

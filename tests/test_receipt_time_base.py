@@ -354,29 +354,84 @@ INTR = ROOT / "resident-runtime/intr_destination_ingress.py"
 FIXED_CLOCK_NS = org.kernel.HB_ANCHOR_UNIX_NS + 7_000_000_000
 
 
-class CarriedEpochTests(unittest.TestCase):
-    """An epoch read back from a repository receipt is CARRIED, never passed on as supplied."""
+class ReferenceProvenanceTests(unittest.TestCase):
+    """A heartbeat reference marks SUPPLIED, CARRIED or CLOCK; one that marks none is refused."""
 
-    def receipt(self, reference):
-        return {"receipt_sha256": "sha256:" + "c" * 64, "hb_reference": reference}
+    def test_supplied_and_carried_references_are_admitted(self):
+        supplied = org.kernel.hb_reference(epoch=4096)
+        self.assertIsNone(org.reference_provenance_failure(supplied))
+        carried = {**supplied, "source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "a" * 64}
+        self.assertIsNone(org.reference_provenance_failure(carried))
 
-    def test_a_supplied_reference_is_carried(self):
-        self.assertEqual(org.carried_epoch(self.receipt(org.kernel.hb_reference(epoch=4096)),
-                                           retry_entrypoint="t"), 4096)
+    def test_an_unmarked_reference_is_refused(self):
+        supplied = org.kernel.hb_reference(epoch=4096)
+        no_key = {k: v for k, v in supplied.items() if k != "derived_from_clock"}
+        bare_sample = {**no_key, "sampled_unix_ns": FIXED_CLOCK_NS}
+        flagged_false_with_sample = {**supplied, "sampled_unix_ns": FIXED_CLOCK_NS}
+        carried_without_head = {**supplied, "source": "CARRIED:ORGANIZATION_LEDGER_HEAD"}
+        for reference in (no_key, bare_sample, flagged_false_with_sample, carried_without_head, None):
+            with self.subTest(reference=reference):
+                self.assertEqual(org.reference_provenance_failure(reference)[0], "HB_EPOCH_PROVENANCE_UNMARKED")
 
-    def test_a_clock_derived_or_unmarked_or_invalid_reference_is_refused_six_field(self):
+    def test_a_clock_reference_is_not_supplied(self):
+        clocked = org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
+        self.assertEqual(org.reference_provenance_failure(clocked)[0], "HB_EPOCH_INVALID")
+
+
+class MarkerVocabularyTests(unittest.TestCase):
+    """SUPPLIED is derived_from_clock false with no sample; CLOCK is true with its sample."""
+
+    def test_a_supplied_epoch_is_marked_supplied_and_reads_no_clock(self):
+        class NoClock:
+            @staticmethod
+            def now(*_):
+                raise AssertionError("clock read")
+
+        clock = org.kernel.datetime
+        org.kernel.datetime = NoClock
+        try:
+            reference = org.kernel.hb_reference(epoch=4096)
+            packet = org.kernel.build_packet(origin_org="O", origin_service="o.org-control", destination_org="D",
+                                             destination_service="d.org-control", payload={"body": {}},
+                                             standing={"mode": "ESTABLISH_GENESIS", "node_ref": "m", "predecessor": None})
+            frame = org.kernel.carrier_frame(packet, epoch=4096)
+        finally:
+            org.kernel.datetime = clock
+        for ref in (reference, frame["heartbeat_reference"]):
+            self.assertIs(ref["derived_from_clock"], False)
+            self.assertNotIn("sampled_unix_ns", ref)
+            self.assertEqual(ref["epoch"], 4096)
+
+    def test_a_clock_sample_is_marked_clock(self):
         clocked = org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
         self.assertIs(clocked["derived_from_clock"], True)
-        unmarked = {k: v for k, v in org.kernel.hb_reference(epoch=4096).items() if k != "derived_from_clock"}
-        for reference in (clocked, unmarked, {"epoch": 31, "derived_from_clock": False},
-                          {"epoch": "+33", "derived_from_clock": False}, None, "4096"):
-            with self.subTest(reference=reference):
-                with self.assertRaises(org.OrgLedgerEpochRefused) as caught:
-                    org.carried_epoch(self.receipt(reference), retry_entrypoint="t")
+        self.assertEqual(clocked["sampled_unix_ns"], FIXED_CLOCK_NS)
+
+
+class ClockSourceReceiptTests(unittest.TestCase):
+    """O-1: the organization writer does not consume a clock-provenance repository receipt."""
+
+    def test_a_clock_repository_receipt_is_refused_and_nothing_written(self):
+        for reference in (org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS),
+                          {"epoch": 33, "sampled_unix_ns": FIXED_CLOCK_NS}):
+            with self.subTest(reference=reference), tempfile.TemporaryDirectory() as root:
+                body = {"schema": "stegverse.repo-transition-receipt/v1",
+                        "repository": REPO_CONTRACT["repository"], "transition_id": "legacy-1",
+                        "hb_reference": reference}
+                legacy = {**body, "receipt_sha256": org.sha(body)}
+                os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = root
+                try:
+                    with self.assertRaises(org.SourceReceiptRefused) as caught:
+                        org.append(legacy, "REPO_STATE_PROPAGATION", "GENESIS", STATE_AFTER, {}, "NONE",
+                                   hb_epoch=4096)
+                finally:
+                    os.environ.pop("STEGVERSE_ORG_LEDGER_ROOT", None)
                 refusal = caught.exception.refusal
-                self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+                self.assertEqual(refusal["failure_code"], "SOURCE_RECEIPT_IS_CLOCK_PROVENANCE")
+                self.assertIn("CARRIED:LEGACY_CLOCK_RECEIPT", refusal["required_evidence_or_repair"])
                 for field in SIX_FIELDS:
                     self.assertTrue(refusal[field], field)
+                self.assertEqual([p for p in Path(root).rglob("*") if p.is_file()], [])
 
 
 class IngressEpochProvenanceProbe(unittest.TestCase):
@@ -452,7 +507,7 @@ class IngressEpochProvenanceProbe(unittest.TestCase):
         with self.assertRaises(SystemExit) as caught:
             self.intr._append("PROBE", "probe-3", self.evidence("c-3"), "4096")
         refusal = caught.exception.refusal
-        self.assertEqual(refusal["failure_code"], "HB_EPOCH_INVALID")
+        self.assertEqual(refusal["failure_code"], "SOURCE_RECEIPT_IS_CLOCK_PROVENANCE")
         for field in SIX_FIELDS:
             self.assertTrue(refusal[field], field)
         self.assertEqual(self.org_receipts(), [])
@@ -472,6 +527,15 @@ class ClockProbeTests(unittest.TestCase):
         self.assertEqual(probe["phases"]["supplied_writer_clock_calls"], 0)
         self.assertEqual(probe["phases"]["frame_only_clock_calls"], 1)
         self.assertTrue(probe["references"])
+        # A response is published at the validated epoch of the frame it answers,
+        # and a monitor answer's resident_status carries it: no clock default.
+        classes = {r["message_class"]: r for r in probe["responses"]}
+        self.assertEqual(set(classes), {"ecosystem.communication.ack", "ecosystem.monitor.response"})
+        for response in classes.values():
+            self.assertEqual(response["heartbeat_reference"]["epoch"], 4096)
+            self.assertIs(response["heartbeat_reference"]["derived_from_clock"], False)
+        self.assertEqual(classes["ecosystem.monitor.response"]["monitor_heartbeat"]["epoch"], 4096)
+        self.assertIs(classes["ecosystem.monitor.response"]["monitor_heartbeat"]["derived_from_clock"], False)
         for reference in probe["references"]:
             if reference.get("derived_from_clock") is False:
                 self.assertEqual(reference["epoch"], 4096, reference)

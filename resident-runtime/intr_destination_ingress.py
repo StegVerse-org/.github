@@ -101,9 +101,6 @@ def _module(name: str, relative: str):
 
 
 repository_ledger = _module("repo_transition_emit", ".stegverse/transition-ledger/emit.py")
-#: This checkout's organization writer, for the carried-epoch rule: the writers
-#: above can be rebound to another ledger component, the rule is not.
-EPOCH_RULE = _module("aggregate_repo_transition_carried_epoch", "resident-runtime/aggregate_repo_transition.py")
 organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
 
@@ -439,10 +436,12 @@ def _append(transition_class: str, packet_id: str, evidence: Mapping[str, Any],
         transition_id, transition_class, predecessor, successor, dict(evidence),
         "NONE", hb_epoch=hb_epoch,
         idempotent_on=("communication_id", "payload_sha256", "disposition"))
-    # The organization receipt takes the repository receipt's epoch, so a replay
-    # rebuilds the same organization receipt rather than one stamped later.
-    epoch = EPOCH_RULE.carried_epoch(repository_receipt,
-                                     retry_entrypoint="resident-runtime/intr_destination_ingress.py::_append")
+    # The organization receipt takes the epoch this append was supplied, which
+    # the repository writer has just admitted. It used to be read back from the
+    # repository receipt, which a replay returns as recorded: a receipt stamped
+    # from a clock would then pass its epoch on as supplied. A replay is still
+    # one organization receipt -- the idempotent append returns the recorded one.
+    epoch = int(str(hb_epoch))
     organization_receipt = _ledger_write(organization_ledger.append,
         repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
         {"operation": operation, "profile_id": profile_id,

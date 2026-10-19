@@ -70,12 +70,27 @@ packet = kernel.build_packet(origin_org="Probe-Origin", origin_service="probe-or
                              destination_service=kernel.organization_slug(registry["organization"]) + ".org-control",
                              payload={"communication_id": "c-frame", "message_class": "ecosystem.communication",
                                       "subject": "s", "body": {}},
-                             standing={"mode": "GENESIS", "node_ref": "probe", "predecessor": None})
+                             standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})
 kernel.publish_packet(packet, root=mesh, epoch=4096)
+# A monitor request reaches resident_status, whose no-epoch default reads the clock.
+monitor = kernel.build_packet(origin_org="Probe-Origin", origin_service="probe-origin.org-control",
+                              destination_org=registry["organization"],
+                              destination_service=kernel.organization_slug(registry["organization"]) + ".org-control",
+                              payload={"communication_id": "c-monitor", "message_class": "ecosystem.monitor.request",
+                                       "subject": "s", "body": {}},
+                              standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})
+kernel.publish_packet(monitor, root=mesh, epoch=4096)
 import contextlib, io
 with contextlib.redirect_stdout(io.StringIO()):
     cycle.main(mesh_root=mesh, node_state_root=WORK / "node", hb_epoch="4096")
 phases["supplied_writer_clock_calls"] = CALLS["n"] - start
+responses = []
+for item in kernel.scan_addressed_frames("Probe-Origin", root=mesh):
+    body = (kernel.recover_packet(item["frame"]).get("payload") or {})
+    responses.append({"message_class": body.get("message_class"),
+                      "heartbeat_reference": item["frame"]["heartbeat_reference"],
+                      "monitor_heartbeat": (((body.get("body") or {}).get("application_result") or {})
+                                            .get("monitor_status") or {}).get("heartbeat_reference")})
 
 # A frame-only publication with no epoch: the WU-B13 helper default, marked.
 start = CALLS["n"]
@@ -88,4 +103,4 @@ for path in WORK.rglob("*.json"):
         references(json.loads(path.read_text()), found)
     except ValueError:
         pass
-print(json.dumps({"phases": phases, "references": found}, sort_keys=True))
+print(json.dumps({"phases": phases, "references": found, "responses": responses}, sort_keys=True))

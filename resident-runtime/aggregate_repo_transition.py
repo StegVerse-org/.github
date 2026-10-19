@@ -145,41 +145,45 @@ def epoch_refusal(hb_epoch):
     }
 
 
-def carried_epoch(source_receipt, *, retry_entrypoint):
-    """The epoch a consumed repository receipt carries, admitted, or OrgLedgerEpochRefused.
+def reference_provenance_failure(reference):
+    """(failure_code, detail) when a heartbeat reference does not mark its provenance, or None.
 
-    An ingress that appends at both levels hands the organization writer the
-    epoch on the repository receipt it just appended, so a replay rebuilds the
-    same organization receipt. That epoch is CARRIED, not supplied: it is
-    admissible only when the receipt's own heartbeat reference says it was
-    supplied (derived_from_clock exactly false) and the shared rule admits it.
-    A clock-derived one -- a receipt minted before the writers required a
-    supplied epoch, returned by an idempotent replay -- is refused six-field
-    rather than passed on, where it would be stamped derived_from_clock false.
-    Nothing is written and no clock is read.
+    The companion to `supplied_epoch_failure`, whose text is pinned byte-identical
+    across organizations: a reference must say where its epoch came from.
+    SUPPLIED is derived_from_clock exactly false with no sampled_unix_ns.
+    CARRIED is the same plus a source "CARRIED:<origin>" and the head_receipt_sha
+    it was read from. CLOCK (derived_from_clock true) is not a supplied epoch.
+    A reference that marks none of these is HB_EPOCH_PROVENANCE_UNMARKED.
     """
-    reference = source_receipt.get("hb_reference") if isinstance(source_receipt, dict) else None
-    epoch = reference.get("epoch") if isinstance(reference, dict) else None
-    failure = supplied_epoch_failure(epoch, reference)
-    if failure is None and reference.get("derived_from_clock") is not False:
-        failure = ("HB_EPOCH_INVALID", "the carried heartbeat reference does not say derived_from_clock false")
-    if failure is None:
-        return int(str(epoch))
-    code, detail = failure
-    raise OrgLedgerEpochRefused({
-        "disposition": "FAIL_CLOSED",
-        "failure_code": code,
-        "failed_predicate": HB_EPOCH_PREDICATE,
-        "detail": ("carried epoch from repository receipt "
-                   + str((source_receipt or {}).get("receipt_sha256") if isinstance(source_receipt, dict) else None)
-                   + ": " + detail),
-        "required_evidence_or_repair": (
-            "the repository receipt must carry a supplied epoch (derived_from_clock false, ASCII digits >= "
-            + str(HB_ANCHOR_EPOCH) + "); a clock-derived epoch is never passed on as supplied"),
-        "retry_entrypoint": retry_entrypoint,
-        "owning_existing_goal": INTR_PROTOCOL_GOAL,
-        "next_attempt": "append the transition at a new identity with a supplied epoch; nothing was written",
-    })
+    if not isinstance(reference, dict):
+        return "HB_EPOCH_PROVENANCE_UNMARKED", "the heartbeat reference is not an object"
+    if reference.get("derived_from_clock") is True:
+        return "HB_EPOCH_INVALID", "the heartbeat reference is derived from a clock, not supplied"
+    if reference.get("derived_from_clock") is not False or "sampled_unix_ns" in reference:
+        return "HB_EPOCH_PROVENANCE_UNMARKED", (
+            "the heartbeat reference does not mark its provenance: derived_from_clock must be exactly "
+            "false with no sampled_unix_ns (SUPPLIED or CARRIED)")
+    source = reference.get("source")
+    if source is not None and not (isinstance(source, str) and source.startswith("CARRIED:")
+                                   and isinstance(reference.get("head_receipt_sha"), str)):
+        return "HB_EPOCH_PROVENANCE_UNMARKED", "a CARRIED reference names its source and head_receipt_sha"
+    return None
+
+
+def clock_provenance(reference):
+    """True when a receipt's heartbeat reference is CLOCK: flagged, or a bare legacy sample."""
+    return isinstance(reference, dict) and (
+        reference.get("derived_from_clock") is True
+        or ("sampled_unix_ns" in reference and reference.get("derived_from_clock") is not False))
+
+
+class SourceReceiptRefused(OrgLedgerAppendRefused):
+    """A source receipt the organization writer will not consume; `.refusal` is six-field."""
+
+    def __init__(self, refusal):
+        super().__init__(refusal["disposition"], refusal["failed_predicate"])
+        self.code = refusal["failure_code"] + ":" + refusal["detail"]
+        self.refusal = dict(refusal)
 
 
 def require_state_digest(field, value):
@@ -329,6 +333,24 @@ def verify_source(receipt):
         body.pop("receipt_sha256", None)
         if claimed != sha(body):
             raise SystemExit("repo receipt hash mismatch")
+        # A repository receipt stamped from a clock (minted before the writers
+        # required a supplied epoch) is not consumed: its organization receipt
+        # would order the chain by that host's clock. Refused before anything is
+        # written; the receipt itself is never mutated.
+        if clock_provenance(receipt.get("hb_reference")):
+            raise SourceReceiptRefused({
+                "disposition": "FAIL_CLOSED",
+                "failure_code": "SOURCE_RECEIPT_IS_CLOCK_PROVENANCE",
+                "failed_predicate": "SOURCE_RECEIPT_CARRIES_A_SUPPLIED_EPOCH",
+                "detail": "repository receipt " + str(claimed) + " has a clock-derived hb_reference",
+                "required_evidence_or_repair": (
+                    "a WU-B13 migration transition that rebinds the legacy repo receipt under a supplied "
+                    "epoch with provenance CARRIED:LEGACY_CLOCK_RECEIPT + source sha; existing receipts "
+                    "are never mutated"),
+                "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
+                "owning_existing_goal": INTR_PROTOCOL_GOAL,
+                "next_attempt": "on the WU-B13 migration transition; nothing was written",
+            })
         return {
             "source_receipt_schema": schema,
             "source_transition_sha256": claimed,

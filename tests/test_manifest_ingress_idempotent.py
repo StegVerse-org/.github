@@ -121,8 +121,13 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         self.assertEqual(organization["repo_receipt_sha256"], repository["receipt_sha256"])
         self.assertEqual(completed["organization_receipt_sha256"], organization["receipt_sha256"])
 
-    def test_replay_completion_takes_its_epoch_from_the_retained_receipt(self):
-        """A retry carrying a different epoch still rebuilds the first attempt's records."""
+    def test_replay_completion_takes_the_epoch_it_was_supplied(self):
+        """A retry completes the organization receipt at the epoch it was supplied.
+
+        It used to read the epoch back from the retained repository receipt;
+        the organization writer is now handed only a supplied epoch. The
+        repository receipt keeps the first attempt's.
+        """
         original = ingress.organization_ledger.append
         calls = {"n": 0}
 
@@ -137,8 +142,11 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         with self.assertRaises(organization_ledger.OrgLedgerAppendRefused):
             self.receive(hb_epoch=32)
         self.receive(hb_epoch=99)
+        repository, = self.receipts(REPO)
         organization, = self.receipts(ORG)
-        self.assertEqual(organization["hb_reference"]["epoch"], 32)
+        self.assertEqual(repository["hb_reference"]["epoch"], 32)
+        self.assertEqual(organization["hb_reference"]["epoch"], 99)
+        self.assertIs(organization["hb_reference"]["derived_from_clock"], False)
 
     def test_replay_of_one_transition_id_over_another_manifest_refuses(self):
         first = self.receive()
