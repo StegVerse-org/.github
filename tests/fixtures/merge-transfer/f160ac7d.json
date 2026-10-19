@@ -97,6 +97,7 @@
   "ledger_ref": "refs/stegverse/organization-ledger",
   "ledger_tip": "2acec0e1cfd158a6a3313ad422737caf41badda3",
   "real_state_at_ledger_tip": {
+    "detail": "no organization receipt names ORGANIZATION_MAIN_MERGE_TRANSFER for StegVerse-org/.github@f160ac7d61891ee8b187368fbf05372eacc8064c",
     "disposition": "FAIL_CLOSED",
     "failed_predicate": "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT",
     "failure_code": "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED",
@@ -105,7 +106,7 @@
     "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
     "owning_existing_goal": "StegVerse-org/.github#162 (INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001)",
     "repository": "StegVerse-org/.github",
-    "required_evidence_or_repair": "an organization receipt on this organization's ledger with boundary_evidence.operation ORGANIZATION_MAIN_MERGE_TRANSFER, repository StegVerse-org/.github and merge_commit f160ac7d61891ee8b187368fbf05372eacc8064c, linked to a sealed repository receipt carrying the same merge",
+    "required_evidence_or_repair": "a sealed organization receipt on this organization's ledger with boundary_evidence.operation ORGANIZATION_MAIN_MERGE_TRANSFER, repository StegVerse-org/.github and merge_commit f160ac7d61891ee8b187368fbf05372eacc8064c, linked to a sealed repository receipt carrying the same merge",
     "retry_entrypoint": ".github/workflows/organization-ledger-merge-transfer.yml (push to main)",
     "schema": "stegverse.main-merge-transfer-result/v1",
     "transfer": "UNVERIFIED"
