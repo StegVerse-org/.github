@@ -1301,8 +1301,8 @@ def main() -> int:
                              "required unless the manifest declares its own chain position")
     parser.add_argument("--packet-id", default="organization-sdk-manifest-ingress")
     parser.add_argument("--hb-epoch", type=str, default=None,
-                        help="heartbeat epoch; derived from the host clock, and marked as "
-                             "derived, when absent")
+                        help="heartbeat epoch, as supplied (ASCII digits >= 32); absent or "
+                             "invalid is refused FAIL_CLOSED, never derived from a clock")
     parser.add_argument("--mesh-root", type=Path, default=None,
                         help="federation mesh this node was materialized with; a governance "
                              "request leaves on it")

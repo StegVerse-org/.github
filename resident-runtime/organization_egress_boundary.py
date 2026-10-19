@@ -945,8 +945,16 @@ def main() -> int:
     if args.close:
         if not args.packet_id or not args.communication_id:
             raise SystemExit("--close requires --packet-id and --communication-id")
-        result = close(args.destination_organization, args.packet_id, args.communication_id,
-                       hb_epoch=args.hb_epoch)
+        # Checked before the destination and mesh are resolved, so a bad epoch
+        # is refused six-field rather than surfacing as a resolution error.
+        refused_epoch = epoch_refusal(args.hb_epoch, "resident-runtime/organization_egress_boundary.py (--close, --hb-epoch)")
+        if refused_epoch is not None:
+            result = {**{k: v for k, v in refused_epoch.items() if k != "emitted"},
+                      "closed": False, "closure_recorded": False,
+                      "communication_id": args.communication_id, "request_packet_id": args.packet_id}
+        else:
+            result = close(args.destination_organization, args.packet_id, args.communication_id,
+                           hb_epoch=args.hb_epoch)
     else:
         payload = json.loads(Path(args.payload).read_text(encoding="utf-8"))
         result = emit(args.destination_organization, payload, standing=standing,

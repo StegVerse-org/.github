@@ -81,8 +81,25 @@ def supplied_ledger(variable):
     value=os.environ.get(variable)
     return LS.parse_locator(value) if value else None
 
+CLI_ENTRYPOINT="resident-runtime/federation_cycle.py (--hb-epoch)"
+
+def epoch_refused(hb_epoch):
+    """The six-field refusal of a supplied epoch, by the organization writer's rule, or None."""
+    refusal=PR.organization_ledger.epoch_refusal(hb_epoch)
+    return None if refusal is None else {**refusal,"retry_entrypoint":CLI_ENTRYPOINT}
+
 def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
          repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None, hb_epoch=None):
+    # A supplied epoch is checked as typed before anything is read or written,
+    # and the cycle record is stamped with it. It used to be accepted and then
+    # ignored: every cycle was stamped from the host clock. A call that supplies
+    # none (resident_executor.py) still takes the clock-derived reference; that
+    # caller is WU-B13 slice e.
+    if hb_epoch is not None:
+        refused=epoch_refused(hb_epoch)
+        if refused is not None:
+            raise PR.organization_ledger.OrgLedgerEpochRefused(refused)
+        hb_epoch=int(str(hb_epoch))
     if node_state_root is None:
         raise SystemExit("NODE_STATE_LOCATION_REQUIRED_FROM_MATERIALIZER")
     # The carrier is the declared one: kernel frames over the mesh this node
@@ -125,7 +142,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     receipt={
       "schema_version":"stegverse.org-federation-cycle.v1",
       "organization":K.load_registry(ROOT)["organization"],
-      "heartbeat_reference":K.hb_reference(),
+      "heartbeat_reference":K.hb_reference(epoch=hb_epoch) if hb_epoch is not None else K.hb_reference(),
       "frames_seen":len(results),
       "frames_consumed":consumed,
       "frames_denied":sum(1 for x in results if (x.get("result") or {}).get("status")=="REFUSED"
@@ -188,4 +205,7 @@ if __name__=="__main__":
     ap.add_argument("--node-state-root", type=Path, required=True)
     ap.add_argument("--hb-epoch", default=None, help="supplied carrier heartbeat epoch (never sampled)")
     args=ap.parse_args()
-    main(mesh_root=args.mesh_root,node_state_root=args.node_state_root,hb_epoch=args.hb_epoch)
+    try:
+        main(mesh_root=args.mesh_root,node_state_root=args.node_state_root,hb_epoch=args.hb_epoch)
+    except PR.organization_ledger.OrgLedgerEpochRefused as exc:
+        print(json.dumps(exc.refusal,sort_keys=True)); raise SystemExit(1)

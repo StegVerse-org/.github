@@ -17,7 +17,9 @@ this, so the repository-receipt cases here are its first coverage.
 
 Source validation only. No authority effect is claimed.
 """
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -256,6 +258,101 @@ class CliEpochParsingTests(unittest.TestCase):
             text = subprocess.run([sys.executable, str(script), "--help"], capture_output=True,
                                   text=True, cwd=str(ROOT)).stdout
             self.assertNotIn("host clock", text, script)
+
+
+FEDERATION_CYCLE = ROOT / "resident-runtime/federation_cycle.py"
+EGRESS = ROOT / "resident-runtime/organization_egress_boundary.py"
+#: Supplied but not admissible: each is refused before anything is written.
+REFUSED_SUPPLIED_EPOCHS = ("", "+33", " 33", "\uff13\uff13", "33.0", "31", "abc")
+
+
+class FederationCycleEpochTests(unittest.TestCase):
+    """A supplied --hb-epoch is checked as typed and stamps the cycle record; it was ignored."""
+
+    def run_cycle(self, work, hb_epoch):
+        (Path(work) / "mesh").mkdir()
+        (Path(work) / "node").mkdir()
+        env = dict(os.environ, STEGVERSE_ORG_LEDGER_ROOT=str(Path(work) / "org"),
+                   STEGVERSE_REPO_LEDGER_ROOT=str(Path(work) / "repo"))
+        return subprocess.run([sys.executable, str(FEDERATION_CYCLE), "--mesh-root", str(Path(work) / "mesh"),
+                               "--node-state-root", str(Path(work) / "node"), "--hb-epoch", hb_epoch],
+                              capture_output=True, text=True, cwd=str(ROOT), env=env)
+
+    def test_a_supplied_epoch_that_is_not_admissible_is_refused_and_nothing_written(self):
+        for epoch in REFUSED_SUPPLIED_EPOCHS:
+            with self.subTest(epoch=epoch), tempfile.TemporaryDirectory() as work:
+                completed = self.run_cycle(work, epoch)
+                self.assertEqual(completed.returncode, 1, (completed.stdout, completed.stderr))
+                refusal = json.loads(completed.stdout.splitlines()[-1])
+                self.assertEqual((refusal["disposition"], refusal["failure_code"]),
+                                 ("FAIL_CLOSED", "HB_EPOCH_INVALID"))
+                self.assertEqual(refusal["retry_entrypoint"], "resident-runtime/federation_cycle.py (--hb-epoch)")
+                for field in SIX_FIELDS:
+                    self.assertTrue(refusal[field], field)
+                written = [p for p in Path(work).rglob("*") if p.is_file()]
+                self.assertEqual(written, [])
+
+    def test_a_supplied_epoch_stamps_the_cycle_and_no_clock_is_read(self):
+        spec = importlib.util.spec_from_file_location("federation_cycle_epoch", FEDERATION_CYCLE)
+        cycle = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cycle)
+
+        class NoClock:
+            @staticmethod
+            def now(*_):
+                raise AssertionError("clock read")
+
+        with tempfile.TemporaryDirectory() as work:
+            (Path(work) / "mesh").mkdir()
+            previous = {k: os.environ.get(k) for k in ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_REPO_LEDGER_ROOT")}
+            os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = str(Path(work) / "org")
+            os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = str(Path(work) / "repo")
+            clock = cycle.K.datetime
+            cycle.K.datetime = NoClock
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    receipt = cycle.main(mesh_root=Path(work) / "mesh", node_state_root=Path(work) / "node",
+                                         hb_epoch="4096")
+            finally:
+                cycle.K.datetime = clock
+                for k, v in previous.items():
+                    if v is None:
+                        os.environ.pop(k, None)
+                    else:
+                        os.environ[k] = v
+            self.assertEqual(receipt["heartbeat_reference"]["epoch"], 4096)
+            self.assertIs(receipt["heartbeat_reference"]["derived_from_clock"], False)
+            self.assertEqual(len(list((Path(work) / "node").rglob("*.json"))), 1)
+
+
+class EgressCloseCliEpochTests(unittest.TestCase):
+    """--close checks the epoch before resolving the destination or the mesh."""
+
+    def test_a_bad_epoch_is_refused_six_field_not_a_resolution_error(self):
+        for epoch in (*REFUSED_SUPPLIED_EPOCHS, None):
+            with self.subTest(epoch=epoch), tempfile.TemporaryDirectory() as work:
+                standing = Path(work) / "standing.json"
+                standing.write_text(json.dumps({"predecessor": None}))
+                payload = Path(work) / "payload.json"  # required by the parser, unread by --close
+                payload.write_text("{}")
+                command = [sys.executable, str(EGRESS), "--destination-organization", "Nowhere-Org",
+                           "--payload", str(payload),
+                           "--standing", str(standing), "--close", "--packet-id", "p-1",
+                           "--communication-id", "c-1"]
+                if epoch is not None:
+                    command += ["--hb-epoch", epoch]
+                completed = subprocess.run(command, capture_output=True, text=True, cwd=str(ROOT),
+                                           env=dict(os.environ, STEGVERSE_ORG_LEDGER_ROOT=str(Path(work) / "org"),
+                                                    STEGVERSE_REPO_LEDGER_ROOT=str(Path(work) / "repo")))
+                self.assertEqual(completed.returncode, 1, completed.stderr)
+                refusal = json.loads(completed.stdout)
+                self.assertEqual(refusal["failure_code"],
+                                 "HB_EPOCH_NOT_SUPPLIED" if epoch is None else "HB_EPOCH_INVALID")
+                self.assertIs(refusal["closure_recorded"], False)
+                for field in SIX_FIELDS:
+                    self.assertTrue(refusal[field], field)
+                self.assertEqual(sorted(p.name for p in Path(work).rglob("*") if p.is_file()),
+                                 ["payload.json", "standing.json"])
 
 
 WORKFLOWS = ROOT / ".github/workflows"
