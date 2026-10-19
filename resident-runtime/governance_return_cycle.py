@@ -58,12 +58,13 @@ def run(*, mesh_root, node_state_root, hb_epoch=None):
     org_ledger_root = cycle.supplied_ledger("STEGVERSE_ORG_LEDGER_ROOT")
     try:
         results = K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
-                                        repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root)
+                                        repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root,
+                                        hb_epoch=int(str(hb_epoch)))
     except ValueError as exc:
         if "ledger_location_required_from_materializer" not in str(exc):
             raise
         return _refused(cycle.ledger_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
-    returns = cycle.returns_for_consumed(results, mesh_root=mesh_root)
+    returns = cycle.returns_for_consumed(results, mesh_root=mesh_root, hb_epoch=int(str(hb_epoch)))
     return {
         "schema": SCHEMA,
         "organization": K.load_registry(ROOT)["organization"],

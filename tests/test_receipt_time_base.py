@@ -715,18 +715,77 @@ class ClockProbeTests(unittest.TestCase):
         self.assertEqual(scan["rows"]["valid"]["status"], "CONSUMED")
         self.assertGreater(scan["valid_in_ledgers"], 0)
         self.assertEqual(scan["second_offered"], 0)
-        # B-P36m: a frame whose CARRIED claim names the current supplied head is
-        # consumed, and every receipt it produces keeps the claim.
+        # B-P36m (09:00Z alternative): accepts_carried_crossings is false. Without a
+        # cycle epoch a CARRIED frame is refused CARRIED_NOT_ACCEPTED_BY_DESTINATION;
+        # in a cycle with its own epoch the claim is verified at admission and kept
+        # in evidence.frame_reference, and every receipt is stamped with the cycle epoch.
         carried = probe["carried"]
+        self.assertEqual(carried["refused_without_cycle_epoch"], ["CARRIED_NOT_ACCEPTED_BY_DESTINATION"])
         self.assertEqual(carried["status"], ["CONSUMED"])
         self.assertEqual(probe["phases"]["carried_clock_calls"], 0)
         self.assertTrue(carried["receipts"])
         for receipt in carried["receipts"]:
             reference = receipt["hb_reference"]
-            self.assertEqual(reference["source"], "CARRIED:ORGANIZATION_LEDGER_HEAD", receipt["schema"])
-            self.assertTrue(reference["head_receipt_sha"].startswith("sha256:"))
+            self.assertEqual(reference["epoch"], 4096, receipt["schema"])
             self.assertIs(reference["derived_from_clock"], False)
-            self.assertNotIn("sampled_unix_ns", reference)
+            for key in ("source", "head_receipt_sha", "sampled_unix_ns"):
+                self.assertNotIn(key, reference)
+        self.assertEqual(len(carried["frame_references"]), len(carried["receipts"]))
+        for frame_reference in carried["frame_references"]:
+            self.assertEqual((frame_reference["epoch_class"], frame_reference["source"], frame_reference["head_receipt_sha"],
+                              frame_reference["epoch"]),
+                             ("CARRIED", "CARRIED:ORGANIZATION_LEDGER_HEAD", carried["head_receipt_sha"], carried["head_epoch"]))
+        # F1: a cycle at supplied 4096 consuming a frame at 77. Every receipt is
+        # stamped 4096; 77 is only inbound provenance; the answer (no resolution
+        # rule) is HB_EPOCH_CONFLICT and nothing is published.
+        f1 = probe["f1"]
+        self.assertEqual(probe["phases"]["f1_clock_calls"], 0)
+        self.assertEqual(f1["status"], ["CONSUMED"])
+        self.assertEqual((f1["response_published"], f1["response_refusal"], f1["mesh_answers"]),
+                         ([False], ["HB_EPOCH_CONFLICT"], 0))
+        self.assertEqual(len(f1["receipts"]), 3)
+        for receipt in f1["receipts"]:
+            self.assertEqual((receipt["epoch"], receipt["derived_from_clock"]), (4096, False), receipt["schema"])
+            self.assertEqual((receipt["frame_reference"]["epoch"], receipt["frame_reference"]["resolution"]),
+                             (77, "SUPPLIED_CYCLE_EPOCH_STAMPS_THIS_ORGANIZATION"), receipt["schema"])
+        # F-TYPE: the per-frame guard is total. Wrong-typed packet_base64 before and
+        # after a valid frame: each FRAME_INGEST_FAILED (AttributeError), quarantined
+        # six-field, never re-offered; the valid frame is ledgered; no clock read.
+        ftype = probe["ftype"]
+        self.assertEqual(probe["phases"]["type_clock_calls"], 0)
+        self.assertEqual((ftype["order"][0], ftype["order"][-1]), ("first", "last"))
+        for label in ("int", "null", "list", "dict", "first", "last"):
+            self.assertEqual((ftype["rows"][label]["status"], ftype["rows"][label]["failure_code"],
+                              ftype["rows"][label]["failed_predicate"]),
+                             ("REFUSED", "FRAME_INGEST_FAILED", "AttributeError"), label)
+        self.assertEqual(ftype["rows"]["valid"]["status"], "CONSUMED")
+        self.assertGreater(ftype["valid_in_ledgers"], 0)
+        self.assertEqual((ftype["bad_in_ledgers"], ftype["second_offered"]), (0, 0))
+        self.assertIs(ftype["six_field_markers"], True)
+        # consume_addressed_frames: the same total guard, and the supplied node state
+        # is its seen-store, so the quarantined frame is not offered again.
+        addressed = probe["addressed"]
+        self.assertEqual(probe["phases"]["addressed_clock_calls"], 0)
+        self.assertEqual(addressed["first"], [["REFUSED", "FRAME_INGEST_FAILED", True], ["CONSUMED", None, None]])
+        self.assertNotIn(addressed["bad_packet_id"], addressed["second_packet_ids"])
+        self.assertGreater(addressed["valid_in_ledgers"], 0)
+        # F-TRANSIENT-RT: an OSError on the repository append, a lost compare-and-swap
+        # on the organization append, a collision writing the seen-marker: each a
+        # non-terminal six-field FRAME_DISPATCH_IO_FAILED, no marker, the frame stays
+        # pending, and the next pass consumes it exactly once (one repository and one
+        # organization receipt, no duplicate or orphan).
+        for label, row in probe["io"].items():
+            with self.subTest(io=label):
+                self.assertEqual(probe["phases"]["io_" + label + "_clock_calls"], 0)
+                self.assertEqual(row["first"], ["PENDING", "FRAME_DISPATCH_IO_FAILED", False])
+                for field in SIX_FIELDS:
+                    self.assertTrue(row["first_record"][field], field)
+                self.assertIsNone(row["first_marker"])
+                self.assertEqual(row["markers_after_first"], 0)
+                self.assertEqual((row["second"], row["third_offered"]), (["CONSUMED"], 0))
+                self.assertEqual(len(row["receipt_shas"]), 2)
+                self.assertEqual(sorted(set(row["receipt_schemas"])),
+                                 ["stegverse.organization-transition-receipt/v1", "stegverse.repo-transition-receipt/v1"])
         self.assertIs(classes["ecosystem.monitor.response"]["monitor_heartbeat"]["derived_from_clock"], False)
         for reference in probe["references"]:
             if reference.get("derived_from_clock") is False:
@@ -743,24 +802,72 @@ SUBMITTER = ROOT / "resident-runtime/submit_org_transition_to_master_records.py"
 class ReleasedSegmentHeadEpochTests(unittest.TestCase):
     """The downstream release stamps its frame with the head receipt's epoch only when it was supplied."""
 
-    def head(self, reference):
+    def head(self, reference, previous=None, transition_id="T-head"):
         body = {"schema": "stegverse.organization-transition-receipt/v1", "organization": "StegVerse-org",
-                "transition_id": "T-head", "previous_receipt_sha256": None, "hb_reference": reference}
+                "transition_id": transition_id, "previous_receipt_sha256": previous, "hb_reference": reference}
         return {**body, "receipt_sha256": org.sha(body)}
 
-    def release(self, work, reference):
+    def ledger(self, work, *receipts):
+        """An organization ledger holding `receipts` as its chain, the last one its HEAD."""
+        root = Path(work) / "org-ledger"
+        store = org.open_store(org.parse_locator(str(root)))
+        for receipt in receipts:
+            store.put(org.receipt_key(receipt["receipt_sha256"]), receipt)
+        if receipts:
+            store.put(org.HEAD_KEY, {"organization": "StegVerse-org", "receipt_sha256": receipts[-1]["receipt_sha256"]})
+        return root
+
+    def release(self, work, reference, *, released=None, ledger=None):
+        head = released or self.head(reference)
         receipt = Path(work) / "head.json"
-        receipt.write_text(json.dumps(self.head(reference)))
+        receipt.write_text(json.dumps(head))
         standing = Path(work) / "standing.json"
         standing.write_text(json.dumps({"mode": "GENESIS", "node_ref": "t", "predecessor": None}))
         mesh = Path(work) / "mesh"
+        ledger = ledger if ledger is not None else self.ledger(work, head)
+        env = {k: v for k, v in os.environ.items() if k != "STEGVERSE_ORG_LEDGER_ROOT"}
         completed = subprocess.run([sys.executable, str(SUBMITTER), "--org-receipt", str(receipt),
                                     "--predecessor-ecosystem-state-sha256", "sha256:" + "1" * 64,
                                     "--successor-ecosystem-state-sha256", "sha256:" + "2" * 64,
-                                    "--standing", str(standing), "--mesh-root", str(mesh)],
-                                   capture_output=True, text=True, cwd=str(ROOT))
+                                    "--standing", str(standing), "--mesh-root", str(mesh),
+                                    "--org-ledger-root", str(ledger)],
+                                   capture_output=True, text=True, cwd=str(ROOT), env=env)
         frames = [json.loads(p.read_text()) for p in mesh.rglob("*.json")] if mesh.exists() else []
         return completed, frames
+
+    def test_a_segment_not_on_the_organization_ledger_is_unverified_and_nothing_published(self):
+        """F4: --org-receipt is verified against the ledger chain, never trusted."""
+        supplied = org.kernel.hb_reference(epoch=4096)
+        with tempfile.TemporaryDirectory() as work:
+            other = self.head(supplied, transition_id="T-other")
+            completed, frames = self.release(work, supplied, ledger=self.ledger(work, other))
+            self.assertEqual(completed.returncode, 3, completed.stderr)
+            refusal = json.loads(completed.stdout)
+            self.assertEqual((refusal["failure_code"], refusal["failed_predicate"]),
+                             ("CARRIED_PROVENANCE_UNVERIFIED", "RELEASED_SEGMENT_IS_DURABLE_ORGANIZATION_LEDGER_STATE"))
+            for field in SIX_FIELDS:
+                self.assertTrue(refusal[field], field)
+            self.assertEqual(frames, [])
+
+    def test_a_declared_verified_segment_head_need_not_be_the_tip(self):
+        supplied = org.kernel.hb_reference(epoch=4096)
+        with tempfile.TemporaryDirectory() as work:
+            head = self.head(supplied)
+            tip = self.head(supplied, previous=head["receipt_sha256"], transition_id="T-tip")
+            completed, frames = self.release(work, supplied, released=head, ledger=self.ledger(work, head, tip))
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            reference = frames[0]["heartbeat_reference"]
+            self.assertEqual((reference["source"], reference["head_receipt_sha"]),
+                             ("CARRIED:SEGMENT_HEAD", head["receipt_sha256"]))
+        manifest = json.loads((ROOT / "resident-runtime/activation-manifest.json").read_text())
+        self.assertIn("CARRIED:SEGMENT_HEAD", manifest["epoch_binding"]["carried_sources"])
+
+    def test_without_a_ledger_location_nothing_is_published(self):
+        with tempfile.TemporaryDirectory() as work:
+            completed, frames = self.release(work, org.kernel.hb_reference(epoch=4096), ledger="")
+            self.assertEqual(completed.returncode, 3, completed.stderr)
+            self.assertEqual(json.loads(completed.stdout)["failed_predicate"], "ORGANIZATION_LEDGER_LOCATION_SUPPLIED")
+            self.assertEqual(frames, [])
 
     def test_a_clock_flagged_absent_or_invalid_head_epoch_is_refused_and_nothing_published(self):
         clocked = org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
@@ -785,12 +892,12 @@ class ReleasedSegmentHeadEpochTests(unittest.TestCase):
             self.assertIs(frames[0]["heartbeat_reference"]["derived_from_clock"], False)
             reference = frames[0]["heartbeat_reference"]
             self.assertEqual((reference["source"], reference["head_receipt_sha"]),
-                             ("CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT", head["receipt_sha256"]))
+                             ("CARRIED:SEGMENT_HEAD", head["receipt_sha256"]))
             self.assertNotIn("sampled_unix_ns", reference)
             self.assertIsNone(org.supplied_epoch_failure(reference["epoch"], reference))
             payload = org.kernel.recover_packet(frames[0])["payload"]
             self.assertEqual(payload["hb_epoch_provenance"],
-                             {"source": "CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT",
+                             {"source": "CARRIED:SEGMENT_HEAD",
                               "head_receipt_sha": head["receipt_sha256"], "derived_from_clock": False})
 
     def test_carried_provenance_needs_a_supplied_epoch_and_only_its_two_keys(self):
@@ -1029,6 +1136,9 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
         self.assertEqual(binding["entrypoints"], ["resident-runtime/resident_executor.py",
                                                   "resident-runtime/federation_cycle.py"])
         self.assertEqual((binding["hb_epoch"], binding["clock_fallback"]), ("SUPPLIED_BY_DISPATCH", "NONE"))
+        self.assertEqual(binding["runtime_dispatcher"]["status"], "PENDING_SUBSTRATE")
+        self.assertIs(binding["accepts_carried_crossings"], False)
+        self.assertIs(org.kernel.ACCEPTS_CARRIED_CROSSINGS, binding["accepts_carried_crossings"])
         dispatcher = ROOT / binding["dispatcher"]
         self.assertTrue(dispatcher.is_file())
         triggers, text = workflow_triggers(dispatcher)
@@ -1083,9 +1193,17 @@ class ResidentDispatchTests(unittest.TestCase):
             argv = invocation["argv"]
             self.assertEqual(argv[argv.index("--hb-epoch") + 1], "4096")
         pending = result["runtime_dispatcher"]
-        self.assertEqual((pending["failure_code"], pending["blocking"]), ("RUNTIME_DISPATCHER_PENDING_SUBSTRATE", False))
+        self.assertEqual((pending["failure_code"], pending["state"], pending["status"], pending["line"], pending["blocking"]),
+                         ("MANIFEST_DISPATCHER_PROHIBITED_ON_HOSTED", "OPEN", "PENDING_SUBSTRATE",
+                          "RUNTIME_DISPATCHER_PENDING_SUBSTRATE", False))
+        self.assertEqual(pending["owning_existing_goal"], "WU-B13 activation (StegVerse-Labs/.github#3183)")
+        self.assertEqual(pending["next_attempt"], "the canonical runtime substrate dispatcher")
         for field in SIX_FIELDS:
             self.assertTrue(pending[field], field)
+        # The prohibition the record names is real in the tree.
+        executor = (ROOT / "resident-runtime/resident_executor.py").read_text()
+        self.assertIn('HOSTED=("GITHUB_ACTIONS","CI"', executor)
+        self.assertIn('raise SystemExit("hosted runtime prohibited: "', executor)
 
     def test_a_runtime_authority_runs_the_executor_with_the_supplied_epoch(self):
         manifest = json.loads((ROOT / "resident-runtime/activation-manifest.json").read_text())

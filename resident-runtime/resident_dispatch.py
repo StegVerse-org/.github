@@ -10,9 +10,10 @@ refusal and exit 1. Each invocation carries the supplied epoch; none reads a
 clock.
 
 Where the manifest declares github_actions_is_runtime_authority false, the
-dispatcher is not the runtime: it records RUNTIME_DISPATCHER_PENDING_SUBSTRATE
-with the six fields, which does not fail the dispatch, and hands the resident
-substrate the exact invocations instead of executing them.
+dispatcher is not the runtime: it records the manifest's OPEN six-field
+MANIFEST_DISPATCHER_PROHIBITED_ON_HOSTED (RUNTIME_DISPATCHER_PENDING_SUBSTRATE,
+dispatcher status PENDING_SUBSTRATE), which does not fail the dispatch, and
+hands the resident substrate the exact invocations instead of executing them.
 """
 from __future__ import annotations
 import argparse, importlib.util, json, subprocess, sys
@@ -38,20 +39,11 @@ def invocations(binding, *, hb_epoch, mesh_root, node_state_root):
             for entrypoint in binding["entrypoints"]]
 
 
-def pending_substrate(rule):
-    """The non-blocking six-field line: the dispatcher is not the runtime authority."""
-    return {"state": "PENDING_SUBSTRATE", "blocking": False,
-            "failure_code": "RUNTIME_DISPATCHER_PENDING_SUBSTRATE",
-            "failed_predicate": "DISPATCHER_IS_THE_RESIDENT_RUNTIME_AUTHORITY",
-            "detail": "activation-manifest.json declares github_actions_is_runtime_authority false, and the "
-                      "executor refuses a hosted runtime; the supplied epoch is handed to the resident substrate",
-            "required_evidence_or_repair": "a resident substrate materializes the node and runs the handed "
-                                           "invocations, each with the supplied --hb-epoch",
-            "retry_entrypoint": "resident-runtime/resident_executor.py --hb-epoch",
-            "owning_existing_goal": rule.INTR_PROTOCOL_GOAL,
-            "next_attempt": "on the resident substrate, with the same supplied epoch; nothing was executed or "
-                            "written here",
-            "consequence_committed": False}
+def pending_substrate(binding):
+    """The non-blocking six-field line the manifest declares: the dispatcher is not the runtime authority."""
+    dispatcher = binding["runtime_dispatcher"]
+    return {"status": dispatcher["status"], "line": dispatcher["line"], "blocking": dispatcher["blocking"],
+            **dispatcher["record"], "consequence_committed": False}
 
 
 def dispatch(*, hb_epoch, mesh_root, node_state_root, manifest=None, run=subprocess.run):
@@ -65,7 +57,7 @@ def dispatch(*, hb_epoch, mesh_root, node_state_root, manifest=None, run=subproc
     if manifest.get("github_actions_is_runtime_authority") is False:
         return {"schema": "stegverse.resident-runtime-dispatch/v1", "disposition": "ALLOW",
                 "hb_epoch": str(hb_epoch), "invocations": handed, "executed": False,
-                "runtime_dispatcher": pending_substrate(rule), "authority_effect": "NONE_DISPATCH_ONLY"}
+                "runtime_dispatcher": pending_substrate(binding), "authority_effect": "NONE_DISPATCH_ONLY"}
     # The executor runs the federation cycle with the same epoch.
     completed = run(handed[0]["argv"], cwd=str(ROOT), check=False)
     return {"schema": "stegverse.resident-runtime-dispatch/v1",

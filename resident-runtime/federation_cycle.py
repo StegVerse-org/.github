@@ -16,7 +16,7 @@ LS=importlib.util.module_from_spec(LSSPEC); LSSPEC.loader.exec_module(LS)
 PRSPEC=importlib.util.spec_from_file_location("propagate_repository_receipts",ROOT/"resident-runtime"/"propagate_repository_receipts.py")
 PR=importlib.util.module_from_spec(PRSPEC); PRSPEC.loader.exec_module(PR)
 
-def returns_for_consumed(results, *, mesh_root):
+def returns_for_consumed(results, *, mesh_root, hb_epoch=None):
     """Materialize the governance return for each decision consumed in this cycle.
 
     The consumed answer is the event; nothing waits for it. The return operation
@@ -31,7 +31,7 @@ def returns_for_consumed(results, *, mesh_root):
     mesh=K.mesh_store(mesh_root)
     out=[]
     for item in answers:
-        # The closure is stamped with the supplied epoch of the answer frame it observes,
+        # Without a cycle epoch the closure is stamped with the supplied epoch of the answer frame it observes,
         # as the kernel stamps an answer with the epoch of the frame it answers:
         # consuming the same answer again (a fresh node state, a further run)
         # then returns the closure already recorded instead of minting another.
@@ -46,8 +46,11 @@ def returns_for_consumed(results, *, mesh_root):
         if module is None:
             spec=importlib.util.spec_from_file_location("governance_decision_return",ROOT/"resident-runtime"/"governance_decision_return.py")
             module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        # F1: the closure is this organization's transition. In a cycle with its own
+        # supplied epoch it is stamped with that epoch (K.EPOCH_RESOLUTION), never
+        # with the deciding organization's; the answer frame is named by its packet.
         returned=module.return_on_consumption(item["result"]["packet"], mesh_root=mesh_root,
-                                              hb_epoch=reference.get("epoch"))
+                                              hb_epoch=reference.get("epoch") if hb_epoch is None else hb_epoch)
         if returned is not None:
             out.append({key:returned.get(key) for key in (
               "disposition","trigger","decision_returned","governance_disposition","governance_failed_predicate","failed_predicate",
@@ -137,7 +140,8 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     consumption={"disposition":"ALLOW"}
     try:
         results=K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
-                                      repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root)
+                                      repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root,
+                                      hb_epoch=hb_epoch)
     except ValueError as exc:
         if "ledger_location_required_from_materializer" not in str(exc):
             raise
@@ -160,7 +164,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
                      "consequence_committed":False}
     consumed=sum(1 for x in results if (x.get("result") or {}).get("status")=="CONSUMED")
     responses=sum(1 for x in results if x.get("response_publication"))
-    governance_returns=returns_for_consumed(results, mesh_root=mesh_root)
+    governance_returns=returns_for_consumed(results, mesh_root=mesh_root, hb_epoch=hb_epoch)
     receipt={
       "schema_version":"stegverse.org-federation-cycle.v1",
       "organization":K.load_registry(ROOT)["organization"],

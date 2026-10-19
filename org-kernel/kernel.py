@@ -535,38 +535,78 @@ def publish_packet(packet:dict[str,Any], *, root:Path|None=None, now_ns:int|None
 
 def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:set[str]|None=None,
                              node_state_root:Path|None=None, repo_ledger_root:Path|None=None,
-                             org_ledger_root:Path|None=None)->list[dict[str,Any]]:
+                             org_ledger_root:Path|None=None, hb_epoch:Any=None)->list[dict[str,Any]]:
     # The same custody as consume_and_respond: a crossing consumed here is a
     # transition within the organization and is recorded before it is returned.
+    if hb_epoch is not None:
+        failure=supplied_epoch_failure(hb_epoch)
+        if failure is not None:
+            raise ValueError("cycle_hb_epoch_invalid: "+failure[0]+": "+failure[1])
+        hb_epoch=int(str(hb_epoch))
     custody=crossing_custody(repo_root,repo_ledger_root=repo_ledger_root,org_ledger_root=org_ledger_root)
     registry=load_registry(repo_root)
     organization=registry["organization"]
     # Node state is optional here because only a work request needs it, and
-    # dispatch refuses that one by name when none was supplied.
+    # dispatch refuses that one by name when none was supplied. When it is
+    # supplied it is also the seen-store: a frame refused for its own defect is
+    # quarantined there and not offered again (F-TYPE).
     node_state=addressed_node_state_store(node_state_root) if node_state_root is not None else None
+    effective_seen=set(seen or set())
+    if node_state is not None:
+        effective_seen|=federation_seen_frame_names(repo_root,store=node_state)
     results=[]
-    for item in scan_addressed_frames(organization,root=mesh_root,seen=seen):
-        kind,provenance,refused=frame_epoch_class(item["frame"],custody)
-        if refused is not None:
-            results.append({"path":item["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
-                            "failed_predicate":refused["failed_predicate"],"failure_code":refused["failure_code"],
-                            "packet_id":item["frame"].get("packet_id")},"organization_record":None})
-            continue
-        if kind=="CLOCK":
-            try:
-                result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
-            except ValueError as exc:
-                if any(marker in str(exc) for marker in CUSTODY_REFUSALS):
-                    raise
-                result={"status":"REFUSED","disposition":"FAIL_CLOSED","failed_predicate":str(exc),
-                        "packet_id":item["frame"].get("packet_id")}
-            results.append({"path":item["path"],"result":{**result,"epoch_lent":None},
-                            "organization_record":not_supplied_record(custody)})
-            continue
-        epoch=(item["frame"].get("heartbeat_reference") or {}).get("epoch")
-        result,recorded=ingest_recorded(repo_root,item,custody,registry,mesh_root=mesh_root,
-                                        node_state=node_state,epoch=epoch,provenance=provenance)
-        results.append({"path":item["path"],"result":result,"organization_record":recorded})
+    unreadable=[]
+    frames=scan_addressed_frames(organization,root=mesh_root,seen=effective_seen,unreadable=unreadable)
+
+    def refuse(item_path, frame, refused):
+        marker=(quarantine_federation_frame(item_path,frame,refused,store=node_state)
+                if node_state is not None else None)
+        results.append({"path":item_path,"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
+                        "failed_predicate":refused["failed_predicate"],"failure_code":refused["failure_code"],
+                        "packet_id":frame.get("packet_id"),"quarantined":marker is not None},
+                        "organization_record":None,"seen_marker":None if marker is None else str(marker)})
+
+    for entry in unreadable:
+        refuse(entry["path"],{},unreadable_entry_refusal(entry["reason"],custody))
+    for item in frames:
+        # The same total per-frame guard as consume_and_respond.
+        try:
+            kind,provenance,refused=frame_epoch_class(item["frame"],custody)
+            if refused is None and kind=="CARRIED" and hb_epoch is None and not ACCEPTS_CARRIED_CROSSINGS:
+                refused=carried_not_accepted(custody)
+            if refused is not None:
+                refuse(item["path"],item["frame"],refused)
+                continue
+            if kind=="CLOCK":
+                try:
+                    result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
+                except ValueError as exc:
+                    if any(marker in str(exc) for marker in CUSTODY_REFUSALS):
+                        raise
+                    result={"status":"REFUSED","disposition":"FAIL_CLOSED","failed_predicate":str(exc),
+                            "packet_id":item["frame"].get("packet_id")}
+                results.append({"path":item["path"],"result":{**result,"epoch_lent":None},
+                                "organization_record":not_supplied_record(custody)})
+                continue
+            frame_epoch=(item["frame"].get("heartbeat_reference") or {}).get("epoch")
+            epoch,record_provenance,frame_reference,_answer=resolve_cycle_epoch(
+                hb_epoch,frame_epoch,kind,provenance,item["frame"])
+            result,recorded=ingest_recorded(repo_root,item,custody,registry,mesh_root=mesh_root,
+                                            node_state=node_state,epoch=epoch,provenance=record_provenance,
+                                            frame_reference=frame_reference)
+            results.append({"path":item["path"],"result":result,"organization_record":recorded})
+        except Exception as exc:
+            if isinstance(exc, ValueError) and any(marker in str(exc) for marker in CUSTODY_REFUSALS):
+                raise
+            if getattr(exc,"capability_ingress_refusal",False):
+                # This route returns a capability crossing's refusal to its caller.
+                raise
+            if writer_fault(exc):
+                results.append({"path":item["path"],"result":{**dispatch_io_failure(exc,custody),
+                                "status":"PENDING","packet_id":item["frame"].get("packet_id")},
+                                "organization_record":None})
+                continue
+            refuse(item["path"],item["frame"],frame_ingest_refusal(exc,custody))
     return results
 
 
@@ -859,7 +899,8 @@ def refusal_disposition(reason:str)->str:
     return "DENY" if any(marker in reason for marker in DETERMINISTIC_REFUSALS) else "FAIL_CLOSED"
 
 def record_refusal(custody:dict[str,Any], item:dict[str,Any], reason:str, disposition:str, *,
-                   service:dict[str,Any]|None, epoch:int|None, provenance:dict[str,Any]|None=None)->dict[str,Any]:
+                   service:dict[str,Any]|None, epoch:int|None, provenance:dict[str,Any]|None=None,
+                   frame_reference:dict[str,Any]|None=None)->dict[str,Any]:
     """Append the repository and organization receipts for a refused crossing.
 
     The crossing arrived, so its disposition is a transition of this
@@ -878,6 +919,8 @@ def record_refusal(custody:dict[str,Any], item:dict[str,Any], reason:str, dispos
               "boundary_role":(service or {}).get("boundary_role"),
               "disposition":disposition,"failed_predicate":reason,
               "retry_entrypoint":None if disposition=="DENY" else "org-kernel/kernel.py::consume_and_respond"}
+    if frame_reference is not None:
+        evidence["frame_reference"]=frame_reference
     emitter=custody["emitter"]; organization_ledger=custody["organization_ledger"]
     repository_receipt=emitter.append(
         "ORGANIZATION-FEDERATION-CROSSING-"+hashlib.sha256(name.encode()).hexdigest()[:16],
@@ -887,7 +930,8 @@ def record_refusal(custody:dict[str,Any], item:dict[str,Any], reason:str, dispos
     organization_receipt=organization_ledger.append(
         repository_receipt,"REPO_STATE_PROPAGATION",predecessor,successor,
         {"operation":CROSSING_REFUSED_CLASS,"packet_id":packet_id,
-         "disposition":disposition,"failed_predicate":reason},
+         "disposition":disposition,"failed_predicate":reason,
+         **({"frame_reference":frame_reference} if frame_reference is not None else {})},
         "NONE",hb_epoch=epoch,hb_provenance=provenance,
         store=custody["organization_store"],idempotent=True)
     return {"repository_receipt_sha256":repository_receipt["receipt_sha256"],
@@ -896,7 +940,8 @@ def record_refusal(custody:dict[str,Any], item:dict[str,Any], reason:str, dispos
 
 def ingest_recorded(repo_root:Path, item:dict[str,Any], custody:dict[str,Any], registry:dict[str,Any], *,
                     mesh_root:Path|None, node_state:Any|None, epoch:int|None,
-                    provenance:dict[str,Any]|None=None)->tuple[dict[str,Any],dict[str,Any]|None]:
+                    provenance:dict[str,Any]|None=None,
+                    frame_reference:dict[str,Any]|None=None)->tuple[dict[str,Any],dict[str,Any]|None]:
     """Ingest one frame and record its disposition, admitted or refused.
 
     A refusal used to leave the consuming pass by exception, recorded nowhere
@@ -912,15 +957,21 @@ def ingest_recorded(repo_root:Path, item:dict[str,Any], custody:dict[str,Any], r
         reason=str(exc)
         if (any(marker in reason for marker in CUSTODY_REFUSALS)
                 or (service or {}).get("boundary_role")==CAPABILITY_INGRESS_ROLE):
+            # Marked, so a caller's per-frame guard can tell this designed refusal
+            # (recorded by the receiving operation itself) from a frame defect.
+            exc.capability_ingress_refusal=(service or {}).get("boundary_role")==CAPABILITY_INGRESS_ROLE
             raise
         disposition=refusal_disposition(reason)
-        recorded=record_refusal(custody,item,reason,disposition,service=service,epoch=epoch,provenance=provenance)
+        recorded=record_refusal(custody,item,reason,disposition,service=service,epoch=epoch,provenance=provenance,
+                                frame_reference=frame_reference)
         return {"status":"REFUSED","disposition":disposition,"failed_predicate":reason,
                 "packet_id":item["frame"].get("packet_id")},recorded
-    return result,record_crossing(custody,item,result,service=service,epoch=epoch,provenance=provenance)
+    return result,record_crossing(custody,item,result,service=service,epoch=epoch,provenance=provenance,
+                                  frame_reference=frame_reference)
 
 def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,Any], *,
-                    service:dict[str,Any]|None, epoch:int|None, provenance:dict[str,Any]|None=None)->dict[str,Any]|None:
+                    service:dict[str,Any]|None, epoch:int|None, provenance:dict[str,Any]|None=None,
+                    frame_reference:dict[str,Any]|None=None)->dict[str,Any]|None:
     """Append the repository and organization receipts for one consumed crossing.
 
     Identified by the frame, which is content addressed, so consuming the same
@@ -944,6 +995,8 @@ def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,A
               "message_class":(packet.get("payload") or {}).get("message_class"),
               "processing_selection":execution.get("processing_selection"),
               "terminal_receipt_id":terminal,"disposition":"ALLOW"}
+    if frame_reference is not None:
+        evidence["frame_reference"]=frame_reference
     emitter=custody["emitter"]; organization_ledger=custody["organization_ledger"]
     repository_receipt=emitter.append(
         "ORGANIZATION-FEDERATION-CROSSING-"+hashlib.sha256(name.encode()).hexdigest()[:16],
@@ -953,7 +1006,8 @@ def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,A
     organization_receipt=organization_ledger.append(
         repository_receipt,"REPO_STATE_PROPAGATION",predecessor,successor,
         {"operation":CROSSING_CONSUMED_CLASS,"packet_id":packet["packet_id"],
-         "service_id":execution.get("service_id"),"disposition":"ALLOW"},
+         "service_id":execution.get("service_id"),"disposition":"ALLOW",
+         **({"frame_reference":frame_reference} if frame_reference is not None else {})},
         "NONE",hb_epoch=epoch,hb_provenance=provenance,
         store=custody["organization_store"],idempotent=True)
     return {"repository_receipt_sha256":repository_receipt["receipt_sha256"],
@@ -961,7 +1015,19 @@ def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,A
 
 def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_root:Path|None=None,
                         repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None,
-                        seen:set[str]|None=None, now_ns:int|None=None)->list[dict[str,Any]]:
+                        seen:set[str]|None=None, now_ns:int|None=None,
+                        hb_epoch:Any=None)->list[dict[str,Any]]:
+    # `hb_epoch` is the cycle's own supplied epoch (F1). When given, this
+    # organization's crossing receipts are this organization's transition and are
+    # stamped with it; the consumed frame's epoch is recorded only as inbound
+    # provenance, in evidence.frame_reference, never as the receipt epoch. A
+    # route with no such resolution (an answer frame, a governance closure) whose
+    # frame epoch differs refuses HB_EPOCH_CONFLICT and writes nothing for it.
+    if hb_epoch is not None:
+        failure=supplied_epoch_failure(hb_epoch)
+        if failure is not None:
+            raise ValueError("cycle_hb_epoch_invalid: "+failure[0]+": "+failure[1])
+        hb_epoch=int(str(hb_epoch))
     # Consumption markers and work intake are this node's own state, at the
     # location its materializer supplied. Resolved first, so a node without one
     # consumes nothing rather than consuming and then failing to remember it.
@@ -996,6 +1062,8 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
             # terminal: quarantined, never offered again, nothing else written.
             kind,provenance,refused=(frame_epoch_class(item["frame"],custody) if now_ns is None
                                      else ("SUPPLIED",None,None))
+            if refused is None and kind=="CARRIED" and hb_epoch is None and not ACCEPTS_CARRIED_CROSSINGS:
+                refused=carried_not_accepted(custody)
             if refused is not None:
                 marker=quarantine_federation_frame(item["path"],item["frame"],refused,store=node_state)
                 out.append({"path":item["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
@@ -1008,7 +1076,9 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
             # recovery has already validated. Consuming the same frame again then
             # builds the same answer frame, and publishing it is a write-once no-op
             # rather than a second answer stamped by whatever clock this pass read.
-            epoch=None if now_ns is not None else (item["frame"].get("heartbeat_reference") or {}).get("epoch")
+            frame_epoch=None if now_ns is not None else (item["frame"].get("heartbeat_reference") or {}).get("epoch")
+            epoch,record_provenance,frame_reference,answer_epoch=resolve_cycle_epoch(
+                hb_epoch,frame_epoch,kind,provenance,item["frame"])
             payload=packet.get("payload") or {}
             message_class=payload.get("message_class")
             service=next((svc for svc in registry["services"] if svc.get("service_id")==packet["destination"]["service"]),None)
@@ -1034,28 +1104,45 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
             # recorded. A failed append leaves the frame unmarked, so the next pass
             # offers it again and the idempotent append completes it.
             result,recorded=ingest_recorded(repo_root,item,custody,registry,mesh_root=mesh_root,
-                                            node_state=node_state,epoch=epoch,provenance=provenance)
+                                            node_state=node_state,epoch=epoch,provenance=record_provenance,
+                                            frame_reference=frame_reference)
             if result.get("status")=="REFUSED" and result["disposition"]!="DENY":
                 # FAIL_CLOSED: recorded, not marked, offered again on the next pass.
                 out.append({"path":item["path"],"result":result,"response_publication":None,
                             "organization_record":recorded,"seen_marker":None})
                 continue
             response_publication=None
+            response_refusal=None
+            response=None
             if result.get("status")=="CONSUMED" and message_class in RESPONDED_REQUEST_CLASSES:
                 response=build_control_response(packet,result["execution_result"])
-                response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=epoch,
-                                                    provenance=provenance)
             elif result.get("status")=="CONSUMED" and not payload.get("response_to_packet_id"):
                 if service and service.get("endpoint_adapter"):
                     response=build_endpoint_response(packet,result["execution_result"])
-                    response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=epoch,
-                                                    provenance=provenance)
+            if response is not None and isinstance(answer_epoch,dict):
+                # The answer's epoch has no resolution rule against the cycle's: nothing is published.
+                response_refusal=answer_epoch
+            elif response is not None:
+                response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=answer_epoch,
+                                                    provenance=provenance if answer_epoch==frame_epoch else None)
             marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result,store=node_state)
             out.append({"path":item["path"],"result":result,"response_publication":response_publication,
+                        "response_refusal":response_refusal,
                         "organization_record":recorded,"seen_marker":str(marker)})
-        except (ValueError, KeyError, TypeError) as exc:
+        except Exception as exc:
+            # Total (F-TYPE): any exception is this frame's, except custody refusals
+            # (no frame can proceed: the pass stops) and a fault writing this node's
+            # own state (F-TRANSIENT-RT): an OSError, a lost compare-and-swap, a store
+            # collision. Those are non-terminal: no marker, the frame stays pending,
+            # and the idempotent appends consume it exactly once on the next pass. A
+            # ledger writer's refusal (SystemExit) is not an Exception and propagates.
             if isinstance(exc, ValueError) and any(marker in str(exc) for marker in CUSTODY_REFUSALS):
                 raise
+            if writer_fault(exc):
+                out.append({"path":item["path"],"result":{**dispatch_io_failure(exc,custody),
+                            "status":"PENDING","packet_id":item["frame"].get("packet_id")},
+                            "response_publication":None,"organization_record":None,"seen_marker":None})
+                continue
             refused=frame_ingest_refusal(exc,custody)
             marker=quarantine_federation_frame(item["path"],item["frame"],refused,store=node_state)
             out.append({"path":item["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
@@ -1231,6 +1318,71 @@ def frame_ingest_refusal(exc:BaseException, custody:dict[str,Any])->dict[str,Any
             "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
             "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
             "next_attempt":"on a republished frame; this one is quarantined and not offered again"}
+
+EPOCH_RESOLUTION="SUPPLIED_CYCLE_EPOCH_STAMPS_THIS_ORGANIZATION"
+#: This destination does not stamp its receipts from a carried crossing epoch
+#: (B-P36m, 09:00Z alternative). A CARRIED claim is verified at admission and kept
+#: only as inbound provenance (evidence.frame_reference) of receipts stamped with
+#: the cycle's own supplied epoch; without a cycle epoch it is refused.
+ACCEPTS_CARRIED_CROSSINGS=False
+
+def carried_not_accepted(custody:dict[str,Any])->dict[str,Any]:
+    """The six-field refusal of a CARRIED frame epoch where no cycle epoch was supplied."""
+    ledger=custody["organization_ledger"]
+    return {"disposition":"FAIL_CLOSED","failure_code":"CARRIED_NOT_ACCEPTED_BY_DESTINATION",
+            "failed_predicate":ledger.HB_EPOCH_PREDICATE,
+            "detail":"accepts_carried_crossings is false: receipts are stamped only with this organization's "
+                     "own supplied cycle epoch, and none was supplied",
+            "required_evidence_or_repair":"consume within a cycle that supplies its own hb_epoch",
+            "retry_entrypoint":"resident-runtime/federation_cycle.py (--hb-epoch)",
+            "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
+            "next_attempt":"the sender republishes the crossing; this frame is quarantined and not offered again"}
+
+def resolve_cycle_epoch(hb_epoch:int|None, frame_epoch:Any, kind:str|None, provenance:dict[str,Any]|None,
+                        frame:dict[str,Any])->tuple[Any,dict[str,Any]|None,dict[str,Any]|None,Any]:
+    """(receipt epoch, receipt provenance, frame_reference, answer epoch or a CONFLICT refusal). No clock is read.
+
+    Without a cycle epoch the frame's supplied epoch is the only one, as before.
+    With one (F1), receipts take the cycle's epoch and carry the frame's as
+    inbound provenance. An answer has no resolution rule, so a differing frame
+    epoch makes it HB_EPOCH_CONFLICT rather than either epoch being chosen.
+    """
+    if hb_epoch is None:
+        return frame_epoch,provenance,None,frame_epoch
+    reference={"epoch":frame_epoch,"epoch_class":kind,"frame_sha256":frame.get("frame_sha256"),
+               "resolution":EPOCH_RESOLUTION,**(provenance or {})}
+    answer=frame_epoch if frame_epoch==hb_epoch else epoch_conflict(hb_epoch,frame_epoch,"an answer frame")
+    return hb_epoch,None,reference,answer
+
+def epoch_conflict(hb_epoch:Any, frame_epoch:Any, route:str)->dict[str,Any]:
+    """The six-field HB_EPOCH_CONFLICT refusal of a route with no resolution between two epochs."""
+    return {"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_CONFLICT",
+            "failed_predicate":"SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+            "detail":route+": supplied epoch "+str(hb_epoch)+" and frame epoch "+str(frame_epoch)
+                     +" differ and this route has no resolution rule",
+            "required_evidence_or_repair":"supply the cycle epoch the frame carries, or a resolution rule for this route",
+            "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
+            "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
+            "next_attempt":"rerun at one epoch; nothing was written for this route","consequence_committed":False}
+
+WRITER_FAULT_MARKERS=("collision","contention","lost_comparison")
+
+def writer_fault(exc:BaseException)->bool:
+    """True for a fault writing this node's own state, which never makes a frame terminal."""
+    if isinstance(exc,(OSError,RuntimeError,node_store_module.WriteOnceCollision)):
+        return True
+    return isinstance(exc,ValueError) and any(m in str(exc).lower() for m in WRITER_FAULT_MARKERS)
+
+def dispatch_io_failure(exc:BaseException, custody:dict[str,Any])->dict[str,Any]:
+    """The non-terminal six-field FRAME_DISPATCH_IO_FAILED record: no marker, the frame stays pending."""
+    ledger=custody["organization_ledger"]
+    return {"disposition":"FAIL_CLOSED","failure_code":"FRAME_DISPATCH_IO_FAILED","terminal":False,
+            "failed_predicate":type(exc).__name__,"detail":str(exc)[:240],
+            "required_evidence_or_repair":"this node's own state (ledger, node state, mesh) accepts the write",
+            "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
+            "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
+            "next_attempt":"the next pass offers the frame again and the idempotent appends consume it exactly once",
+            "consequence_committed":False}
 
 def unreadable_entry_refusal(reason:str, custody:dict[str,Any])->dict[str,Any]:
     """The six-field FRAME_INGEST_FAILED refusal of a frames.d entry that is not a readable frame."""

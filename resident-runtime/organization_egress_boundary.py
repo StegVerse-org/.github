@@ -654,7 +654,17 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
                 raise EgressRefused(refused.failed_predicate, refused.reason) from None
             attested = attestation_module.record(declared, signature, receipt)
             packet = {**packet, "attestation": signature}
-        published = kernel.publish_packet(packet, root=mesh_root, epoch=hb_epoch)
+        # F3b: a replay is checked against this organization's own emission record
+        # before anything is published. The same frame is a write-once no-op and the
+        # record already held is returned; a different frame for a recorded packet
+        # (another epoch, another attestation) is refused here, so no frame is left
+        # on the mesh without a receipt and nothing raises after publishing.
+        frame = kernel.carrier_frame(packet, epoch=hb_epoch)
+        prior = recorded_emission(packet["packet_id"])
+        if prior is not None and prior.get("frame_sha256") != frame["frame_sha256"]:
+            return replay_collision_refusal(packet, prior, frame, payload)
+        published = {"packet": packet, "frame": frame,
+                     "path": str(kernel.publish_frame(frame, root=mesh_root))}
     except EgressRefused as exc:
         record = emit_refusal_record(exc.failed_predicate, exc.reason,
                                      destination_organization, origin, payload)
@@ -706,6 +716,33 @@ def refusal_repair(failed_predicate: str, detail: str) -> str:
     if "mesh_location_required" in str(detail):
         return "materialize this node with its federation mesh location (the supplied mesh is the durable queue)"
     return "satisfy the egress boundary's failed predicate: " + str(failed_predicate)
+
+
+def replay_collision_refusal(packet: Mapping[str, Any], prior: Mapping[str, Any],
+                             frame: Mapping[str, Any], payload: Any) -> dict[str, Any]:
+    """The six-field refusal of a replayed emission whose frame differs from the recorded one.
+
+    Nothing is published and nothing is appended: the recorded emission stands.
+    """
+    return {
+        "schema": RESULT_SCHEMA,
+        "operation": OPERATION_ID,
+        "disposition": FAIL_CLOSED,
+        "emitted": False,
+        "packet_id": packet["packet_id"],
+        "communication_id": (payload or {}).get("communication_id") if isinstance(payload, Mapping) else None,
+        "failure_code": "EMISSION_REPLAY_COLLISION",
+        "failed_predicate": "REPLAYED_EMISSION_REPRODUCES_THE_RECORDED_FRAME",
+        "detail": ("packet " + packet["packet_id"] + " is recorded as emitted in frame "
+                   + str(prior.get("frame_sha256")) + "; this replay would publish "
+                   + str(frame["frame_sha256"])),
+        "required_evidence_or_repair": "replay the emission at the epoch it was recorded with, or emit a new packet",
+        "retry_entrypoint": "resident-runtime/organization_egress_boundary.py::emit",
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "nothing was published and nothing was appended; the recorded emission stands",
+        "refusal_recorded": False,
+        "authority_effect": "NONE_REFUSAL_ONLY",
+    }
 
 
 def _refusal_result(record: Mapping[str, Any], appended: Mapping[str, Any]) -> dict[str, Any]:

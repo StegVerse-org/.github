@@ -135,10 +135,54 @@ carried = addressed("c-carried-verified")
 kernel.publish_packet(carried, root=cmesh, epoch=head_epoch,
                       provenance={"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": head_sha})
 start = CALLS["n"]
-carried_rows = kernel.consume_and_respond(ROOT, mesh_root=cmesh, node_state_root=WORK / "c-node", **roots)
+# Without a cycle epoch this destination does not stamp from a carried epoch.
+refused_rows = kernel.consume_and_respond(ROOT, mesh_root=cmesh, node_state_root=WORK / "c-node-0", **roots)
+# In a cycle with its own supplied epoch the claim is verified at admission and
+# kept as inbound provenance; every receipt is stamped with the cycle epoch.
+carried_rows = kernel.consume_and_respond(ROOT, mesh_root=cmesh, node_state_root=WORK / "c-node", **roots,
+                                          hb_epoch=4096)
 phases["carried_clock_calls"] = CALLS["n"] - start
 carried_out = {"status": [(r.get("result") or {}).get("status") for r in carried_rows],
+               "refused_without_cycle_epoch": [(r.get("result") or {}).get("failure_code") for r in refused_rows],
+               "head_epoch": head_epoch, "head_receipt_sha": head_sha,
                "receipts": receipts_for(carried["packet_id"])}
+
+# F1: a cycle at supplied 4096 consuming a frame at 77. This organization's
+# receipts are stamped 4096 with the frame's 77 only in evidence.frame_reference;
+# its answer has no resolution rule, so it is HB_EPOCH_CONFLICT and not published.
+fmesh = WORK / "f1-mesh"
+fmesh.mkdir()
+at77 = addressed("c-frame-at-77")
+kernel.publish_packet(at77, root=fmesh, epoch=77)
+start = CALLS["n"]
+f1_rows = kernel.consume_and_respond(ROOT, mesh_root=fmesh, node_state_root=WORK / "f1-node", **roots, hb_epoch=4096)
+phases["f1_clock_calls"] = CALLS["n"] - start
+
+
+def full_receipts_for(packet_id):
+    found = []
+    for f in ledger_files():
+        try:
+            doc = json.loads(Path(f).read_text())
+        except ValueError:
+            continue
+        if isinstance(doc, dict) and isinstance(doc.get("hb_reference"), dict) and packet_id in json.dumps(doc) \
+                and "receipt_sha256" in doc and not f.endswith("HEAD.json"):
+            found.append(doc)
+    return found
+
+
+f1 = {"status": [(r.get("result") or {}).get("status") for r in f1_rows],
+      "response_published": [r.get("response_publication") is not None for r in f1_rows],
+      "response_refusal": [(r.get("response_refusal") or {}).get("failure_code") for r in f1_rows],
+      "receipts": [{"schema": d.get("schema"), "epoch": d["hb_reference"].get("epoch"),
+                    "derived_from_clock": d["hb_reference"].get("derived_from_clock"),
+                    "frame_reference": ((d.get("evidence") or d.get("boundary_evidence") or {})
+                                        .get("frame_reference"))}
+                   for d in full_receipts_for(at77["packet_id"])],
+      "mesh_answers": len(kernel.scan_addressed_frames("Probe-Origin", root=fmesh))}
+carried_out["frame_references"] = [((d.get("evidence") or d.get("boundary_evidence") or {}).get("frame_reference"))
+                                   for d in full_receipts_for(carried["packet_id"])]
 
 # B-P36j/k + NARROW S1: CLOCK frames (a communication and a monitor request)
 # are consumed but lend no epoch; a forged CARRIED claim is quarantined.
@@ -302,18 +346,155 @@ scan = {"rows": {scan_row_name(r):
         "second_offered": len(second),
         "markers": scan_markers}
 
+# F-TYPE: a field that is decoded or hashed carrying the wrong type, before and
+# after a valid frame. The guard is total: each is FRAME_INGEST_FAILED with its
+# exception class, quarantined, never re-offered; the valid frame is ledgered.
+tmesh = WORK / "t-mesh"
+tmesh.mkdir()
+typed = {}
+for label, value in (("int", 123), ("null", None), ("list", [1]), ("dict", {"a": 1})):
+    frame = copy.deepcopy(kernel.carrier_frame(addressed("c-type-" + label), epoch=4096))
+    frame["packet_base64"] = value
+    typed[label] = reseal(frame)
+typed_names = {}
+for label, frame in typed.items():
+    typed_names[frame["packet_id"]] = label
+    kernel.publish_frame(frame, root=tmesh)
+# Two more, named to sort before and after every content-addressed frame name.
+for label, name in (("first", "0000-wrong-type-first.json"), ("last", "zzzz-wrong-type-last.json")):
+    frame = copy.deepcopy(kernel.carrier_frame(addressed("c-type-" + label), epoch=4096))
+    frame["packet_base64"] = 7
+    typed[label] = reseal(frame)
+    typed_names[typed[label]["packet_id"]] = label
+    (tmesh / "frames.d" / name).write_text(json.dumps(typed[label]))
+type_valid = addressed("c-type-valid")
+kernel.publish_packet(type_valid, root=tmesh, epoch=4096)
+typed_names[type_valid["packet_id"]] = "valid"
+start = CALLS["n"]
+first = kernel.consume_and_respond(ROOT, mesh_root=tmesh, node_state_root=WORK / "t-node", **roots, hb_epoch=4096)
+second = kernel.consume_and_respond(ROOT, mesh_root=tmesh, node_state_root=WORK / "t-node", **roots, hb_epoch=4096)
+phases["type_clock_calls"] = CALLS["n"] - start
+type_markers = {m.get("packet_id"): m for m in (json.loads(p.read_text()) for p in (WORK / "t-node").rglob("*.json"))
+                if isinstance(m, dict) and "frame_name" in m}
+ftype = {"rows": {typed_names.get(scan_packet_id, "?"): {"status": (r.get("result") or {}).get("status"),
+                                                          "failure_code": (r.get("result") or {}).get("failure_code"),
+                                                          "failed_predicate": (r.get("result") or {}).get("failed_predicate")}
+                  for r in first for scan_packet_id in [(r.get("result") or {}).get("packet_id")
+                                                        or ((r.get("result") or {}).get("packet") or {}).get("packet_id")]},
+         "order": [typed_names.get(r["result"].get("packet_id") or (r["result"].get("packet") or {}).get("packet_id"))
+                   for r in first],
+         "valid_in_ledgers": len(receipts_for(type_valid["packet_id"])),
+         "bad_in_ledgers": sum(len(receipts_for(f["packet_id"])) for f in typed.values()),
+         "second_offered": len(second),
+         "six_field_markers": all(type_markers.get(f["packet_id"], {}).get(k) for f in typed.values()
+                                  for k in ("refusal_failure_code", "failed_predicate", "required_evidence_or_repair",
+                                            "retry_entrypoint", "owning_existing_goal", "next_attempt"))}
+
+# The same total guard and a seen-store on consume_addressed_frames.
+amesh = WORK / "a-mesh"
+amesh.mkdir()
+a_bad = copy.deepcopy(kernel.carrier_frame(addressed("c-addressed-bad"), epoch=4096))
+a_bad["packet_base64"] = 123
+a_bad = reseal(a_bad)
+(amesh / "frames.d").mkdir()
+(amesh / "frames.d" / "0000-addressed-bad.json").write_text(json.dumps(a_bad))
+a_valid = addressed("c-addressed-valid")
+kernel.publish_packet(a_valid, root=amesh, epoch=4096)
+start = CALLS["n"]
+a_first = kernel.consume_addressed_frames(ROOT, mesh_root=amesh, node_state_root=WORK / "a-node", **roots)
+a_second = kernel.consume_addressed_frames(ROOT, mesh_root=amesh, node_state_root=WORK / "a-node", **roots)
+phases["addressed_clock_calls"] = CALLS["n"] - start
+addressed_out = {"first": [((r.get("result") or {}).get("status"), (r.get("result") or {}).get("failure_code"),
+                            (r.get("result") or {}).get("quarantined")) for r in a_first],
+                 "second_packet_ids": [(r.get("result") or {}).get("packet_id")
+                                       or ((r.get("result") or {}).get("packet") or {}).get("packet_id") for r in a_second],
+                 "bad_packet_id": a_bad["packet_id"], "valid_in_ledgers": len(receipts_for(a_valid["packet_id"]))}
+
+# F-TRANSIENT-RT: a fault writing this node's own state -- an OSError on the
+# repository append, a lost compare-and-swap on the organization append, a store
+# collision on the seen-marker -- is a non-terminal FRAME_DISPATCH_IO_FAILED: no
+# marker, the frame stays pending, and the next pass consumes it exactly once.
+real_custody = kernel.crossing_custody
+
+
+class Faulting:
+    def __init__(self, target, method, exc):
+        self._target, self._method, self._exc = target, method, exc
+
+    def __getattr__(self, name):
+        attribute = getattr(self._target, name)
+        if name != self._method or self._exc is None:
+            return attribute
+
+        def faulting(*args, **kwargs):
+            exc, self._exc = self._exc, None
+            raise exc
+        return faulting
+
+
+io = {}
+for label, part, method, exc in (
+        ("oserror_repo_append", "emitter", "append", OSError(5, "Input/output error")),
+        ("lost_comparison_org_append", "organization_ledger", "append",
+         RuntimeError("ledger_append_lost_comparison")),
+        ("collision_seen_marker", None, None, None)):
+    imesh2 = WORK / ("io-mesh-" + label)
+    imesh2.mkdir()
+    victim = addressed("c-io-" + label)
+    kernel.publish_packet(victim, root=imesh2, epoch=4096)
+    faults = {"armed": True}
+
+    def faulting_custody(*args, _part=part, _method=method, _exc=exc, **kwargs):
+        custody = real_custody(*args, **kwargs)
+        if _part is not None and faults["armed"]:
+            faults["armed"] = False
+            custody = {**custody, _part: Faulting(custody[_part], _method, _exc)}
+        return custody
+
+    real_mark = kernel.mark_federation_frame_seen
+    if label == "collision_seen_marker":
+        def faulting_mark(*args, **kwargs):
+            if faults["armed"]:
+                faults["armed"] = False
+                raise kernel.node_store_module.WriteOnceCollision("federation_seen_marker_collision")
+            return real_mark(*args, **kwargs)
+        kernel.mark_federation_frame_seen = faulting_mark
+    kernel.crossing_custody = faulting_custody
+    node = WORK / ("io-node-" + label)
+    start = CALLS["n"]
+    try:
+        first = kernel.consume_and_respond(ROOT, mesh_root=imesh2, node_state_root=node, **roots, hb_epoch=4096)
+        markers_after_first = len([p for p in node.rglob("*.json") if "seen.d" in p.parts])
+        second = kernel.consume_and_respond(ROOT, mesh_root=imesh2, node_state_root=node, **roots, hb_epoch=4096)
+        third = kernel.consume_and_respond(ROOT, mesh_root=imesh2, node_state_root=node, **roots, hb_epoch=4096)
+    finally:
+        kernel.crossing_custody = real_custody
+        kernel.mark_federation_frame_seen = real_mark
+    phases["io_" + label + "_clock_calls"] = CALLS["n"] - start
+    receipts = full_receipts_for(victim["packet_id"])
+    io[label] = {"first": [(r.get("result") or {}).get(k) for r in first
+                           for k in ("status", "failure_code", "terminal")],
+                 "first_record": (first[0].get("result") if first else None),
+                 "first_marker": first[0].get("seen_marker") if first else "absent",
+                 "markers_after_first": markers_after_first,
+                 "second": [(r.get("result") or {}).get("status") for r in second],
+                 "third_offered": len(third),
+                 "receipt_shas": sorted({d["receipt_sha256"] for d in receipts}),
+                 "receipt_schemas": sorted(d.get("schema") or "" for d in receipts)}
+
 # A frame-only publication with no epoch: the WU-B13 helper default, marked.
 start = CALLS["n"]
 kernel.publish_packet(dict(packet, packet_id="probe-frame-only"), root=WORK / "frame-only-mesh")
 phases["frame_only_clock_calls"] = CALLS["n"] - start
 
 found = []
-# Every reference this run wrote; the deliberately forged input frames in
-# i-mesh are inputs, not something the system wrote.
-for path in (p for p in WORK.rglob("*.json") if p.is_file() and not {"i-mesh", "s-mesh", "s0-mesh"} & set(p.parts)):
+# Every reference this run wrote; the deliberately forged or off-epoch input
+# frames (i-, s-, t- and f1-mesh) are inputs, not something the system wrote.
+for path in (p for p in WORK.rglob("*.json") if p.is_file() and not {"i-mesh", "s-mesh", "s0-mesh", "t-mesh", "f1-mesh", "a-mesh"} & set(p.parts)):
     try:
         references(json.loads(path.read_text()), found)
     except ValueError:
         pass
 print(json.dumps({"phases": phases, "references": found, "responses": responses, "quarantine": quarantine,
-                  "carried": carried_out, "integrity": integrity, "scan": scan}, sort_keys=True))
+                  "carried": carried_out, "integrity": integrity, "scan": scan,
+                  "f1": f1, "ftype": ftype, "io": io, "addressed": addressed_out}, sort_keys=True, default=str))
