@@ -87,3 +87,39 @@ ref, not a claim of authentic receipts.
 The ALLOW refusal tests use the receipts #202 and SV-011#15 computed over a temporary copy of each
 ledger tip (`expected-receipts.json`); the receipts later appended for `f160ac7d` and `d7beaf59` are
 equal to them by value.
+
+### Git-store verifier for StegVerse-Labs and GCAT-BCAT-Engine
+
+`merge_transfer.py` (032ed727) fails in two organizations before it reads a receipt
+(`MERGE_TRANSFER_VERIFIER_STORE_INCOMPATIBLE`):
+
+- StegVerse-Labs declares its organization ledger as `{store: git}`.
+- GCAT-BCAT-Engine appends through `resident-runtime/dual_ledger.py` and has no `repository_ledger`.
+
+`main_merge_transfer.verifiers_by_organization` pins both to Lane D's
+`resident-runtime/merge_transfer_gitstore.py verify`, mode `dual`.
+
+- **Digest:** sha256 `bf9f1c15420b1c9c8e21655fe176d6b009e190357e09e433bac170bf09247176`.
+- **Where:** byte-identical at the three open draft heads: StegVerse-org/.github#211 `5f5f3669`, StegVerse-Labs/.github#3292 `e3a0f506` and GCAT-BCAT-Engine/.github#16 `f0d55e81`. The pins say `landed: false`; re-pin them to the merge commits when those land.
+- **Other organizations:** every other organization stays on `merge_transfer.py`, single read (`verifier_rule`).
+
+Dual mode reads both copies of the linked repository receipt: the one in the repository chain, and the one the organization ledger retained under `source-receipts/`.
+
+- When both copies are the same receipt, the predicate is checked as before.
+- When they are not, the result is FAIL_CLOSED `MERGE_TRANSFER_DUAL_LEDGER_DIVERGENCE` (evidence predicate `REPOSITORY_AND_ORGANIZATION_LEDGERS_HOLD_ONE_RECEIPT`). That code is now in the predicate's `fail_closed_failure_codes`.
+
+For these organizations the offline readback carries `retained_repository_receipt`. Single-read organizations are not held to it. SV-011's published ledger retains no `source-receipts/` copy at all, so dual mode would refuse it, and it stays on `merge_transfer.py`.
+
+**Side by side** (`tests/test_intr_protocol_conformance_merge_transfer_gitstore.py`):
+
+- The test runs the verifier from a sha-pinned byte copy (`tests/fixtures/intr-protocol/merge-transfer-gitstore/merge_transfer_gitstore.py`). Once #211 lands, the landed file must be the same bytes.
+- It lays every case out in the ledger layout in a temporary directory.
+- It requires the same disposition, failure_code and failed_predicate from both checks, in dual and in single mode.
+- The ALLOW receipts (`expected-receipts.json`, NOT_LEDGERED_NOT_AUTHENTIC) were appended by that verifier to temporary bare copies of the published tips. StegVerse-Labs used writer surface `AGGREGATE_TRANSITION`, GCAT-BCAT-Engine `DUAL_LEDGER`.
+
+**Real state** (`manifest.json`): the published ledgers hold no main-merge transfer receipt at these tips, the same tips and verdicts Lane D pinned.
+
+- StegVerse-Labs `978b8880` at tip `a5bb54d8`: FAIL_CLOSED `MERGE_TRANSFER_RECEIPT_NOT_LEDGERED`.
+- GCAT-BCAT-Engine `c3cf1b1a` at tip `ba0098da`: FAIL_CLOSED `MERGE_TRANSFER_RECEIPT_NOT_LEDGERED`.
+
+**Not repaired here:** StegVerse-Labs' organization writer stamps a clock `observed_at` on organization receipts (`resident-runtime/aggregate_repo_transition.py:1083`). The verifier does not read it, and a test shows that changing it and resealing still verifies. This is tracked in StegVerse-Labs/.github#3263 and #3290.

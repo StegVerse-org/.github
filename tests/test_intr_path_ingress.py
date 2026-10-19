@@ -1,0 +1,190 @@
+"""InTr mesh path ingress: the destination half (carried source receipts -> this organization's ingress receipts).
+
+Every source receipt here is SYNTHETIC: built and sealed in this test for a path
+into this organization, never read from any ledger. Destination receipts are written
+to temporary copies of the pinned ledger tip. Nothing here is ledgered or
+authentic. Real destination receipts appear only once an inbound row carrying
+real source receipts lands on main and .github/workflows/intr-path-ingress.yml
+consumes it.
+"""
+from __future__ import annotations
+
+import copy
+import importlib.util
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+try:   # pytest: hold the organization to org-contract.json's own organization_ledger declaration
+    import pytest
+    pytestmark = pytest.mark.repository_ledger_locus
+except (ImportError, AttributeError):
+    pass
+
+ROOT = Path(__file__).resolve().parents[1]
+LEDGER_TIP = json.loads((ROOT / "tests/fixtures/intr-path-ingress/pin.json").read_text())["ledger_tip"]
+NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").read_text())[
+    "repository_ledger_location"]["namespace"]
+
+
+def load(name, relative):
+    spec = importlib.util.spec_from_file_location(name, ROOT / relative)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+pi = load("intr_path_ingress_under_test", "resident-runtime/intr_path_ingress.py")
+sys.path.insert(0, str(ROOT / "tests"))
+from intr_path_temp_ledger import TempLedger  # noqa: E402
+DESTINATION = pi.organization()
+SOURCE = "SV-011" if DESTINATION != "SV-011" else "StegVerse-org"
+OTHER = "SV-LLM" if DESTINATION != "SV-LLM" else "StegGhost"
+PID = SOURCE + "->" + DESTINATION + ":intr-destination"
+CID = "intr-path-v1:" + SOURCE + "->" + DESTINATION
+
+
+def seal(body):
+    body = {k: v for k, v in body.items() if k != "receipt_sha256"}
+    return {**body, "receipt_sha256": pi.sha(body)}
+
+
+def synthetic_source(path_id=PID, cid=CID, destination=DESTINATION, **evidence_overrides):
+    message = {"message_class": "ecosystem.communication", "communication_id": cid,
+               "body": {"schema": pi.ingress.PAYLOAD_SCHEMA, "path_id": path_id, "transfer_commit": "a" * 40}}
+    core = {"schema": pi.SOURCE_EVIDENCE_SCHEMA, "repository": SOURCE + "/.github", "path_id": path_id,
+            "source_organization": SOURCE, "destination_organization": destination, "capability": "intr-destination",
+            "destination_address": pi.address(destination), "message": message, "message_sha256": pi.sha(message),
+            "transfer_commit": "a" * 40, "merge_transfer_organization_receipt_sha256": "sha256:" + "b" * 64}
+    core.update(evidence_overrides)
+    evidence = {**core, "payload_sha256": pi.sha(core), "disposition": "ALLOW", "communication_id": cid}
+    repo = seal({"schema": "stegverse.repo-transition-receipt/v1", "repository": SOURCE + "/.github",
+                 "evidence": evidence, "synthetic": "NOT_LEDGERED_NOT_AUTHENTIC"})
+    org = seal({"schema": "stegverse.organization-transition-receipt/v1", "source_repository": SOURCE + "/.github",
+                "repo_receipt_sha256": repo["receipt_sha256"], "previous_receipt_sha256": None,
+                "boundary_evidence": {"operation": pi.SOURCE_OPERATION, "path_id": path_id, "communication_id": cid},
+                "synthetic": "NOT_LEDGERED_NOT_AUTHENTIC"})
+    return org, repo
+
+
+class Ledger(TempLedger):
+    def __init__(self, inbound=None):
+        super().__init__(ROOT, LEDGER_TIP, NAMESPACE, git=pi.ledger.kind == "MERGE_TRANSFER_GITSTORE")
+        self.scratch = tempfile.TemporaryDirectory()
+        self.inbound = Path(self.scratch.name) / "inbound.json"
+
+    def write_inbound(self, rows):
+        self.inbound.write_text(json.dumps({"schema": pi.INBOUND_SCHEMA, "destination_repository": DESTINATION + "/.github",
+                                            "transfers": rows}))
+        return self.inbound
+
+    def close(self):
+        super().close()
+        self.scratch.cleanup()
+
+
+def row(org, repo, pid=PID, cid=CID):
+    return {"path_id": pid, "communication_id": cid,
+            "carried": {"source_organization_receipt": org, "source_repository_receipt": repo}}
+
+
+def source_readback(org, repo):
+    return {"schema": pi.READBACK_SCHEMA, "repository": SOURCE + "/.github", "ledger_tip": "synthetic",
+            "head_receipt_sha256": org["receipt_sha256"], "chain": [org], "organization_receipt": org,
+            "repository_receipt": repo}
+
+
+class Consume(unittest.TestCase):
+    def setUp(self):
+        self.ledger = Ledger()
+
+    def tearDown(self):
+        self.ledger.close()
+
+    def six(self, result):
+        for field in pi.SIX_FIELDS:
+            self.assertTrue(result.get(field), field)
+
+    def test_no_inbound_file_is_no_transition(self):
+        self.assertEqual(pi.consume(Path(self.ledger.scratch.name) / "absent.json"), [])
+
+    def test_carried_receipts_enter_ingress_and_link_by_seal(self):
+        org, repo = synthetic_source()
+        before = self.ledger.files()
+        (result,) = pi.consume(self.ledger.write_inbound([row(org, repo)]))
+        self.assertEqual(result["disposition"], "ALLOW", result)
+        self.assertEqual(result["source_inclusion"]["failure_code"], "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED")
+        self.six(result["source_inclusion"])
+        after = self.ledger.files()
+        for name, data in before.items():
+            if not name.endswith("HEAD.json"):
+                self.assertEqual(after[name], data, name)
+        d_org, d_rep, _ = pi.find_destination(PID, CID)
+        self.assertEqual(pi.ledger.boundary(d_org)["operation"], "ORGANIZATION_INTR_DESTINATION_INGRESS")
+        self.assertEqual(pi.ledger.boundary(d_org)["source_organization_receipt_sha256"], org["receipt_sha256"])
+        self.assertEqual(d_rep["evidence"]["source_repository_receipt_sha256"], repo["receipt_sha256"])
+        (verified,) = pi.verify_inbound(self.ledger.inbound)
+        self.assertEqual(verified["disposition"], "ALLOW", verified)
+        (replay,) = pi.consume(self.ledger.inbound)
+        self.assertTrue(replay["replayed"])
+        self.assertEqual(self.ledger.files(), after)
+
+    def test_end_to_end_is_allow_only_with_both_ledgers_read_back(self):
+        org, repo = synthetic_source()
+        pi.consume(self.ledger.write_inbound([row(org, repo)]))
+        destination = pi.readback(PID, CID, pi.OPERATION, "temp")
+        whole = pi.verify_end_to_end(PID, CID, source_readback(org, repo), destination)
+        self.assertEqual((whole["disposition"], whole["path"]), ("ALLOW", "VERIFIED"), whole)
+        blind = pi.verify_end_to_end(PID, CID, None, destination)
+        self.assertEqual((blind["disposition"], blind["failure_code"]),
+                         ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"))
+        self.assertIn("StegVerse-Labs/TVC", blind["retry_entrypoint"])
+        self.assertIn(SOURCE + "/.github", blind["retry_entrypoint"])
+        self.six(blind)
+        other_org, other_repo = synthetic_source(cid="intr-path-v1:other")
+        mismatch = pi.verify_end_to_end(PID, CID, source_readback(other_org, other_repo), destination)
+        self.assertEqual(mismatch["disposition"], "DENY", mismatch)
+        self.six(mismatch)
+
+    def test_destination_receipt_linking_another_source_is_denied(self):
+        org, repo = synthetic_source()
+        pi.consume(self.ledger.write_inbound([row(org, repo)]))
+        d_org, d_rep, _ = pi.find_destination(PID, CID)
+        forged = seal({**repo, "evidence": {**repo["evidence"], "tree": "x"}})
+        link = {"path_id": PID, "communication_id": CID, "source_organization_receipt_sha256": org["receipt_sha256"],
+                "source_repository_receipt_sha256": forged["receipt_sha256"]}
+        result = pi.verify_destination_pair(d_org, d_rep, link)
+        self.assertEqual((result["disposition"], result["failure_code"]),
+                         ("DENY", "INTR_PATH_DESTINATION_RECEIPT_LINK_UNVERIFIED"))
+        self.six(result)
+
+    def test_refusals_write_nothing(self):
+        org, repo = synthetic_source()
+        before = self.ledger.files()
+        cases = [
+            (row(None, None), "FAIL_CLOSED", "INTR_PATH_SOURCE_RECEIPT_NOT_CARRIED"),
+            (row(*synthetic_source(destination=OTHER)), "DENY", "INTR_PATH_CARRIED_RECEIPT_CONTRADICTED"),
+            (row(*synthetic_source(destination_address=pi.address(OTHER))), "DENY",
+             "INTR_PATH_CARRIED_RECEIPT_CONTRADICTED"),
+            (row(org, synthetic_source(cid="intr-path-v1:other")[1]), "DENY", "INTR_PATH_CARRIED_RECEIPT_CONTRADICTED"),
+        ]
+        tampered = copy.deepcopy(org)
+        tampered["boundary_evidence"]["path_id"] = "x"
+        cases.append((row(tampered, repo), "FAIL_CLOSED", "INTR_PATH_SOURCE_RECEIPT_NOT_CARRIED"))
+        for r, disposition, code in cases:
+            with self.subTest(code=code):
+                (result,) = pi.consume(self.ledger.write_inbound([r]))
+                self.assertEqual((result["disposition"], result["failure_code"]), (disposition, code), result)
+                self.six(result)
+        self.assertEqual(self.ledger.files(), before)
+        (unledgered,) = pi.verify_inbound(self.ledger.write_inbound([row(org, repo)]))
+        self.assertEqual((unledgered["disposition"], unledgered["failure_code"]),
+                         ("FAIL_CLOSED", "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED"))
+        self.six(unledgered)
+
+
+if __name__ == "__main__":
+    unittest.main()
