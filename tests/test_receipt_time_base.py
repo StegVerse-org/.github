@@ -44,7 +44,7 @@ CLOCK_FIELDS = ("observed_at", "timestamp", "emitted_at", "sampled_at")
 
 def repo_receipt(transition_id="time-base-1"):
     body = {
-        "schema": "stegverse.repo-transition-receipt/v1",
+        "schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
         "repository": "StegVerse-org/StegVerse-SDK",
         "transition_id": transition_id,
     }
@@ -330,24 +330,28 @@ class FederationCycleEpochTests(unittest.TestCase):
 class ResidentExecutorEpochTests(unittest.TestCase):
     """The executor has no epoch of its own: without one supplied, its cycle fails closed."""
 
-    def test_without_a_supplied_epoch_the_executor_records_fail_closed_and_no_cycle(self):
-        with tempfile.TemporaryDirectory() as work:
-            mesh, state = Path(work) / "mesh", Path(work) / "state"
-            mesh.mkdir()
-            # A node materialization, not a hosted runner: the executor refuses
-            # to run at all under GITHUB_ACTIONS / CI (resident_executor.HOSTED).
-            hosted = ("GITHUB_ACTIONS", "CI", "RENDER", "VERCEL", "CF_PAGES", "CLOUDFLARE_WORKERS")
-            env = {k: v for k, v in os.environ.items() if k not in hosted and not k.startswith("STEGVERSE_")}
-            env.update(STEGVERSE_ORG_LEDGER_ROOT=str(Path(work) / "org"),
-                       STEGVERSE_REPO_LEDGER_ROOT=str(Path(work) / "repo"))
-            completed = subprocess.run([sys.executable, "-B", str(ROOT / "resident-runtime/resident_executor.py"),
-                                        "--mesh-root", str(mesh), "--node-state-root", str(state)],
-                                       capture_output=True, text=True, env=env, cwd=work, timeout=180)
-            record = json.loads(completed.stdout.strip().splitlines()[-1])
-            self.assertEqual(record["disposition"], "FAIL_CLOSED")
-            self.assertEqual(record["failed_predicate"], "FEDERATION_CYCLE_FAILED")
-            self.assertIn("HB_EPOCH_NOT_SUPPLIED", record["error"])
-            self.assertEqual(list(state.rglob("cycles.d/*.json")), [])
+    def test_without_a_supplied_epoch_the_executor_refuses_and_writes_nothing(self):
+        """F7: refused six-field at the top level, before the cycle runs; no state record is written."""
+        for epoch in (None, "", "+33", "31"):
+            with self.subTest(epoch=epoch), tempfile.TemporaryDirectory() as work:
+                mesh, state = Path(work) / "mesh", Path(work) / "state"
+                mesh.mkdir()
+                hosted = ("GITHUB_ACTIONS", "CI", "RENDER", "VERCEL", "CF_PAGES", "CLOUDFLARE_WORKERS")
+                env = {k: v for k, v in os.environ.items() if k not in hosted and not k.startswith("STEGVERSE_")}
+                env.update(STEGVERSE_ORG_LEDGER_ROOT=str(Path(work) / "org"),
+                           STEGVERSE_REPO_LEDGER_ROOT=str(Path(work) / "repo"))
+                command = [sys.executable, "-B", str(ROOT / "resident-runtime/resident_executor.py"),
+                           "--mesh-root", str(mesh), "--node-state-root", str(state)]
+                if epoch is not None:
+                    command += ["--hb-epoch", epoch]
+                completed = subprocess.run(command, capture_output=True, text=True, env=env, cwd=work, timeout=180)
+                self.assertEqual(completed.returncode, 1, completed.stderr)
+                refusal = json.loads(completed.stdout.strip().splitlines()[-1])
+                self.assertEqual(refusal["failure_code"],
+                                 "HB_EPOCH_NOT_SUPPLIED" if epoch is None else "HB_EPOCH_INVALID")
+                for field in SIX_FIELDS:
+                    self.assertTrue(refusal[field], field)
+                self.assertEqual([p for p in Path(work).rglob("*") if p.is_file()], [])
 
 
 INTR = ROOT / "resident-runtime/intr_destination_ingress.py"
@@ -431,6 +435,49 @@ class WriterCarriedProvenanceTests(unittest.TestCase):
                                  "NONE", hb_epoch=4096, store=org_store, hb_provenance=claim)
             self.assertEqual({k: receipt["hb_reference"][k] for k in ("source", "head_receipt_sha", "derived_from_clock")},
                              {**claim, "derived_from_clock": False})
+
+
+class SourceReceiptProvenanceTests(unittest.TestCase):
+    """F5 / F4: the organization writer refuses an unmarked source, and verifies a CARRIED one."""
+
+    def source(self, reference, transition_id="src-1"):
+        body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": REPO_CONTRACT["repository"],
+                "transition_id": transition_id}
+        if reference is not None:
+            body["hb_reference"] = reference
+        return {**body, "receipt_sha256": org.sha(body)}
+
+    def append(self, root, receipt, predecessor="GENESIS"):
+        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = root
+        try:
+            return org.append(receipt, "REPO_STATE_PROPAGATION", predecessor, STATE_AFTER, {}, "NONE", hb_epoch=4096)
+        finally:
+            os.environ.pop("STEGVERSE_ORG_LEDGER_ROOT", None)
+
+    def test_an_unmarked_source_reference_is_refused_and_nothing_written(self):
+        unmarked = {k: v for k, v in org.kernel.hb_reference(epoch=4096).items() if k != "derived_from_clock"}
+        for reference in (unmarked, None):
+            with self.subTest(reference=reference), tempfile.TemporaryDirectory() as root:
+                with self.assertRaises(org.SourceReceiptRefused) as caught:
+                    self.append(root, self.source(reference))
+                self.assertEqual(caught.exception.refusal["failure_code"], "HB_EPOCH_PROVENANCE_UNMARKED")
+                for field in SIX_FIELDS:
+                    self.assertTrue(caught.exception.refusal[field], field)
+                self.assertEqual(files_under(root), [])
+
+    def test_a_source_claiming_carried_provenance_is_verified_against_the_head(self):
+        with tempfile.TemporaryDirectory() as root:
+            head = self.append(root, self.source(org.kernel.hb_reference(epoch=4096), "src-head"))
+            before = files_under(root)
+            forged = {**org.kernel.hb_reference(epoch=4096), "source": "CARRIED:ORGANIZATION_LEDGER_HEAD",
+                      "head_receipt_sha": "sha256:" + "f" * 64}
+            with self.assertRaises(org.OrgLedgerEpochRefused) as caught:
+                self.append(root, self.source(forged, "src-forged"), predecessor="FROM_HEAD")
+            self.assertEqual(caught.exception.refusal["failure_code"], "CARRIED_PROVENANCE_UNVERIFIED")
+            self.assertEqual(files_under(root), before)
+            honest = {**forged, "head_receipt_sha": head["receipt_sha256"]}
+            receipt = self.append(root, self.source(honest, "src-honest"), predecessor="FROM_HEAD")
+            self.assertEqual(receipt["previous_receipt_sha256"], head["receipt_sha256"])
 
 
 class MarkerVocabularyTests(unittest.TestCase):
@@ -621,6 +668,19 @@ class ClockProbeTests(unittest.TestCase):
         self.assertEqual(marker["failure_code"], "FRAME_REFUSED_QUARANTINED")
         for field in SIX_FIELDS:
             self.assertTrue(marker[field], field)
+        # B-P36o / F-S1a: each frame that cannot be ingested is its own six-field
+        # refusal, quarantined with no clock read; the valid frame beside them is
+        # consumed and ledgered, and a second cycle offers none of the bad ones.
+        integrity = probe["integrity"]
+        self.assertEqual(probe["phases"]["integrity_clock_calls"], 0)
+        self.assertEqual({name: row["failure_code"] for name, row in integrity["rows"].items()},
+                         {"generation": "HB_REFERENCE_INVALID", "heartbeat_id": "HB_REFERENCE_INVALID",
+                          "frame_hash": "FRAME_INTEGRITY_INVALID", "clock_epoch_abc": "HB_EPOCH_INVALID",
+                          "clock_epoch_5": "HB_EPOCH_INVALID", "valid": None})
+        self.assertEqual(integrity["rows"]["valid"]["status"], "CONSUMED")
+        self.assertGreater(integrity["valid_in_ledgers"], 0)
+        self.assertEqual(integrity["bad_in_ledgers"], 0)
+        self.assertEqual(integrity["second_offered"], 0)
         # B-P36m: a frame whose CARRIED claim names the current supplied head is
         # consumed, and every receipt it produces keeps the claim.
         carried = probe["carried"]

@@ -21,7 +21,7 @@ HB_EPOCH = 4128
 
 def make_repo_receipt(number):
     body = {
-        "schema": "stegverse.repo-transition-receipt/v1",
+        "schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
         "repository": "StegVerse-org/StegVerse-SDK",
         "transition_id": "test-" + str(number),
     }
@@ -100,11 +100,11 @@ class OrgLedgerAppendTests(unittest.TestCase):
         predicate, not surface as an unstructured KeyError from the receipt body."""
         cases = {
             "missing repository": {
-                "schema": "stegverse.repo-transition-receipt/v1",
+                "schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
                 "transition_id": "malformed-1",
             },
             "missing transition_id": {
-                "schema": "stegverse.repo-transition-receipt/v1",
+                "schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
                 "repository": "StegVerse-org/StegVerse-SDK",
             },
         }

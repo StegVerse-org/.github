@@ -1186,13 +1186,11 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
             if resolution:
                 return refused("ONE_TRANSITION_ID_BINDS_ONE_MANIFEST", str(exc),
                                request_sha256=request["request_sha256"])
-    # The organization receipt takes the epoch this receive was supplied; a
-    # replay is still one organization receipt, since the idempotent append
-    # returns the recorded one. The outbound emission below keeps the recorded
-    # repository receipt's epoch, so a replay rebuilds the same frame (a
-    # write-once no-op) instead of a second request. That epoch was supplied
-    # when it was recorded: the organization append refuses a clock-provenance
-    # repository receipt (SOURCE_RECEIPT_IS_CLOCK_PROVENANCE) before it.
+    # The organization receipt and the outbound emission below take the epoch
+    # this receive was supplied, never one read back from the recorded
+    # repository receipt. A replay is still one organization receipt (the
+    # idempotent append returns the recorded one); a replay supplied with a
+    # different epoch emits its request frame at that epoch.
     organization_receipt = _ledger_write(organization_ledger.append,
         repository_receipt, "REPO_STATE_PROPAGATION",
         predecessor_state, successor_state,
@@ -1201,7 +1199,6 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
          "ingress_packet_id": crossing["ingress_packet_id"],
          "egress_packet_id": crossing["egress_packet_id"]},
         "NONE", hb_epoch=hb_epoch, idempotent=True)
-    hb_epoch = int(str(repository_receipt["hb_reference"]["epoch"]))
 
     # Governance is decided by the organization that owns StegCore. The ingress
     # transition above occurred here and is recorded; the request now leaves

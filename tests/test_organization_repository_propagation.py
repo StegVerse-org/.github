@@ -68,7 +68,8 @@ class RepositoryPropagationTests(unittest.TestCase):
                 "successor_state_sha256": "sha256:" + f"{sequence + 1:064d}",
                 "evidence": {"transition_id": transition_id},
                 "authority_effect": "NONE",
-                "hb_reference": {"epoch": 32 + sequence, "progression_dependency": "OSCILLATOR_ONLY"},
+                "hb_reference": {"epoch": 32 + sequence, "progression_dependency": "OSCILLATOR_ONLY",
+                                 "derived_from_clock": False},
                 "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY",
                 "previous_receipt_sha256": previous}
         digest = organization_ledger.sha(body)

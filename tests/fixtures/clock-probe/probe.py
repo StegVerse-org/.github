@@ -184,16 +184,67 @@ quarantine = {
     "markers": markers,
 }
 
+# B-P36o / F-S1a: frames that cannot be ingested -- an incoherent heartbeat
+# reference, a tampered digest, a clock frame with a malformed epoch -- are
+# each a six-field refusal and quarantined; the valid frame beside them is
+# consumed and ledgered, and a second cycle offers none of the bad ones.
+import copy, hashlib as _hashlib
+
+
+def reseal(frame):
+    body = {k: v for k, v in frame.items() if k != "frame_sha256"}
+    return {**body, "frame_sha256": "sha256:" + _hashlib.sha256(
+        json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()}
+
+
+imesh = WORK / "i-mesh"
+imesh.mkdir()
+bad = {}
+base = kernel.carrier_frame(addressed("c-gen"), epoch=4096)
+generation = copy.deepcopy(base); generation["heartbeat_reference"]["generation"] = 4097
+bad["generation"] = reseal(generation)
+heartbeat_id = copy.deepcopy(kernel.carrier_frame(addressed("c-hbid"), epoch=4096))
+heartbeat_id["heartbeat_reference"]["heartbeat_id"] = "HB:1"
+bad["heartbeat_id"] = reseal(heartbeat_id)
+tampered = kernel.carrier_frame(addressed("c-hash"), epoch=4096)
+tampered["frame_sha256"] = "sha256:" + "0" * 64
+bad["frame_hash"] = tampered
+for epoch in ("abc", 5):
+    clock_bad = copy.deepcopy(kernel.carrier_frame(addressed("c-clock-" + str(epoch)), epoch=4096))
+    clock_bad["heartbeat_reference"]["epoch"] = epoch
+    clock_bad["heartbeat_reference"]["derived_from_clock"] = True
+    bad["clock_epoch_" + str(epoch)] = reseal(clock_bad)
+for frame in bad.values():
+    kernel.publish_frame(frame, root=imesh)
+good = addressed("c-integrity-valid")
+kernel.publish_packet(good, root=imesh, epoch=4096)
+before_ledgers = ledger_files()
+start = CALLS["n"]
+first = kernel.consume_and_respond(ROOT, mesh_root=imesh, node_state_root=WORK / "i-node", **roots)
+second = kernel.consume_and_respond(ROOT, mesh_root=imesh, node_state_root=WORK / "i-node", **roots)
+phases["integrity_clock_calls"] = CALLS["n"] - start
+names = {frame["packet_id"]: name for name, frame in bad.items()}
+names[good["packet_id"]] = "valid"
+integrity = {"rows": {names.get((r.get("result") or {}).get("packet_id")
+                                or ((r.get("result") or {}).get("packet") or {}).get("packet_id"), "?"):
+                      {"status": (r.get("result") or {}).get("status"),
+                       "failure_code": (r.get("result") or {}).get("failure_code")} for r in first},
+             "second_offered": len(second),
+             "valid_in_ledgers": len(receipts_for(good["packet_id"])),
+             "bad_in_ledgers": sum(len(receipts_for(f["packet_id"])) for f in bad.values())}
+
 # A frame-only publication with no epoch: the WU-B13 helper default, marked.
 start = CALLS["n"]
 kernel.publish_packet(dict(packet, packet_id="probe-frame-only"), root=WORK / "frame-only-mesh")
 phases["frame_only_clock_calls"] = CALLS["n"] - start
 
 found = []
-for path in WORK.rglob("*.json"):
+# Every reference this run wrote; the deliberately forged input frames in
+# i-mesh are inputs, not something the system wrote.
+for path in (p for p in WORK.rglob("*.json") if "i-mesh" not in p.parts):
     try:
         references(json.loads(path.read_text()), found)
     except ValueError:
         pass
 print(json.dumps({"phases": phases, "references": found, "responses": responses, "quarantine": quarantine,
-                  "carried": carried_out}, sort_keys=True))
+                  "carried": carried_out, "integrity": integrity}, sort_keys=True))

@@ -44,7 +44,7 @@ def load_json(path):
 
 def repo_receipt(number=1):
     body = {
-        "schema": REPO,
+        "schema": REPO, "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
         "repository": ORGANIZATION + "/StegVerse-SDK",
         "transition_id": "repo-" + str(number),
     }

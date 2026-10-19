@@ -287,10 +287,16 @@ jobs:
                 "$recorded" "$canonical" "$out/ingress.json"
               continue
             fi
+            # The dispatch's supplied epoch is the request's epoch binding. A push
+            # run has none, so the writers refuse HB_EPOCH_NOT_SUPPLIED and nothing
+            # is appended (MANIFEST_ENTRYPOINT_LACKS_EPOCH_BINDING on #207).
+            epoch_args=()
+            if [ -n "${HB_EPOCH:-}" ]; then epoch_args=(--hb-epoch "$HB_EPOCH"); fi
             python resident-runtime/organization_manifest_ingress.py \
               --registry org-boundary/registry/services.json \
               --manifest "$out/manifest.json" --standing "$out/standing.json" \
-              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} --out "$out/ingress.json" || true
+              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} ${epoch_args[@]+"${epoch_args[@]}"} \
+              --out "$out/ingress.json" || true
             python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
           done < "$RUNNER_TEMP/requests.txt"
 

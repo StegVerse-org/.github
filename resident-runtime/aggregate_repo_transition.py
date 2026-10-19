@@ -350,7 +350,25 @@ def verify_source(receipt):
         # required a supplied epoch) is not consumed: its organization receipt
         # would order the chain by that host's clock. Refused before anything is
         # written; the receipt itself is never mutated.
-        if clock_provenance(receipt.get("hb_reference")):
+        reference = receipt.get("hb_reference")
+        # F5: a source reference that marks no provenance (no flag, no sample)
+        # is refused like a clock one: its epoch cannot be told from a clock's.
+        if not clock_provenance(reference) and (not isinstance(reference, dict)
+                                                or "derived_from_clock" not in reference):
+            raise SourceReceiptRefused({
+                "disposition": "FAIL_CLOSED",
+                "failure_code": "HB_EPOCH_PROVENANCE_UNMARKED",
+                "failed_predicate": "SOURCE_RECEIPT_CARRIES_A_SUPPLIED_EPOCH",
+                "detail": "repository receipt " + str(claimed) + " has no marked hb_reference",
+                "required_evidence_or_repair": (
+                    "a WU-B13 migration transition that rebinds the legacy repo receipt under a supplied "
+                    "epoch with provenance CARRIED:LEGACY_CLOCK_RECEIPT + source sha; existing receipts "
+                    "are never mutated"),
+                "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
+                "owning_existing_goal": INTR_PROTOCOL_GOAL,
+                "next_attempt": "on the WU-B13 migration transition; nothing was written",
+            })
+        if clock_provenance(reference):
             raise SourceReceiptRefused({
                 "disposition": "FAIL_CLOSED",
                 "failure_code": "SOURCE_RECEIPT_IS_CLOCK_PROVENANCE",
@@ -487,9 +505,18 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
                         raise ValueError("ledger_receipt_collision")
                     return prior
             # A CARRIED epoch is recorded as CARRIED only when its claim names
-            # this ledger's current supplied head (B-P36m); nothing is written otherwise.
-            if hb_provenance is not None:
-                failed = carried_provenance_failure(hb_provenance, hb_epoch, target)
+            # this ledger's current supplied head (B-P36m); nothing is written
+            # otherwise. A source receipt that itself claims CARRIED provenance
+            # is held to the same check (F4).
+            source_reference = source_receipt.get("hb_reference") if isinstance(source_receipt, dict) else None
+            source_claim = ({k: source_reference.get(k) for k in ("source", "head_receipt_sha")}
+                            if isinstance(source_reference, dict)
+                            and ("source" in source_reference or "head_receipt_sha" in source_reference) else None)
+            for claim, claim_epoch in ((hb_provenance, hb_epoch),
+                                       (source_claim, (source_reference or {}).get("epoch"))):
+                if claim is None:
+                    continue
+                failed = carried_provenance_failure(claim, claim_epoch, target)
                 if failed is not None:
                     raise OrgLedgerEpochRefused({
                         "disposition": "FAIL_CLOSED", "failure_code": failed[0],
