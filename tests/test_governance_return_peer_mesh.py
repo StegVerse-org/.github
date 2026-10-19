@@ -417,7 +417,8 @@ class ReturnCycleCustodyRefusals(unittest.TestCase):
                     "repositories_declared": 0, "repositories_present": 0,
                     "receipts_propagated": 0, "receipts_already_carried": 0}), \
                     mock.patch("builtins.print"):
-                federation = cycle.cycle.main(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node-f")
+                federation = cycle.cycle.main(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node-f",
+                                              hb_epoch=4096)
         self.assert_six_fields(refused)
         self.assertEqual(refused["failed_predicate"], "LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER")
         consumption = federation["consumption"]

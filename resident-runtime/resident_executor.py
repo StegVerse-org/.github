@@ -43,11 +43,15 @@ def run_json(cmd, timeout):
             pass
     return p,payload
 
-def cycle(mesh_root, node_state_root):
+def cycle(mesh_root, node_state_root, hb_epoch=None):
     script=ROOT/"resident-runtime"/"federation_cycle.py"
-    p,result=run_json([sys.executable,str(script),"--mesh-root",str(mesh_root),"--node-state-root",str(node_state_root)],120)
+    # The cycle takes a supplied epoch and refuses without one; the executor
+    # passes on what its materializer supplied and reads none from a clock.
+    epoch=[] if hb_epoch is None else ["--hb-epoch",hb_epoch]
+    p,result=run_json([sys.executable,str(script),"--mesh-root",str(mesh_root),"--node-state-root",str(node_state_root),*epoch],120)
     if p.returncode!=0:
-        raise RuntimeError("federation cycle failed: "+p.stderr[-1024:])
+        # A refused cycle prints its six-field refusal; it is carried, not just stderr.
+        raise RuntimeError("federation cycle failed: "+(json.dumps(result,sort_keys=True) if result else p.stderr[-1024:]))
     return result
 
 # The cycle records each attempted transition with its own disposition and
@@ -75,13 +79,14 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--mesh-root",type=Path,required=True)
     ap.add_argument("--node-state-root",type=Path,required=True)
+    ap.add_argument("--hb-epoch",default=None,help="supplied heartbeat epoch, passed to the federation cycle")
     a=ap.parse_args()
     bad=[k for k in HOSTED if truthy(os.getenv(k))]
     if bad:
         raise SystemExit("hosted runtime prohibited: "+",".join(bad))
     error=None
     try:
-        fed=cycle(a.mesh_root,a.node_state_root)
+        fed=cycle(a.mesh_root,a.node_state_root,a.hb_epoch)
     except Exception as exc:
         fed=None
         error=str(exc)

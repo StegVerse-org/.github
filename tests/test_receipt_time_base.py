@@ -274,18 +274,20 @@ class FederationCycleEpochTests(unittest.TestCase):
         (Path(work) / "node").mkdir()
         env = dict(os.environ, STEGVERSE_ORG_LEDGER_ROOT=str(Path(work) / "org"),
                    STEGVERSE_REPO_LEDGER_ROOT=str(Path(work) / "repo"))
+        epoch = [] if hb_epoch is None else ["--hb-epoch", hb_epoch]
         return subprocess.run([sys.executable, str(FEDERATION_CYCLE), "--mesh-root", str(Path(work) / "mesh"),
-                               "--node-state-root", str(Path(work) / "node"), "--hb-epoch", hb_epoch],
+                               "--node-state-root", str(Path(work) / "node"), *epoch],
                               capture_output=True, text=True, cwd=str(ROOT), env=env)
 
-    def test_a_supplied_epoch_that_is_not_admissible_is_refused_and_nothing_written(self):
-        for epoch in REFUSED_SUPPLIED_EPOCHS:
+    def test_an_absent_or_inadmissible_epoch_is_refused_and_nothing_written(self):
+        """Absent is HB_EPOCH_NOT_SUPPLIED: the cycle no longer stamps a record from the clock."""
+        for epoch in (*REFUSED_SUPPLIED_EPOCHS, None):
             with self.subTest(epoch=epoch), tempfile.TemporaryDirectory() as work:
                 completed = self.run_cycle(work, epoch)
                 self.assertEqual(completed.returncode, 1, (completed.stdout, completed.stderr))
                 refusal = json.loads(completed.stdout.splitlines()[-1])
                 self.assertEqual((refusal["disposition"], refusal["failure_code"]),
-                                 ("FAIL_CLOSED", "HB_EPOCH_INVALID"))
+                                 ("FAIL_CLOSED", "HB_EPOCH_NOT_SUPPLIED" if epoch is None else "HB_EPOCH_INVALID"))
                 self.assertEqual(refusal["retry_entrypoint"], "resident-runtime/federation_cycle.py (--hb-epoch)")
                 for field in SIX_FIELDS:
                     self.assertTrue(refusal[field], field)
@@ -323,6 +325,25 @@ class FederationCycleEpochTests(unittest.TestCase):
             self.assertEqual(receipt["heartbeat_reference"]["epoch"], 4096)
             self.assertIs(receipt["heartbeat_reference"]["derived_from_clock"], False)
             self.assertEqual(len(list((Path(work) / "node").rglob("*.json"))), 1)
+
+
+class ResidentExecutorEpochTests(unittest.TestCase):
+    """The executor has no epoch of its own: without one supplied, its cycle fails closed."""
+
+    def test_without_a_supplied_epoch_the_executor_records_fail_closed_and_no_cycle(self):
+        with tempfile.TemporaryDirectory() as work:
+            mesh, state = Path(work) / "mesh", Path(work) / "state"
+            mesh.mkdir()
+            env = dict(os.environ, STEGVERSE_ORG_LEDGER_ROOT=str(Path(work) / "org"),
+                       STEGVERSE_REPO_LEDGER_ROOT=str(Path(work) / "repo"))
+            completed = subprocess.run([sys.executable, "-B", str(ROOT / "resident-runtime/resident_executor.py"),
+                                        "--mesh-root", str(mesh), "--node-state-root", str(state)],
+                                       capture_output=True, text=True, env=env, cwd=work, timeout=180)
+            record = json.loads(completed.stdout.strip().splitlines()[-1])
+            self.assertEqual(record["disposition"], "FAIL_CLOSED")
+            self.assertEqual(record["failed_predicate"], "FEDERATION_CYCLE_FAILED")
+            self.assertIn("HB_EPOCH_NOT_SUPPLIED", record["error"])
+            self.assertEqual(list(state.rglob("cycles.d/*.json")), [])
 
 
 class EgressCloseCliEpochTests(unittest.TestCase):

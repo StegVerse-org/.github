@@ -90,22 +90,20 @@ def epoch_refused(hb_epoch):
 
 def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
          repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None, hb_epoch=None):
-    # A supplied epoch is checked as typed before anything is read or written,
-    # and the cycle record is stamped with it. It used to be accepted and then
-    # ignored: every cycle was stamped from the host clock. A call that supplies
-    # none (resident_executor.py) still takes the clock-derived reference; that
-    # caller is WU-B13 slice e.
-    if hb_epoch is not None:
-        refused=epoch_refused(hb_epoch)
-        if refused is not None:
-            raise PR.organization_ledger.OrgLedgerEpochRefused(refused)
-        hb_epoch=int(str(hb_epoch))
     if node_state_root is None:
         raise SystemExit("NODE_STATE_LOCATION_REQUIRED_FROM_MATERIALIZER")
     # The carrier is the declared one: kernel frames over the mesh this node
     # was materialized with. Nothing in the host environment selects another.
     if mesh_root is None:
         raise SystemExit("MESH_LOCATION_REQUIRED_FROM_MATERIALIZER")
+    # The epoch is supplied and checked as typed after the locations, before anything is
+    # read or written, and the cycle record is stamped with it. It used to be accepted
+    # and then ignored: every cycle was stamped from the host clock. An absent
+    # one is HB_EPOCH_NOT_SUPPLIED; a refused write beats a clock-stamped record.
+    refused=epoch_refused(hb_epoch)
+    if refused is not None:
+        raise PR.organization_ledger.OrgLedgerEpochRefused(refused)
+    hb_epoch=int(str(hb_epoch))
     repo_ledger_root=repo_ledger_root or supplied_ledger("STEGVERSE_REPO_LEDGER_ROOT")
     org_ledger_root=org_ledger_root or supplied_ledger("STEGVERSE_ORG_LEDGER_ROOT")
     # Consuming a crossing is a transition within the organization, so it is
@@ -142,7 +140,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     receipt={
       "schema_version":"stegverse.org-federation-cycle.v1",
       "organization":K.load_registry(ROOT)["organization"],
-      "heartbeat_reference":K.hb_reference(epoch=hb_epoch) if hb_epoch is not None else K.hb_reference(),
+      "heartbeat_reference":K.hb_reference(epoch=hb_epoch),
       "frames_seen":len(results),
       "frames_consumed":consumed,
       "frames_denied":sum(1 for x in results if (x.get("result") or {}).get("status")=="REFUSED"
