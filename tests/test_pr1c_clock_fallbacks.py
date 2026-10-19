@@ -44,7 +44,7 @@ OW = _load("pr1c_observation_window", "resident-runtime/observation_window.py")
 
 
 def repo_receipt(number=1):
-    body = {"schema": "stegverse.repo-transition-receipt/v1",
+    body = {"schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
             "repository": "StegVerse-org/StegVerse-SDK", "transition_id": "pr1c-" + str(number)}
     return {**body, "receipt_sha256": org.sha(body)}
 
@@ -127,7 +127,8 @@ class OrganizationAppendTests(SixFields, unittest.TestCase):
         vendored = function_lines("resident-runtime/aggregate_repo_transition.py", "supplied_epoch_failure")
         self.assertEqual(hashlib.sha256(vendored.encode()).hexdigest(),
                          hashlib.sha256(shared.encode()).hexdigest())
-        self.assertTrue(hashlib.sha256(shared.encode()).hexdigest().startswith("7f36f0e6"))
+        # The StegVerse-Labs/.github#3282 FINAL text (SHARED_VALIDATOR_SHA256).
+        self.assertTrue(hashlib.sha256(shared.encode()).hexdigest().startswith("ad8ff529"))
 
 
 class ObservationWindowTests(SixFields, unittest.TestCase):

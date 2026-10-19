@@ -145,6 +145,20 @@ class PosixStateStore:
             return None
         return json.loads(path.read_text())
 
+    def read_bounded(self, key, limit):
+        """The raw bytes at `key`, refused rather than read when they are not a
+        regular file of at most `limit` bytes. Raises OSError or ValueError."""
+        path = self._path(key)
+        if path.is_dir():
+            raise ValueError("frame_entry_is_a_directory")
+        if path.stat().st_size > limit:
+            raise ValueError("frame_entry_oversized: " + str(path.stat().st_size) + " bytes > " + str(limit))
+        with path.open("rb") as stream:
+            raw = stream.read(limit + 1)
+        if len(raw) > limit:
+            raise ValueError("frame_entry_oversized: more than " + str(limit) + " bytes")
+        return raw
+
     def put_once(self, key, value):
         """Write `value` at `key` unless it already holds something else.
 

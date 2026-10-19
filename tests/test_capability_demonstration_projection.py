@@ -134,7 +134,7 @@ class CapabilityMapTests(unittest.TestCase):
                      "manifest_sha256": kernel.sha(manifest), "manifest": manifest},
             standing=standing, transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=4096)
         return kernel.consume_addressed_frames(
             ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
             org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])

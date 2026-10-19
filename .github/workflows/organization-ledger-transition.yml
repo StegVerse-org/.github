@@ -44,7 +44,7 @@ on:
         default: ''
         type: string
       hb_epoch:
-        description: 'supplied heartbeat epoch the self-closure receipts carry (mode=self-closure; non-negative integer); no clock is read for it'
+        description: 'supplied heartbeat epoch, ASCII digits >= 32 (mode=self-closure; mode=request when the committed request declares none, or the same one); no clock is read for it'
         required: false
         default: ''
         type: string
@@ -231,6 +231,22 @@ jobs:
           while IFS= read -r request; do
             [ -n "$request" ] || continue
             name=$(basename "$request" .json)
+            # A push is not a dispatcher that supplies an epoch: the committed
+            # request declares its own hb_epoch (a dispatch may supply it). It is
+            # checked by the shared rule before anything is invoked for this
+            # request; an absent, invalid or disagreeing one fails closed with six
+            # fields, nothing is built, received or appended, and the run fails.
+            if ! epoch=$(python resident-runtime/manifest_directed_run_inputs.py request-epoch \
+                --dispatch-hb-epoch "${HB_EPOCH:-}" --request "$request"); then
+              echo "$epoch"
+              mkdir -p "$RUNNER_TEMP/epoch-refusals"
+              printf '%s\n' "$epoch" > "$RUNNER_TEMP/epoch-refusals/$name.json"
+              continue
+            fi
+            request_epoch=$(python -c 'import json,sys; print(json.loads(sys.argv[1])["hb_epoch"])' "$epoch")
+            # Recorded in the receipts beside the epoch: COMMITTED_REQUEST (or
+            # WORKFLOW_DISPATCH) and the request's digest.
+            epoch_source=$(python -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["hb_epoch_source"], sort_keys=True))' "$epoch")
             # A request whose process the boundary binds to egress leaves this
             # organization, and a run without a supplied mesh can
             # only record its emission as refused. Recording it would also make
@@ -287,10 +303,13 @@ jobs:
                 "$recorded" "$canonical" "$out/ingress.json"
               continue
             fi
+            # The request's epoch binding, resolved above before anything ran.
+            epoch_args=(--hb-epoch "$request_epoch" --hb-epoch-source-json "$epoch_source")
             python resident-runtime/organization_manifest_ingress.py \
               --registry org-boundary/registry/services.json \
               --manifest "$out/manifest.json" --standing "$out/standing.json" \
-              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} --out "$out/ingress.json" || true
+              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} ${epoch_args[@]+"${epoch_args[@]}"} \
+              --out "$out/ingress.json" || true
             python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
           done < "$RUNNER_TEMP/requests.txt"
 
@@ -313,11 +332,22 @@ jobs:
             packet_id="intr-destination-self-closure-${GITHUB_RUN_ID}"
           fi
           # Time is supplied with the dispatch. It is not sampled from a clock.
-          case "$HB_EPOCH" in
-            ''|*[!0-9]*)
-              echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_HB_EPOCH_INVALID","failed_predicate":"HB_EPOCH_IS_SUPPLIED_AS_A_NON_NEGATIVE_INTEGER","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","consequence_committed":false}'
-              exit 1 ;;
-          esac
+          # The dispatch epoch is checked as typed by the organization writer's
+          # shared rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH): an empty,
+          # signed, padded, fullwidth or sub-anchor value is refused six-field
+          # before any writer runs. A workflow_dispatch string input cannot tell
+          # empty from absent, so here "" is HB_EPOCH_NOT_SUPPLIED.
+          python - <<'PY'
+          import importlib.util, json, os, sys
+          spec = importlib.util.spec_from_file_location("dispatch_epoch_rule", "resident-runtime/aggregate_repo_transition.py")
+          rule = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(rule)
+          refusal = rule.epoch_refusal(os.environ.get("HB_EPOCH") or None)
+          if refusal is not None:
+              print(json.dumps({**refusal, "retry_entrypoint": ".github/workflows/organization-ledger-transition.yml (hb_epoch input)",
+                                "consequence_committed": False}, sort_keys=True))
+              sys.exit(1)
+          PY
           # A refusal is recorded too; the publish step below carries it, and
           # the readback step fails the run on any closure that is not ALLOW.
           python resident-runtime/intr_destination_ingress.py \
@@ -448,3 +478,14 @@ jobs:
           name: organization-ledger-transition
           path: ${{ runner.temp }}/results
           if-no-files-found: ignore
+
+      # A committed request refused for want of a supplied epoch invoked nothing;
+      # the run still fails and names it with the six fields.
+      - name: Fail a run whose committed request carried no supplied epoch
+        if: always() && env.MODE == 'request'
+        run: |
+          if ls "$RUNNER_TEMP"/epoch-refusals/*.json >/dev/null 2>&1; then
+            cat "$RUNNER_TEMP"/epoch-refusals/*.json
+            exit 1
+          fi
+          echo "every committed request carried a supplied epoch"

@@ -330,7 +330,7 @@ class AddressedAndClosedTests(RedirectedLedgers):
             payload=payload, standing=standing(),
             transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=4096)
         return packet
 
     def consume(self):
@@ -603,7 +603,7 @@ class LedgerWriterSelfClosureModeTests(unittest.TestCase):
         self.assertIn("HB_EPOCH: ${{ github.event.inputs.hb_epoch }}", text)
         close = self.step("Close an intr-destination diagnostic against this organization")
         self.assertIn("if: env.MODE == 'self-closure'", close)
-        self.assertIn("DISPATCH_HB_EPOCH_INVALID", close)
+        self.assertIn('rule.epoch_refusal(os.environ.get("HB_EPOCH") or None)', close)
         self.assertIn('--hb-epoch "$HB_EPOCH"', close)
         self.assertIn("--self-close", close)
         self.assertNotIn("federation.json", close)

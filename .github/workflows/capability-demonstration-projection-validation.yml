@@ -141,7 +141,7 @@ jobs:
                        "manifest_sha256": kernel.sha(manifest), "manifest": manifest},
               standing=standing, transition_reference="intr:transition:ci-capability-map",
               authority_effect="NONE", packet_id="ci-capability-map-inbound")
-          kernel.publish_packet(packet, root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]))
+          kernel.publish_packet(packet, root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]), epoch=4096)
           # The mesh still holds the peer's acknowledgement of the outbound
           # crossing, which is also addressed here, so this asserts the frame it
           # published rather than a count of everything consumed.

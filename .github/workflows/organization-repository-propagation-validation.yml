@@ -90,7 +90,7 @@ jobs:
                   "predecessor_state_sha256": "sha256:" + "1" * 64,
                   "successor_state_sha256": "sha256:" + "2" * 64,
                   "evidence": {"ci": True}, "authority_effect": "NONE",
-                  "hb_reference": {"epoch": 32, "progression_dependency": "OSCILLATOR_ONLY"},
+                  "hb_reference": {"epoch": 32, "derived_from_clock": False, "progression_dependency": "OSCILLATOR_ONLY"},
                   "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY", "previous_receipt_sha256": None}
           digest = ledger.sha(body)
           receipt = {**body, "receipt_sha256": digest}

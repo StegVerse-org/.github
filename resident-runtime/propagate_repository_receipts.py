@@ -222,6 +222,9 @@ def propagate_all(*, hb_epoch: int | None = None) -> dict[str, Any]:
     }
 
 
+CLI_ENTRYPOINT = "resident-runtime/propagate_repository_receipts.py (--hb-epoch)"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Carry repository transition receipts onto the organization chain.")
@@ -229,10 +232,17 @@ def main() -> int:
                         help="one declared repository; omit to sweep every declared repository")
     parser.add_argument("--repository-ledger-root", type=Path, default=None,
                         help="address of that repository's ledger; derived from the ledger home when absent")
-    parser.add_argument("--hb-epoch", type=int, default=None,
-                        help="heartbeat epoch; derived from the host clock, and marked as derived, when absent")
+    parser.add_argument("--hb-epoch", default=None,
+                        help="heartbeat epoch, as supplied (ASCII digits >= 32); absent or invalid is "
+                             "refused FAIL_CLOSED and nothing is propagated")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
+    # Checked as typed, before any ledger is read, by the organization
+    # writer's rule: argparse's int() would admit "+33" or " 33" as 33.
+    refused = organization_ledger.epoch_refusal(args.hb_epoch)
+    if refused is not None:
+        print(json.dumps({**refused, "retry_entrypoint": CLI_ENTRYPOINT}, sort_keys=True))
+        return 1
 
     if args.repository:
         result = propagate(args.repository, repository_root=args.repository_ledger_root,
@@ -251,4 +261,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/propagate_repository_receipts.py"))
