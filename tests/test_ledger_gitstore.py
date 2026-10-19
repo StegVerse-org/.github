@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import inspect
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -177,6 +178,143 @@ class Ingress(unittest.TestCase):
                 bodies.append((appended["repository_receipt"], strip(appended["organization_receipt"])))
         self.assertEqual(bodies[0][0], bodies[1][0])
         self.assertEqual(bodies[0][1], bodies[1][1])
+
+
+# -- all or nothing: preflight before either half, rollback after the repository half ----------
+
+WRONG_REF = "refs/stegverse/not-the-organization-ledger"
+ingress = _load("intr_destination_ingress_for_ledger_gitstore_atomic", "resident-runtime/intr_destination_ingress.py")
+
+
+def org_writer_name(surface) -> str:
+    return {"DUAL_LEDGER": "append_organization", "AGGREGATE_TRANSITION": "aggregate_transition",
+            "TWO_MODULE_APPEND": "append"}[surface.kind]
+
+
+def ingress_org_writer():
+    """(module, attribute) of the organization writer this checkout's ingress _append calls."""
+    source = inspect.getsource(ingress._append_halves)
+    if "ledger.append_organization(" in source:
+        return ingress.ledger, "append_organization"
+    if "organization_ledger.aggregate_transition(" in source:
+        return ingress.organization_ledger, "aggregate_transition"
+    return ingress.organization_ledger, "append"
+
+
+class Atomic(unittest.TestCase):
+    def tips(self, ledger) -> tuple:
+        return tuple(ledger._git("rev-parse", "--verify", "-q", ref).strip() for ref in (ledger.ref, WRONG_REF))
+
+    def assertUntouched(self, ledger, before):
+        self.assertEqual(self.tips(ledger), before)
+
+    def path_append(self, n, **kw):
+        epoch, _ = lg.head_epoch(lg.org_store())
+        return lg.append("ORGANIZATION_INTR_PATH_TRANSFER", "p@cid-%d" % n, evidence(n), epoch,
+                         operation="ORGANIZATION_INTR_PATH_TRANSFER", profile_id="intr-path-transfer", **kw)
+
+    def ingress_append(self, n):
+        epoch, _ = lg.head_epoch(lg.org_store())
+        return ingress._append("ORGANIZATION_INTR_PATH_TRANSFER", "i@cid-%d" % n, evidence(n), epoch,
+                               operation="ORGANIZATION_INTR_PATH_TRANSFER", profile_id="intr-path-transfer")
+
+    def test_a_wrong_organization_ref_refuses_before_either_half_is_written(self):
+        for variable_set in ("root_and_git_ref", "git_ref_only"):
+            for writer in ("ledger_gitstore", "ingress"):
+                with self.subTest(variables=variable_set, writer=writer), TempLedger() as ledger:
+                    ledger._git("update-ref", WRONG_REF, ledger.tip())
+                    os.environ["STEGVERSE_ORG_LEDGER_GIT_REF"] = WRONG_REF
+                    if variable_set == "root_and_git_ref":
+                        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = "git+" + ledger.git_dir + "#" + WRONG_REF
+                    elif lg.writer_surface().kind != "AGGREGATE_TRANSITION":
+                        continue  # only the aggregate_transition writer reads STEGVERSE_ORG_LEDGER_GIT_REF
+                    before = self.tips(ledger)
+                    with self.assertRaises(ValueError) as caught:  # TwoLevelAppendRefused of either module copy
+                        self.path_append(1) if writer == "ledger_gitstore" else self.ingress_append(1)
+                    self.assertEqual(type(caught.exception).__name__, "TwoLevelAppendRefused")
+                    self.assertEqual(caught.exception.refusal["failure_code"], lg.PREFLIGHT_REFUSED)
+                    for field in lg.SIX_FIELDS:
+                        self.assertTrue(caught.exception.refusal[field], field)
+                    self.assertUntouched(ledger, before)
+
+    def test_a_wrong_repository_ref_refuses_before_either_half_is_written(self):
+        for writer in ("ledger_gitstore", "ingress"):
+            with self.subTest(writer=writer), TempLedger() as ledger:
+                ledger._git("update-ref", WRONG_REF, ledger.tip())
+                os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = "git+" + ledger.git_dir + "#" + WRONG_REF + ":" + ledger.ns
+                before = self.tips(ledger)
+                with self.assertRaises(ValueError) as caught:
+                    self.path_append(2) if writer == "ledger_gitstore" else self.ingress_append(2)
+                self.assertEqual(type(caught.exception).__name__, "TwoLevelAppendRefused")
+                # refused by the contract check, or already by this checkout's own repository store binding
+                self.assertIn(caught.exception.refusal["failed_predicate"],
+                              ("REPOSITORY_LEDGER_REF_IS_THE_DECLARED_REF", "REPOSITORY_LEDGER_LOCATION_RESOLVES"))
+                self.assertEqual(caught.exception.refusal["failure_code"], lg.PREFLIGHT_REFUSED)
+                self.assertUntouched(ledger, before)
+
+    def test_an_organization_write_failing_after_the_repository_write_rolls_the_repository_half_back(self):
+        for failure in (ValueError("organization writer refused"), SystemExit(3)):
+            for writer in ("ledger_gitstore", "ingress", "merge_transfer"):
+                with self.subTest(failure=repr(failure), writer=writer), TempLedger() as ledger:
+                    ledger._git("update-ref", WRONG_REF, ledger.tip())
+                    before = self.tips(ledger)
+                    seen = []
+
+                    def fail(*args, **kwargs):
+                        seen.append(ledger.tip())  # the repository half has already moved the ref
+                        raise failure
+
+                    surface = lg.writer_surface()
+                    module, name = (ingress_org_writer() if writer == "ingress"
+                                    else ((surface.dual if surface.kind == "DUAL_LEDGER" else surface.aggregate),
+                                          org_writer_name(surface)))
+                    original = getattr(module, name)
+                    setattr(module, name, fail)
+                    try:
+                        if writer == "merge_transfer":
+                            result = lg.append_merge_transfer(SYNTHETIC, surface=surface)
+                            self.assertEqual(result["disposition"], "FAIL_CLOSED", result)
+                        else:
+                            with self.assertRaises(type(failure)):
+                                if writer == "ledger_gitstore":
+                                    self.path_append(3, surface=surface)
+                                else:
+                                    self.ingress_append(3)
+                    finally:
+                        setattr(module, name, original)
+                    self.assertEqual(len(seen), 1)
+                    self.assertNotEqual(seen[0], before[0], "the repository half wrote before the failure")
+                    self.assertUntouched(ledger, before)
+
+    def test_a_rollback_never_undoes_another_writers_commits(self):
+        with TempLedger() as ledger:
+            surface = lg.writer_surface()
+            module = surface.dual if surface.kind == "DUAL_LEDGER" else surface.aggregate
+            name = org_writer_name(surface)
+            original = getattr(module, name)
+
+            def fail_after_foreign_appends(*args, **kwargs):
+                for n in range(2):
+                    ledger.write({"foreign-%d.txt" % n: b"another writer"})
+                raise ValueError("organization writer refused")
+
+            setattr(module, name, fail_after_foreign_appends)
+            try:
+                with self.assertRaises(lg.TwoLevelAppendRefused) as caught:
+                    self.path_append(4, surface=surface)
+            finally:
+                setattr(module, name, original)
+            self.assertEqual(caught.exception.refusal["failure_code"], lg.ROLLBACK_FAILED)
+            self.assertIn("foreign-1.txt", ledger.files())
+
+    def test_the_guarded_append_still_appends_and_replays(self):
+        with TempLedger() as ledger:
+            first, replayed = self.path_append(5)
+            tip = ledger.tip()
+            again, replayed_again = self.path_append(5)
+            self.assertEqual((replayed, replayed_again), (False, True))
+            self.assertEqual(ledger.tip(), tip)
+            self.assertEqual(first["organization_receipt_sha256"], again["organization_receipt_sha256"])
 
 
 if __name__ == "__main__":
