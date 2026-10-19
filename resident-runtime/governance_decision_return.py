@@ -305,9 +305,16 @@ def main() -> int:
     parser.add_argument("--communication-id", required=True)
     parser.add_argument("--mesh-root", type=Path, required=True,
                         help="federation mesh this node was materialized with")
-    parser.add_argument("--hb-epoch", type=int, default=None)
+    parser.add_argument("--hb-epoch", default=None,
+                        help="carrier heartbeat epoch as ASCII digits; the shared rule sees the raw text")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
+    # Checked as typed, by the egress boundary's rule, before anything is read
+    # or closed: argparse's int() would hand "+33" to egress.close as 33.
+    refused = egress.epoch_refusal(args.hb_epoch, "resident-runtime/governance_decision_return.py (--hb-epoch)")
+    if refused is not None:
+        print(json.dumps(refused, sort_keys=True))
+        return EXIT_NOT_ALLOWED
     result = return_decision(json.loads(args.manifest.read_text(encoding="utf-8")),
                              packet_id=args.packet_id, communication_id=args.communication_id,
                              mesh_root=args.mesh_root, hb_epoch=args.hb_epoch)

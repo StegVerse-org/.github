@@ -461,7 +461,9 @@ def main():
     parser.add_argument("--successor-org-state-sha256", required=True)
     parser.add_argument("--boundary-evidence-json", default="{}")
     parser.add_argument("--authority-effect", default="NONE")
-    parser.add_argument("--hb-epoch", type=int, default=None,
+    # The epoch is read as typed: argparse's int() would admit "+33", " 33"
+    # or fullwidth digits as 33 before the shared rule ever saw them.
+    parser.add_argument("--hb-epoch", default=None,
                         help="heartbeat epoch, supplied; absent or invalid is refused HB_EPOCH_NOT_SUPPLIED/HB_EPOCH_INVALID")
     args = parser.parse_args()
     source_path = args.transition_receipt or args.repo_receipt

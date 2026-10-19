@@ -173,6 +173,90 @@ class RepositoryAppendEpochTests(unittest.TestCase):
             self.assertIs(receipt["hb_reference"]["derived_from_clock"], False)
 
 
+AGGREGATE = ROOT / "resident-runtime/aggregate_repo_transition.py"
+PROPAGATE = ROOT / "resident-runtime/propagate_repository_receipts.py"
+#: Values argparse's int() used to admit as 33, plus other malformed ones.
+REFUSED_CLI_EPOCHS = ("+33", "\uff13\uff13", " 33", "True", "abc", "33.7", None)
+
+
+def files_under(root):
+    return sorted(str(p.relative_to(root)) for p in Path(root).rglob("*") if p.is_file())
+
+
+class CliEpochParsingTests(unittest.TestCase):
+    """--hb-epoch is read as typed and checked by the shared rule; a refusal writes nothing."""
+
+    def run_cli(self, script, args, hb_epoch, env):
+        command = [sys.executable, str(script), *args]
+        if hb_epoch is not None:
+            command += ["--hb-epoch", hb_epoch]
+        return subprocess.run(command, capture_output=True, text=True, cwd=str(ROOT),
+                              env=dict(os.environ, **env))
+
+    def assert_refused(self, completed, epoch):
+        self.assertEqual(completed.returncode, 1, (epoch, completed.stdout, completed.stderr))
+        refusal = json.loads(completed.stdout.splitlines()[-1])
+        self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+        self.assertEqual(refusal["failure_code"],
+                         "HB_EPOCH_NOT_SUPPLIED" if epoch is None else "HB_EPOCH_INVALID", epoch)
+        for field in SIX_FIELDS:
+            self.assertTrue(refusal[field], field)
+
+    def aggregate(self, root, hb_epoch):
+        source = Path(root) / "source.json"
+        source.write_text(json.dumps(repo_receipt()))
+        ledger = Path(root) / "org-ledger"
+        completed = self.run_cli(AGGREGATE, ["--repo-receipt", str(source),
+                                             "--predecessor-org-state-sha256", "GENESIS",
+                                             "--successor-org-state-sha256", STATE_AFTER],
+                                 hb_epoch, {"STEGVERSE_ORG_LEDGER_ROOT": str(ledger)})
+        return completed, ledger
+
+    def test_the_organization_writer_cli_refuses_and_writes_nothing(self):
+        for epoch in REFUSED_CLI_EPOCHS:
+            with self.subTest(epoch=epoch), tempfile.TemporaryDirectory() as root:
+                completed, ledger = self.aggregate(root, epoch)
+                self.assert_refused(completed, epoch)
+                self.assertEqual(files_under(ledger) if ledger.exists() else [], [])
+
+    def test_the_organization_writer_cli_admits_ascii_digits(self):
+        with tempfile.TemporaryDirectory() as root:
+            completed, ledger = self.aggregate(root, "4096")
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            receipt = json.loads(completed.stdout.splitlines()[-1])
+            self.assertEqual(receipt["hb_reference"]["epoch"], 4096)
+            self.assertIs(receipt["hb_reference"]["derived_from_clock"], False)
+
+    def propagate(self, root, hb_epoch):
+        ledger = Path(root) / "org-ledger"
+        repository = Path(root) / "repository-ledger"
+        repository.mkdir()
+        completed = self.run_cli(PROPAGATE, ["--repository", REPO_CONTRACT["repository"],
+                                             "--repository-ledger-root", str(repository)],
+                                 hb_epoch, {"STEGVERSE_ORG_LEDGER_ROOT": str(ledger)})
+        return completed, ledger
+
+    def test_the_propagation_cli_refuses_and_writes_nothing(self):
+        for epoch in REFUSED_CLI_EPOCHS:
+            with self.subTest(epoch=epoch), tempfile.TemporaryDirectory() as root:
+                completed, ledger = self.propagate(root, epoch)
+                self.assert_refused(completed, epoch)
+                self.assertEqual(json.loads(completed.stdout.splitlines()[-1])["retry_entrypoint"],
+                                 "resident-runtime/propagate_repository_receipts.py (--hb-epoch)")
+                self.assertEqual(files_under(ledger) if ledger.exists() else [], [])
+
+    def test_the_propagation_cli_admits_ascii_digits(self):
+        with tempfile.TemporaryDirectory() as root:
+            completed, _ = self.propagate(root, "4096")
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_no_cli_help_says_the_epoch_is_derived_from_a_clock(self):
+        for script in (AGGREGATE, PROPAGATE, EMIT):
+            text = subprocess.run([sys.executable, str(script), "--help"], capture_output=True,
+                                  text=True, cwd=str(ROOT)).stdout
+            self.assertNotIn("host clock", text, script)
+
+
 class OrganizationReceiptTests(unittest.TestCase):
     def _append(self, root, transition_id="time-base-1", hb_epoch=EPOCH):
         os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = root
