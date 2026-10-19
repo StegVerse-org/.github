@@ -99,11 +99,10 @@
       "path": "resident-runtime/merge_transfer.py",
       "command": "python resident-runtime/merge_transfer.py verify --commit <MERGE_COMMIT>",
       "sha256": "sha256:032ed727358d56f33369b35e6cc50d65f6af5dc0035f0b69fe7cddb3f4f4e20e",
-      "pinned_at": [
-        {"pull_request": "StegVerse-org/.github#202", "head": "b590fb0adf9a2212501b2807a43e4aea24631f03"},
-        {"pull_request": "SV-011/.github#15", "head": "2e74ecb3174da619310e86c1c66e7b650ff994bd"}
-      ],
-      "admission_depends_on": ["StegVerse-org/.github#202", "SV-011/.github#15"]
+      "landed_at": [
+        {"repository": "StegVerse-org/.github", "pull_request": "StegVerse-org/.github#202", "head": "b590fb0adf9a2212501b2807a43e4aea24631f03", "merge_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481", "sha256": "sha256:032ed727358d56f33369b35e6cc50d65f6af5dc0035f0b69fe7cddb3f4f4e20e"},
+        {"repository": "SV-011/.github", "pull_request": "SV-011/.github#15", "head": "8c02f276d6e27a9388ee6d7b0991ff365a1dc390", "merge_commit": "a636fafca237a0f928fa0eccfe4585866bfecf9d", "sha256": "sha256:032ed727358d56f33369b35e6cc50d65f6af5dc0035f0b69fe7cddb3f4f4e20e"}
+      ]
     },
     "destination_predicates": [
       {
