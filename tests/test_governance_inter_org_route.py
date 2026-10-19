@@ -350,7 +350,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         emitted = self.receive()
         self.answer(emitted)
         before = self.written()
-        for epoch in ("+33", "\uff13\uff13", " 33", "True", "abc", "33.7", None):
+        for epoch in ("+33", "\uff13\uff13", " 33", "True", "abc", "33.7", "", None):
             with self.subTest(epoch=epoch):
                 out = io.StringIO()
                 self.assertEqual(self.run_cli(emitted, hb_epoch=epoch, out=out), returning.EXIT_NOT_ALLOWED)

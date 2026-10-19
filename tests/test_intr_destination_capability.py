@@ -603,7 +603,7 @@ class LedgerWriterSelfClosureModeTests(unittest.TestCase):
         self.assertIn("HB_EPOCH: ${{ github.event.inputs.hb_epoch }}", text)
         close = self.step("Close an intr-destination diagnostic against this organization")
         self.assertIn("if: env.MODE == 'self-closure'", close)
-        self.assertIn('rule.epoch_refusal(os.environ.get("HB_EPOCH"))', close)
+        self.assertIn('rule.epoch_refusal(os.environ.get("HB_EPOCH") or None)', close)
         self.assertIn('--hb-epoch "$HB_EPOCH"', close)
         self.assertIn("--self-close", close)
         self.assertNotIn("federation.json", close)

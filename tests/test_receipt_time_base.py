@@ -176,7 +176,8 @@ class RepositoryAppendEpochTests(unittest.TestCase):
 AGGREGATE = ROOT / "resident-runtime/aggregate_repo_transition.py"
 PROPAGATE = ROOT / "resident-runtime/propagate_repository_receipts.py"
 #: Values argparse's int() used to admit as 33, plus other malformed ones.
-REFUSED_CLI_EPOCHS = ("+33", "\uff13\uff13", " 33", "True", "abc", "33.7", None)
+#: A CLI can tell "" from absent, so "" is HB_EPOCH_INVALID there.
+REFUSED_CLI_EPOCHS = ("+33", "\uff13\uff13", " 33", "True", "abc", "33.7", "", None)
 
 
 def files_under(root):
@@ -277,7 +278,12 @@ def workflow_epoch_gates():
 
 
 class WorkflowEpochGateTests(unittest.TestCase):
-    """Each inline dispatch-epoch gate refuses six-field as the writers do; "4096" passes."""
+    """Each inline dispatch-epoch gate refuses six-field as the writers do; "4096" passes.
+
+    A workflow_dispatch string input cannot tell empty from absent, so a gate
+    reads "" as HB_EPOCH_NOT_SUPPLIED. Where the two can be told apart (function
+    and CLI arguments) "" stays HB_EPOCH_INVALID.
+    """
 
     def run_gate(self, source, hb_epoch):
         env = {k: v for k, v in os.environ.items() if k != "HB_EPOCH"}
@@ -298,7 +304,7 @@ class WorkflowEpochGateTests(unittest.TestCase):
             self.assertNotIn("int(os.environ", text.replace(" ", ""), path.name)
 
     def test_each_gate_refuses_six_field_and_admits_ascii_digits(self):
-        expected = {"": "HB_EPOCH_INVALID", None: "HB_EPOCH_NOT_SUPPLIED", "+33": "HB_EPOCH_INVALID",
+        expected = {"": "HB_EPOCH_NOT_SUPPLIED", None: "HB_EPOCH_NOT_SUPPLIED", "+33": "HB_EPOCH_INVALID",
                     " 33": "HB_EPOCH_INVALID", "\uff13\uff13": "HB_EPOCH_INVALID",
                     "33.0": "HB_EPOCH_INVALID", "31": "HB_EPOCH_INVALID", "abc": "HB_EPOCH_INVALID"}
         for workflow, step, source in workflow_epoch_gates():
