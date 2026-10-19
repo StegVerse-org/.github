@@ -21,6 +21,12 @@ import sys
 import unittest
 from pathlib import Path
 
+try:   # pytest: hold the organization to org-contract.json's own organization_ledger declaration
+    import pytest
+    pytestmark = pytest.mark.repository_ledger_locus
+except (ImportError, AttributeError):
+    pass
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
 from intr_path_temp_ledger import TempLedger  # noqa: E402

@@ -17,6 +17,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
+try:   # pytest: hold the organization to org-contract.json's own organization_ledger declaration
+    import pytest
+    pytestmark = pytest.mark.repository_ledger_locus
+except (ImportError, AttributeError):
+    pass
+
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER_TIP = json.loads((ROOT / "tests/fixtures/intr-path-ingress/pin.json").read_text())["ledger_tip"]
 NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").read_text())[
