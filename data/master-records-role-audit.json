@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 155,
+      "PROPER": 157,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 20,
-      "total": 194
+      "total": 196
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1419,6 +1419,20 @@
       "text": "\"master_records_in_path\": false,",
       "classification": "PROPER",
       "reason": "Byte snapshot of StegVerse-org/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
+    },
+    {
+      "file": "components/intr-ingress-ledger/v1/templates/resident-runtime/organization_ledger_readback.py.tmpl",
+      "line": 131,
+      "text": "\"master_records_awaited\": False,",
+      "classification": "PROPER",
+      "reason": "Component template of StegGhost/.github resident-runtime/organization_ledger_readback.py (intr-ingress-ledger/v1): the readback states the downstream recorder is not awaited, which repeats its canonical role (recorder of released organization batch receipts; not in the path)."
+    },
+    {
+      "file": "docs/INTR_INGRESS_LEDGER_COMPONENT_V1.md",
+      "line": 54,
+      "text": "The downstream recorder organization does not adopt. Its canonical role is `RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER` (`data/master-records-role-audit.json`, docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md \"restated\"), under which ",
+      "classification": "PROPER",
+      "reason": "Cites this repository's role audit file for the canonical role RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER as the basis for the recorder organization not adopting an InTr destination (not in the path; cannot admit a transition)."
     }
   ]
 }

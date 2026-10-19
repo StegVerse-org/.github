@@ -1,0 +1,39 @@
+name: Validate InTr Ingress Ledger Component
+
+# PR-facing check for StegVerse-org/.github components/intr-ingress-ledger/v1
+# as installed here. Temporary ledgers only; nothing is pushed or dispatched.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - '.stegverse/components/**'
+      - '.stegverse/transition-ledger/**'
+      - 'org-boundary/**'
+      - 'org-kernel/kernel.py'
+      - 'org-runtime/**'
+      - 'resident-runtime/**'
+      - 'data/intr-protocol/**'
+      - 'tests/test_intr_ingress_ledger_component.py'
+      - '.github/workflows/intr-ingress-ledger-component-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-intr-ingress-ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Installed bytes, InTr v1 conformance, ledger designation, self-closure on temporary ledgers
+        run: python3 -m unittest tests.test_intr_ingress_ledger_component -v
+
+      - name: "Conformance, read-only: {{ORGANIZATION}} at {{SLUG}}.intr-destination"
+        run: |
+          python3 org-runtime/intr_protocol.py conform --org "{{ORGANIZATION}}" > conform.json
+          python3 -c 'import json; r=json.load(open("conform.json")); assert r["disposition"]=="ALLOW", r; print("INTR_DESTINATION_CONFORMS", r["disposition"])'
