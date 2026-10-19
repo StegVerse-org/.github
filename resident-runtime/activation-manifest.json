@@ -79,6 +79,18 @@
         "verification": "member of the chain walked from HEAD, byte-identical, recomputing; need not be the tip",
         "unverified": "CARRIED_PROVENANCE_UNVERIFIED"
       }
-    }
+    },
+    "open_records": [
+      {
+        "state": "OPEN",
+        "failure_code": "MERGE_TRANSFER_PROVENANCE_PENDING_206",
+        "failed_predicate": "MERGE_TRANSFER_RECEIPTS_RECORD_SOURCE_AND_HEAD_RECEIPT_SHA",
+        "detail": "resident-runtime/merge_transfer.py stamps the ORGANIZATION_MAIN_MERGE_TRANSFER receipts with the head receipt's supplied epoch (admissible under the 08:49Z route) but records neither source nor head_receipt_sha, and its CLI does not yet return six fields on a write fault; both belong to StegVerse-org/.github#206 (Lane D), whose files this branch does not change",
+        "required_evidence_or_repair": "#206 merges; merge_transfer receipts then carry source CARRIED:<head> and head_receipt_sha, and its CLI runs through resident-runtime/writer_cli.py",
+        "retry_entrypoint": "resident-runtime/merge_transfer.py append",
+        "owning_existing_goal": "StegVerse-org/.github#206",
+        "next_attempt": "merge main into the B-P31 branch after #206 merges, regenerate the fixtures and re-probe"
+      }
+    ]
   }
 }

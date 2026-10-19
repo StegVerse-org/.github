@@ -588,6 +588,12 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
                 predecessor = previous
             elif predecessor_state == GENESIS:
                 if expected_head is not None:
+                    # The exact retry of a genesis append that a fault tore (and the
+                    # next append completed) is that genesis receipt, not a refusal.
+                    genesis = recorded(target, expected_head, source["source_transition_sha256"])
+                    if (genesis is not None and genesis.get("previous_receipt_sha256") is None
+                            and genesis.get("org_transition_class") == org_transition_class):
+                        return genesis
                     raise OrgLedgerAppendRefused("DENY", "ORG_LEDGER_GENESIS_ON_NON_EMPTY_LEDGER")
                 predecessor = None
             else:
@@ -656,4 +662,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    raise SystemExit(_writer.run(main, "resident-runtime/aggregate_repo_transition.py"))

@@ -715,34 +715,26 @@ class ClockProbeTests(unittest.TestCase):
         self.assertEqual(scan["rows"]["valid"]["status"], "CONSUMED")
         self.assertGreater(scan["valid_in_ledgers"], 0)
         self.assertEqual(scan["second_offered"], 0)
-        # B-P36m (09:00Z alternative): accepts_carried_crossings is false. Without a
-        # cycle epoch a CARRIED frame is refused CARRIED_NOT_ACCEPTED_BY_DESTINATION;
-        # in a cycle with its own epoch the claim is verified at admission and kept
-        # in evidence.frame_reference, and every receipt is stamped with the cycle epoch.
+        # B-P36m (09:00Z alternative): accepts_carried_crossings is false, whether or
+        # not the cycle supplies an epoch: a CARRIED frame is refused
+        # CARRIED_NOT_ACCEPTED_BY_DESTINATION and nothing of it is ledgered.
         carried = probe["carried"]
         self.assertEqual(carried["refused_without_cycle_epoch"], ["CARRIED_NOT_ACCEPTED_BY_DESTINATION"])
-        self.assertEqual(carried["status"], ["CONSUMED"])
+        self.assertEqual((carried["status"], carried["in_cycle_failure_code"]),
+                         (["REFUSED"], ["CARRIED_NOT_ACCEPTED_BY_DESTINATION"]))
         self.assertEqual(probe["phases"]["carried_clock_calls"], 0)
-        self.assertTrue(carried["receipts"])
-        for receipt in carried["receipts"]:
-            reference = receipt["hb_reference"]
-            self.assertEqual(reference["epoch"], 4096, receipt["schema"])
-            self.assertIs(reference["derived_from_clock"], False)
-            for key in ("source", "head_receipt_sha", "sampled_unix_ns"):
-                self.assertNotIn(key, reference)
-        self.assertEqual(len(carried["frame_references"]), len(carried["receipts"]))
-        for frame_reference in carried["frame_references"]:
-            self.assertEqual((frame_reference["epoch_class"], frame_reference["source"], frame_reference["head_receipt_sha"],
-                              frame_reference["epoch"]),
-                             ("CARRIED", "CARRIED:ORGANIZATION_LEDGER_HEAD", carried["head_receipt_sha"], carried["head_epoch"]))
-        # F1: a cycle at supplied 4096 consuming a frame at 77. Every receipt is
-        # stamped 4096; 77 is only inbound provenance; the answer (no resolution
-        # rule) is HB_EPOCH_CONFLICT and nothing is published.
+        self.assertEqual(carried["receipts"], [])
+        # F1: a cycle at supplied 4096 consuming a frame at 77. Every receipt and
+        # the answer are this organization's, stamped 4096; 77 is only inbound
+        # provenance (frame_reference). A consumed request is always answered.
         f1 = probe["f1"]
         self.assertEqual(probe["phases"]["f1_clock_calls"], 0)
         self.assertEqual(f1["status"], ["CONSUMED"])
-        self.assertEqual((f1["response_published"], f1["response_refusal"], f1["mesh_answers"]),
-                         ([False], ["HB_EPOCH_CONFLICT"], 0))
+        self.assertEqual((f1["response_published"], f1["mesh_answers"]), ([True], 1))
+        answer, = f1["answers"]
+        self.assertEqual((answer["epoch"], answer["derived_from_clock"]), (4096, False))
+        self.assertEqual((answer["request_frame_reference"]["epoch"], answer["request_frame_reference"]["resolution"]),
+                         (77, "SUPPLIED_CYCLE_EPOCH_STAMPS_THIS_ORGANIZATION"))
         self.assertEqual(len(f1["receipts"]), 3)
         for receipt in f1["receipts"]:
             self.assertEqual((receipt["epoch"], receipt["derived_from_clock"]), (4096, False), receipt["schema"])
@@ -1156,6 +1148,10 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
         self.assertEqual(binding["runtime_dispatcher"]["status"], "PENDING_SUBSTRATE")
         self.assertIs(binding["accepts_carried_crossings"], False)
         self.assertIs(org.kernel.ACCEPTS_CARRIED_CROSSINGS, binding["accepts_carried_crossings"])
+        pending, = [r for r in binding["open_records"] if r["failure_code"] == "MERGE_TRANSFER_PROVENANCE_PENDING_206"]
+        self.assertEqual((pending["state"], pending["owning_existing_goal"]), ("OPEN", "StegVerse-org/.github#206"))
+        for field in SIX_FIELDS:
+            self.assertTrue(pending[field], field)
         dispatcher = ROOT / binding["dispatcher"]
         self.assertTrue(dispatcher.is_file())
         triggers, text = workflow_triggers(dispatcher)
@@ -1232,6 +1228,86 @@ class ResidentDispatchTests(unittest.TestCase):
         argv = run.call_args[0][0]
         self.assertTrue(argv[1].endswith("resident_executor.py"))
         self.assertEqual(argv[argv.index("--hb-epoch") + 1], "4096")
+
+
+class WriterCliTraceTests(unittest.TestCase):
+    """F-WRITER-TRACE / B-P36q: a writer CLI whose own write faults prints six fields, no traceback;
+    the same invocation run again completes exactly once."""
+
+    FAULT = ROOT / "tests/fixtures/write-fault"
+
+    def run_cli(self, work, command, env_extra):
+        env = {k: v for k, v in os.environ.items() if not k.startswith("STEGVERSE_")}
+        env.update(env_extra, PYTHONPATH=str(self.FAULT), STEGVERSE_TEST_FAULT_HEAD_ONCE=str(Path(work) / "faulted"))
+        return subprocess.run([sys.executable, *command], capture_output=True, text=True, cwd=str(ROOT), env=env)
+
+    def assert_fault_then_once(self, work, command, env_extra, ledger):
+        faulted = self.run_cli(work, command, env_extra)
+        self.assertTrue((Path(work) / "faulted").exists(), "the HEAD write was not reached")
+        self.assertEqual(faulted.returncode, 75, faulted.stdout + faulted.stderr)
+        self.assertNotIn("Traceback", faulted.stderr)
+        record = json.loads(faulted.stdout.strip().splitlines()[-1])
+        self.assertEqual((record["failure_code"], record["terminal"]), ("WRITE_FAILED", False))
+        for field in SIX_FIELDS:
+            self.assertTrue(record[field], field)
+        again = self.run_cli(work, command, env_extra)
+        self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
+        receipts = sorted((Path(ledger) / "receipts").glob("*.json"))
+        self.assertEqual(len(receipts), 1)
+        head = json.loads((Path(ledger) / "HEAD.json").read_text())
+        self.assertEqual(head["receipt_sha256"][7:] + ".json", receipts[0].name)
+
+    def test_the_repository_emitter(self):
+        with tempfile.TemporaryDirectory() as work:
+            ledger = Path(work) / "repo"
+            self.assert_fault_then_once(work, [str(EMIT), "--transition-id", "t-fault", "--transition-class", "TEST",
+                                               "--predecessor-state-sha256", STATE_BEFORE,
+                                               "--successor-state-sha256", STATE_AFTER, "--hb-epoch", str(EPOCH)],
+                                        {"STEGVERSE_REPO_LEDGER_ROOT": str(ledger)}, ledger)
+
+    def test_the_organization_writer(self):
+        with tempfile.TemporaryDirectory() as work:
+            ledger = Path(work) / "org"
+            source = Path(work) / "repo-receipt.json"
+            source.write_text(json.dumps(repo_receipt("t-org-fault")))
+            self.assert_fault_then_once(work, [str(ROOT / "resident-runtime/aggregate_repo_transition.py"),
+                                               "--repo-receipt", str(source),
+                                               "--predecessor-org-state-sha256", "GENESIS",
+                                               "--successor-org-state-sha256", STATE_AFTER, "--hb-epoch", str(EPOCH)],
+                                        {"STEGVERSE_ORG_LEDGER_ROOT": str(ledger)}, ledger)
+
+    def test_every_writer_cli_runs_through_the_six_field_wrapper(self):
+        for relative in (".stegverse/transition-ledger/emit.py", "resident-runtime/aggregate_repo_transition.py",
+                         "resident-runtime/federation_cycle.py", "resident-runtime/governance_decision_return.py",
+                         "resident-runtime/governance_return_cycle.py", "resident-runtime/intr_destination_ingress.py",
+                         "resident-runtime/organization_egress_boundary.py",
+                         "resident-runtime/organization_manifest_ingress.py",
+                         "resident-runtime/propagate_repository_receipts.py", "resident-runtime/resident_dispatch.py",
+                         "resident-runtime/resident_executor.py",
+                         "resident-runtime/submit_org_transition_to_master_records.py"):
+            with self.subTest(cli=relative):
+                main_block = (ROOT / relative).read_text().split('__name__', )[-1]
+                self.assertIn("_writer.run(", main_block)
+
+    def test_the_wrapper_classifies_each_failure(self):
+        writer = load_module("probe_writer_cli", "resident-runtime/writer_cli.py")
+        cases = ((OSError(5, "io"), "WRITE_FAILED", 75), (RuntimeError("ledger_append_lost_comparison"), "WRITE_FAILED", 75),
+                 (ValueError("ledger_receipt_collision"), "WRITE_FAILED", 75),
+                 (SystemExit("ORG_LEDGER_HEAD_INVALID"), "ORG_LEDGER_HEAD_INVALID", 1),
+                 (KeyError("manifest"), "WRITER_INPUT_REFUSED", 1))
+        for exc, code, exit_code in cases:
+            with self.subTest(exc=type(exc).__name__), contextlib.redirect_stdout(io.StringIO()) as out, \
+                    contextlib.redirect_stderr(io.StringIO()):
+                def failing():
+                    raise exc
+                self.assertEqual(writer.run(failing, "entry"), exit_code)
+                record = json.loads(out.getvalue().splitlines()[-1])
+                self.assertEqual(record["failure_code"], code)
+                for field in SIX_FIELDS:
+                    self.assertTrue(record[field], field)
+        with self.assertRaises(SystemExit) as passed:
+            writer.run(lambda: (_ for _ in ()).throw(SystemExit(2)), "entry")
+        self.assertEqual(passed.exception.code, 2)
 
 
 class OrganizationReceiptTests(unittest.TestCase):

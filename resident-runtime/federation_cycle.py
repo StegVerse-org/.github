@@ -225,7 +225,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     print(json.dumps({**receipt,"recorded_at":str(recorded)},sort_keys=True))
     return receipt
 
-if __name__=="__main__":
+def cli():
     ap=argparse.ArgumentParser()
     ap.add_argument("--mesh-root", type=Path, default=None)
     ap.add_argument("--node-state-root", type=Path, required=True)
@@ -235,3 +235,10 @@ if __name__=="__main__":
         main(mesh_root=args.mesh_root,node_state_root=args.node_state_root,hb_epoch=args.hb_epoch)
     except PR.organization_ledger.OrgLedgerEpochRefused as exc:
         print(json.dumps(exc.refusal,sort_keys=True)); raise SystemExit(1)
+    return 0
+
+if __name__=="__main__":
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    raise SystemExit(_writer.run(cli, "resident-runtime/federation_cycle.py (--hb-epoch)"))

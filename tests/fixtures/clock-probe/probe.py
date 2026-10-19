@@ -143,6 +143,7 @@ carried_rows = kernel.consume_and_respond(ROOT, mesh_root=cmesh, node_state_root
                                           hb_epoch=4096)
 phases["carried_clock_calls"] = CALLS["n"] - start
 carried_out = {"status": [(r.get("result") or {}).get("status") for r in carried_rows],
+               "in_cycle_failure_code": [(r.get("result") or {}).get("failure_code") for r in carried_rows],
                "refused_without_cycle_epoch": [(r.get("result") or {}).get("failure_code") for r in refused_rows],
                "head_epoch": head_epoch, "head_receipt_sha": head_sha,
                "receipts": receipts_for(carried["packet_id"])}
@@ -175,7 +176,11 @@ def full_receipts_for(packet_id):
 
 f1 = {"status": [(r.get("result") or {}).get("status") for r in f1_rows],
       "response_published": [r.get("response_publication") is not None for r in f1_rows],
-      "response_refusal": [(r.get("response_refusal") or {}).get("failure_code") for r in f1_rows],
+      "answers": [{"epoch": item["frame"]["heartbeat_reference"]["epoch"],
+                   "derived_from_clock": item["frame"]["heartbeat_reference"]["derived_from_clock"],
+                   "request_frame_reference": (kernel.recover_packet(item["frame"]).get("payload") or {})
+                   .get("request_frame_reference")}
+                  for item in kernel.scan_addressed_frames("Probe-Origin", root=fmesh)],
       "receipts": [{"schema": d.get("schema"), "epoch": d["hb_reference"].get("epoch"),
                     "derived_from_clock": d["hb_reference"].get("derived_from_clock"),
                     "frame_reference": ((d.get("evidence") or d.get("boundary_evidence") or {})

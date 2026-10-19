@@ -572,7 +572,7 @@ def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:s
         # The same total per-frame guard as consume_and_respond.
         try:
             kind,provenance,refused=frame_epoch_class(item["frame"],custody)
-            if refused is None and kind=="CARRIED" and hb_epoch is None and not ACCEPTS_CARRIED_CROSSINGS:
+            if refused is None and kind=="CARRIED" and not ACCEPTS_CARRIED_CROSSINGS:
                 refused=carried_not_accepted(custody)
             if refused is None and node_state is not None:
                 refused=request_id_collision(node_state,recover_packet(item["frame"]),item["frame"],custody)
@@ -1064,7 +1064,7 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
             # terminal: quarantined, never offered again, nothing else written.
             kind,provenance,refused=(frame_epoch_class(item["frame"],custody) if now_ns is None
                                      else ("SUPPLIED",None,None))
-            if refused is None and kind=="CARRIED" and hb_epoch is None and not ACCEPTS_CARRIED_CROSSINGS:
+            if refused is None and kind=="CARRIED" and not ACCEPTS_CARRIED_CROSSINGS:
                 refused=carried_not_accepted(custody)
             if refused is not None:
                 marker=quarantine_federation_frame(item["path"],item["frame"],refused,store=node_state)
@@ -1128,22 +1128,21 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
                             "organization_record":recorded,"seen_marker":None})
                 continue
             response_publication=None
-            response_refusal=None
             response=None
             if result.get("status")=="CONSUMED" and message_class in RESPONDED_REQUEST_CLASSES:
                 response=build_control_response(packet,result["execution_result"])
             elif result.get("status")=="CONSUMED" and not payload.get("response_to_packet_id"):
                 if service and service.get("endpoint_adapter"):
                     response=build_endpoint_response(packet,result["execution_result"])
-            if response is not None and isinstance(answer_epoch,dict):
-                # The answer's epoch has no resolution rule against the cycle's: nothing is published.
-                response_refusal=answer_epoch
-            elif response is not None:
+            if response is not None:
+                if frame_reference is not None:
+                    # The answer names the request frame it answers, as inbound provenance.
+                    response={**response,"payload":{**(response.get("payload") or {}),
+                                                    "request_frame_reference":frame_reference}}
                 response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=answer_epoch,
-                                                    provenance=provenance if answer_epoch==frame_epoch else None)
+                                                    provenance=provenance if frame_reference is None else None)
             marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result,store=node_state)
             out.append({"path":item["path"],"result":result,"response_publication":response_publication,
-                        "response_refusal":response_refusal,
                         "organization_record":recorded,"seen_marker":str(marker)})
         except Exception as exc:
             # Total (F-TYPE): any exception is this frame's, except custody refusals
@@ -1336,50 +1335,39 @@ def frame_ingest_refusal(exc:BaseException, custody:dict[str,Any])->dict[str,Any
             "next_attempt":"on a republished frame; this one is quarantined and not offered again"}
 
 EPOCH_RESOLUTION="SUPPLIED_CYCLE_EPOCH_STAMPS_THIS_ORGANIZATION"
-#: This destination does not stamp its receipts from a carried crossing epoch
-#: (B-P36m, 09:00Z alternative). A CARRIED claim is verified at admission and kept
-#: only as inbound provenance (evidence.frame_reference) of receipts stamped with
-#: the cycle's own supplied epoch; without a cycle epoch it is refused.
+#: This destination does not accept a carried crossing epoch (B-P36m, 09:00Z
+#: alternative): a CARRIED frame is refused CARRIED_NOT_ACCEPTED_BY_DESTINATION,
+#: whether or not the cycle supplies its own epoch. Its claim is still verified
+#: first, so a forged one is CARRIED_PROVENANCE_UNVERIFIED.
 ACCEPTS_CARRIED_CROSSINGS=False
 
 def carried_not_accepted(custody:dict[str,Any])->dict[str,Any]:
-    """The six-field refusal of a CARRIED frame epoch where no cycle epoch was supplied."""
+    """The six-field refusal of a CARRIED frame epoch: this destination does not accept one."""
     ledger=custody["organization_ledger"]
     return {"disposition":"FAIL_CLOSED","failure_code":"CARRIED_NOT_ACCEPTED_BY_DESTINATION",
             "failed_predicate":ledger.HB_EPOCH_PREDICATE,
-            "detail":"accepts_carried_crossings is false: receipts are stamped only with this organization's "
-                     "own supplied cycle epoch, and none was supplied",
-            "required_evidence_or_repair":"consume within a cycle that supplies its own hb_epoch",
+            "detail":"accepts_carried_crossings is false: this destination accepts a crossing only at a supplied "
+                     "epoch, never a carried one",
+            "required_evidence_or_repair":"the sender republishes the crossing at a supplied epoch",
             "retry_entrypoint":"resident-runtime/federation_cycle.py (--hb-epoch)",
             "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
             "next_attempt":"the sender republishes the crossing; this frame is quarantined and not offered again"}
 
 def resolve_cycle_epoch(hb_epoch:int|None, frame_epoch:Any, kind:str|None, provenance:dict[str,Any]|None,
                         frame:dict[str,Any])->tuple[Any,dict[str,Any]|None,dict[str,Any]|None,Any]:
-    """(receipt epoch, receipt provenance, frame_reference, answer epoch or a CONFLICT refusal). No clock is read.
+    """(receipt epoch, receipt provenance, frame_reference, answer epoch). No clock is read.
 
     Without a cycle epoch the frame's supplied epoch is the only one, as before.
-    With one (F1), receipts take the cycle's epoch and carry the frame's as
-    inbound provenance. An answer has no resolution rule, so a differing frame
-    epoch makes it HB_EPOCH_CONFLICT rather than either epoch being chosen.
+    With one (F1), everything this organization writes for the crossing -- its
+    receipts and its answer -- is its own transition and takes the cycle's
+    epoch, with the frame's kept as inbound provenance (frame_reference), so a
+    consumed request is always answered.
     """
     if hb_epoch is None:
         return frame_epoch,provenance,None,frame_epoch
     reference={"epoch":frame_epoch,"epoch_class":kind,"frame_sha256":frame.get("frame_sha256"),
                "resolution":EPOCH_RESOLUTION,**(provenance or {})}
-    answer=frame_epoch if frame_epoch==hb_epoch else epoch_conflict(hb_epoch,frame_epoch,"an answer frame")
-    return hb_epoch,None,reference,answer
-
-def epoch_conflict(hb_epoch:Any, frame_epoch:Any, route:str)->dict[str,Any]:
-    """The six-field HB_EPOCH_CONFLICT refusal of a route with no resolution between two epochs."""
-    return {"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_CONFLICT",
-            "failed_predicate":"SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
-            "detail":route+": supplied epoch "+str(hb_epoch)+" and frame epoch "+str(frame_epoch)
-                     +" differ and this route has no resolution rule",
-            "required_evidence_or_repair":"supply the cycle epoch the frame carries, or a resolution rule for this route",
-            "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
-            "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
-            "next_attempt":"rerun at one epoch; nothing was written for this route","consequence_committed":False}
+    return hb_epoch,None,reference,hb_epoch
 
 REQUEST_ID_PREFIX="federation/request-ids.d/"
 
