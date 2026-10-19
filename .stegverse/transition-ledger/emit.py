@@ -135,8 +135,10 @@ def append(transition_id,transition_class,predecessor_state_sha256,successor_sta
  raise SystemExit("REPO_LEDGER_APPEND_CONTENTION_EXHAUSTED")
 
 def main():
+ # An exact rerun returns the receipt recorded for this transition (F-POST-HEAD):
+ # the same id with any other field is a ledger_receipt_collision, never a second receipt.
  p=argparse.ArgumentParser();p.add_argument("--transition-id",required=True);p.add_argument("--transition-class",required=True);p.add_argument("--predecessor-state-sha256",required=True);p.add_argument("--successor-state-sha256",required=True);p.add_argument("--evidence-json",default="{}");p.add_argument("--authority-effect",default="NONE");p.add_argument("--hb-epoch",default=None,help="heartbeat epoch, as supplied (ASCII digits >= 32); refused FAIL_CLOSED when absent, never derived from a clock");a=p.parse_args()
- try:r=append(a.transition_id,a.transition_class,a.predecessor_state_sha256,a.successor_state_sha256,json.loads(a.evidence_json),a.authority_effect,a.hb_epoch)
+ try:ev=json.loads(a.evidence_json);r=append(a.transition_id,a.transition_class,a.predecessor_state_sha256,a.successor_state_sha256,ev,a.authority_effect,a.hb_epoch,idempotent_on=tuple(sorted(ev)) if isinstance(ev,dict) else ())
  except RepoLedgerChainBreak as exc:
   print(json.dumps(chain_break_refusal(exc),sort_keys=True));raise SystemExit(1)
  except RepoLedgerEpochRefused as exc:

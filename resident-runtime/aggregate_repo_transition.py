@@ -651,7 +651,9 @@ def main():
         result = append(receipt, args.org_transition_class or default_class,
                         args.predecessor_org_state_sha256, args.successor_org_state_sha256,
                         json.loads(args.boundary_evidence_json), args.authority_effect,
-                        hb_epoch=args.hb_epoch)
+                        # An exact rerun returns the receipt that already consumed this
+                        # source (F-POST-HEAD), never a second one.
+                        hb_epoch=args.hb_epoch, idempotent=True)
     except LedgerLocationRequired as exc:
         print(json.dumps(location_refusal(exc), sort_keys=True))
         raise SystemExit(1)
@@ -665,4 +667,4 @@ if __name__ == "__main__":
     import importlib.util as _writer_util
     _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
     _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
-    raise SystemExit(_writer.run(main, "resident-runtime/aggregate_repo_transition.py"))
+    raise SystemExit(_writer.run(main, "resident-runtime/aggregate_repo_transition.py", inputs=('--repo-receipt', '--transition-receipt')))

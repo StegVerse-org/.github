@@ -185,4 +185,4 @@ if __name__=="__main__":
     import importlib.util as _writer_util
     _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
     _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
-    sys.exit(_writer.run(main, "resident-runtime/submit_org_transition_to_master_records.py"))
+    sys.exit(_writer.run(main, "resident-runtime/submit_org_transition_to_master_records.py", inputs=('--org-receipt', '--standing')))

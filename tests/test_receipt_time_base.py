@@ -1236,13 +1236,14 @@ class WriterCliTraceTests(unittest.TestCase):
 
     FAULT = ROOT / "tests/fixtures/write-fault"
 
-    def run_cli(self, work, command, env_extra):
+    def run_cli(self, work, command, env_extra, mode="STEGVERSE_TEST_FAULT_HEAD_ONCE"):
         env = {k: v for k, v in os.environ.items() if not k.startswith("STEGVERSE_")}
-        env.update(env_extra, PYTHONPATH=str(self.FAULT), STEGVERSE_TEST_FAULT_HEAD_ONCE=str(Path(work) / "faulted"))
+        env.update(env_extra, PYTHONPATH=str(self.FAULT))
+        env[mode] = str(Path(work) / "faulted")
         return subprocess.run([sys.executable, *command], capture_output=True, text=True, cwd=str(ROOT), env=env)
 
-    def assert_fault_then_once(self, work, command, env_extra, ledger):
-        faulted = self.run_cli(work, command, env_extra)
+    def assert_fault_then_once(self, work, command, env_extra, ledger, mode="STEGVERSE_TEST_FAULT_HEAD_ONCE"):
+        faulted = self.run_cli(work, command, env_extra, mode)
         self.assertTrue((Path(work) / "faulted").exists(), "the HEAD write was not reached")
         self.assertEqual(faulted.returncode, 75, faulted.stdout + faulted.stderr)
         self.assertNotIn("Traceback", faulted.stderr)
@@ -1250,31 +1251,94 @@ class WriterCliTraceTests(unittest.TestCase):
         self.assertEqual((record["failure_code"], record["terminal"]), ("WRITE_FAILED", False))
         for field in SIX_FIELDS:
             self.assertTrue(record[field], field)
-        again = self.run_cli(work, command, env_extra)
+        self.assertNotIn("nothing was written", record["next_attempt"])
+        again = self.run_cli(work, command, env_extra, mode)
         self.assertEqual(again.returncode, 0, again.stdout + again.stderr)
         receipts = sorted((Path(ledger) / "receipts").glob("*.json"))
         self.assertEqual(len(receipts), 1)
         head = json.loads((Path(ledger) / "HEAD.json").read_text())
         self.assertEqual(head["receipt_sha256"][7:] + ".json", receipts[0].name)
+        # The retry returns the recorded receipt itself.
+        self.assertEqual(json.loads(again.stdout.strip().splitlines()[-1])["receipt_sha256"], head["receipt_sha256"])
+
+    def emit_command(self):
+        return [str(EMIT), "--transition-id", "t-fault", "--transition-class", "TEST",
+                "--predecessor-state-sha256", STATE_BEFORE, "--successor-state-sha256", STATE_AFTER,
+                "--hb-epoch", str(EPOCH), "--evidence-json", '{"k": 1}']
+
+    def org_command(self, work):
+        source = Path(work) / "repo-receipt.json"
+        source.write_text(json.dumps(repo_receipt("t-org-fault")))
+        return [str(ROOT / "resident-runtime/aggregate_repo_transition.py"), "--repo-receipt", str(source),
+                "--predecessor-org-state-sha256", "GENESIS", "--successor-org-state-sha256", STATE_AFTER,
+                "--hb-epoch", str(EPOCH)]
+
+    def test_a_fault_after_head_is_committed_is_retried_into_the_recorded_receipt(self):
+        """F-POST-HEAD: HEAD was replaced, then a durability step failed; the rerun mints nothing new."""
+        for name, ledger_var in (("repo", "STEGVERSE_REPO_LEDGER_ROOT"), ("org", "STEGVERSE_ORG_LEDGER_ROOT")):
+            with self.subTest(writer=name), tempfile.TemporaryDirectory() as work:
+                ledger = Path(work) / name
+                command = self.emit_command() if name == "repo" else self.org_command(work)
+                self.assert_fault_then_once(work, command, {ledger_var: str(ledger)}, ledger,
+                                            mode="STEGVERSE_TEST_FAULT_AFTER_HEAD_ONCE")
+
+    def test_an_exact_rerun_returns_the_recorded_receipt_and_another_transition_collides(self):
+        with tempfile.TemporaryDirectory() as work:
+            ledger = Path(work) / "repo"
+            env = {k: v for k, v in os.environ.items() if not k.startswith("STEGVERSE_")}
+            env["STEGVERSE_REPO_LEDGER_ROOT"] = str(ledger)
+            first, second = (subprocess.run([sys.executable, *self.emit_command()], capture_output=True, text=True,
+                                            cwd=str(ROOT), env=env) for _ in range(2))
+            self.assertEqual((first.returncode, second.returncode), (0, 0))
+            self.assertEqual(len(list((ledger / "receipts").glob("*.json"))), 1)
+            other = [*self.emit_command()[:-1], '{"k": 2}']
+            collided = subprocess.run([sys.executable, *other], capture_output=True, text=True, cwd=str(ROOT), env=env)
+            self.assertEqual(collided.returncode, 1)
+            self.assertNotIn("Traceback", collided.stderr)
+            record = json.loads(collided.stdout.strip().splitlines()[-1])
+            self.assertEqual((record["failure_code"], record["terminal"]), ("LEDGER_RECEIPT_COLLISION", True))
+            self.assertEqual(len(list((ledger / "receipts").glob("*.json"))), 1)
+
+    def test_an_unusable_input_file_is_terminal_and_writes_nothing(self):
+        """F-INPUT-TRACE: a missing, non-JSON, non-UTF-8, directory or non-object input; six fields, terminal."""
+        clis = {"resident-runtime/aggregate_repo_transition.py": ["--repo-receipt"],
+                "resident-runtime/governance_decision_return.py": ["--manifest"],
+                "resident-runtime/intr_destination_ingress.py": ["--payload", "--registry"],
+                "resident-runtime/organization_egress_boundary.py": ["--payload", "--standing"],
+                "resident-runtime/organization_manifest_ingress.py": ["--manifest", "--registry", "--standing"],
+                "resident-runtime/submit_org_transition_to_master_records.py": ["--org-receipt", "--standing"]}
+        with tempfile.TemporaryDirectory() as work:
+            bad = {"missing": Path(work) / "absent.json", "directory": Path(work)}
+            for name, content in (("not-json", b"{not json"), ("not-utf8", b"\xff\xfe{}"), ("a-list", b"[1,2,3]")):
+                bad[name] = Path(work) / (name + ".json")
+                bad[name].write_bytes(content)
+            ledgers = Path(work) / "ledgers"
+            env = {k: v for k, v in os.environ.items() if not k.startswith("STEGVERSE_")}
+            env.update(STEGVERSE_REPO_LEDGER_ROOT=str(ledgers / "repo"), STEGVERSE_ORG_LEDGER_ROOT=str(ledgers / "org"))
+            for cli, flags in clis.items():
+                for flag in flags:
+                    for label, path in bad.items():
+                        with self.subTest(cli=cli, flag=flag, input=label):
+                            completed = subprocess.run([sys.executable, str(ROOT / cli), flag, str(path)],
+                                                       capture_output=True, text=True, cwd=str(ROOT), env=env)
+                            self.assertNotEqual(completed.returncode, 0)
+                            self.assertNotIn("Traceback", completed.stderr)
+                            record = json.loads(completed.stdout.strip().splitlines()[-1])
+                            self.assertIs(record["terminal"], True)
+                            self.assertIn(record["failure_code"], ("INPUT_UNREADABLE", "INPUT_INVALID"))
+                            for field in SIX_FIELDS:
+                                self.assertTrue(record[field], field)
+            self.assertFalse(ledgers.exists())
 
     def test_the_repository_emitter(self):
         with tempfile.TemporaryDirectory() as work:
             ledger = Path(work) / "repo"
-            self.assert_fault_then_once(work, [str(EMIT), "--transition-id", "t-fault", "--transition-class", "TEST",
-                                               "--predecessor-state-sha256", STATE_BEFORE,
-                                               "--successor-state-sha256", STATE_AFTER, "--hb-epoch", str(EPOCH)],
-                                        {"STEGVERSE_REPO_LEDGER_ROOT": str(ledger)}, ledger)
+            self.assert_fault_then_once(work, self.emit_command(), {"STEGVERSE_REPO_LEDGER_ROOT": str(ledger)}, ledger)
 
     def test_the_organization_writer(self):
         with tempfile.TemporaryDirectory() as work:
             ledger = Path(work) / "org"
-            source = Path(work) / "repo-receipt.json"
-            source.write_text(json.dumps(repo_receipt("t-org-fault")))
-            self.assert_fault_then_once(work, [str(ROOT / "resident-runtime/aggregate_repo_transition.py"),
-                                               "--repo-receipt", str(source),
-                                               "--predecessor-org-state-sha256", "GENESIS",
-                                               "--successor-org-state-sha256", STATE_AFTER, "--hb-epoch", str(EPOCH)],
-                                        {"STEGVERSE_ORG_LEDGER_ROOT": str(ledger)}, ledger)
+            self.assert_fault_then_once(work, self.org_command(work), {"STEGVERSE_ORG_LEDGER_ROOT": str(ledger)}, ledger)
 
     def test_every_writer_cli_runs_through_the_six_field_wrapper(self):
         for relative in (".stegverse/transition-ledger/emit.py", "resident-runtime/aggregate_repo_transition.py",
@@ -1292,7 +1356,8 @@ class WriterCliTraceTests(unittest.TestCase):
     def test_the_wrapper_classifies_each_failure(self):
         writer = load_module("probe_writer_cli", "resident-runtime/writer_cli.py")
         cases = ((OSError(5, "io"), "WRITE_FAILED", 75), (RuntimeError("ledger_append_lost_comparison"), "WRITE_FAILED", 75),
-                 (ValueError("ledger_receipt_collision"), "WRITE_FAILED", 75),
+                 (ValueError("ledger_receipt_collision"), "LEDGER_RECEIPT_COLLISION", 1),
+                 (SystemExit("ORG_LEDGER_APPEND_CONTENTION_EXHAUSTED"), "WRITE_FAILED", 75),
                  (SystemExit("ORG_LEDGER_HEAD_INVALID"), "ORG_LEDGER_HEAD_INVALID", 1),
                  (KeyError("manifest"), "WRITER_INPUT_REFUSED", 1))
         for exc, code, exit_code in cases:
