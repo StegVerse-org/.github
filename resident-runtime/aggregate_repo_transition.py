@@ -406,7 +406,43 @@ def verify_source(receipt):
     }
 
 
+def _complete_pending_head(store):
+    """Finish a torn append (B-P36q): a receipt written whose HEAD publication was not.
+
+    `append_transaction` writes the documents and then HEAD, last. A fault
+    between the two leaves exactly one receipt off the chain, extending the
+    current HEAD (or opening an empty chain). It is the receipt that append
+    would have published, so HEAD is published for it now, idempotently, under
+    the same lock -- instead of the ledger refusing itself for good. Anything
+    else unreachable is still a recovery refusal below. No clock is read.
+    """
+    head = store.get(HEAD_KEY)
+    previous = (head or {}).get("receipt_sha256") if isinstance(head, dict) else None
+    reachable, cursor = set(), previous
+    while isinstance(cursor, str) and cursor not in reachable:
+        record = store.get(receipt_key(cursor))
+        if not isinstance(record, dict):
+            return
+        reachable.add(cursor)
+        cursor = record.get("previous_receipt_sha256")
+    orphans = sorted(store.list_prefix(RECEIPT_PREFIX) - {receipt_key(d) for d in reachable})
+    if len(orphans) != 1:
+        return
+    pending = store.get(orphans[0])
+    if not isinstance(pending, dict):
+        return
+    digest = pending.get("receipt_sha256")
+    body = {k: v for k, v in pending.items() if k != "receipt_sha256"}
+    if (sha(body) != digest or receipt_key(digest) != orphans[0]
+            or pending.get("organization") != C["organization"]
+            or pending.get("previous_receipt_sha256") != previous):
+        return
+    store.put(HEAD_KEY, {"organization": C["organization"], "receipt_sha256": digest,
+                         "receipt_path": store.locator(orphans[0])})
+
+
 def _validate_existing_head(store):
+    _complete_pending_head(store)
     head = store.get(HEAD_KEY)
     if head is None:
         # A missing HEAD with existing receipts requires explicit recovery;
@@ -443,13 +479,29 @@ def _validate_existing_head(store):
     if store.list_prefix(RECEIPT_PREFIX) != {receipt_key(digest) for digest in reachable}:
         raise SystemExit("ORG_LEDGER_UNPUBLISHED_OR_ORPHAN_RECEIPTS_RECOVERY_REQUIRED")
     # A retained source copy is published only through the receipt that names
-    # it. Ledgers written before retention existed simply have none.
-    sources = {source_key(store.get(receipt_key(digest))["source_transition_sha256"])
-               for digest in reachable
-               if isinstance(store.get(receipt_key(digest)).get("source_transition_sha256"), str)}
-    if not store.list_prefix(SOURCE_PREFIX) <= sources:
-        raise SystemExit("ORG_LEDGER_ORPHAN_SOURCE_RECEIPTS_RECOVERY_REQUIRED")
+    # it. Ledgers written before retention existed simply have none. A copy no
+    # receipt names yet is a torn append's pending document (B-P36q): it is not
+    # published by anything, and the retried append rewrites it byte-identically
+    # (a different document at its key is still a collision there). Only one that
+    # is not a document at all is a recovery refusal.
+    named = {source_key(store.get(receipt_key(digest))["source_transition_sha256"])
+             for digest in reachable
+             if isinstance(store.get(receipt_key(digest)).get("source_transition_sha256"), str)}
+    for key in store.list_prefix(SOURCE_PREFIX) - named:
+        if not _pending_source_copy(store, key):
+            raise SystemExit("ORG_LEDGER_ORPHAN_SOURCE_RECEIPTS_RECOVERY_REQUIRED")
     return previous
+
+
+def _pending_source_copy(store, key):
+    """True when an unnamed source copy is a verifiable source receipt at its own address."""
+    document = store.get(key)
+    if not isinstance(document, dict):
+        return False
+    try:
+        return source_key(verify_source(document)["source_transition_sha256"]) == key
+    except (SystemExit, ValueError, KeyError, TypeError):
+        return False
 
 
 def recorded(store, head, source_transition_sha256):
@@ -491,9 +543,10 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     for _attempt in range(128):
         guard = target.exclusive() if hasattr(target, "exclusive") else nullcontext()
         with guard:
+            # Validated (and a torn append completed) before HEAD is read for comparison.
+            _validate_existing_head(target)
             expected_head = target.get(HEAD_KEY)
             previous = (expected_head or {}).get("receipt_sha256")
-            _validate_existing_head(target)
             # A source receipt is consumed once. With `idempotent` the chain is
             # read at the HEAD this attempt compares against: a receipt already
             # consuming this exact source is returned instead of a second one

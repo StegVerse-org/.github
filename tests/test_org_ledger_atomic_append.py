@@ -85,15 +85,87 @@ class OrgLedgerAppendTests(unittest.TestCase):
                                   STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
                 self.assertEqual((Path(root) / "HEAD.json").read_bytes(), head)
 
-    def test_missing_head_with_existing_receipt_fails_closed(self):
+    def test_missing_head_with_existing_receipts_fails_closed(self):
         with tempfile.TemporaryDirectory() as root:
             with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
                 module.append(make_repo_receipt(1), "REPO_STATE_PROPAGATION",
                               STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
+                module.append(make_repo_receipt(2), "REPO_STATE_PROPAGATION",
+                              STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
                 (Path(root) / "HEAD.json").unlink()
                 with self.assertRaisesRegex(SystemExit, "ORG_LEDGER_HEAD_MISSING"):
-                    module.append(make_repo_receipt(2), "REPO_STATE_PROPAGATION",
+                    module.append(make_repo_receipt(3), "REPO_STATE_PROPAGATION",
                                   STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
+
+    def test_a_torn_genesis_append_is_completed_not_refused(self):
+        """B-P36q: the genesis receipt was written and HEAD was not; the next append publishes it."""
+        with tempfile.TemporaryDirectory() as root:
+            with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
+                first = module.append(make_repo_receipt(1), "REPO_STATE_PROPAGATION",
+                                      STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
+                (Path(root) / "HEAD.json").unlink()
+                again = module.append(make_repo_receipt(1), "REPO_STATE_PROPAGATION",
+                                      STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH,
+                                      idempotent=True)
+                self.assertEqual(again["receipt_sha256"], first["receipt_sha256"])
+                self.assertEqual(json.loads((Path(root) / "HEAD.json").read_text())["receipt_sha256"],
+                                 first["receipt_sha256"])
+                self.assertEqual(len(list((Path(root) / "receipts").glob("*.json"))), 1)
+
+    def test_a_torn_append_on_a_chain_is_completed_and_the_chain_continues(self):
+        """B-P36q: an OSError on the HEAD write after the receipt write; the next appends complete once."""
+        with tempfile.TemporaryDirectory() as root:
+            with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
+                module.append(make_repo_receipt(1), "REPO_STATE_PROPAGATION",
+                              STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
+                store_class = module.open_store(module.parse_locator(root)).__class__
+                real_put = store_class.put
+                armed = {"on": True}
+
+                def torn_put(self, key, value):
+                    if key == module.HEAD_KEY and armed["on"]:
+                        armed["on"] = False
+                        raise OSError(5, "Input/output error")
+                    return real_put(self, key, value)
+
+                with patch.object(store_class, "put", torn_put), self.assertRaises(OSError):
+                    module.append(make_repo_receipt(2), "REPO_STATE_PROPAGATION",
+                                  STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH, idempotent=True)
+                retried = module.append(make_repo_receipt(2), "REPO_STATE_PROPAGATION",
+                                        STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH, idempotent=True)
+                later = module.append(make_repo_receipt(3), "REPO_STATE_PROPAGATION",
+                                      STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
+                self.assertEqual(len(list((Path(root) / "receipts").glob("*.json"))), 3)
+                self.assertEqual(later["previous_receipt_sha256"], retried["receipt_sha256"])
+                self.assertEqual(json.loads((Path(root) / "HEAD.json").read_text())["receipt_sha256"],
+                                 later["receipt_sha256"])
+
+    def test_a_torn_append_after_the_source_copy_is_completed_on_retry(self):
+        """B-P36q: an OSError on the receipt write leaves only the pending source copy; the retry completes once."""
+        with tempfile.TemporaryDirectory() as root:
+            with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
+                module.append(make_repo_receipt(1), "REPO_STATE_PROPAGATION",
+                              STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
+                store_class = module.open_store(module.parse_locator(root)).__class__
+                real_put = store_class.put
+                armed = {"on": True}
+
+                def torn_put(self, key, value):
+                    if key.startswith(module.RECEIPT_PREFIX) and armed["on"]:
+                        armed["on"] = False
+                        raise OSError(5, "Input/output error")
+                    return real_put(self, key, value)
+
+                with patch.object(store_class, "put", torn_put), self.assertRaises(OSError):
+                    module.append(make_repo_receipt(2), "REPO_STATE_PROPAGATION",
+                                  STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH, idempotent=True)
+                pending = list((Path(root) / "source-receipts").glob("*.json"))
+                retried = module.append(make_repo_receipt(2), "REPO_STATE_PROPAGATION",
+                                        STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH, idempotent=True)
+                self.assertEqual(len(list((Path(root) / "receipts").glob("*.json"))), 2)
+                self.assertEqual(sorted(pending), sorted((Path(root) / "source-receipts").glob("*.json")))
+                self.assertEqual(json.loads((Path(root) / "HEAD.json").read_text())["receipt_sha256"],
+                                 retried["receipt_sha256"])
 
     def test_malformed_repo_receipt_fails_closed_without_creating_head(self):
         """A repo receipt missing an admission field must reach a named fail-closed

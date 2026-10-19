@@ -121,6 +121,18 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         self.assertEqual(organization["repo_receipt_sha256"], repository["receipt_sha256"])
         self.assertEqual(completed["organization_receipt_sha256"], organization["receipt_sha256"])
 
+    def test_a_committed_request_epoch_is_recorded_with_its_source_and_digest(self):
+        """Push epochs (09:20Z ruling (b)): receipts record SUPPLIED, source COMMITTED_REQUEST and the request digest."""
+        source = {"source": "COMMITTED_REQUEST", "request_sha256": "sha256:" + "d" * 64}
+        self.receive(hb_epoch=32, hb_epoch_source=source)
+        repository, = self.receipts(REPO)
+        organization, = self.receipts(ORG)
+        self.assertEqual(repository["evidence"]["hb_epoch_source"], source)
+        self.assertEqual(organization["boundary_evidence"]["hb_epoch_source"], source)
+        for receipt in (repository, organization):
+            self.assertEqual(receipt["hb_reference"]["epoch"], 32)
+            self.assertIs(receipt["hb_reference"]["derived_from_clock"], False)
+
     def test_replay_completion_takes_the_epoch_it_was_supplied(self):
         """A retry completes the organization receipt at the epoch it was supplied.
 

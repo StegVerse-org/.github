@@ -748,6 +748,8 @@ class ClockProbeTests(unittest.TestCase):
             self.assertEqual((receipt["epoch"], receipt["derived_from_clock"]), (4096, False), receipt["schema"])
             self.assertEqual((receipt["frame_reference"]["epoch"], receipt["frame_reference"]["resolution"]),
                              (77, "SUPPLIED_CYCLE_EPOCH_STAMPS_THIS_ORGANIZATION"), receipt["schema"])
+            self.assertEqual(receipt["frame_reference"]["cycle_epoch_source"],
+                             {"source": "COMMITTED_REQUEST", "request_sha256": "sha256:" + "d" * 64})
         # F-TYPE: the per-frame guard is total. Wrong-typed packet_base64 before and
         # after a valid frame: each FRAME_INGEST_FAILED (AttributeError), quarantined
         # six-field, never re-offered; the valid frame is ledgered; no clock read.
@@ -786,6 +788,18 @@ class ClockProbeTests(unittest.TestCase):
                 self.assertEqual(len(row["receipt_shas"]), 2)
                 self.assertEqual(sorted(set(row["receipt_schemas"])),
                                  ["stegverse.organization-transition-receipt/v1", "stegverse.repo-transition-receipt/v1"])
+                self.assertEqual(row["heads_consistent"], {"repo": True, "org": True})
+                # F-REPUB: a fault after the answer is published never yields a second one.
+                self.assertEqual(row["responses"], 1)
+        self.assertIn("torn_head_repo_append", probe["io"])
+        self.assertIn("torn_head_org_append", probe["io"])
+        self.assertEqual((probe["io_later"]["status"], probe["io_later"]["receipts"]), (["CONSUMED"], 2))
+        # F-REPUB keying / RESPONSE_ID_COLLISION: B reuses A's request id with other
+        # content; refused before anything is ledgered or answered; one response.
+        duplicate = probe["duplicate"]
+        self.assertEqual(duplicate["first"], ["CONSUMED"])
+        self.assertEqual(duplicate["second"], [["REFUSED", "RESPONSE_ID_COLLISION"]])
+        self.assertEqual((duplicate["third_offered"], duplicate["responses"], duplicate["receipt_shas"]), (0, 1, 2))
         self.assertIs(classes["ecosystem.monitor.response"]["monitor_heartbeat"]["derived_from_clock"], False)
         for reference in probe["references"]:
             if reference.get("derived_from_clock") is False:
@@ -1097,6 +1111,9 @@ class RequestEpochResolutionTests(unittest.TestCase):
                 resolved = self.inputs.request_epoch(dispatch, request, "entry")
                 self.assertEqual((resolved["disposition"], resolved["hb_epoch"], resolved["source"]),
                                  ("ALLOW", "4096", source))
+                digest = "sha256:" + __import__("hashlib").sha256(json.dumps(
+                    request, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+                self.assertEqual(resolved["hb_epoch_source"], {"source": source, "request_sha256": digest})
 
     def test_a_governance_return_request_without_an_epoch_is_refused_before_anything_runs(self):
         with tempfile.TemporaryDirectory() as work:
@@ -1160,11 +1177,12 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
         loop = transition.split('while IFS= read -r request; do', 1)[1]
         self.assertLess(loop.index("manifest_directed_run_inputs.py request-epoch"),
                         loop.index("from stegverse.manifest_builder import build_manifest"))
-        self.assertIn('epoch_args=(--hb-epoch "$request_epoch")', loop)
+        self.assertIn('epoch_args=(--hb-epoch "$request_epoch" --hb-epoch-source-json "$epoch_source")', loop)
         self.assertIn("Fail a run whose committed request carried no supplied epoch", transition)
         _, ret = workflow_triggers(WORKFLOWS / "organization-governance-return.yml")
         self.assertLess(ret.index("--dispatch-hb-epoch"), ret.index("python resident-runtime/peer_mesh_intake.py"))
         self.assertIn('--hb-epoch "$RETURN_HB_EPOCH"', ret)
+        self.assertIn('--hb-epoch-source-json "$RETURN_HB_EPOCH_SOURCE_JSON"', ret)
         self.assertNotIn("schedule:", transition + ret)
 
 

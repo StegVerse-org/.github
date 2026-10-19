@@ -31,6 +31,7 @@ through `mesh_locator_binding.py` or `peer_mesh_intake.py` exactly as a
 dispatched one would. Any refusal carries all six fields.
 """
 import argparse
+import hashlib
 import importlib.util
 import json
 import re
@@ -91,8 +92,13 @@ def request_epoch(dispatch_epoch, request, retry_entrypoint):
                         "it; it is never derived from a clock",
                         retry_entrypoint, "commit a successor request declaring hb_epoch; nothing was invoked",
                         detail=failure[1])
-    return {"schema": SCHEMA, "disposition": "ALLOW", "hb_epoch": str(epoch),
-            "source": "WORKFLOW_DISPATCH" if supplied is not None else "COMMITTED_REQUEST",
+    source = "WORKFLOW_DISPATCH" if supplied is not None else "COMMITTED_REQUEST"
+    # The receipts record where the epoch came from, bound to the request's digest.
+    digest = "sha256:" + hashlib.sha256(json.dumps(request if isinstance(request, dict) else {}, sort_keys=True,
+                                                   separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+    return {"schema": SCHEMA, "disposition": "ALLOW", "hb_epoch": str(epoch), "source": source,
+            "request_sha256": digest,
+            "hb_epoch_source": {"source": source, "request_sha256": digest},
             "authority_effect": "NONE_INPUT_RESOLUTION_ONLY"}
 
 
@@ -237,6 +243,7 @@ def governance_return_inputs(dispatch, changed_paths):
     if epoch["disposition"] != "ALLOW":
         return {**epoch, "source": source}
     values["hb_epoch"] = epoch["hb_epoch"]
+    values["hb_epoch_source_json"] = json.dumps(epoch["hb_epoch_source"], sort_keys=True, separators=(",", ":"))
     for name, value in values.items():
         if not _printable(value):
             return _refused("RETURN_INPUT_INVALID", "RETURN_INPUT_IS_PRINTABLE",

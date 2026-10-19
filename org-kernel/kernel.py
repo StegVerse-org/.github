@@ -574,6 +574,8 @@ def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:s
             kind,provenance,refused=frame_epoch_class(item["frame"],custody)
             if refused is None and kind=="CARRIED" and hb_epoch is None and not ACCEPTS_CARRIED_CROSSINGS:
                 refused=carried_not_accepted(custody)
+            if refused is None and node_state is not None:
+                refused=request_id_collision(node_state,recover_packet(item["frame"]),item["frame"],custody)
             if refused is not None:
                 refuse(item["path"],item["frame"],refused)
                 continue
@@ -1016,7 +1018,7 @@ def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,A
 def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_root:Path|None=None,
                         repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None,
                         seen:set[str]|None=None, now_ns:int|None=None,
-                        hb_epoch:Any=None)->list[dict[str,Any]]:
+                        hb_epoch:Any=None, hb_epoch_source:dict[str,Any]|None=None)->list[dict[str,Any]]:
     # `hb_epoch` is the cycle's own supplied epoch (F1). When given, this
     # organization's crossing receipts are this organization's transition and are
     # stamped with it; the consumed frame's epoch is recorded only as inbound
@@ -1072,6 +1074,17 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
                             "response_publication":None,"organization_record":None,"seen_marker":str(marker)})
                 continue
             packet=recover_packet(item["frame"])
+            # F-REPUB keying: a request packet id is bound to its first content. A
+            # later frame reusing it with different content is refused here, before
+            # anything is ledgered or answered, and is never handed the earlier answer.
+            collided=request_id_collision(node_state,packet,item["frame"],custody)
+            if collided is not None:
+                marker=quarantine_federation_frame(item["path"],item["frame"],collided,store=node_state)
+                out.append({"path":item["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
+                            "failed_predicate":collided["failed_predicate"],"failure_code":collided["failure_code"],
+                            "packet_id":packet["packet_id"],"quarantined":True},
+                            "response_publication":None,"organization_record":None,"seen_marker":str(marker)})
+                continue
             # An answer is stamped with the epoch of the frame it answers, which
             # recovery has already validated. Consuming the same frame again then
             # builds the same answer frame, and publishing it is a write-once no-op
@@ -1079,6 +1092,9 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
             frame_epoch=None if now_ns is not None else (item["frame"].get("heartbeat_reference") or {}).get("epoch")
             epoch,record_provenance,frame_reference,answer_epoch=resolve_cycle_epoch(
                 hb_epoch,frame_epoch,kind,provenance,item["frame"])
+            if frame_reference is not None and hb_epoch_source is not None:
+                # Where the cycle's own epoch came from (a committed request on a push run).
+                frame_reference={**frame_reference,"cycle_epoch_source":dict(hb_epoch_source)}
             payload=packet.get("payload") or {}
             message_class=payload.get("message_class")
             service=next((svc for svc in registry["services"] if svc.get("service_id")==packet["destination"]["service"]),None)
@@ -1364,6 +1380,37 @@ def epoch_conflict(hb_epoch:Any, frame_epoch:Any, route:str)->dict[str,Any]:
             "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
             "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
             "next_attempt":"rerun at one epoch; nothing was written for this route","consequence_committed":False}
+
+REQUEST_ID_PREFIX="federation/request-ids.d/"
+
+def request_id_collision(node_state:Any, packet:dict[str,Any], frame:dict[str,Any],
+                         custody:dict[str,Any])->dict[str,Any]|None:
+    """Bind a request packet id to its first content in this node's state; the six-field collision, or None.
+
+    The same packet (same packet_sha256) at any epoch is the same request. A
+    different packet under an id already bound is RESPONSE_ID_COLLISION.
+    """
+    key=REQUEST_ID_PREFIX+hashlib.sha256(str(packet["packet_id"]).encode()).hexdigest()+".json"
+    binding={"packet_id":packet["packet_id"],"packet_sha256":frame.get("packet_sha256")}
+    bound=node_state.get(key)
+    if bound is None:
+        try:
+            node_state.put_once(key,binding)
+            return None
+        except node_store_module.WriteOnceCollision:
+            bound=node_state.get(key)
+    if bound==binding:
+        return None
+    ledger=custody["organization_ledger"]
+    return {"disposition":"FAIL_CLOSED","failure_code":"RESPONSE_ID_COLLISION",
+            "failed_predicate":"REQUEST_PACKET_ID_BINDS_ITS_FIRST_CONTENT",
+            "detail":"packet "+str(packet["packet_id"])+" is bound to "+str((bound or {}).get("packet_sha256"))
+                     +"; this frame carries "+str(frame.get("packet_sha256")),
+            "required_evidence_or_repair":"a different request carries its own packet id",
+            "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
+            "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
+            "next_attempt":"the sender republishes under a new packet id; this frame is quarantined, nothing was "
+                           "ledgered or answered"}
 
 WRITER_FAULT_MARKERS=("collision","contention","lost_comparison")
 

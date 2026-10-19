@@ -45,7 +45,7 @@ def _refused(refusal):
             "authority_effect": "NONE_REFUSAL_ONLY"}
 
 
-def run(*, mesh_root, node_state_root, hb_epoch=None):
+def run(*, mesh_root, node_state_root, hb_epoch=None, hb_epoch_source=None):
     if mesh_root is None:
         return _refused(cycle.mesh_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
     # A cycle without a supplied epoch consumes nothing (§Q): it refuses
@@ -59,7 +59,7 @@ def run(*, mesh_root, node_state_root, hb_epoch=None):
     try:
         results = K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
                                         repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root,
-                                        hb_epoch=int(str(hb_epoch)))
+                                        hb_epoch=int(str(hb_epoch)), hb_epoch_source=hb_epoch_source)
     except ValueError as exc:
         if "ledger_location_required_from_materializer" not in str(exc):
             raise
@@ -86,8 +86,12 @@ def main(argv=None):
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--hb-epoch", default=None,
                         help="the supplied heartbeat epoch (ASCII digits >= 32); without one nothing is consumed")
+    parser.add_argument("--hb-epoch-source-json", default=None,
+                        help="where the epoch came from (source COMMITTED_REQUEST and the request digest); recorded")
     args = parser.parse_args(argv)
-    result = run(mesh_root=args.mesh_root, node_state_root=args.node_state_root, hb_epoch=args.hb_epoch)
+    source = json.loads(args.hb_epoch_source_json) if args.hb_epoch_source_json else None
+    result = run(mesh_root=args.mesh_root, node_state_root=args.node_state_root, hb_epoch=args.hb_epoch,
+                 hb_epoch_source=source)
     text = json.dumps(result, indent=2, sort_keys=True, default=str)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

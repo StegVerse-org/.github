@@ -92,7 +92,7 @@ jobs:
           python - "$resolved" >> "$GITHUB_ENV" <<'PY'
           import json, sys
           resolved = json.loads(sys.argv[1])
-          for name in ("mesh_root", "peer_mesh", "sdk_ref", "deciding_ledger", "hb_epoch"):
+          for name in ("mesh_root", "peer_mesh", "sdk_ref", "deciding_ledger", "hb_epoch", "hb_epoch_source_json"):
               print("RETURN_" + name.upper() + "=" + resolved[name])
           PY
 
@@ -171,6 +171,7 @@ jobs:
           status=0
           python resident-runtime/governance_return_cycle.py --mesh-root "$OWN_MESH" \
             --node-state-root "$RUNNER_TEMP/node-state" --hb-epoch "$RETURN_HB_EPOCH" \
+            --hb-epoch-source-json "$RETURN_HB_EPOCH_SOURCE_JSON" \
             --out "$RUNNER_TEMP/results/return-cycle.json" || status=$?
           echo "RETURN_CYCLE_STATUS=$status" >> "$GITHUB_ENV"
 

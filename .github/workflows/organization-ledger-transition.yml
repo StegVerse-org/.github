@@ -244,6 +244,9 @@ jobs:
               continue
             fi
             request_epoch=$(python -c 'import json,sys; print(json.loads(sys.argv[1])["hb_epoch"])' "$epoch")
+            # Recorded in the receipts beside the epoch: COMMITTED_REQUEST (or
+            # WORKFLOW_DISPATCH) and the request's digest.
+            epoch_source=$(python -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["hb_epoch_source"], sort_keys=True))' "$epoch")
             # A request whose process the boundary binds to egress leaves this
             # organization, and a run without a supplied mesh can
             # only record its emission as refused. Recording it would also make
@@ -301,7 +304,7 @@ jobs:
               continue
             fi
             # The request's epoch binding, resolved above before anything ran.
-            epoch_args=(--hb-epoch "$request_epoch")
+            epoch_args=(--hb-epoch "$request_epoch" --hb-epoch-source-json "$epoch_source")
             python resident-runtime/organization_manifest_ingress.py \
               --registry org-boundary/registry/services.json \
               --manifest "$out/manifest.json" --standing "$out/standing.json" \

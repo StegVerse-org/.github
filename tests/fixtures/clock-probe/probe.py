@@ -155,7 +155,8 @@ fmesh.mkdir()
 at77 = addressed("c-frame-at-77")
 kernel.publish_packet(at77, root=fmesh, epoch=77)
 start = CALLS["n"]
-f1_rows = kernel.consume_and_respond(ROOT, mesh_root=fmesh, node_state_root=WORK / "f1-node", **roots, hb_epoch=4096)
+f1_rows = kernel.consume_and_respond(ROOT, mesh_root=fmesh, node_state_root=WORK / "f1-node", **roots, hb_epoch=4096,
+                                     hb_epoch_source={"source": "COMMITTED_REQUEST", "request_sha256": "sha256:" + "d" * 64})
 phases["f1_clock_calls"] = CALLS["n"] - start
 
 
@@ -437,7 +438,10 @@ for label, part, method, exc in (
         ("oserror_repo_append", "emitter", "append", OSError(5, "Input/output error")),
         ("lost_comparison_org_append", "organization_ledger", "append",
          RuntimeError("ledger_append_lost_comparison")),
-        ("collision_seen_marker", None, None, None)):
+        ("collision_seen_marker", None, None, None),
+        # B-P36q torn write: the receipt is written and the HEAD write fails.
+        ("torn_head_repo_append", "repository_store", "HEAD", OSError(5, "Input/output error")),
+        ("torn_head_org_append", "organization_store", "HEAD", OSError(5, "Input/output error"))):
     imesh2 = WORK / ("io-mesh-" + label)
     imesh2.mkdir()
     victim = addressed("c-io-" + label)
@@ -446,7 +450,18 @@ for label, part, method, exc in (
 
     def faulting_custody(*args, _part=part, _method=method, _exc=exc, **kwargs):
         custody = real_custody(*args, **kwargs)
-        if _part is not None and faults["armed"]:
+        if _part is not None and faults["armed"] and _method == "HEAD":
+            faults["armed"] = False
+            store = custody[_part]
+            real_put = store.put
+
+            def torn_put(key, value, _armed={"on": True}):
+                if key == "HEAD.json" and _armed["on"]:
+                    _armed["on"] = False
+                    raise _exc
+                return real_put(key, value)
+            store.put = torn_put
+        elif _part is not None and faults["armed"]:
             faults["armed"] = False
             custody = {**custody, _part: Faulting(custody[_part], _method, _exc)}
         return custody
@@ -472,7 +487,13 @@ for label, part, method, exc in (
         kernel.mark_federation_frame_seen = real_mark
     phases["io_" + label + "_clock_calls"] = CALLS["n"] - start
     receipts = full_receipts_for(victim["packet_id"])
-    io[label] = {"first": [(r.get("result") or {}).get(k) for r in first
+    heads = {}
+    for name, root_dir in (("repo", WORK / "repo"), ("org", WORK / "org")):
+        head_doc = json.loads((root_dir / "HEAD.json").read_text())
+        heads[name] = (root_dir / "receipts" / (head_doc["receipt_sha256"][7:] + ".json")).is_file()
+    io[label] = {"heads_consistent": heads,
+                 "responses": len(kernel.scan_addressed_frames("Probe-Origin", root=imesh2)),
+                 "first": [(r.get("result") or {}).get(k) for r in first
                            for k in ("status", "failure_code", "terminal")],
                  "first_record": (first[0].get("result") if first else None),
                  "first_marker": first[0].get("seen_marker") if first else "absent",
@@ -481,6 +502,43 @@ for label, part, method, exc in (
                  "third_offered": len(third),
                  "receipt_shas": sorted({d["receipt_sha256"] for d in receipts}),
                  "receipt_schemas": sorted(d.get("schema") or "" for d in receipts)}
+
+# F-REPUB keying: request A is answered; request B reuses A's packet id with
+# different content. B is RESPONSE_ID_COLLISION before anything is ledgered or
+# answered, and exactly one response exists.
+dmesh = WORK / "dup-mesh"
+dmesh.mkdir()
+dup = {}
+for label, subject in (("a", "first content"), ("b", "different content")):
+    dup[label] = kernel.build_packet(origin_org="Probe-Origin", origin_service="probe-origin.org-control",
+                                     destination_org=registry["organization"],
+                                     destination_service=kernel.organization_slug(registry["organization"]) + ".org-control",
+                                     payload={"communication_id": "c-dup", "message_class": "ecosystem.communication",
+                                              "subject": subject, "body": {}},
+                                     standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None},
+                                     packet_id="pkt-duplicate-request-id")
+# Published one at a time, so A is answered before B arrives.
+kernel.publish_packet(dup["a"], root=dmesh, epoch=4096)
+dup_first = kernel.consume_and_respond(ROOT, mesh_root=dmesh, node_state_root=WORK / "dup-node", **roots, hb_epoch=4096)
+kernel.publish_packet(dup["b"], root=dmesh, epoch=4096)
+dup_second = kernel.consume_and_respond(ROOT, mesh_root=dmesh, node_state_root=WORK / "dup-node", **roots, hb_epoch=4096)
+dup_third = kernel.consume_and_respond(ROOT, mesh_root=dmesh, node_state_root=WORK / "dup-node", **roots, hb_epoch=4096)
+duplicate = {"first": [(r.get("result") or {}).get("status") for r in dup_first],
+             "second": [((r.get("result") or {}).get("status"), (r.get("result") or {}).get("failure_code"))
+                        for r in dup_second],
+             "third_offered": len(dup_third),
+             "responses": len(kernel.scan_addressed_frames("Probe-Origin", root=dmesh)),
+             "receipt_shas": len({d["receipt_sha256"] for d in full_receipts_for("pkt-duplicate-request-id")})}
+
+# After every injected fault, a later frame is consumed and ledgered normally.
+later_mesh = WORK / "io-later-mesh"
+later_mesh.mkdir()
+later = addressed("c-io-later")
+kernel.publish_packet(later, root=later_mesh, epoch=4096)
+later_rows = kernel.consume_and_respond(ROOT, mesh_root=later_mesh, node_state_root=WORK / "io-later-node", **roots,
+                                        hb_epoch=4096)
+io_later = {"status": [(r.get("result") or {}).get("status") for r in later_rows],
+            "receipts": len({d["receipt_sha256"] for d in full_receipts_for(later["packet_id"])})}
 
 # A frame-only publication with no epoch: the WU-B13 helper default, marked.
 start = CALLS["n"]
@@ -497,4 +555,5 @@ for path in (p for p in WORK.rglob("*.json") if p.is_file() and not {"i-mesh", "
         pass
 print(json.dumps({"phases": phases, "references": found, "responses": responses, "quarantine": quarantine,
                   "carried": carried_out, "integrity": integrity, "scan": scan,
-                  "f1": f1, "ftype": ftype, "io": io, "addressed": addressed_out}, sort_keys=True, default=str))
+                  "f1": f1, "ftype": ftype, "io": io, "io_later": io_later, "addressed": addressed_out,
+                  "duplicate": duplicate}, sort_keys=True, default=str))
