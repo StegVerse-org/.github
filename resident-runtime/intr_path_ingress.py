@@ -476,6 +476,32 @@ def end_to_end_via_tvc(path_id: str, communication_id: str, directory: Path | st
     return verify_end_to_end(path_id, communication_id, src, dst)
 
 
+def end_to_end_via_tvc(path_id: str, communication_id: str, directory: Path | str | None = None,
+                       ledger_tip: str | None = None) -> dict[str, Any]:
+    """This organization's half from its own ledger; the other organization's from its verified TVC read receipt."""
+    ends = str(path_id).split(":")[0].split("->")
+    if len(ends) != 2 or organization() not in ends:
+        return refusal(FAIL_CLOSED, NOT_LEDGERED, "THIS_ORGANIZATION_IS_AN_END_OF_THE_PATH",
+                       "run the end-to-end check in the source or destination organization of " + str(path_id),
+                       "re-run in an end organization", path_id=path_id, communication_id=communication_id)
+    here_is_source = organization() == ends[0]
+    other = (ends[1] if here_is_source else ends[0]) + "/.github"
+    remote, refused = tvc_readback(path_id, communication_id, other, directory)
+    if refused is not None:   # the other organization's half first: nothing local is read without it
+        return {**refused, "half": "destination" if here_is_source else "source", "path": "UNVERIFIED"}
+    try:
+        local = readback(path_id, communication_id, SOURCE_OPERATION if here_is_source else OPERATION, ledger_tip)
+    except Refused as exc:
+        return {**exc.result, "schema": RESULT_SCHEMA, "path_id": path_id, "communication_id": communication_id}
+    except Exception as exc:  # the bound ledger location is unavailable in this checkout
+        return refusal(FAIL_CLOSED, NOT_LEDGERED, "THIS_ORGANIZATION_LEDGER_IS_READABLE",
+                       "this organization's ledger at its declared location: " + type(exc).__name__ + ": " + str(exc)[:200],
+                       "re-run where the ledger location is materialized", path_id=path_id,
+                       communication_id=communication_id, path="UNVERIFIED")
+    src, dst = (local, remote) if here_is_source else (remote, local)
+    return verify_end_to_end(path_id, communication_id, src, dst)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
