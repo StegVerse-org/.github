@@ -7,11 +7,19 @@ GCAT-BCAT-Engine): the tip in a temporary bare repository on the declared ref,
 bound as ``git+<dir>#<ref>[:<namespace>]``, as Lane D's tests bind it.
 Receipts written here are NOT LEDGERED and NOT AUTHENTIC; nothing is pushed.
 Git commits in the temporary repository carry a fixed identity and date.
+
+A git-store ledger uses org-contract.json's own organization_ledger declaration.
+An organization whose test package declares a POSIX locus for a plain unittest
+run (StegVerse-Labs tests/__init__.py -> tests/posix_ledger_locus) is held to
+its declaration for the life of a git TempLedger, as its pytest marker
+``repository_ledger_locus`` does; the POSIX declaration is restored on close.
 """
 from __future__ import annotations
 
+import importlib.machinery
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -20,6 +28,19 @@ ENV_KEYS = ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_GIT_DIR", "STEGVE
             "STEGVERSE_ORG_LEDGER_STORE", "STEGVERSE_ORG_LEDGER_GIT_REF", "STEGVERSE_ORG_LEDGER_GIT_REMOTE",
             "STEGVERSE_ORG_LEDGER_GIT_CUSTODY", "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME",
             "GIT_COMMITTER_EMAIL", "GIT_AUTHOR_DATE", "GIT_COMMITTER_DATE")
+POSIX_LOCUS_SHIM = "tests.posix_ledger_locus.sitecustomize"
+
+
+def _declared_locus_exec_module():
+    """The loader's own exec_module when a test package replaced it to declare a POSIX locus, else None."""
+    shim = sys.modules.get(POSIX_LOCUS_SHIM)
+    original = getattr(shim, "_exec_module", None)
+    loader = importlib.machinery.SourceFileLoader
+    if original is not None and loader.exec_module is not original:
+        return original
+    return None
+
+
 IDENTITY = {"GIT_AUTHOR_NAME": "temp-ledger", "GIT_AUTHOR_EMAIL": "temp-ledger@invalid",
             "GIT_COMMITTER_NAME": "temp-ledger", "GIT_COMMITTER_EMAIL": "temp-ledger@invalid",
             "GIT_AUTHOR_DATE": "2000-01-01T00:00:00+0000", "GIT_COMMITTER_DATE": "2000-01-01T00:00:00+0000"}
@@ -30,7 +51,12 @@ class TempLedger:
         self.repo_root, self.tip, self.namespace, self.git = str(repo_root), tip, namespace, git
         self.dir = tempfile.TemporaryDirectory()
         self.saved = {k: os.environ.pop(k, None) for k in ENV_KEYS}
+        self.restore_loader = None
         if git:
+            original = _declared_locus_exec_module()
+            if original is not None:
+                self.restore_loader = importlib.machinery.SourceFileLoader.exec_module
+                importlib.machinery.SourceFileLoader.exec_module = original
             self.root = Path(self.dir.name) / "ledger.git"
             subprocess.run(["git", "init", "-q", "--bare", str(self.root)], check=True)
             subprocess.run(["git", "-C", self.repo_root, "push", "-q", str(self.root), tip + ":" + REF], check=True,
@@ -61,6 +87,8 @@ class TempLedger:
         return out
 
     def close(self) -> None:
+        if self.restore_loader is not None:
+            importlib.machinery.SourceFileLoader.exec_module = self.restore_loader
         for k in ENV_KEYS:
             os.environ.pop(k, None)
         for k, v in self.saved.items():
