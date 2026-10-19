@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, hashlib, importlib.util, json, subprocess, tempfile
+import argparse, hashlib, importlib.util, json, os, subprocess, sys, tempfile
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -78,7 +78,11 @@ def endpoint_result(env,svc,envelope_path,node_state_root=None):
     raise SystemExit("endpoint-adapter-not-installed")
 def main():
  ap=argparse.ArgumentParser(); ap.add_argument("--envelope",required=True); ap.add_argument("--registry",required=True); ap.add_argument("--out",required=True); ap.add_argument("--node-state-root",default=None); a=ap.parse_args()
- env=load(a.envelope); reg=load(a.registry)
+ try:
+  env=load(a.envelope); reg=load(a.registry)
+ except (OSError,ValueError) as exc:
+  raise InputFault("input-unreadable: "+type(exc).__name__+": "+str(exc)[:200])
+ if not isinstance(env,dict) or not isinstance(reg,dict): raise InputFault("input-not-a-json-object")
  req=["schema_version","packet_id","direction","origin","destination","carrier","intr_profile","transition","payload","evidence"]; miss=[k for k in req if k not in env]
  if miss: raise SystemExit("missing:"+",".join(miss))
  if env["destination"]["org"]!=reg["organization"]: raise SystemExit("wrong-destination-org")
@@ -97,5 +101,66 @@ def main():
   subject={**base,"kind":kind,"previous_receipt_id":prev}; rid=hid(kind.lower(),subject); receipts.append({"kind":kind,"receipt_id":rid,"subject":svc["service_id"],"evidence_hash":hashlib.sha256(canon(subject)).hexdigest(),"previous_receipt_id":prev}); prev=rid
  application_result=endpoint_result(env,svc,a.envelope,a.node_state_root)
  result={"schema_version":reg["organization"].lower().replace(" ","-")+".boundary-execution.v1","packet_id":env["packet_id"],"organization":reg["organization"],"service_id":svc["service_id"],"consumed":True,"application_result":application_result,"authority_effect":env["transition"]["authority_effect"],**selected,**standing,"receipts":receipts,"reconstruction":{"same_execution_required":True,"status":"RECONSTRUCTED","terminal_receipt_id":prev}}
- Path(a.out).parent.mkdir(parents=True,exist_ok=True); Path(a.out).write_text(json.dumps(result,indent=2,sort_keys=True)+"\n"); print(json.dumps({"status":"PASS","terminal_receipt_id":prev}))
-if __name__=="__main__": main()
+ try:
+  write_atomically(Path(a.out),json.dumps(result,indent=2,sort_keys=True)+"\n")
+ except OSError as exc:
+  raise WriteFault(type(exc).__name__+": "+str(exc)[:200])
+ print(json.dumps({"status":"PASS","terminal_receipt_id":prev}))
+
+# The exit-code split callers depend on (Data-Continuation/.github#10): a fault in
+# this node's own write is non-terminal and the frame is offered again (75); a
+# frame this boundary refuses or cannot read is terminal (65). An installed
+# adapter that fails to run or answers malformed is this node's own component,
+# not the frame's: non-terminal (70), retried. Each prints a six-field record on
+# stdout and its message last on stderr; never a traceback.
+INPUT_FAULT_EXIT=65
+ADAPTER_FAULT_EXIT=70
+WRITE_FAULT_EXIT=75
+ADAPTER_FAULTS=("endpoint-adapter-execution-failed","endpoint-adapter-result-invalid",
+                "FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_MATERIALIZED")
+
+class InputFault(Exception):
+ pass
+
+class WriteFault(Exception):
+ pass
+
+def write_atomically(path,text):
+ path.parent.mkdir(parents=True,exist_ok=True)
+ fd,temp=tempfile.mkstemp(prefix=".boundary-out-",suffix=".tmp",dir=str(path.parent))
+ try:
+  with os.fdopen(fd,"w",encoding="utf-8") as stream:
+   stream.write(text); stream.flush(); os.fsync(stream.fileno())
+  os.replace(temp,path)
+ finally:
+  if os.path.exists(temp): os.unlink(temp)
+
+def fault_record(code,detail,terminal):
+ return {"disposition":"FAIL_CLOSED","terminal":terminal,"failure_code":code,
+         "failed_predicate":"BOUNDARY_PROCESSES_THE_FRAME" if terminal else "BOUNDARY_WRITES_ITS_OWN_OUTPUT",
+         "detail":detail[:240],
+         "required_evidence_or_repair":("the sender republishes a frame this boundary admits" if terminal
+                                        else "this node's own --out location accepts the write"),
+         "retry_entrypoint":"org-boundary/runtime/process_boundary.py --envelope --registry --out",
+         "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
+         "next_attempt":("terminal for this frame; it is refused, not retried" if terminal
+                         else "rerun unchanged; nothing durable was written and the frame is offered again")}
+
+def cli():
+ try:
+  main(); return 0
+ except SystemExit as exc:
+  if exc.code is None or isinstance(exc.code,int): raise
+  if str(exc.code).startswith(ADAPTER_FAULTS):
+   code,detail,terminal,status="PROCESS_BOUNDARY_ADAPTER_FAULT",str(exc.code),False,ADAPTER_FAULT_EXIT
+  else:
+   code,detail,terminal,status="PROCESS_BOUNDARY_INPUT_FAULT",str(exc.code),True,INPUT_FAULT_EXIT
+ except WriteFault as exc:
+  code,detail,terminal,status="PROCESS_BOUNDARY_WRITE_FAULT",str(exc),False,WRITE_FAULT_EXIT
+ except Exception as exc:  # noqa: BLE001 -- a frame this boundary cannot process is the frame's
+  code,detail,terminal,status="PROCESS_BOUNDARY_INPUT_FAULT",type(exc).__name__+": "+str(exc),True,INPUT_FAULT_EXIT
+ print(json.dumps(fault_record(code,detail,terminal),sort_keys=True),flush=True)
+ print(detail,file=sys.stderr)
+ return status
+
+if __name__=="__main__": sys.exit(cli())

@@ -32,6 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSOR = ROOT / "org-boundary/runtime/process_boundary.py"
+BOUNDARY_WRITE_FAULT_EXIT = 75
 
 _spec = importlib.util.spec_from_file_location(
     "intr_transport", ROOT / "org-boundary/runtime/intr_transport.py")
@@ -303,8 +304,14 @@ def cross(manifest, *, registry, origin=None, packet_id="sdk-manifest-crossing",
         completed = subprocess.run(
             [sys.executable, str(PROCESSOR), "--envelope", str(envelope), "--registry", str(registry_path), "--out", str(execution)],
             cwd=str(ROOT), capture_output=True, text=True, check=False)
+        if completed.returncode == BOUNDARY_WRITE_FAULT_EXIT:
+            # PB-EXIT-SPLIT: the boundary's own write faulted (75). Not a refusal
+            # of the manifest: nothing is recorded as refused, and the caller's
+            # writer wrapper reports a non-terminal WRITE_FAILED to rerun.
+            raise RuntimeError("PROCESS_BOUNDARY_WRITE_FAULT: " + (completed.stderr or "").strip()[-400:])
         if completed.returncode != 0 or not execution.is_file():
-            # The far side refused or could not be reached. Say which, and say
+            # The far side refused or could not be reached (65 is the boundary's
+            # terminal input refusal). Say which, and say
             # it as a disposition rather than as a crossing that happened.
             detail = (completed.stderr or completed.stdout or "").strip().splitlines()
             far_side_disposition = detail[-1] if detail else "FAR_SIDE_UNREACHABLE"

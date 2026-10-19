@@ -243,6 +243,13 @@ def load_registry(source:Path|dict[str,Any])->dict[str,Any]:
         raise ValueError("capability_registry_services_invalid")
     return value
 
+#: process_boundary.py's exit codes (Data-Continuation/.github#10 semantics).
+PROCESS_BOUNDARY_INPUT_FAULT_EXIT=65
+PROCESS_BOUNDARY_WRITE_FAULT_EXIT=75
+
+class BoundaryWriteFault(RuntimeError):
+    """The boundary processor's own write faulted (exit 75): non-terminal, the frame stays pending."""
+
 def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None,
              node_state:Any|None=None, epoch:int|None=None)->dict[str,Any]:
     registry=load_registry(root)
@@ -275,6 +282,15 @@ def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None,
             if node_state is not None:
                 command+=["--node-state-root",str(node_state.root)]
             completed=subprocess.run(command,cwd=root,capture_output=True,text=True,check=False)
+            # The boundary's exit-code split (PB-EXIT-SPLIT): 75 is a fault in this
+            # node's own write -- a writer fault, never the frame's, so the consuming
+            # pass leaves the frame pending with no marker and no receipt. 65 is the
+            # frame refused or unreadable: terminal, recorded DENY and marked.
+            if completed.returncode==PROCESS_BOUNDARY_WRITE_FAULT_EXIT:
+                raise BoundaryWriteFault("PROCESS_BOUNDARY_WRITE_FAULT:"+completed.stderr[-512:])
+            if completed.returncode==PROCESS_BOUNDARY_INPUT_FAULT_EXIT:
+                raise ValueError("PROCESS_BOUNDARY_INPUT_FAULT:endpoint_adapter_execution_failed:"
+                                 +completed.stderr[-512:])
             if completed.returncode!=0 or not out.is_file():
                 raise ValueError("endpoint_adapter_execution_failed:"+completed.stderr[-512:])
             result=json.loads(out.read_text())
@@ -887,7 +903,7 @@ def crossing_custody(repo_root:Path, *, repo_ledger_root:Path|None, org_ledger_r
 CROSSING_REFUSED_CLASS="ORGANIZATION_FEDERATION_CROSSING_REFUSED"
 #: Refusals that will not change on a retry: the crossing is refused, recorded
 #: and marked. Anything else is FAIL_CLOSED: recorded, left unmarked, retried.
-DETERMINISTIC_REFUSALS=("unknown_service","node_standing_refused:","standing-",
+DETERMINISTIC_REFUSALS=("PROCESS_BOUNDARY_INPUT_FAULT","unknown_service","node_standing_refused:","standing-",
                         "PROCESSING_SELECTED_ONLY_BY_ADMITTED_PROCESSING_CAPABILITY_AND_ROUTE_ID",
                         "manifest-declares-","declared-capability-","endpoint_adapter_not_installed",
                         "endpoint-adapter-not-installed","wrong_destination_org","wrong-destination-org")
@@ -966,8 +982,16 @@ def ingest_recorded(repo_root:Path, item:dict[str,Any], custody:dict[str,Any], r
         disposition=refusal_disposition(reason)
         recorded=record_refusal(custody,item,reason,disposition,service=service,epoch=epoch,provenance=provenance,
                                 frame_reference=frame_reference)
-        return {"status":"REFUSED","disposition":disposition,"failed_predicate":reason,
-                "packet_id":item["frame"].get("packet_id")},recorded
+        refused={"status":"REFUSED","disposition":disposition,"failed_predicate":reason,
+                 "packet_id":item["frame"].get("packet_id")}
+        if "PROCESS_BOUNDARY_INPUT_FAULT" in reason:
+            # The boundary refused the frame itself (exit 65): terminal, recorded and marked.
+            refused.update({"failure_code":"FRAME_INGEST_FAILED","terminal":True,
+                            "required_evidence_or_repair":"the sender republishes a frame the boundary admits",
+                            "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
+                            "owning_existing_goal":custody["organization_ledger"].INTR_PROTOCOL_GOAL,
+                            "next_attempt":"terminal for this frame; it is recorded DENY and not offered again"})
+        return refused,recorded
     return result,record_crossing(custody,item,result,service=service,epoch=epoch,provenance=provenance,
                                   frame_reference=frame_reference)
 

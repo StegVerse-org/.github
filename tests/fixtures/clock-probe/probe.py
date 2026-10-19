@@ -535,6 +535,55 @@ duplicate = {"first": [(r.get("result") or {}).get("status") for r in dup_first]
              "responses": len(kernel.scan_addressed_frames("Probe-Origin", root=dmesh)),
              "receipt_shas": len({d["receipt_sha256"] for d in full_receipts_for("pkt-duplicate-request-id")})}
 
+# PB-EXIT-SPLIT: the boundary processor's exit codes are kept apart by the
+# caller. Its own --out write faulting (exit 75) is a non-terminal writer fault:
+# no marker, no receipt, the frame consumed exactly once on the next pass. A
+# frame the boundary refuses (exit 65) is terminal: FRAME_INGEST_FAILED,
+# recorded DENY and marked, never offered again.
+def endpoint_packet(capability, communication_id):
+    return kernel.build_packet(origin_org="Probe-Origin", origin_service="probe-origin.org-control",
+                               destination_org=registry["organization"], destination_service="stegverse-org.llm-adapter",
+                               payload={"communication_id": communication_id, "manifest": {"processing": {
+                                   "capability": capability, "route_id": "stegverse.route.ecosystem-diagnostic.v1"}}},
+                               standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})
+
+
+pb = {}
+for label, capability, fault in (("write_fault", "ecosystem_diagnostic", True), ("input_fault", "governance", False)):
+    pmesh = WORK / ("pb-mesh-" + label)
+    pmesh.mkdir()
+    victim = endpoint_packet(capability, "c-pb-" + label)
+    kernel.publish_packet(victim, root=pmesh, epoch=4096)
+    node = WORK / ("pb-node-" + label)
+    saved = {k: os.environ.get(k) for k in ("PYTHONPATH", "STEGVERSE_TEST_FAULT_REPLACE_SUFFIX",
+                                            "STEGVERSE_TEST_FAULT_REPLACE_MARKER")}
+    if fault:
+        os.environ.update(PYTHONPATH=str(ROOT / "tests/fixtures/write-fault"),
+                          STEGVERSE_TEST_FAULT_REPLACE_SUFFIX="execution.json",
+                          STEGVERSE_TEST_FAULT_REPLACE_MARKER=str(WORK / ("pb-faulted-" + label)))
+    start = CALLS["n"]
+    try:
+        first = kernel.consume_and_respond(ROOT, mesh_root=pmesh, node_state_root=node, **roots, hb_epoch=4096)
+        markers_after_first = len([p for p in node.rglob("*.json") if "seen.d" in p.parts])
+        receipts_after_first = len({d["receipt_sha256"] for d in full_receipts_for(victim["packet_id"])})
+        second = kernel.consume_and_respond(ROOT, mesh_root=pmesh, node_state_root=node, **roots, hb_epoch=4096)
+        third = kernel.consume_and_respond(ROOT, mesh_root=pmesh, node_state_root=node, **roots, hb_epoch=4096)
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    phases["pb_" + label + "_clock_calls"] = CALLS["n"] - start
+    result = (first[0].get("result") or {}) if first else {}
+    pb[label] = {"faulted": (WORK / ("pb-faulted-" + label)).exists(),
+                 "first": [result.get(k) for k in ("status", "disposition", "failure_code", "terminal")],
+                 "first_record": result, "first_marker": first[0].get("seen_marker") if first else "absent",
+                 "markers_after_first": markers_after_first, "receipts_after_first": receipts_after_first,
+                 "second": [(r.get("result") or {}).get("status") for r in second],
+                 "third_offered": len(third),
+                 "receipt_shas": len({d["receipt_sha256"] for d in full_receipts_for(victim["packet_id"])})}
+
 # After every injected fault, a later frame is consumed and ledgered normally.
 later_mesh = WORK / "io-later-mesh"
 later_mesh.mkdir()
@@ -561,4 +610,4 @@ for path in (p for p in WORK.rglob("*.json") if p.is_file() and not {"i-mesh", "
 print(json.dumps({"phases": phases, "references": found, "responses": responses, "quarantine": quarantine,
                   "carried": carried_out, "integrity": integrity, "scan": scan,
                   "f1": f1, "ftype": ftype, "io": io, "io_later": io_later, "addressed": addressed_out,
-                  "duplicate": duplicate}, sort_keys=True, default=str))
+                  "duplicate": duplicate, "pb": pb}, sort_keys=True, default=str))

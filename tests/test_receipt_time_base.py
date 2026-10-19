@@ -786,6 +786,25 @@ class ClockProbeTests(unittest.TestCase):
         self.assertIn("torn_head_repo_append", probe["io"])
         self.assertIn("torn_head_org_append", probe["io"])
         self.assertEqual((probe["io_later"]["status"], probe["io_later"]["receipts"]), (["CONSUMED"], 2))
+        # PB-EXIT-SPLIT: the boundary processor's own --out write faulting (exit 75)
+        # is a non-terminal writer fault -- no marker, no receipt, consumed exactly
+        # once next pass; a frame it refuses (exit 65) is terminal FRAME_INGEST_FAILED,
+        # recorded and marked, never re-offered.
+        write, refused = probe["pb"]["write_fault"], probe["pb"]["input_fault"]
+        self.assertIs(write["faulted"], True)
+        self.assertEqual(write["first"], ["PENDING", "FAIL_CLOSED", "FRAME_DISPATCH_IO_FAILED", False])
+        self.assertIn("PROCESS_BOUNDARY_WRITE_FAULT", write["first_record"]["detail"])
+        self.assertEqual((write["first_marker"], write["markers_after_first"], write["receipts_after_first"]),
+                         (None, 0, 0))
+        self.assertEqual((write["second"], write["third_offered"], write["receipt_shas"]), (["CONSUMED"], 0, 2))
+        self.assertEqual(refused["first"], ["REFUSED", "DENY", "FRAME_INGEST_FAILED", True])
+        self.assertIn("PROCESS_BOUNDARY_INPUT_FAULT", refused["first_record"]["failed_predicate"])
+        for field in SIX_FIELDS:
+            self.assertTrue(refused["first_record"][field], field)
+        self.assertTrue(refused["first_marker"])
+        self.assertEqual((refused["markers_after_first"], refused["second"], refused["third_offered"]), (1, [], 0))
+        for label in ("write_fault", "input_fault"):
+            self.assertEqual(probe["phases"]["pb_" + label + "_clock_calls"], 0)
         # F-REPUB keying / RESPONSE_ID_COLLISION: B reuses A's request id with other
         # content; refused before anything is ledgered or answered; one response.
         duplicate = probe["duplicate"]
@@ -1391,6 +1410,101 @@ class WriterCliTraceTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as passed:
             writer.run(lambda: (_ for _ in ()).throw(SystemExit(2)), "entry")
         self.assertEqual(passed.exception.code, 2)
+
+
+class ProcessBoundaryExitSplitTests(unittest.TestCase):
+    """PB-EXIT-SPLIT: process_boundary.py exits 75 on its own write fault, 65 on a frame it refuses;
+    six fields on stdout, the message last on stderr, never a traceback; every caller keeps them apart."""
+
+    BOUNDARY = ROOT / "org-boundary/runtime/process_boundary.py"
+
+    def envelope(self, work, capability="ecosystem_diagnostic"):
+        packet = org.kernel.build_packet(
+            origin_org="Probe-Origin", origin_service="probe-origin.org-control", destination_org="StegVerse-org",
+            destination_service="stegverse-org.llm-adapter",
+            payload={"manifest": {"processing": {"capability": capability,
+                                                 "route_id": "stegverse.route.ecosystem-diagnostic.v1"}}},
+            standing={"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None})
+        path = Path(work) / "envelope.json"
+        path.write_text(json.dumps(packet))
+        return path
+
+    def run_boundary(self, envelope, out, fault_marker=None):
+        env = {k: v for k, v in os.environ.items() if not k.startswith("STEGVERSE_")}
+        if fault_marker is not None:
+            env.update(PYTHONPATH=str(ROOT / "tests/fixtures/write-fault"),
+                       STEGVERSE_TEST_FAULT_REPLACE_SUFFIX=Path(out).name,
+                       STEGVERSE_TEST_FAULT_REPLACE_MARKER=str(fault_marker))
+        return subprocess.run([sys.executable, str(self.BOUNDARY), "--envelope", str(envelope),
+                               "--registry", str(ROOT / "org-boundary/registry/services.json"), "--out", str(out)],
+                              capture_output=True, text=True, cwd=str(ROOT), env=env)
+
+    def assert_record(self, completed, code, terminal):
+        self.assertNotIn("Traceback", completed.stderr)
+        record = json.loads(completed.stdout.strip().splitlines()[-1])
+        self.assertEqual((record["failure_code"], record["terminal"]), (code, terminal))
+        for field in SIX_FIELDS:
+            self.assertTrue(record[field], field)
+
+    def test_its_own_write_fault_is_75_and_the_rerun_writes_the_same_output(self):
+        with tempfile.TemporaryDirectory() as work:
+            envelope, out = self.envelope(work), Path(work) / "execution.json"
+            faulted = self.run_boundary(envelope, out, fault_marker=Path(work) / "faulted")
+            self.assertEqual(faulted.returncode, 75, faulted.stderr)
+            self.assert_record(faulted, "PROCESS_BOUNDARY_WRITE_FAULT", False)
+            self.assertFalse(out.exists())
+            self.assertEqual(list(Path(work).glob(".boundary-out-*")), [])
+            again = self.run_boundary(envelope, out)
+            self.assertEqual(again.returncode, 0, again.stderr)
+            self.assertTrue(json.loads(out.read_text())["consumed"])
+
+    def test_a_frame_it_refuses_or_cannot_read_is_65(self):
+        with tempfile.TemporaryDirectory() as work:
+            bad = Path(work) / "bad.json"
+            bad.write_text("{not json")
+            for envelope in (Path(work) / "absent.json", bad, self.envelope(work, capability="governance")):
+                with self.subTest(envelope=envelope.name):
+                    completed = self.run_boundary(envelope, Path(work) / "out.json")
+                    self.assertEqual(completed.returncode, 65, completed.stderr)
+                    self.assert_record(completed, "PROCESS_BOUNDARY_INPUT_FAULT", True)
+
+    def test_an_installed_adapter_that_fails_is_70_and_not_the_frames_fault(self):
+        with tempfile.TemporaryDirectory() as work:
+            out = Path(work) / "execution.json"
+            with mock.patch.dict(os.environ):
+                completed = subprocess.run(
+                    [sys.executable, "-c", "import runpy,sys,subprocess as s;"
+                     "s.run=lambda *a,**k: s.CompletedProcess(a,1,'','adapter-unavailable');"
+                     "sys.argv=sys.argv[1:];runpy.run_path(sys.argv[0],run_name='__main__')",
+                     str(self.BOUNDARY), "--envelope", str(self.envelope(work)),
+                     "--registry", str(ROOT / "org-boundary/registry/services.json"), "--out", str(out)],
+                    capture_output=True, text=True, cwd=str(ROOT))
+            self.assertEqual(completed.returncode, 70, completed.stderr)
+            self.assert_record(completed, "PROCESS_BOUNDARY_ADAPTER_FAULT", False)
+
+    def test_every_caller_keeps_75_and_65_apart(self):
+        kernel = (ROOT / "org-kernel/kernel.py").read_text()
+        self.assertIn("if completed.returncode==PROCESS_BOUNDARY_WRITE_FAULT_EXIT:", kernel)
+        self.assertIn("raise BoundaryWriteFault(", kernel)
+        self.assertTrue(org.kernel.writer_fault(org.kernel.BoundaryWriteFault("x")))
+        self.assertEqual(org.kernel.refusal_disposition("PROCESS_BOUNDARY_INPUT_FAULT:x"), "DENY")
+        crossing = load_module("pb_sdk_manifest_crossing", "resident-runtime/sdk_manifest_crossing.py")
+        manifest = json.loads((ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json").read_text())
+        registry = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
+        standing = {"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None}
+        for status in (75, 65):
+            with self.subTest(exit=status), mock.patch.object(
+                    crossing.subprocess, "run",
+                    return_value=subprocess.CompletedProcess([], status, stdout="", stderr="boundary said no\n")):
+                if status == 75:
+                    with self.assertRaisesRegex(RuntimeError, "PROCESS_BOUNDARY_WRITE_FAULT"):
+                        crossing.cross(manifest, registry=registry, standing=standing, packet_id="pb-split")
+                else:
+                    refused = crossing.cross(manifest, registry=registry, standing=standing, packet_id="pb-split")
+                    self.assertEqual((refused["crossing_completed"], refused["disposition"]), (False, "FAIL_CLOSED"))
+        run_once = (ROOT / "resident-runtime/run_once.py").read_text()
+        self.assertNotIn("check=True", run_once)
+        self.assertIn("return completed.returncode", run_once)
 
 
 class OrganizationReceiptTests(unittest.TestCase):

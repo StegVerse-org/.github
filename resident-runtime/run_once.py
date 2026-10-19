@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, json, subprocess, tempfile
+import argparse, json, subprocess, sys, tempfile
 from pathlib import Path
 from org_boundary_runtime import build_egress, validate_org_crossing
 # The boundary processor and its registry are addressed from the repository root,
@@ -9,7 +9,12 @@ def main():
  ap=argparse.ArgumentParser(); ap.add_argument("--ingress",required=True); ap.add_argument("--egress",required=True); a=ap.parse_args()
  ingress=json.loads(Path(a.ingress).read_text()); validate_org_crossing(ingress,"INGRESS")
  with tempfile.TemporaryDirectory() as td:
-  p=Path(td)/"execution.json"; subprocess.run(["python3",str(ROOT/"org-boundary/runtime/process_boundary.py"),"--envelope",str(Path(a.ingress).resolve()),"--registry",str(ROOT/"org-boundary/registry/services.json"),"--out",str(p)],cwd=str(ROOT),check=True); result=json.loads(p.read_text())
+  p=Path(td)/"execution.json"; completed=subprocess.run(["python3",str(ROOT/"org-boundary/runtime/process_boundary.py"),"--envelope",str(Path(a.ingress).resolve()),"--registry",str(ROOT/"org-boundary/registry/services.json"),"--out",str(p)],cwd=str(ROOT),capture_output=True,text=True,check=False)
+  # PB-EXIT-SPLIT: the boundary's six-field record is passed through with its
+  # exit code -- 75 non-terminal (its own write faulted; rerun), 65 terminal.
+  if completed.returncode!=0:
+   sys.stdout.write(completed.stdout); sys.stderr.write(completed.stderr); return completed.returncode
+  result=json.loads(p.read_text())
  egress=build_egress(ingress,result); validate_org_crossing(egress,"EGRESS"); Path(a.egress).parent.mkdir(parents=True,exist_ok=True); Path(a.egress).write_text(json.dumps(egress,indent=2,sort_keys=True)+"\n")
  print(json.dumps({"status":"PASS","packet_id":ingress["packet_id"],"egress_packet_id":egress["packet_id"],"consumed":result["consumed"],"reconstruction":result["reconstruction"]["status"]}))
-if __name__=="__main__": main()
+if __name__=="__main__": sys.exit(main())
