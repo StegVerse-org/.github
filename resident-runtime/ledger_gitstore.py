@@ -45,6 +45,7 @@ import argparse
 import contextlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -234,6 +235,13 @@ def preflight(root: Path | str = ROOT, *, surface: Any = None) -> tuple[_Locatio
                    "the " + level + " ledger location this writer binds is refused: " + str(exc)[:300],
                    level=level, detail=type(exc).__name__)
     repository_location, organization_location = located
+    # A materializer variable naming the organization ledger is non-authoritative: present, it must agree
+    # with what the organization half resolves to, whether or not this checkout's writer reads it.
+    supplied_ref = os.environ.get("STEGVERSE_ORG_LEDGER_GIT_REF")
+    if supplied_ref and organization_location.key[0] == "git" and supplied_ref != organization_location.ref:
+        refuse("STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF",
+               "STEGVERSE_ORG_LEDGER_GIT_REF names " + supplied_ref + "; the organization half resolves to "
+               + str(organization_location.ref), level="organization", supplied_ref=supplied_ref)
     declared_org = gitstore.org_contract(root).get("organization_ledger_ref")
     declared_repo = gitstore.contract(root).get("repository_ledger_location") or {}
     for location, ref, namespace in ((organization_location, declared_org, None),
@@ -255,6 +263,11 @@ def preflight(root: Path | str = ROOT, *, surface: Any = None) -> tuple[_Locatio
         if current is not None and location.tip() is None:
             refuse(location.level.upper() + "_LEDGER_REF_NAMES_A_COMMIT",
                    location.ref + " does not name a commit", level=location.level)
+    if repository_location.key[0] == organization_location.key[0] == "git" and declared_org \
+            and declared_repo.get("ref") == declared_org and repository_location.git_dir != organization_location.git_dir:
+        refuse("BOTH_HALVES_SHARE_THE_DECLARED_LEDGER_REF",
+               "contract.json keeps the repository chain on the organization ledger ref itself; the halves resolve "
+               "to two git dirs: " + str(repository_location.git_dir) + " and " + str(organization_location.git_dir))
     return repository_location, organization_location
 
 

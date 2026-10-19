@@ -10,6 +10,8 @@ from __future__ import annotations
 import importlib.util
 import inspect
 import os
+import subprocess
+import tempfile
 import sys
 import unittest
 from pathlib import Path
@@ -226,8 +228,7 @@ class Atomic(unittest.TestCase):
                     os.environ["STEGVERSE_ORG_LEDGER_GIT_REF"] = WRONG_REF
                     if variable_set == "root_and_git_ref":
                         os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = "git+" + ledger.git_dir + "#" + WRONG_REF
-                    elif lg.writer_surface().kind != "AGGREGATE_TRANSITION":
-                        continue  # only the aggregate_transition writer reads STEGVERSE_ORG_LEDGER_GIT_REF
+                    # git_ref_only: a writer that does not read the variable is refused too (it contradicts the binding)
                     before = self.tips(ledger)
                     with self.assertRaises(ValueError) as caught:  # TwoLevelAppendRefused of either module copy
                         self.path_append(1) if writer == "ledger_gitstore" else self.ingress_append(1)
@@ -236,6 +237,22 @@ class Atomic(unittest.TestCase):
                     for field in lg.SIX_FIELDS:
                         self.assertTrue(caught.exception.refusal[field], field)
                     self.assertUntouched(ledger, before)
+
+    def test_an_organization_half_in_another_git_dir_refuses_before_either_half_is_written(self):
+        with TempLedger() as ledger, tempfile.TemporaryDirectory() as other:
+            subprocess.run(["git", "init", "-q", "--bare", other], check=True)
+            ledger._git("update-ref", WRONG_REF, ledger.tip())
+            # the organization half bound to another git dir (each writer reads one of these two variables)
+            os.environ["STEGVERSE_ORG_LEDGER_GIT_DIR"] = other
+            os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = "git+" + other + "#" + ledger.ref
+            before = self.tips(ledger)
+            with self.assertRaises(ValueError) as caught:
+                self.path_append(6)
+            self.assertEqual(type(caught.exception).__name__, "TwoLevelAppendRefused")
+            self.assertEqual(caught.exception.refusal["failed_predicate"], "BOTH_HALVES_SHARE_THE_DECLARED_LEDGER_REF")
+            self.assertUntouched(ledger, before)
+            self.assertEqual(subprocess.run(["git", "--git-dir", other, "for-each-ref"], capture_output=True,
+                                            text=True).stdout, "")
 
     def test_a_wrong_repository_ref_refuses_before_either_half_is_written(self):
         for writer in ("ledger_gitstore", "ingress"):
