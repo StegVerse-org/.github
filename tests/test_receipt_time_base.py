@@ -150,6 +150,12 @@ class RepositoryAppendEpochTests(unittest.TestCase):
             self.assertTrue(refusal[field], field)
         return refusal
 
+    def test_the_rule_is_the_organization_writers_not_a_copy(self):
+        self.assertIs(self.emit.supplied_epoch_failure.__code__.co_filename,
+                      self.emit._org_rule.supplied_epoch_failure.__code__.co_filename)
+        self.assertTrue(self.emit.supplied_epoch_failure.__code__.co_filename.endswith(
+            "resident-runtime/aggregate_repo_transition.py"))
+
     def test_an_absent_epoch_is_not_supplied(self):
         self.assertEqual(self._refused(None)["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
 

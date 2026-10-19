@@ -40,19 +40,14 @@ def chain_break_refusal(exc):
 # hb_epoch used to fall back to kernel.hb_reference(), which derives the epoch
 # from the host clock (derived_from_clock true), so a receipt's ordering
 # depended on that host's clock discipline. The rule is the shared one
-# (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH), vendored from
-# resident-runtime/aggregate_repo_transition.py because this writer is also
-# bound from a standalone ledger component; the refusal is six-field
-# FAIL_CLOSED and raised before the store is opened, so nothing is written.
-HB_EPOCH_PREDICATE="SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH";HB_ANCHOR_EPOCH=32
-INTR_PROTOCOL_GOAL="INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
-def supplied_epoch_failure(hb_epoch):
- """(failure_code, detail) for an absent or invalid hb_epoch, or None. No clock is read."""
- if hb_epoch is None:return "HB_EPOCH_NOT_SUPPLIED","no hb_epoch was supplied and no clock is read"
- text=str(hb_epoch) if isinstance(hb_epoch,int) and not isinstance(hb_epoch,bool) else hb_epoch if isinstance(hb_epoch,str) else None
- if text is None or not text.isascii() or not text.isdigit():return "HB_EPOCH_INVALID","hb_epoch "+repr(hb_epoch)+" is not ASCII [0-9]+"
- if int(text)<HB_ANCHOR_EPOCH:return "HB_EPOCH_INVALID","hb_epoch "+text+" is below the HB32 anchor (32)"
- return None
+# (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH) the organization writer applies,
+# loaded from it rather than copied; the refusal is six-field FAIL_CLOSED and
+# raised before the store is opened, so nothing is written.
+_aspec=importlib.util.spec_from_file_location("repo_emit_org_epoch_rule",ROOT/"resident-runtime/aggregate_repo_transition.py")
+_org_rule=importlib.util.module_from_spec(_aspec);_aspec.loader.exec_module(_org_rule)
+supplied_epoch_failure=_org_rule.supplied_epoch_failure
+HB_EPOCH_PREDICATE=_org_rule.HB_EPOCH_PREDICATE;HB_ANCHOR_EPOCH=_org_rule.HB_ANCHOR_EPOCH
+INTR_PROTOCOL_GOAL=_org_rule.INTR_PROTOCOL_GOAL
 class RepoLedgerEpochRefused(SystemExit):
  """An append refused for its epoch; `.refusal` carries the six-field FAIL_CLOSED."""
  def __init__(self,code,detail):
