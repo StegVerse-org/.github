@@ -1230,6 +1230,10 @@ class ResidentDispatchTests(unittest.TestCase):
         self.assertEqual(argv[argv.index("--hb-epoch") + 1], "4096")
 
 
+SDK_IMPORTING_CLIS = ("resident-runtime/governance_decision_return.py",
+                      "resident-runtime/organization_manifest_ingress.py")
+
+
 class WriterCliTraceTests(unittest.TestCase):
     """F-WRITER-TRACE / B-P36q: a writer CLI whose own write faults prints six fields, no traceback;
     the same invocation run again completes exactly once."""
@@ -1315,7 +1319,12 @@ class WriterCliTraceTests(unittest.TestCase):
             ledgers = Path(work) / "ledgers"
             env = {k: v for k, v in os.environ.items() if not k.startswith("STEGVERSE_")}
             env.update(STEGVERSE_REPO_LEDGER_ROOT=str(ledgers / "repo"), STEGVERSE_ORG_LEDGER_ROOT=str(ledgers / "org"))
+            # Two of these import the pinned SDK at module load; a workflow that does not
+            # install it cannot start them at all, so they are exercised where it is.
+            sdk_present = importlib.util.find_spec("stegverse") is not None
             for cli, flags in clis.items():
+                if cli in SDK_IMPORTING_CLIS and not sdk_present:
+                    continue
                 for flag in flags:
                     for label, path in bad.items():
                         with self.subTest(cli=cli, flag=flag, input=label):
