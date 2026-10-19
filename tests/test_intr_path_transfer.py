@@ -23,9 +23,10 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures" / "intr-path-transfer"
 EXPECTED = json.loads((FIXTURES / "expected-real-state.json").read_text())
 LEDGER_TIP = EXPECTED["ledger_tip"]
-NAMESPACE = "repository-ledger/StegVerse-org/.github"
-TRANSFER = "41035e9e4bca6d4114f2f6a181b03dda2de85481"   # main-merge transfer VERIFIED at the pinned tip
-UNLEDGERED = "f40ad7dd47160add7f1f18559b2dda6c73f57f29"  # no main-merge transfer receipt at the pinned tip
+NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").read_text())[
+    "repository_ledger_location"]["namespace"]
+TRANSFER = EXPECTED["verified_transfer_commit"]   # main-merge transfer VERIFIED at the pinned tip
+UNLEDGERED = EXPECTED["unledgered_commit"]        # no main-merge transfer receipt at the pinned tip
 
 
 def load(name, relative):
@@ -66,7 +67,7 @@ def reseal(receipt):
 
 
 def mine():
-    return [p for p in pt.declared_paths() if p["source"] == "StegVerse-org"]
+    return [p for p in pt.declared_paths() if p["source"] == pt.organization()]
 
 
 def cid(path):

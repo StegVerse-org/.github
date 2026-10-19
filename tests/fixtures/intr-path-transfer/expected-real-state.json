@@ -3,6 +3,10 @@
   "rule": "real state of every declared path, computed by resident-runtime/intr_path_transfer.py verify over the organization ledger at ledger_tip; no path receipt exists yet, so every path is FAIL_CLOSED. Path receipts appear only once the transfer declaration lands on main and .github/workflows/intr-path-transfer.yml appends them; even then the destination half stays FAIL_CLOSED class B until a carrier and a TV/TVC read credential exist.",
   "ledger_ref": "refs/stegverse/organization-ledger",
   "ledger_tip": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+  "verified_transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481",
+  "verified_transfer_note": "a main merge whose main-merge transfer receipt is on the ledger at ledger_tip (StegVerse-org/.github#202)",
+  "unledgered_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+  "unledgered_note": "a main merge with no main-merge transfer receipt at ledger_tip",
   "authentic_receipt": false,
   "counts": {
     "ALLOW": 0,
