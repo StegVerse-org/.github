@@ -106,7 +106,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         response = kernel.build_control_response(
             packet, {"application_result": decision,
                      "reconstruction": {"terminal_receipt_id": terminal or chain[-1]}})
-        kernel.publish_packet(response, root=self.mesh)
+        kernel.publish_packet(response, root=self.mesh, epoch=4096)
         return packet
 
     def return_decision(self, emitted, **overrides):
@@ -146,7 +146,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
                      "manifest": body, "manifest_sha256": kernel.sha(body)},
             standing=GENESIS, transition_reference="intr:transition:capability-address-mesh",
             authority_effect="NONE", packet_id="capability-address-mesh")
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=4096)
         results = kernel.consume_addressed_frames(
             ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
             org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])

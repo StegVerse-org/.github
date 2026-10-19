@@ -92,6 +92,54 @@ for item in kernel.scan_addressed_frames("Probe-Origin", root=mesh):
                       "monitor_heartbeat": (((body.get("body") or {}).get("application_result") or {})
                                             .get("monitor_status") or {}).get("heartbeat_reference")})
 
+# B-P36j/k: a CLOCK frame and a forged CARRIED claim beside a valid frame.
+# Both are quarantined (terminal) with no clock read, and a second cycle
+# proceeds without offering them again.
+def addressed(communication_id):
+    return kernel.build_packet(origin_org="Probe-Origin", origin_service="probe-origin.org-control",
+                               destination_org=registry["organization"],
+                               destination_service=kernel.organization_slug(registry["organization"]) + ".org-control",
+                               payload={"communication_id": communication_id, "message_class": "ecosystem.communication",
+                                        "subject": "s", "body": {}},
+                               standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})
+
+
+qmesh = WORK / "q-mesh"
+qmesh.mkdir()
+kernel.publish_packet(addressed("c-clock-frame"), root=qmesh)  # stamped from the (fixed) clock
+kernel.publish_packet(addressed("c-forged-carried"), root=qmesh, epoch=4096,
+                      provenance={"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "f" * 64})
+kernel.publish_packet(addressed("c-valid"), root=qmesh, epoch=4096)
+ledger_files = lambda: sorted(str(p) for p in (WORK / "repo").rglob("*") if p.is_file()) + \
+    sorted(str(p) for p in (WORK / "org").rglob("*") if p.is_file())
+before_ledgers = ledger_files()
+start = CALLS["n"]
+roots = {"repo_ledger_root": os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
+         "org_ledger_root": os.environ["STEGVERSE_ORG_LEDGER_ROOT"]}
+first = kernel.consume_and_respond(ROOT, mesh_root=qmesh, node_state_root=WORK / "q-node", **roots)
+second = kernel.consume_and_respond(ROOT, mesh_root=qmesh, node_state_root=WORK / "q-node", **roots)
+phases["quarantine_clock_calls"] = CALLS["n"] - start
+
+
+def communication(row):
+    packet_id = (row.get("result") or {}).get("packet_id") or ""
+    return packet_id.split(":")[0] if ":" in packet_id else packet_id
+
+
+markers = [json.loads(p.read_text()) for p in (WORK / "q-node").rglob("*.json")]
+quarantine = {
+    "first": [{"packet_id": (r.get("result") or {}).get("packet_id"),
+               "status": (r.get("result") or {}).get("status"),
+               "failure_code": (r.get("result") or {}).get("failure_code")} for r in first],
+    "second_offered": len(second),
+    "new_ledger_files": len([f for f in ledger_files() if f not in before_ledgers]),
+    "refused_in_new_ledger_files": sum(
+        1 for f in ledger_files() if f not in before_ledgers
+        for r in first if (r.get("result") or {}).get("status") == "REFUSED"
+        if (r.get("result") or {}).get("packet_id") in Path(f).read_text()),
+    "markers": markers,
+}
+
 # A frame-only publication with no epoch: the WU-B13 helper default, marked.
 start = CALLS["n"]
 kernel.publish_packet(dict(packet, packet_id="probe-frame-only"), root=WORK / "frame-only-mesh")
@@ -103,4 +151,5 @@ for path in WORK.rglob("*.json"):
         references(json.loads(path.read_text()), found)
     except ValueError:
         pass
-print(json.dumps({"phases": phases, "references": found, "responses": responses}, sort_keys=True))
+print(json.dumps({"phases": phases, "references": found, "responses": responses, "quarantine": quarantine},
+                 sort_keys=True))

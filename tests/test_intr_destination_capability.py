@@ -330,7 +330,7 @@ class AddressedAndClosedTests(RedirectedLedgers):
             payload=payload, standing=standing(),
             transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=4096)
         return packet
 
     def consume(self):

@@ -543,6 +543,29 @@ class ClockProbeTests(unittest.TestCase):
             self.assertEqual(response["heartbeat_reference"]["epoch"], 4096)
             self.assertIs(response["heartbeat_reference"]["derived_from_clock"], False)
         self.assertEqual(classes["ecosystem.monitor.response"]["monitor_heartbeat"]["epoch"], 4096)
+        # B-P36j / B-P36k: a CLOCK frame and a forged CARRIED claim (head ff..ff)
+        # beside a valid frame are refused, quarantined terminally with six
+        # fields and no clock read; nothing of theirs reaches a ledger, and a
+        # second cycle proceeds without offering them again.
+        quarantine = probe["quarantine"]
+        self.assertEqual(probe["phases"]["quarantine_clock_calls"], 0)
+        refused = {row["failure_code"] for row in quarantine["first"] if row["status"] == "REFUSED"}
+        self.assertEqual(refused, {"HB_EPOCH_INVALID", "CARRIED_PROVENANCE_UNVERIFIED"})
+        self.assertEqual([row["status"] for row in quarantine["first"]].count("CONSUMED"), 1)
+        self.assertEqual(quarantine["second_offered"], 0)
+        self.assertGreater(quarantine["new_ledger_files"], 0)
+        self.assertEqual(quarantine["refused_in_new_ledger_files"], 0)
+        markers = [m for m in quarantine["markers"] if m.get("status") == "REFUSED"]
+        self.assertEqual(len(markers), 2)
+        for marker in markers:
+            self.assertEqual(marker["failure_code"], "FRAME_REFUSED_QUARANTINED")
+            self.assertIs(marker["quarantined"], True)
+            for field in SIX_FIELDS:
+                self.assertTrue(marker[field], field)
+            # Stamps no clock value: no heartbeat reference, no sample, not the clock's reading.
+            for key in ("sampled_unix_ns", "derived_from_clock", "heartbeat_reference", "hb_reference"):
+                self.assertNotIn(key, marker)
+            self.assertNotIn(str(FIXED_CLOCK_NS), json.dumps(marker))
         self.assertIs(classes["ecosystem.monitor.response"]["monitor_heartbeat"]["derived_from_clock"], False)
         for reference in probe["references"]:
             if reference.get("derived_from_clock") is False:

@@ -464,6 +464,12 @@ def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:s
     node_state=addressed_node_state_store(node_state_root) if node_state_root is not None else None
     results=[]
     for item in scan_addressed_frames(organization,root=mesh_root,seen=seen):
+        refused=frame_epoch_refusal(item["frame"],custody)
+        if refused is not None:
+            results.append({"path":item["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
+                            "failed_predicate":refused["failed_predicate"],"failure_code":refused["failure_code"],
+                            "packet_id":item["frame"].get("packet_id")},"organization_record":None})
+            continue
         epoch=(item["frame"].get("heartbeat_reference") or {}).get("epoch")
         result,recorded=ingest_recorded(repo_root,item,custody,registry,mesh_root=mesh_root,
                                         node_state=node_state,epoch=epoch)
@@ -867,6 +873,17 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
     effective_seen=set(seen or set())|durable_seen
     out=[]
     for item in scan_addressed_frames(organization,root=mesh_root,seen=effective_seen):
+        # A frame whose epoch is not supplied (or whose CARRIED claim does not
+        # verify) is refused before it is recovered or consumed, and made
+        # terminal: quarantined, never offered again, nothing else written.
+        refused=frame_epoch_refusal(item["frame"],custody) if now_ns is None else None
+        if refused is not None:
+            marker=quarantine_federation_frame(item["path"],item["frame"],refused,store=node_state)
+            out.append({"path":item["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
+                        "failed_predicate":refused["failed_predicate"],"failure_code":refused["failure_code"],
+                        "packet_id":item["frame"].get("packet_id"),"quarantined":True},
+                        "response_publication":None,"organization_record":None,"seen_marker":str(marker)})
+            continue
         packet=recover_packet(item["frame"])
         # An answer is stamped with the epoch of the frame it answers, which
         # recovery has already validated. Consuming the same frame again then
@@ -970,6 +987,76 @@ def federation_seen_frame_names(repo_root:Path, *, store:Any|None=None)->set[str
         if isinstance(value,dict) and isinstance(value.get("frame_name"),str):
             names.add(value["frame_name"])
     return names
+
+FRAME_REFUSED_QUARANTINED="FRAME_REFUSED_QUARANTINED"
+
+def frame_epoch_refusal(frame:dict[str,Any], custody:dict[str,Any])->dict[str,Any]|None:
+    """The six-field refusal of a consumed frame's epoch, or None. No clock is read.
+
+    A frame's epoch reaches this organization's receipts, so it must be one
+    the frame says was supplied: derived_from_clock exactly false, no clock
+    sample, and the shared rule's [0-9]+ >= 32. A frame stamped from a clock
+    used to be consumed at its clock epoch and recorded as derived_from_clock
+    false. A frame that claims CARRIED provenance (source, head_receipt_sha)
+    is verified against this organization's current ledger head -- that head,
+    supplied, at the same epoch -- or refused CARRIED_PROVENANCE_UNVERIFIED;
+    the claim is never stripped to read the frame as SUPPLIED.
+    """
+    ledger=custody["organization_ledger"]
+    ref=frame.get("heartbeat_reference")
+    epoch=ref.get("epoch") if isinstance(ref,dict) else None
+    failure=ledger.supplied_epoch_failure(epoch,ref) or ledger.reference_provenance_failure(ref)
+    if failure is None and isinstance(ref,dict) and ("source" in ref or "head_receipt_sha" in ref):
+        store=custody["organization_store"]; ls=custody["emitter"].ledger_store
+        head=store.get(ls.HEAD_KEY)
+        head_sha=(head or {}).get("receipt_sha256") if isinstance(head,dict) else None
+        receipt=store.get(ls.receipt_key(head_sha)) if isinstance(head_sha,str) else None
+        head_ref=(receipt or {}).get("hb_reference") if isinstance(receipt,dict) else None
+        if not (str(ref.get("source","")).startswith("CARRIED:") and head_sha is not None
+                and ref.get("head_receipt_sha")==head_sha and isinstance(head_ref,dict)
+                and head_ref.get("derived_from_clock") is False and "sampled_unix_ns" not in head_ref
+                and head_ref.get("epoch")==epoch):
+            failure=("CARRIED_PROVENANCE_UNVERIFIED",
+                     "the frame's CARRIED claim "+repr(ref.get("head_receipt_sha"))
+                     +" is not this organization's current supplied ledger head at epoch "+repr(epoch))
+    if failure is None:
+        return None
+    code,detail=failure
+    return {"disposition":"FAIL_CLOSED","failure_code":code,
+            "failed_predicate":ledger.HB_EPOCH_PREDICATE,"detail":detail,
+            "required_evidence_or_repair":("a frame carries a supplied epoch: derived_from_clock false, no "
+                                           "sampled_unix_ns, ASCII digits >= "+str(HB_ANCHOR_EPOCH)
+                                           +"; a CARRIED claim names this organization's current supplied head"),
+            "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
+            "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
+            "next_attempt":"the sender republishes the crossing with a supplied epoch; this frame is quarantined "
+                           "and not offered again"}
+
+def quarantine_federation_frame(frame_path:str, frame:dict[str,Any], refusal:dict[str,Any], *,
+                                store:Any|None=None)->Path:
+    """Mark a refused frame terminal: a six-field quarantine seen-marker, once. No clock is read.
+
+    It is the frame's seen-marker, so the frame is never offered again and
+    never blocks a later cycle. Nothing else is written for it: no receipt
+    can be stamped without a supplied epoch.
+    """
+    target=required_node_state(store)
+    frame_name=node_store_module.frame_name(str(frame_path))
+    marker={"schema_version":"stegverse.federation-frame-consumption.v1",
+            "frame_name":frame_name,"frame_sha256":frame.get("frame_sha256"),
+            "packet_id":frame.get("packet_id"),"destination_org":frame.get("destination_org"),
+            "status":"REFUSED","quarantined":True,
+            "failure_code":FRAME_REFUSED_QUARANTINED,"refusal_failure_code":refusal["failure_code"],
+            "failed_predicate":refusal["failed_predicate"],"detail":refusal["detail"],
+            "required_evidence_or_repair":refusal["required_evidence_or_repair"],
+            "retry_entrypoint":refusal["retry_entrypoint"],"owning_existing_goal":refusal["owning_existing_goal"],
+            "next_attempt":refusal["next_attempt"],"authority_effect":"NONE_CARRIER_ONLY"}
+    key=node_store_module.seen_key(frame_name)
+    try:
+        target.put_once(key,marker)
+    except node_store_module.WriteOnceCollision:
+        raise ValueError("federation_seen_marker_collision")
+    return Path(target.locator(key))
 
 def mark_federation_frame_seen(repo_root:Path, frame_path:str, frame:dict[str,Any], result:dict[str,Any],
                                *, store:Any|None=None)->Path:
