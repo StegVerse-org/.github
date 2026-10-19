@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 155,
+      "PROPER": 177,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
-      "NAMING_ONLY": 20,
-      "total": 194
+      "NAMING_ONLY": 25,
+      "total": 221
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -492,7 +492,7 @@
     {
       "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
       "line": 19,
-      "text": "Master Records is the **recorder of released organization batch receipts** — downstream evidence preservation only (`docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md`, \"master-records restated\"). It cannot create, admit, authorize, infe",
+      "text": "Master Records is the **recorder of released organization batch receipts** \u2014 downstream evidence preservation only (`docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md`, \"master-records restated\"). It cannot create, admit, authorize, infe",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -1178,7 +1178,7 @@
     {
       "file": "README.md",
       "line": 174,
-      "text": "External LLM ingress stays on the declared `healthy node → LLM-adapter → SDK → StegVerse-org/.github → Interlock/InTr → Organization Ledger` path. HCB is optional and never a required hop; already-admitted internal Sandbox work does not re-",
+      "text": "External LLM ingress stays on the declared `healthy node \u2192 LLM-adapter \u2192 SDK \u2192 StegVerse-org/.github \u2192 Interlock/InTr \u2192 Organization Ledger` path. HCB is optional and never a required hop; already-admitted internal Sandbox work does not re-",
       "classification": "PROPER",
       "reason": "States Master Records is downstream and non-gating on the declared external ingress path."
     },
@@ -1419,6 +1419,195 @@
       "text": "\"master_records_in_path\": false,",
       "classification": "PROPER",
       "reason": "Byte snapshot of StegVerse-org/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/manifest.json",
+      "line": 310,
+      "text": "\"organization\": \"master-records\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/manifest.json",
+      "line": 311,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/manifest.json",
+      "line": 315,
+      "text": "\"file\": \"master-records.interlock-intr.json\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/manifest.json",
+      "line": 320,
+      "text": "\"file\": \"master-records.services.json\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.interlock-intr.json",
+      "line": 3,
+      "text": "\"organization\": \"master-records\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.interlock-intr.json",
+      "line": 4,
+      "text": "\"owner_repository\": \"master-records/.github\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 2,
+      "text": "\"schema_version\": \"master-records.service-registry.v1\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 3,
+      "text": "\"organization\": \"master-records\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 6,
+      "text": "\"service_id\": \"master-records.org-control\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 7,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 19,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 18,
+      "text": "\"service_id\": \"master-records.boundary-diagnostic\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 25,
+      "text": "\"service_id\": \"master-records.orchestration\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 26,
+      "text": "\"repository\": \"master-records/orchestration\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 37,
+      "text": "\"repository\": \"master-records/orchestration\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 76,
+      "text": "\"repository\": \"master-records/orchestration\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 34,
+      "text": "\"master-records.ecosystem-transition-ledger\"",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 36,
+      "text": "\"legacy_reference\": \"MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 54,
+      "text": "\"service_id\": \"master-records.monitoring\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 55,
+      "text": "\"repository\": \"master-records/monitoring\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 61,
+      "text": "\"service_id\": \"master-records.core-lite\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 62,
+      "text": "\"repository\": \"master-records/core-lite\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 68,
+      "text": "\"service_id\": \"master-records.telemetry\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 69,
+      "text": "\"repository\": \"master-records/telemetry\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 75,
+      "text": "\"service_id\": \"master-records.sv002-self-characterization-reconstruction\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 93,
+      "text": "\"boundary_rule\": \"Cross-organization ingress/egress semantics are defined by the organization boundary; endpoint authority remains transition-governed. Master Records records released organization batch receipts only; it holds no transition",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/test_intr_protocol_conformance.py",
+      "line": 23,
+      "text": "\"Infrastructure-Continuity-Ventures\", \"Triad-Test\", \"formalism-tests\", \"master-records\"]",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
     }
   ]
 }

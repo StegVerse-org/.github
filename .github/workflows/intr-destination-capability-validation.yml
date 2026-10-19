@@ -87,7 +87,10 @@ jobs:
           python - <<'PY'
           import json
           r = json.load(open("mesh.json"))
-          assert r["counts"] == {"ALLOW": 8, "DENY": 0, "FAIL_CLOSED": 0}, r["counts"]
+          # 16 organizations (federation.json); 8 do not install the receiving operation (class B).
+          assert r["counts"] == {"ALLOW": 8, "DENY": 0, "FAIL_CLOSED": 8}, r["counts"]
+          for row in r["results"]:
+              print(" ", row["subject"]["organization"], row["disposition"], row.get("failure_code", ""), row.get("failed_predicate", ""))
           print("INTR_PROTOCOL_V1_MESH", json.dumps(r["counts"], sort_keys=True), r["report_digest"])
           # Separate dimension: a main merge is a VERIFIED transfer only with a sealed, linked ledger receipt.
           print("INTR_PROTOCOL_V1_MERGE_TRANSFER", json.dumps(r["merge_transfer"]["counts"], sort_keys=True))
