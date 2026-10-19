@@ -690,6 +690,8 @@ class ClockProbeTests(unittest.TestCase):
                           "clock_generation": "HB_REFERENCE_INVALID",
                           # F11: a self-asserted CARRIED claim on an unflagged sampled frame.
                           "clock_forged_carried": "CARRIED_PROVENANCE_UNVERIFIED",
+                          # F-SCAN-RECURSION: a packet too deep to parse is the frame's defect.
+                          "deep_packet": "FRAME_INGEST_FAILED",
                           "valid": None})
         self.assertEqual(integrity["rows"]["valid"]["status"], "CONSUMED")
         self.assertGreater(integrity["valid_in_ledgers"], 0)
@@ -700,10 +702,11 @@ class ClockProbeTests(unittest.TestCase):
         # clock read and no ledger file; the valid frame is still ledgered.
         scan = probe["scan"]
         corrupt = ("0000-not-json.json", "0001-a-list.json", "0002-not-utf8.json", "0003-oversized.json",
-                   "0004-a-directory.json", "0005-read-error.json")
+                   "0004-a-directory.json", "0005-read-error.json", "0006-too-deep.json")
         self.assertEqual(probe["phases"]["scan_clock_calls"], 0)
-        self.assertEqual(tuple(scan["order"][:6]), corrupt)
-        self.assertEqual(scan["corrupt_only_rows"], 6)
+        self.assertEqual(tuple(scan["order"][:7]), corrupt)
+        self.assertEqual(scan["corrupt_only_rows"], 7)
+        self.assertIn("frame_entry_too_deep", scan["markers"]["0006-too-deep.json"]["detail"])
         self.assertEqual(scan["corrupt_only_ledger_files"], 0)
         for name in corrupt:
             self.assertEqual(scan["rows"][name], {"status": "REFUSED", "failure_code": "FRAME_INGEST_FAILED"}, name)
@@ -1341,7 +1344,8 @@ class WriterCliTraceTests(unittest.TestCase):
                 "resident-runtime/submit_org_transition_to_master_records.py": ["--org-receipt", "--standing"]}
         with tempfile.TemporaryDirectory() as work:
             bad = {"missing": Path(work) / "absent.json", "directory": Path(work)}
-            for name, content in (("not-json", b"{not json"), ("not-utf8", b"\xff\xfe{}"), ("a-list", b"[1,2,3]")):
+            for name, content in (("not-json", b"{not json"), ("not-utf8", b"\xff\xfe{}"), ("a-list", b"[1,2,3]"),
+                                  ("too-deep", b'{"a":' + b"[" * 200000)):
                 bad[name] = Path(work) / (name + ".json")
                 bad[name].write_bytes(content)
             ledgers = Path(work) / "ledgers"
@@ -1462,7 +1466,9 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as work:
             bad = Path(work) / "bad.json"
             bad.write_text("{not json")
-            for envelope in (Path(work) / "absent.json", bad, self.envelope(work, capability="governance")):
+            deep = Path(work) / "deep.json"
+            deep.write_text('{"a":' + "[" * 200000)
+            for envelope in (Path(work) / "absent.json", bad, deep, self.envelope(work, capability="governance")):
                 with self.subTest(envelope=envelope.name):
                     completed = self.run_boundary(envelope, Path(work) / "out.json")
                     self.assertEqual(completed.returncode, 65, completed.stderr)

@@ -37,7 +37,13 @@ WRITER_FAULT_MARKERS = ("contention", "lost_comparison")
 
 
 def writer_fault(exc: BaseException) -> bool:
-    """True for a fault writing the writer's own state, which a retry completes."""
+    """True for a fault writing the writer's own state, which a retry completes.
+
+    RecursionError (a RuntimeError) and MemoryError come from input too deep to
+    parse (F-SCAN-RECURSION): the input's fault, terminal, never a writer fault.
+    """
+    if isinstance(exc, (RecursionError, MemoryError)):
+        return False
     if isinstance(exc, (OSError, RuntimeError)):
         return True
     return isinstance(exc, (ValueError, SystemExit)) and any(m in str(exc).lower() for m in WRITER_FAULT_MARKERS)
@@ -68,7 +74,7 @@ def read_inputs(argv, inputs, entrypoint, owning_goal):
         except OSError as exc:
             return input_refusal(flag, path, type(exc).__name__ + ": " + str(exc), "INPUT_UNREADABLE",
                                  entrypoint, owning_goal)
-        except (UnicodeDecodeError, ValueError) as exc:
+        except (UnicodeDecodeError, ValueError, RecursionError, MemoryError) as exc:
             return input_refusal(flag, path, type(exc).__name__ + ": " + str(exc)[:160], "INPUT_INVALID",
                                  entrypoint, owning_goal)
         if not isinstance(document, dict):

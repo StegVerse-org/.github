@@ -275,6 +275,14 @@ del forged_sampled["heartbeat_reference"]["derived_from_clock"]
 forged_sampled["heartbeat_reference"].update({"source": "CARRIED:ORGANIZATION_LEDGER_HEAD",
                                               "head_receipt_sha": "sha256:" + "f" * 64})
 bad["clock_forged_carried"] = reseal(forged_sampled)
+# F-SCAN-RECURSION inside a frame: a packet whose bytes are too deeply nested to
+# parse. Its digests hold, so recovery reaches the parse and raises RecursionError
+# (a RuntimeError) -- the frame's defect, quarantined, never a pending writer fault.
+deep_packet = copy.deepcopy(kernel.carrier_frame(addressed("c-deep-packet"), epoch=4096))
+deep_raw = ('{"a":' + "[" * 200000).encode()
+deep_packet["packet_base64"] = __import__("base64").b64encode(deep_raw).decode()
+deep_packet["packet_sha256"] = kernel.sha(deep_raw)
+bad["deep_packet"] = reseal(deep_packet)
 for frame in bad.values():
     kernel.publish_frame(frame, root=imesh)
 good = addressed("c-integrity-valid")
@@ -309,6 +317,8 @@ def corrupt_mesh(name):
     (frames / "0003-oversized.json").write_text('{"pad": "' + "x" * (kernel.FRAME_ENTRY_LIMIT_BYTES + 1) + '"}')
     (frames / "0004-a-directory.json").mkdir()
     (frames / "0005-read-error.json").write_text("{}")
+    # F-SCAN-RECURSION: under the size cap, too deep for the parser.
+    (frames / "0006-too-deep.json").write_text('{"a":' + "[" * 200000)
     return root
 
 

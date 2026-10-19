@@ -466,6 +466,10 @@ def read_frame_entry(target:Any, key:str)->dict[str,Any]:
         raise ValueError("frame_entry_not_utf8: "+str(exc)[:120])
     except json.JSONDecodeError as exc:
         raise ValueError("frame_entry_not_json: "+str(exc)[:120])
+    except (RecursionError, MemoryError) as exc:
+        # A deeply nested document under the size cap (F-SCAN-RECURSION) is the
+        # entry's defect, never the scan's: quarantined like any unreadable entry.
+        raise ValueError("frame_entry_too_deep: "+type(exc).__name__)
     except OSError as exc:
         raise ValueError("frame_entry_read_error: "+type(exc).__name__+": "+str(exc)[:120])
     if not isinstance(frame,dict):
@@ -1426,7 +1430,13 @@ def request_id_collision(node_state:Any, packet:dict[str,Any], frame:dict[str,An
 WRITER_FAULT_MARKERS=("collision","contention","lost_comparison")
 
 def writer_fault(exc:BaseException)->bool:
-    """True for a fault writing this node's own state, which never makes a frame terminal."""
+    """True for a fault writing this node's own state, which never makes a frame terminal.
+
+    RecursionError subclasses RuntimeError but is raised by parsing content too
+    deep to read (F-SCAN-RECURSION): that is the frame's defect, never a writer fault.
+    """
+    if isinstance(exc,(RecursionError,MemoryError)):
+        return False
     if isinstance(exc,(OSError,RuntimeError,node_store_module.WriteOnceCollision)):
         return True
     return isinstance(exc,ValueError) and any(m in str(exc).lower() for m in WRITER_FAULT_MARKERS)

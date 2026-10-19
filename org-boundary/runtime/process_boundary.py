@@ -80,7 +80,8 @@ def main():
  ap=argparse.ArgumentParser(); ap.add_argument("--envelope",required=True); ap.add_argument("--registry",required=True); ap.add_argument("--out",required=True); ap.add_argument("--node-state-root",default=None); a=ap.parse_args()
  try:
   env=load(a.envelope); reg=load(a.registry)
- except (OSError,ValueError) as exc:
+ except (OSError,ValueError,RecursionError,MemoryError) as exc:
+  # A too-deep document (F-SCAN-RECURSION) is unreadable input too: terminal, 65.
   raise InputFault("input-unreadable: "+type(exc).__name__+": "+str(exc)[:200])
  if not isinstance(env,dict) or not isinstance(reg,dict): raise InputFault("input-not-a-json-object")
  req=["schema_version","packet_id","direction","origin","destination","carrier","intr_profile","transition","payload","evidence"]; miss=[k for k in req if k not in env]
