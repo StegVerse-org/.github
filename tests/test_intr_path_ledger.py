@@ -271,17 +271,23 @@ class TwoLevelPreflight(unittest.TestCase):
 
     def test_preflight_refusals_surface_with_six_fields_and_both_tips_stay_unchanged(self):
         commit = EXPECTED["verified_transfer_commit"]
+        # predicate -> (the env that breaks one half's location, the predicates the preflight may name: an
+        # organization writer that itself refuses the location (StegVerse-Labs: organization_ledger_locus_mismatch)
+        # is reported as ORGANIZATION_LEDGER_LOCATION_RESOLVES)
         cases = {
             "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF":
-                {"STEGVERSE_ORG_LEDGER_GIT_REF": "refs/heads/organization-ledger/elsewhere"},
+                ({"STEGVERSE_ORG_LEDGER_GIT_REF": "refs/heads/organization-ledger/elsewhere"},
+                 {"STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF", "ORGANIZATION_LEDGER_LOCATION_RESOLVES"}),
             "REPOSITORY_LEDGER_REF_IS_THE_DECLARED_REF":
-                {"STEGVERSE_REPO_LEDGER_ROOT": "git+%s#refs/heads/organization-ledger/elsewhere:%s"
+                ({"STEGVERSE_REPO_LEDGER_ROOT": "git+%s#refs/heads/organization-ledger/elsewhere:%s"
                                                % (self.ledger.root, NAMESPACE)},
+                 {"REPOSITORY_LEDGER_REF_IS_THE_DECLARED_REF", "REPOSITORY_LEDGER_LOCATION_RESOLVES"}),
             "ORGANIZATION_LEDGER_GIT_DIR_EXISTS":
-                {"STEGVERSE_ORG_LEDGER_ROOT": "git+%s#refs/stegverse/organization-ledger" % (Path(self.ledger.dir.name) / "absent.git"),
+                ({"STEGVERSE_ORG_LEDGER_ROOT": "git+%s#refs/stegverse/organization-ledger" % (Path(self.ledger.dir.name) / "absent.git"),
                  "STEGVERSE_ORG_LEDGER_GIT_DIR": str(Path(self.ledger.dir.name) / "absent.git")},
+                 {"ORGANIZATION_LEDGER_GIT_DIR_EXISTS", "ORGANIZATION_LEDGER_LOCATION_RESOLVES"}),
         }
-        for predicate, env in cases.items():
+        for predicate, (env, named) in cases.items():
             with self.subTest(predicate=predicate):
                 before = self.tips()
                 restore = self.broken(env)
@@ -290,8 +296,8 @@ class TwoLevelPreflight(unittest.TestCase):
                     paths = pt.append_transfers(commit)
                 finally:
                     restore()
-                self.assertEqual((merge["disposition"], merge["failure_code"], merge["failed_predicate"]),
-                                 ("FAIL_CLOSED", self.PREFLIGHT, predicate), merge)
+                self.assertEqual((merge["disposition"], merge["failure_code"]), ("FAIL_CLOSED", self.PREFLIGHT), merge)
+                self.assertIn(merge["failed_predicate"], named, merge)
                 self.six(merge)
                 # one transfer-level refusal when the broken location also hides the transfer from the readers,
                 # else one refusal per declared path
@@ -301,8 +307,8 @@ class TwoLevelPreflight(unittest.TestCase):
                     self.six(result)
                 if predicate == "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF":
                     # the readers still find the transfer, so the refusal is the writer's own preflight
-                    self.assertEqual({(r["failure_code"], r["failed_predicate"]) for r in paths},
-                                     {(self.PREFLIGHT, predicate)})
+                    self.assertEqual({r["failure_code"] for r in paths}, {self.PREFLIGHT}, paths)
+                    self.assertLessEqual({r["failed_predicate"] for r in paths}, named, paths)
                 self.assertEqual(self.tips(), before)
 
     def test_a_rollback_that_cannot_restore_a_tip_surfaces_with_six_fields(self):
