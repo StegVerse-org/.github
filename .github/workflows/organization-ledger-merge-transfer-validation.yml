@@ -2,8 +2,8 @@ name: Validate Main Merge Transfer
 
 # PR-facing checks for the main-merge transfer writer
 # (.github/workflows/organization-ledger-merge-transfer.yml). Read-only: the
-# published ledger ref is fetched, copied to a scratch ref, and the writer's
-# own commands run against that copy. Nothing is pushed.
+# published ledger ref is fetched, copied into a scratch git dir at the same
+# ref name, and the writer's own commands run against that copy. Nothing is pushed.
 on:
   pull_request:
     branches: [main]
@@ -14,6 +14,8 @@ on:
       - '.stegverse/transition-ledger/**'
       - 'resident-runtime/merge_transfer.py'
       - 'resident-runtime/intr_destination_ingress.py'
+      - 'resident-runtime/ledger_gitstore.py'
+      - 'resident-runtime/merge_transfer_gitstore.py'
       - 'resident-runtime/aggregate_repo_transition.py'
       - 'resident-runtime/ledger_store.py'
       - 'tests/test_merge_transfer.py'
@@ -24,7 +26,6 @@ permissions:
 
 env:
   LEDGER_REF: refs/stegverse/organization-ledger
-  DRY_RUN_REF: refs/dry-run/organization-ledger
 
 jobs:
   unit:
@@ -51,41 +52,64 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Copy the published ledger to a scratch ref
+      - name: Copy the published ledger into a scratch git dir at the declared ref
+        # The writers hold both halves to the declared ref name (resident-runtime/ledger_gitstore.py
+        # preflight, through intr_destination_ingress._append), so the copy keeps that name in a scratch
+        # bare git dir instead of a second ref name in the workspace. It is never pushed.
         run: |
           set -euo pipefail
-          git fetch --no-tags origin "+$LEDGER_REF:$DRY_RUN_REF"
-          echo "published ledger tip: $(git rev-parse "$DRY_RUN_REF")"
+          git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
+          published=$(git rev-parse "$LEDGER_REF")
+          echo "published ledger tip: $published"
+          scratch="$RUNNER_TEMP/scratch-ledger.git"
+          git init -q --bare "$scratch"
+          git --git-dir="$scratch" fetch -q "$GITHUB_WORKSPACE" "+$LEDGER_REF:$LEDGER_REF"
           namespace=$(python3 -c 'import json; print(json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]["namespace"])')
-          echo "REPO_LEDGER_NAMESPACE=$namespace" >> "$GITHUB_ENV"
+          {
+            echo "PUBLISHED_TIP=$published"
+            echo "SCRATCH=$scratch"
+            echo "STEGVERSE_ORG_LEDGER_ROOT=git+$scratch#$LEDGER_REF"
+            echo "STEGVERSE_REPO_LEDGER_ROOT=git+$scratch#$LEDGER_REF:$namespace"
+          } >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/results"
           python3 resident-runtime/merge_transfer.py commits --before "$BASE_SHA" --after "$BASE_SHA" \
             --pending .stegverse/merge-transfer/pending.json > "$RUNNER_TEMP/results/commits.txt"
           cat "$RUNNER_TEMP/results/commits.txt"
           test -s "$RUNNER_TEMP/results/commits.txt"
 
-      - name: "Real state, read-only: each pending merge is FAIL_CLOSED (no receipt)"
+      - name: "Real state, read-only: each pending merge is VERIFIED or not ledgered, never contradicted"
+        # A pending merge leaves FAIL_CLOSED once the push-to-main writer has ledgered it; both are sound.
         run: |
           set -euo pipefail
-          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
-          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
-          python3 resident-runtime/merge_transfer.py verify --expect FAIL_CLOSED \
-            --commits-file "$RUNNER_TEMP/results/commits.txt" --out "$RUNNER_TEMP/results/real-state.json"
+          status=0
+          python3 resident-runtime/merge_transfer.py verify --commits-file "$RUNNER_TEMP/results/commits.txt" \
+            --out "$RUNNER_TEMP/results/real-state.json" > /dev/null || status=$?
+          python3 - "$RUNNER_TEMP/results/real-state.json" <<'PY'
+          import json, sys
+          for r in json.load(open(sys.argv[1])):
+              ok = r["disposition"] == "ALLOW" or (r["disposition"] == "FAIL_CLOSED"
+                                                   and r["failure_code"] == "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED")
+              assert ok, r
+              print(r["merge_commit"], r["disposition"], r.get("failure_code"))
+          PY
 
-      - name: The writer's append on the scratch ref, then VERIFIED, then an idempotent replay
+      - name: The writer's append on the scratch copy, then VERIFIED, then an idempotent replay
         run: |
           set -euo pipefail
-          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
-          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
+          before=$(git --git-dir="$SCRATCH" rev-parse "$LEDGER_REF")
           python3 resident-runtime/merge_transfer.py append --commits-file "$RUNNER_TEMP/results/commits.txt" \
             --out "$RUNNER_TEMP/results/append.json"
           python3 resident-runtime/merge_transfer.py verify --commits-file "$RUNNER_TEMP/results/commits.txt" \
             --out "$RUNNER_TEMP/results/verify.json"
-          tip=$(git rev-parse "$DRY_RUN_REF")
+          tip=$(git --git-dir="$SCRATCH" rev-parse "$LEDGER_REF")
           python3 resident-runtime/merge_transfer.py append --commits-file "$RUNNER_TEMP/results/commits.txt" \
             --out "$RUNNER_TEMP/results/replay.json"
-          test "$(git rev-parse "$DRY_RUN_REF")" = "$tip"
+          test "$(git --git-dir="$SCRATCH" rev-parse "$LEDGER_REF")" = "$tip"
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert all(x["replayed"] is True for x in r), r' "$RUNNER_TEMP/results/replay.json"
-          # the published ref is untouched by this run
-          test "$(git rev-parse "$DRY_RUN_REF")" != "$(git ls-remote origin "$LEDGER_REF" | cut -f1)"
-          { echo '### dry run (scratch ref, not published)'; echo '```json'; cat "$RUNNER_TEMP/results/verify.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # an already ledgered merge is a replay that writes nothing; otherwise the append moved the scratch tip
+          python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert (sys.argv[2] == sys.argv[3]) == all(x["replayed"] is True for x in r), r' \
+            "$RUNNER_TEMP/results/append.json" "$before" "$tip"
+          # nothing was published: the workspace ref is the fetched tip and the remote never holds a scratch append
+          test "$(git rev-parse "$LEDGER_REF")" = "$PUBLISHED_TIP"
+          test "$tip" = "$before" || test "$(git ls-remote origin "$LEDGER_REF" | cut -f1)" != "$tip"
+          { echo '### dry run (scratch git dir, not published)'; echo '```json'; cat "$RUNNER_TEMP/results/verify.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
