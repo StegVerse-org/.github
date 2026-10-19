@@ -99,7 +99,7 @@ def carried_head_epoch(head):
  """The supplied epoch the segment's head receipt carries, or ReleaseRefused. No clock is read."""
  reference=head.get("hb_reference")
  epoch=reference.get("epoch") if isinstance(reference,dict) else None
- failure=AGG.supplied_epoch_failure(epoch,reference) or AGG.reference_provenance_failure(reference)
+ failure=AGG.supplied_epoch_failure(epoch,reference)
  if failure is not None:
   raise ReleaseRefused("RELEASED_SEGMENT_HEAD_CARRIES_A_SUPPLIED_EPOCH",failure[0]+": "+failure[1])
  return int(str(epoch))

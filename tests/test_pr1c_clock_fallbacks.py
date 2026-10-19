@@ -127,7 +127,8 @@ class OrganizationAppendTests(SixFields, unittest.TestCase):
         vendored = function_lines("resident-runtime/aggregate_repo_transition.py", "supplied_epoch_failure")
         self.assertEqual(hashlib.sha256(vendored.encode()).hexdigest(),
                          hashlib.sha256(shared.encode()).hexdigest())
-        self.assertTrue(hashlib.sha256(shared.encode()).hexdigest().startswith("7f36f0e6"))
+        # The StegVerse-Labs/.github#3282 FINAL text (SHARED_VALIDATOR_SHA256).
+        self.assertTrue(hashlib.sha256(shared.encode()).hexdigest().startswith("ad8ff529"))
 
 
 class ObservationWindowTests(SixFields, unittest.TestCase):

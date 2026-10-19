@@ -354,36 +354,37 @@ INTR = ROOT / "resident-runtime/intr_destination_ingress.py"
 FIXED_CLOCK_NS = org.kernel.HB_ANCHOR_UNIX_NS + 7_000_000_000
 
 
-class ReferenceProvenanceTests(unittest.TestCase):
-    """A heartbeat reference marks SUPPLIED, CARRIED or CLOCK; one that marks none is refused."""
+class SharedRuleReferenceTests(unittest.TestCase):
+    """The FINAL shared rule on a carrier reference: CLOCK and unmarked are refused; false passes."""
 
-    def test_supplied_and_carried_references_are_admitted(self):
-        supplied = org.kernel.hb_reference(epoch=4096)
-        self.assertIsNone(org.reference_provenance_failure(supplied))
-        carried = {**supplied, "source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "a" * 64}
-        self.assertIsNone(org.reference_provenance_failure(carried))
+    def setUp(self):
+        self.supplied = org.kernel.hb_reference(epoch=4096)
+        self.no_flag = {k: v for k, v in self.supplied.items() if k != "derived_from_clock"}
 
-    def test_a_flag_false_reference_without_a_sample_passes_whatever_its_source(self):
-        supplied = org.kernel.hb_reference(epoch=4096)
-        for source in ("SUPPLIED", "anything", "CARRIED:ORGANIZATION_LEDGER_HEAD"):
-            with self.subTest(source=source):
-                self.assertIsNone(org.reference_provenance_failure({**supplied, "source": source}))
+    def code(self, reference):
+        failure = org.supplied_epoch_failure(4096, reference)
+        return failure[0] if failure else None
 
-    def test_an_unmarked_reference_is_refused(self):
-        supplied = org.kernel.hb_reference(epoch=4096)
-        no_key = {k: v for k, v in supplied.items() if k != "derived_from_clock"}
-        for reference in (no_key, {**no_key, "derived_from_clock": None}, None):
-            with self.subTest(reference=reference):
-                self.assertEqual(org.reference_provenance_failure(reference)[0], "HB_EPOCH_PROVENANCE_UNMARKED")
+    def test_no_flag_with_a_sample_is_clock(self):
+        self.assertEqual(self.code({**self.no_flag, "sampled_unix_ns": FIXED_CLOCK_NS}), "HB_EPOCH_INVALID")
 
-    def test_a_clock_reference_or_any_sample_is_clock(self):
-        supplied = org.kernel.hb_reference(epoch=4096)
-        no_key = {k: v for k, v in supplied.items() if k != "derived_from_clock"}
-        for reference in (org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS),
-                          {**no_key, "sampled_unix_ns": FIXED_CLOCK_NS},
-                          {**supplied, "sampled_unix_ns": FIXED_CLOCK_NS}):
-            with self.subTest(reference=reference):
-                self.assertEqual(org.reference_provenance_failure(reference)[0], "HB_EPOCH_INVALID")
+    def test_a_fabricated_carried_claim_without_a_flag_is_unmarked(self):
+        forged = {**self.no_flag, "source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "f" * 64}
+        self.assertEqual(self.code(forged), "HB_EPOCH_PROVENANCE_UNMARKED")
+
+    def test_false_with_a_sample_is_clock(self):
+        self.assertEqual(self.code({**self.supplied, "sampled_unix_ns": FIXED_CLOCK_NS}), "HB_EPOCH_INVALID")
+
+    def test_false_passes_whatever_its_source(self):
+        self.assertIsNone(self.code({**self.supplied, "source": "X"}))
+        self.assertIsNone(self.code(self.supplied))
+
+    def test_the_rule_is_the_same_text_in_all_four_copies(self):
+        import hashlib, inspect
+        from tests.test_p1_supplied_epoch_and_ledger_paths import SHARED_VALIDATOR_SHA256
+        self.assertEqual(hashlib.sha256(inspect.getsource(org.supplied_epoch_failure).encode()).hexdigest(),
+                         SHARED_VALIDATOR_SHA256)
+        self.assertFalse(hasattr(org, "reference_provenance_failure"))
 
 
 class MarkerVocabularyTests(unittest.TestCase):
@@ -550,7 +551,8 @@ class ClockProbeTests(unittest.TestCase):
         quarantine = probe["quarantine"]
         self.assertEqual(probe["phases"]["quarantine_clock_calls"], 0)
         refused = {row["failure_code"] for row in quarantine["first"] if row["status"] == "REFUSED"}
-        self.assertEqual(refused, {"HB_EPOCH_INVALID", "CARRIED_PROVENANCE_UNVERIFIED"})
+        # NARROW S1: a clock-flagged frame lends no epoch, so recording it is NOT_SUPPLIED.
+        self.assertEqual(refused, {"HB_EPOCH_NOT_SUPPLIED", "CARRIED_PROVENANCE_UNVERIFIED"})
         self.assertEqual([row["status"] for row in quarantine["first"]].count("CONSUMED"), 1)
         self.assertEqual(quarantine["second_offered"], 0)
         self.assertGreater(quarantine["new_ledger_files"], 0)
@@ -626,7 +628,7 @@ class ReleasedSegmentHeadEpochTests(unittest.TestCase):
             self.assertEqual((reference["source"], reference["head_receipt_sha"]),
                              ("CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT", head["receipt_sha256"]))
             self.assertNotIn("sampled_unix_ns", reference)
-            self.assertIsNone(org.reference_provenance_failure(reference))
+            self.assertIsNone(org.supplied_epoch_failure(reference["epoch"], reference))
             payload = org.kernel.recover_packet(frames[0])["payload"]
             self.assertEqual(payload["hb_epoch_provenance"],
                              {"source": "CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT",

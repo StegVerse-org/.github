@@ -86,6 +86,8 @@ def supplied_epoch_failure(hb_epoch: Any, reference: Any = None) -> tuple[str, s
             and reference["derived_from_clock"] is not False:
         return "HB_EPOCH_INVALID", ("the carrier's derived_from_clock is not exactly false; "
                                     "a clock-derived epoch is not a supplied one")
+    if reference is not None and "sampled_unix_ns" in reference: return "HB_EPOCH_INVALID", "the carrier's heartbeat reference carries sampled_unix_ns; a sampled clock value is CLOCK, never a supplied epoch"
+    if reference is not None and "derived_from_clock" not in reference: return "HB_EPOCH_PROVENANCE_UNMARKED", "the carrier's heartbeat reference carries no derived_from_clock; an unmarked clock value is laundering, and a carrier cannot self-assert CARRIED provenance"
     return None
 
 
@@ -143,31 +145,6 @@ def epoch_refusal(hb_epoch):
         "owning_existing_goal": INTR_PROTOCOL_GOAL,
         "next_attempt": "append again with the supplied epoch; nothing was written",
     }
-
-
-def reference_provenance_failure(reference):
-    """(failure_code, detail) when a heartbeat reference does not mark its provenance, or None.
-
-    The companion to `supplied_epoch_failure`, whose text is pinned byte-identical
-    across organizations: a reference must say where its epoch came from.
-    SUPPLIED is derived_from_clock exactly false with no sampled_unix_ns; CARRIED
-    is the same plus a source "CARRIED:<origin>" and the head_receipt_sha it was
-    read from. CLOCK -- derived_from_clock true, or any sampled_unix_ns -- is
-    HB_EPOCH_INVALID. A reference that marks none of these (no flag, no sample)
-    is HB_EPOCH_PROVENANCE_UNMARKED. Converges to the shared companion text
-    StegVerse-Labs/.github#3282 publishes (SHARED_RULE_CONVERGENCE_PENDING).
-    """
-    if not isinstance(reference, dict):
-        return "HB_EPOCH_PROVENANCE_UNMARKED", "the heartbeat reference is not an object"
-    # CLOCK: flagged true, or carrying a clock sample (a bare sample is legacy CLOCK).
-    if reference.get("derived_from_clock") is True or "sampled_unix_ns" in reference:
-        return "HB_EPOCH_INVALID", "the heartbeat reference is derived from a clock, not supplied"
-    # Flag false and no sample is SUPPLIED or CARRIED, whatever its source field says.
-    if reference.get("derived_from_clock") is not False:
-        return "HB_EPOCH_PROVENANCE_UNMARKED", (
-            "the heartbeat reference does not mark its provenance: derived_from_clock must be exactly "
-            "false (SUPPLIED or CARRIED) or true (CLOCK)")
-    return None
 
 
 def clock_provenance(reference):

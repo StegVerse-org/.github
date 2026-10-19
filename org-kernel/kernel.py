@@ -91,6 +91,47 @@ def derive_channel(payload_hash:str)->dict[str,Any]:
     return {"channel_id":f"HB:H1:P{slot}","phase_slot":slot,"phase_slot_count":CHANNEL_COUNT,
             "derivation":"PAYLOAD_SHA256_FIRST64_MOD_16","authority_effect":"NONE_CARRIER_ONLY"}
 
+# The shared supplied-epoch rule, byte-identical to the copies in
+# org-boundary/runtime/capability_ingress.py, resident-runtime/aggregate_repo_transition.py
+# and resident-runtime/organization_egress_boundary.py (StegVerse-Labs/.github#3282 FINAL;
+# SHARED_VALIDATOR_SHA256 in tests/test_p1_supplied_epoch_and_ledger_paths.py).
+def supplied_epoch_failure(hb_epoch: Any, reference: Any = None) -> tuple[str, str] | None:
+    """The shared supplied-epoch rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH).
+
+    Byte-identical in StegVerse-org/.github#185 and StegVerse-Labs/.github#3212
+    and #3213. `hb_epoch` absent (None) is HB_EPOCH_NOT_SUPPLIED. Otherwise it
+    must be ASCII [0-9]+ only -- an int is read as its decimal text; a bool, a
+    float or anything coerced ('+33', ' 33', '3_3', '33.0') is refused -- with
+    integer value >= 32 (the HB32 anchor). `reference`, the carrier frame's
+    heartbeat reference when there is one, must be an object, and a
+    `derived_from_clock` it carries must be exactly false. Any failure is
+    HB_EPOCH_INVALID. Returns (failure_code, detail), or None when the epoch is
+    supplied. No clock is read.
+    """
+    if reference is not None and not isinstance(reference, dict):
+        return "HB_EPOCH_INVALID", "the carrier's heartbeat reference is not an object"
+    if hb_epoch is None:
+        return "HB_EPOCH_NOT_SUPPLIED", "no hb_epoch was supplied and no clock is read"
+    if isinstance(hb_epoch, bool):
+        text = None
+    elif isinstance(hb_epoch, int):
+        text = str(hb_epoch)
+    elif isinstance(hb_epoch, str):
+        text = hb_epoch
+    else:
+        text = None
+    if text is None or not text.isascii() or not text.isdigit():
+        return "HB_EPOCH_INVALID", "hb_epoch " + repr(hb_epoch) + " is not ASCII [0-9]+"
+    if int(text) < 32:
+        return "HB_EPOCH_INVALID", "hb_epoch " + text + " is below the HB32 anchor (32)"
+    if reference is not None and "derived_from_clock" in reference \
+            and reference["derived_from_clock"] is not False:
+        return "HB_EPOCH_INVALID", ("the carrier's derived_from_clock is not exactly false; "
+                                    "a clock-derived epoch is not a supplied one")
+    if reference is not None and "sampled_unix_ns" in reference: return "HB_EPOCH_INVALID", "the carrier's heartbeat reference carries sampled_unix_ns; a sampled clock value is CLOCK, never a supplied epoch"
+    if reference is not None and "derived_from_clock" not in reference: return "HB_EPOCH_PROVENANCE_UNMARKED", "the carrier's heartbeat reference carries no derived_from_clock; an unmarked clock value is laundering, and a carrier cannot self-assert CARRIED provenance"
+    return None
+
 CARRIED_PROVENANCE_KEYS=("source","head_receipt_sha")
 
 def carrier_frame(packet:dict[str,Any], *, now_ns:int|None=None, epoch:int|None=None,
@@ -1005,7 +1046,14 @@ def frame_epoch_refusal(frame:dict[str,Any], custody:dict[str,Any])->dict[str,An
     ledger=custody["organization_ledger"]
     ref=frame.get("heartbeat_reference")
     epoch=ref.get("epoch") if isinstance(ref,dict) else None
-    failure=ledger.supplied_epoch_failure(epoch,ref) or ledger.reference_provenance_failure(ref)
+    failure=supplied_epoch_failure(epoch,ref)
+    if isinstance(ref,dict) and (ref.get("derived_from_clock") is True or "sampled_unix_ns" in ref):
+        # NARROW S1: a clock-flagged frame lends no epoch. Every route that
+        # consumes a crossing here records it at both ledger levels, which takes
+        # a supplied epoch, so it ends NOT_SUPPLIED -- quarantined, not partly
+        # consumed (CLOCK_FLAGGED_FRAMES_CONSUMED_PENDING_WU_B13).
+        failure=("HB_EPOCH_NOT_SUPPLIED","a clock-flagged frame lends no epoch, and recording its crossing "
+                 "needs a supplied one; no clock is read")
     if failure is None and isinstance(ref,dict) and ("source" in ref or "head_receipt_sha" in ref):
         store=custody["organization_store"]; ls=custody["emitter"].ledger_store
         head=store.get(ls.HEAD_KEY)
