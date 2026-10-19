@@ -144,7 +144,7 @@ class Append(unittest.TestCase):
     def test_a_ledgered_path_is_answered_from_the_ledger_on_a_later_push(self):
         pt.append_transfers(TRANSFER)
         after = self.ledger.files()
-        later = pt.append_transfers("f160ac7d61891ee8b187368fbf05372eacc8064c")
+        later = pt.append_transfers(EXPECTED["later_verified_transfer_commit"])
         self.assertTrue(all(r.get("replayed") for r in later))
         self.assertEqual(self.ledger.files(), after)
 
