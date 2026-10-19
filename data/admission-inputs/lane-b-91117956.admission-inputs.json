@@ -1602,7 +1602,7 @@
         },
         {
           "path": ".github/workflows/intr-path-transfer-validation.yml",
-          "blob_digest": "sha256:92b882b7c7fa3397aba3bdc05ddd1bf8d028ec028a944023311d79a756ce2505",
+          "blob_digest": "sha256:311d915749a3dad961bf595f2676ba06ccedfcadc58c1439860616b94606c378",
           "deleted": false
         },
         {
@@ -1617,7 +1617,7 @@
         },
         {
           "path": "data/intr-protocol/v1/protocol.json",
-          "blob_digest": "sha256:a144c616c4fa082fa1f79a53c85ec1c8e3212ece5a585749bac701a64338d41f",
+          "blob_digest": "sha256:7100e4c70413e8a5514dddbfd336d0d3c3210a22dbacb4ed6cbebfc6f7c789b1",
           "deleted": false
         },
         {
@@ -1627,7 +1627,7 @@
         },
         {
           "path": "docs/INTR_PATH_TRANSFER_V1.md",
-          "blob_digest": "sha256:470a380d800ccb8d9982f56131e8819d40942b1c3aa18c2873f59ffd3d0df94e",
+          "blob_digest": "sha256:be8c54aeef3797e54e1a4a0befee21f1a27ab1df532182f6d849e4e8e4d7e375",
           "deleted": false
         },
         {
@@ -1637,12 +1637,17 @@
         },
         {
           "path": "resident-runtime/intr_path_ingress.py",
-          "blob_digest": "sha256:36156360eb88eaeb7fae59c2b2233daa7cdd261acf6c1f1eea3ec824b7496a82",
+          "blob_digest": "sha256:056ba90679f8932b0ad9ab08506c56a975ea9e4580788b539ff551c8920e8102",
           "deleted": false
         },
         {
           "path": "resident-runtime/intr_path_transfer.py",
-          "blob_digest": "sha256:11c44de132cb69d60ba471294eddbf3ab9c5304866e2fddecf49b79a9d1f2e24",
+          "blob_digest": "sha256:2909ec9480467ad8622726686b1808b87e3f794bc477566806cd86376db7592d",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_tvc_read.py",
+          "blob_digest": "sha256:a3f14f99fe50b598d90173709efa186608acb50921a2bb564ef616fccf8e3afe",
           "deleted": false
         },
         {
@@ -1653,6 +1658,11 @@
         {
           "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
           "blob_digest": "sha256:49d64a2be052e8568bb0ddd7bd2e20962d6633149d2bb35575c62fc93b534231",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+          "blob_digest": "sha256:41c6d58d3958a38ba4c3ce6bb6d1ce656dda4a6d2b2ee0cf44d7d1ab3a5de684",
           "deleted": false
         },
         {
@@ -1747,7 +1757,12 @@
         },
         {
           "path": "tests/test_intr_path_transfer.py",
-          "blob_digest": "sha256:6c8ffcb0a80bde3305e5adeea471f7cd7a3e354f08ca2afedb8e91708ff0a887",
+          "blob_digest": "sha256:c9cd30b1117e9b633f2dbc3293ac4882f6271b0c14ee52b12559a7bee16de9f2",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_tvc_read.py",
+          "blob_digest": "sha256:882878499f539a339bbbc8771ddee7a48ae9e1170d8deebb6eebaf18028b1e63",
           "deleted": false
         }
       ],
@@ -1763,8 +1778,10 @@
         "org-runtime/intr_protocol.py",
         "resident-runtime/intr_path_ingress.py",
         "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/intr_path_tvc_read.py",
         "tests/fixtures/intr-path-ingress/pin.json",
         "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
         "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
         "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
         "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
@@ -1783,7 +1800,8 @@
         "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
         "tests/fixtures/intr-protocol/destinations/manifest.json",
         "tests/test_intr_path_ingress.py",
-        "tests/test_intr_path_transfer.py"
+        "tests/test_intr_path_transfer.py",
+        "tests/test_intr_path_tvc_read.py"
       ],
       "declared_session": "Lane B (91117956)",
       "owning_goal": "StegVerse-org/.github#162",
@@ -1799,11 +1817,11 @@
       "projection": {
         "github_pull_request": "https://github.com/SV-011/.github/pull/17",
         "head_ref": "laneb/intr-path-ingress",
-        "head_sha": "a2d1281a18c73e52af55075dd093472c20464527",
+        "head_sha": "a697c50251c44dc86967ad24619ff8358211b10c",
         "base_commit": "a636fafca237a0f928fa0eccfe4585866bfecf9d",
         "title": "InTr mesh path transfer + destination carrier [Lane B, #162]"
       },
-      "content_identity_digest_without_registry_generation": "sha256:8b126bb84a04d10c5df3f5e725b7c3401b0b19efe3013991754a8c509c04687a",
+      "content_identity_digest_without_registry_generation": "sha256:b5b7a0c7270b321be143310aa27cf1e7abbd2c84f700a935197af38198e40b92",
       "unobserved_fields": [
         "/base_ref/registry_generation",
         "/hb_epoch",
@@ -1834,7 +1852,7 @@
         },
         {
           "path": ".github/workflows/intr-path-transfer-validation.yml",
-          "blob_digest": "sha256:92b882b7c7fa3397aba3bdc05ddd1bf8d028ec028a944023311d79a756ce2505",
+          "blob_digest": "sha256:9950cfb2655b31bbefbe917637ae6f15eaa85a6681851820ee67907d3b9f0211",
           "deleted": false
         },
         {
@@ -1859,12 +1877,12 @@
         },
         {
           "path": "data/intr-protocol/v1/protocol.json",
-          "blob_digest": "sha256:a144c616c4fa082fa1f79a53c85ec1c8e3212ece5a585749bac701a64338d41f",
+          "blob_digest": "sha256:7100e4c70413e8a5514dddbfd336d0d3c3210a22dbacb4ed6cbebfc6f7c789b1",
           "deleted": false
         },
         {
           "path": "docs/INTR_PATH_TRANSFER_V1.md",
-          "blob_digest": "sha256:470a380d800ccb8d9982f56131e8819d40942b1c3aa18c2873f59ffd3d0df94e",
+          "blob_digest": "sha256:be8c54aeef3797e54e1a4a0befee21f1a27ab1df532182f6d849e4e8e4d7e375",
           "deleted": false
         },
         {
@@ -1879,12 +1897,17 @@
         },
         {
           "path": "resident-runtime/intr_path_ingress.py",
-          "blob_digest": "sha256:36156360eb88eaeb7fae59c2b2233daa7cdd261acf6c1f1eea3ec824b7496a82",
+          "blob_digest": "sha256:056ba90679f8932b0ad9ab08506c56a975ea9e4580788b539ff551c8920e8102",
           "deleted": false
         },
         {
           "path": "resident-runtime/intr_path_transfer.py",
-          "blob_digest": "sha256:11c44de132cb69d60ba471294eddbf3ab9c5304866e2fddecf49b79a9d1f2e24",
+          "blob_digest": "sha256:2909ec9480467ad8622726686b1808b87e3f794bc477566806cd86376db7592d",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_tvc_read.py",
+          "blob_digest": "sha256:a3f14f99fe50b598d90173709efa186608acb50921a2bb564ef616fccf8e3afe",
           "deleted": false
         },
         {
@@ -1900,6 +1923,11 @@
         {
           "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
           "blob_digest": "sha256:352fcaa30046d38eb7fe488b9dd328a241332c8d7c1a596c0f23cfbc7661b104",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+          "blob_digest": "sha256:41c6d58d3958a38ba4c3ce6bb6d1ce656dda4a6d2b2ee0cf44d7d1ab3a5de684",
           "deleted": false
         },
         {
@@ -1994,7 +2022,12 @@
         },
         {
           "path": "tests/test_intr_path_transfer.py",
-          "blob_digest": "sha256:6c8ffcb0a80bde3305e5adeea471f7cd7a3e354f08ca2afedb8e91708ff0a887",
+          "blob_digest": "sha256:c9cd30b1117e9b633f2dbc3293ac4882f6271b0c14ee52b12559a7bee16de9f2",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_tvc_read.py",
+          "blob_digest": "sha256:882878499f539a339bbbc8771ddee7a48ae9e1170d8deebb6eebaf18028b1e63",
           "deleted": false
         }
       ],
@@ -2011,9 +2044,11 @@
         "resident-runtime/intr_destination_ingress.py",
         "resident-runtime/intr_path_ingress.py",
         "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/intr_path_tvc_read.py",
         "resident-runtime/merge_transfer.py",
         "tests/fixtures/intr-path-ingress/pin.json",
         "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
         "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
         "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
         "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
@@ -2032,7 +2067,8 @@
         "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
         "tests/fixtures/intr-protocol/destinations/manifest.json",
         "tests/test_intr_path_ingress.py",
-        "tests/test_intr_path_transfer.py"
+        "tests/test_intr_path_transfer.py",
+        "tests/test_intr_path_tvc_read.py"
       ],
       "declared_session": "Lane B (91117956)",
       "owning_goal": "StegVerse-org/.github#162",
@@ -2048,11 +2084,11 @@
       "projection": {
         "github_pull_request": "https://github.com/StegGhost/.github/pull/24",
         "head_ref": "laneb/intr-mesh-path",
-        "head_sha": "d4413b3bc95f23d412ad35c3fedd279f1ffb3c5a",
+        "head_sha": "ee27719805084031acf1efc565dd4e0588151077",
         "base_commit": "da5c94758601decb69cfea2084975b74e974bbc9",
         "title": "InTr mesh path transfer + destination carrier (with main-merge transfer) [Lane B, #162]"
       },
-      "content_identity_digest_without_registry_generation": "sha256:10aaefc59a99efa29bdde980e72dec9a1fef24b08acf81ca003f9964143e8ffb",
+      "content_identity_digest_without_registry_generation": "sha256:a8d7780a88216748f49a48f4b97d83761635839eaeaed708b925ead28944caef",
       "unobserved_fields": [
         "/base_ref/registry_generation",
         "/hb_epoch",
@@ -2083,7 +2119,7 @@
         },
         {
           "path": ".github/workflows/intr-path-transfer-validation.yml",
-          "blob_digest": "sha256:92b882b7c7fa3397aba3bdc05ddd1bf8d028ec028a944023311d79a756ce2505",
+          "blob_digest": "sha256:34b4101b5d59de2aac72247656f396f9a8352200068bd1dce16d1e876bcf3113",
           "deleted": false
         },
         {
@@ -2108,7 +2144,7 @@
         },
         {
           "path": "data/intr-protocol/v1/protocol.json",
-          "blob_digest": "sha256:a144c616c4fa082fa1f79a53c85ec1c8e3212ece5a585749bac701a64338d41f",
+          "blob_digest": "sha256:7100e4c70413e8a5514dddbfd336d0d3c3210a22dbacb4ed6cbebfc6f7c789b1",
           "deleted": false
         },
         {
@@ -2118,7 +2154,7 @@
         },
         {
           "path": "docs/INTR_PATH_TRANSFER_V1.md",
-          "blob_digest": "sha256:470a380d800ccb8d9982f56131e8819d40942b1c3aa18c2873f59ffd3d0df94e",
+          "blob_digest": "sha256:be8c54aeef3797e54e1a4a0befee21f1a27ab1df532182f6d849e4e8e4d7e375",
           "deleted": false
         },
         {
@@ -2133,12 +2169,17 @@
         },
         {
           "path": "resident-runtime/intr_path_ingress.py",
-          "blob_digest": "sha256:36156360eb88eaeb7fae59c2b2233daa7cdd261acf6c1f1eea3ec824b7496a82",
+          "blob_digest": "sha256:056ba90679f8932b0ad9ab08506c56a975ea9e4580788b539ff551c8920e8102",
           "deleted": false
         },
         {
           "path": "resident-runtime/intr_path_transfer.py",
-          "blob_digest": "sha256:11c44de132cb69d60ba471294eddbf3ab9c5304866e2fddecf49b79a9d1f2e24",
+          "blob_digest": "sha256:2909ec9480467ad8622726686b1808b87e3f794bc477566806cd86376db7592d",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_tvc_read.py",
+          "blob_digest": "sha256:a3f14f99fe50b598d90173709efa186608acb50921a2bb564ef616fccf8e3afe",
           "deleted": false
         },
         {
@@ -2154,6 +2195,11 @@
         {
           "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
           "blob_digest": "sha256:886ad10c517efdf801dd77f54ab2a3f30512cdffc66e83d2951060d9ed78e944",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+          "blob_digest": "sha256:41c6d58d3958a38ba4c3ce6bb6d1ce656dda4a6d2b2ee0cf44d7d1ab3a5de684",
           "deleted": false
         },
         {
@@ -2248,7 +2294,12 @@
         },
         {
           "path": "tests/test_intr_path_transfer.py",
-          "blob_digest": "sha256:6c8ffcb0a80bde3305e5adeea471f7cd7a3e354f08ca2afedb8e91708ff0a887",
+          "blob_digest": "sha256:c9cd30b1117e9b633f2dbc3293ac4882f6271b0c14ee52b12559a7bee16de9f2",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_tvc_read.py",
+          "blob_digest": "sha256:d9a64b4ab57822d3b89179c9dff1b53cef302b963ecc13fe728c50e83fe4eed0",
           "deleted": false
         }
       ],
@@ -2266,9 +2317,11 @@
         "resident-runtime/intr_destination_ingress.py",
         "resident-runtime/intr_path_ingress.py",
         "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/intr_path_tvc_read.py",
         "resident-runtime/merge_transfer.py",
         "tests/fixtures/intr-path-ingress/pin.json",
         "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
         "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
         "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
         "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
@@ -2287,7 +2340,8 @@
         "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
         "tests/fixtures/intr-protocol/destinations/manifest.json",
         "tests/test_intr_path_ingress.py",
-        "tests/test_intr_path_transfer.py"
+        "tests/test_intr_path_transfer.py",
+        "tests/test_intr_path_tvc_read.py"
       ],
       "declared_session": "Lane B (91117956)",
       "owning_goal": "StegVerse-org/.github#162",
@@ -2303,11 +2357,11 @@
       "projection": {
         "github_pull_request": "https://github.com/SV-LLM/.github/pull/50",
         "head_ref": "laneb/intr-mesh-path",
-        "head_sha": "2df47daa1e682ce72b8e5b5133c6e8fd023fdab3",
+        "head_sha": "c8a4032382947d4dbcdd9bffc3c6abe37a759e55",
         "base_commit": "398326a27bc5816a5d06bffac8894a19d997ccdf",
         "title": "InTr mesh path transfer + destination carrier (with main-merge transfer) [Lane B, #162]"
       },
-      "content_identity_digest_without_registry_generation": "sha256:9cf4826d5dcb762f2d3b2ce562bac03d4d3231156eaa830961547e5ae6836deb",
+      "content_identity_digest_without_registry_generation": "sha256:957ad68c9dd284c2120b4c55ed8d9a818c50bad56d6f253a20d98553923e2d0e",
       "unobserved_fields": [
         "/base_ref/registry_generation",
         "/hb_epoch",
