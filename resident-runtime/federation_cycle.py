@@ -16,7 +16,7 @@ LS=importlib.util.module_from_spec(LSSPEC); LSSPEC.loader.exec_module(LS)
 PRSPEC=importlib.util.spec_from_file_location("propagate_repository_receipts",ROOT/"resident-runtime"/"propagate_repository_receipts.py")
 PR=importlib.util.module_from_spec(PRSPEC); PRSPEC.loader.exec_module(PR)
 
-def returns_for_consumed(results, *, mesh_root, hb_epoch=None):
+def returns_for_consumed(results, *, mesh_root, hb_epoch=None, hb_epoch_source=None):
     """Materialize the governance return for each decision consumed in this cycle.
 
     The consumed answer is the event; nothing waits for it. The return operation
@@ -50,7 +50,8 @@ def returns_for_consumed(results, *, mesh_root, hb_epoch=None):
         # supplied epoch it is stamped with that epoch (K.EPOCH_RESOLUTION), never
         # with the deciding organization's; the answer frame is named by its packet.
         returned=module.return_on_consumption(item["result"]["packet"], mesh_root=mesh_root,
-                                              hb_epoch=reference.get("epoch") if hb_epoch is None else hb_epoch)
+                                              hb_epoch=reference.get("epoch") if hb_epoch is None else hb_epoch,
+                                              hb_epoch_source=hb_epoch_source)
         if returned is not None:
             out.append({key:returned.get(key) for key in (
               "disposition","trigger","decision_returned","governance_disposition","governance_failed_predicate","failed_predicate",

@@ -135,6 +135,41 @@ class PeerAnswerReturned(unittest.TestCase):
         self.assertIn("ORGANIZATION_EGRESS_CLOSED", classes)
         self.assertTrue(repository["every_receipt_retained_in_organization_ledger"])
 
+    def test_a_push_runs_epoch_source_is_recorded_on_every_receipt_it_writes(self):
+        """09:20Z ruling (b): the crossing and the closure, at both levels, record SUPPLIED,
+        source COMMITTED_REQUEST and the committed request's digest beside the epoch."""
+        source = {"source": "COMMITTED_REQUEST", "request_sha256": "sha256:" + "d" * 64}
+        self.answer_on_the_peer_mesh()
+        intake.intake(self.peer, own_mesh_root=self.own)
+        result = cycle.run(mesh_root=self.own, node_state_root=Path(self.temp.name) / "node", hb_epoch=4096,
+                           hb_epoch_source=source)
+        self.assertEqual(result["governance_returns"][0]["disposition"], "ALLOW", result)
+        store_module = egress.repository_ledger.ledger_store
+
+        def chain(locator):
+            store = store_module.open_store(store_module.parse_locator(locator))
+            cursor, found = (store.get(store_module.HEAD_KEY) or {}).get("receipt_sha256"), []
+            while cursor:
+                receipt = store.get(store_module.receipt_key(cursor))
+                found.append(receipt)
+                cursor = receipt.get("previous_receipt_sha256")
+            return found
+
+        repository = {r["transition_class"]: r for r in chain(os.environ["STEGVERSE_REPO_LEDGER_ROOT"])}
+        organization = chain(os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
+        crossing = repository["ORGANIZATION_FEDERATION_CROSSING_CONSUMED"]
+        closure = repository["ORGANIZATION_EGRESS_CLOSED"]
+        self.assertEqual(crossing["evidence"]["frame_reference"]["cycle_epoch_source"], source)
+        self.assertEqual(closure["evidence"]["hb_epoch_source"], source)
+        for repository_receipt, where in ((crossing, "frame_reference"), (closure, None)):
+            org_receipt = next(r for r in organization if r.get("repo_receipt_sha256") == repository_receipt["receipt_sha256"])
+            evidence = org_receipt["boundary_evidence"]
+            recorded = evidence[where]["cycle_epoch_source"] if where else evidence["hb_epoch_source"]
+            self.assertEqual(recorded, source, repository_receipt["transition_class"])
+            for receipt in (repository_receipt, org_receipt):
+                self.assertEqual((receipt["hb_reference"]["epoch"], receipt["hb_reference"]["derived_from_clock"]),
+                                 (4096, False))
+
     def test_a_replayed_answer_returns_the_closure_already_recorded(self):
         self.answer_on_the_peer_mesh()
         intake.intake(self.peer, own_mesh_root=self.own)

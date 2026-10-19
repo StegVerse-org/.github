@@ -560,7 +560,8 @@ def epoch_refusal(hb_epoch: Any, entrypoint: str) -> dict[str, Any] | None:
 
 
 def _record(transition_id: str, transition_class: str, predecessor: str, successor: str,
-            record: Mapping[str, Any], hb_epoch: int) -> dict[str, Any]:
+            record: Mapping[str, Any], hb_epoch: int,
+            hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Append at both levels: the repository first, the organization consuming it.
 
     The epoch is the supplied one (`epoch_refusal` has admitted it), so the
@@ -571,16 +572,19 @@ def _record(transition_id: str, transition_class: str, predecessor: str, success
     if epoch_refusal(hb_epoch, "resident-runtime/organization_egress_boundary.py") is not None:
         raise ValueError("HB_EPOCH_NOT_SUPPLIED_OR_INVALID: a ledger append takes a supplied epoch")
     idempotent = True
+    # Where a push run's epoch came from (COMMITTED_REQUEST and the request
+    # digest) is recorded on both receipts beside the epoch; it never supplies one.
+    source = {"hb_epoch_source": dict(hb_epoch_source)} if hb_epoch_source is not None else {}
     repository_receipt = repository_ledger.append(
         transition_id, transition_class, predecessor, successor,
-        dict(record), "NONE", hb_epoch=hb_epoch,
+        {**dict(record), **source}, "NONE", hb_epoch=hb_epoch,
         idempotent_on=("frame_sha256", "payload_sha256") if idempotent else None)
     organization_receipt = organization_ledger.append(
         repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
         {"operation": OPERATION_ID,
          "intended_action": record["intended_action"],
          "disposition": record["disposition"],
-         "crossed_an_organization_boundary": record["crossed_an_organization_boundary"]},
+         "crossed_an_organization_boundary": record["crossed_an_organization_boundary"], **source},
         "NONE", hb_epoch=hb_epoch,
         idempotent=idempotent)
     return {"repository_receipt": repository_receipt,
@@ -888,7 +892,8 @@ def _recorded_attestation(emission: Mapping[str, Any] | None) -> dict[str, Any] 
 
 def close(destination_organization: str, packet_id: str, communication_id: str, *,
           root: Path | None = None, mesh_root: Path | None = None,
-          hb_epoch: int | None = None) -> dict[str, Any]:
+          hb_epoch: int | None = None,
+          hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Observe the far side's closure of an emitted crossing, and record it.
 
     Returns `PENDING` and records nothing when no response is in the mesh. An
@@ -933,7 +938,7 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
     transition_class = CLOSED_CLASS if not findings else CLOSURE_REFUSED_CLASS
     appended = _record(transition_class + ":" + packet_id, transition_class,
                        sha({"packet_id": packet_id, "communication_id": communication_id}),
-                       sha(record), record, hb_epoch)
+                       sha(record), record, hb_epoch, hb_epoch_source=hb_epoch_source)
     return {
         "schema": RESULT_SCHEMA,
         "operation": OPERATION_ID,

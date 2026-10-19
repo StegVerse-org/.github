@@ -64,7 +64,8 @@ def run(*, mesh_root, node_state_root, hb_epoch=None, hb_epoch_source=None):
         if "ledger_location_required_from_materializer" not in str(exc):
             raise
         return _refused(cycle.ledger_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
-    returns = cycle.returns_for_consumed(results, mesh_root=mesh_root, hb_epoch=int(str(hb_epoch)))
+    returns = cycle.returns_for_consumed(results, mesh_root=mesh_root, hb_epoch=int(str(hb_epoch)),
+                                         hb_epoch_source=hb_epoch_source)
     return {
         "schema": SCHEMA,
         "organization": K.load_registry(ROOT)["organization"],

@@ -1148,6 +1148,15 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
         self.assertEqual(binding["runtime_dispatcher"]["status"], "PENDING_SUBSTRATE")
         self.assertIs(binding["accepts_carried_crossings"], False)
         self.assertIs(org.kernel.ACCEPTS_CARRIED_CROSSINGS, binding["accepts_carried_crossings"])
+        for record in binding["open_records"]:
+            with self.subTest(open_record=record["failure_code"]):
+                self.assertEqual(record["state"], "OPEN")
+                for field in SIX_FIELDS:
+                    self.assertTrue(record[field], field)
+        self.assertEqual({r["failure_code"] for r in binding["open_records"]},
+                         {"MERGE_TRANSFER_PROVENANCE_PENDING_206", "PROPAGATE_MISSING_LEDGER_ROOT_IS_SILENT",
+                          "IDENTICAL_REQUEST_AT_TWO_EPOCHS_ANSWERED_TWICE",
+                          "DIRECT_KERNEL_CONSUME_STAMPS_THE_FRAME_EPOCH", "KERNEL_LEGACY_DIRECT_CALL_PATHS"})
         pending, = [r for r in binding["open_records"] if r["failure_code"] == "MERGE_TRANSFER_PROVENANCE_PENDING_206"]
         self.assertEqual((pending["state"], pending["owning_existing_goal"]), ("OPEN", "StegVerse-org/.github#206"))
         for field in SIX_FIELDS:

@@ -638,7 +638,7 @@
     },
     {
       "file": "resident-runtime/governance_decision_return.py",
-      "line": 121,
+      "line": 122,
       "text": "\"master_records_organization_record_observed\": False}",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
@@ -1457,14 +1457,14 @@
     },
     {
       "file": "tests/test_receipt_time_base.py",
-      "line": 1360,
+      "line": 1369,
       "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"):",
       "classification": "NAMING_ONLY",
       "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": "tests/test_receipt_time_base.py",
-      "line": 1313,
+      "line": 1322,
       "text": "\"resident-runtime/submit_org_transition_to_master_records.py\": [\"--org-receipt\", \"--standing\"]}",
       "classification": "NAMING_ONLY",
       "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."

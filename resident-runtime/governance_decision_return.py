@@ -105,7 +105,8 @@ def answered_decision(answer: Any, request: Mapping[str, Any], governance_reques
 
 
 def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communication_id: str,
-                    mesh_root: Path | None, hb_epoch: int | None = None) -> dict[str, Any]:
+                    mesh_root: Path | None, hb_epoch: int | None = None,
+                    hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Observe the decision's return, record it, and hand it to the SDK."""
     request = derive_execution_request(manifest, ingress.boundary())
     binding = governance_binding()
@@ -126,7 +127,7 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
                 "authority_effect": "NONE_REFUSAL_ONLY"}
 
     closed = egress.close(binding["destination_organization"], packet_id, communication_id,
-                          mesh_root=mesh_root, hb_epoch=hb_epoch)
+                          mesh_root=mesh_root, hb_epoch=hb_epoch, hb_epoch_source=hb_epoch_source)
     if closed["disposition"] == egress.PENDING:
         return {**base, "disposition": "PENDING", "decision_returned": False,
                 "absence_is_not_a_transition": True, "observation_only": True,
@@ -245,7 +246,8 @@ def retained_manifest(request_sha256: str) -> tuple[dict[str, Any] | None, str |
 
 
 def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path | None,
-                          hb_epoch: int | None = None) -> dict[str, Any] | None:
+                          hb_epoch: int | None = None,
+                          hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
     """Materialize the return when the deciding organization's answer is consumed.
 
     Called for a frame this organization has just consumed. Answers to anything
@@ -293,7 +295,7 @@ def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path
                 "retry_entrypoint": RETRY_ENTRYPOINT, "authority_effect": "NONE_REFUSAL_ONLY"}
     returned = return_decision(manifest, packet_id=request_packet_id,
                                communication_id=communication_id,
-                               mesh_root=mesh_root, hb_epoch=hb_epoch)
+                               mesh_root=mesh_root, hb_epoch=hb_epoch, hb_epoch_source=hb_epoch_source)
     return {**returned, "trigger": "DECISION_FRAME_CONSUMED",
             "response_packet_id": response_packet.get("packet_id")}
 

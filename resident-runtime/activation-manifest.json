@@ -90,6 +90,46 @@
         "retry_entrypoint": "resident-runtime/merge_transfer.py append",
         "owning_existing_goal": "StegVerse-org/.github#206",
         "next_attempt": "merge main into the B-P31 branch after #206 merges, regenerate the fixtures and re-probe"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "PROPAGATE_MISSING_LEDGER_ROOT_IS_SILENT",
+        "failed_predicate": "A_SUPPLIED_LEDGER_LOCATION_EXISTS_OR_IS_REFUSED",
+        "detail": "propagate_repository_receipts.py --repository-ledger-root naming a missing directory exits 0 with nothing propagated",
+        "required_evidence_or_repair": "refuse a supplied repository ledger root that does not exist with a six-field FAIL_CLOSED, non-zero exit",
+        "retry_entrypoint": "resident-runtime/propagate_repository_receipts.py --repository-ledger-root",
+        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
+        "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "IDENTICAL_REQUEST_AT_TWO_EPOCHS_ANSWERED_TWICE",
+        "failed_predicate": "ONE_REQUEST_PACKET_IS_CONSUMED_AND_ANSWERED_ONCE",
+        "detail": "the same request packet (same packet_sha256) published at two epochs is two frames; each is consumed and answered",
+        "required_evidence_or_repair": "bind consumption to the request packet (packet_id + packet_sha256), so a second frame of the same request is observed as already consumed and is not answered again",
+        "retry_entrypoint": "org-kernel/kernel.py::consume_and_respond",
+        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
+        "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "DIRECT_KERNEL_CONSUME_STAMPS_THE_FRAME_EPOCH",
+        "failed_predicate": "EVERY_CONSUMING_ENTRYPOINT_SUPPLIES_THE_CYCLE_EPOCH",
+        "detail": "kernel.consume_and_respond / consume_addressed_frames called directly with no hb_epoch stamp receipts with the frame's supplied epoch; the cycle entrypoints (federation_cycle, governance_return_cycle) always supply one",
+        "required_evidence_or_repair": "make hb_epoch required on the kernel consuming calls and refuse NOT_SUPPLIED without it; move direct callers (tests, capability workflows) onto a supplied cycle epoch",
+        "retry_entrypoint": "org-kernel/kernel.py::consume_and_respond (hb_epoch)",
+        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
+        "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "KERNEL_LEGACY_DIRECT_CALL_PATHS",
+        "failed_predicate": "LEGACY_KERNEL_ENTRYPOINTS_ARE_GATED_OR_REFUSED",
+        "detail": "carried over from before #207: ingest_frame called directly has no epoch gate; the now_ns test path skips classification; publish_ecosystem_from_directory raises TypeError instead of a six-field refusal",
+        "required_evidence_or_repair": "gate ingest_frame on a classified frame, remove or gate the now_ns path, and give publish_ecosystem_from_directory a six-field refusal",
+        "retry_entrypoint": "org-kernel/kernel.py (ingest_frame, consume_and_respond now_ns, publish_ecosystem_from_directory)",
+        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
+        "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
       }
     ]
   }
