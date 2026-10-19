@@ -363,19 +363,27 @@ class ReferenceProvenanceTests(unittest.TestCase):
         carried = {**supplied, "source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "a" * 64}
         self.assertIsNone(org.reference_provenance_failure(carried))
 
+    def test_a_flag_false_reference_without_a_sample_passes_whatever_its_source(self):
+        supplied = org.kernel.hb_reference(epoch=4096)
+        for source in ("SUPPLIED", "anything", "CARRIED:ORGANIZATION_LEDGER_HEAD"):
+            with self.subTest(source=source):
+                self.assertIsNone(org.reference_provenance_failure({**supplied, "source": source}))
+
     def test_an_unmarked_reference_is_refused(self):
         supplied = org.kernel.hb_reference(epoch=4096)
         no_key = {k: v for k, v in supplied.items() if k != "derived_from_clock"}
-        bare_sample = {**no_key, "sampled_unix_ns": FIXED_CLOCK_NS}
-        flagged_false_with_sample = {**supplied, "sampled_unix_ns": FIXED_CLOCK_NS}
-        carried_without_head = {**supplied, "source": "CARRIED:ORGANIZATION_LEDGER_HEAD"}
-        for reference in (no_key, bare_sample, flagged_false_with_sample, carried_without_head, None):
+        for reference in (no_key, {**no_key, "derived_from_clock": None}, None):
             with self.subTest(reference=reference):
                 self.assertEqual(org.reference_provenance_failure(reference)[0], "HB_EPOCH_PROVENANCE_UNMARKED")
 
-    def test_a_clock_reference_is_not_supplied(self):
-        clocked = org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
-        self.assertEqual(org.reference_provenance_failure(clocked)[0], "HB_EPOCH_INVALID")
+    def test_a_clock_reference_or_any_sample_is_clock(self):
+        supplied = org.kernel.hb_reference(epoch=4096)
+        no_key = {k: v for k, v in supplied.items() if k != "derived_from_clock"}
+        for reference in (org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS),
+                          {**no_key, "sampled_unix_ns": FIXED_CLOCK_NS},
+                          {**supplied, "sampled_unix_ns": FIXED_CLOCK_NS}):
+            with self.subTest(reference=reference):
+                self.assertEqual(org.reference_provenance_failure(reference)[0], "HB_EPOCH_INVALID")
 
 
 class MarkerVocabularyTests(unittest.TestCase):

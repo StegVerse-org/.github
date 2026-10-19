@@ -150,23 +150,23 @@ def reference_provenance_failure(reference):
 
     The companion to `supplied_epoch_failure`, whose text is pinned byte-identical
     across organizations: a reference must say where its epoch came from.
-    SUPPLIED is derived_from_clock exactly false with no sampled_unix_ns.
-    CARRIED is the same plus a source "CARRIED:<origin>" and the head_receipt_sha
-    it was read from. CLOCK (derived_from_clock true) is not a supplied epoch.
-    A reference that marks none of these is HB_EPOCH_PROVENANCE_UNMARKED.
+    SUPPLIED is derived_from_clock exactly false with no sampled_unix_ns; CARRIED
+    is the same plus a source "CARRIED:<origin>" and the head_receipt_sha it was
+    read from. CLOCK -- derived_from_clock true, or any sampled_unix_ns -- is
+    HB_EPOCH_INVALID. A reference that marks none of these (no flag, no sample)
+    is HB_EPOCH_PROVENANCE_UNMARKED. Converges to the shared companion text
+    StegVerse-Labs/.github#3282 publishes (SHARED_RULE_CONVERGENCE_PENDING).
     """
     if not isinstance(reference, dict):
         return "HB_EPOCH_PROVENANCE_UNMARKED", "the heartbeat reference is not an object"
-    if reference.get("derived_from_clock") is True:
+    # CLOCK: flagged true, or carrying a clock sample (a bare sample is legacy CLOCK).
+    if reference.get("derived_from_clock") is True or "sampled_unix_ns" in reference:
         return "HB_EPOCH_INVALID", "the heartbeat reference is derived from a clock, not supplied"
-    if reference.get("derived_from_clock") is not False or "sampled_unix_ns" in reference:
+    # Flag false and no sample is SUPPLIED or CARRIED, whatever its source field says.
+    if reference.get("derived_from_clock") is not False:
         return "HB_EPOCH_PROVENANCE_UNMARKED", (
             "the heartbeat reference does not mark its provenance: derived_from_clock must be exactly "
-            "false with no sampled_unix_ns (SUPPLIED or CARRIED)")
-    source = reference.get("source")
-    if source is not None and not (isinstance(source, str) and source.startswith("CARRIED:")
-                                   and isinstance(reference.get("head_receipt_sha"), str)):
-        return "HB_EPOCH_PROVENANCE_UNMARKED", "a CARRIED reference names its source and head_receipt_sha"
+            "false (SUPPLIED or CARRIED) or true (CLOCK)")
     return None
 
 
