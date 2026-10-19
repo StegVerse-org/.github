@@ -47,8 +47,22 @@ def _module(name: str, relative: str):
     return module
 
 
-mt = _module("merge_transfer_for_path_ingress", "resident-runtime/merge_transfer.py")
-ingress = mt.ingress
+path_ledger = _module("intr_path_ledger", "resident-runtime/intr_path_ledger.py")
+Refused = path_ledger.Refused
+
+
+def bind(binding: Any = None) -> Any:
+    """This organization's ledger binding, selected by its protocol.json pin (or ``binding``): merge_transfer.py
+    organizations exactly as before; StegVerse-Labs and GCAT-BCAT-Engine through merge_transfer_gitstore.py."""
+    global ledger, ingress
+    binding = binding if binding is not None else path_ledger.bound(ROOT)
+    ledger, ingress = binding, binding.ingress
+    return binding
+
+
+ledger: Any = None
+ingress: Any = None
+bind()
 
 SOURCE_OPERATION = "INTR_MESH_PATH_TRANSFER"
 SOURCE_EVIDENCE_SCHEMA = "stegverse.intr-path-transfer-evidence/v1"
@@ -65,7 +79,7 @@ ENTRYPOINT = (".github/workflows/intr-path-ingress.yml (after Organization Ledge
 CREDENTIAL_ENTRYPOINT = ("StegVerse-Labs/TVC least-privilege issuance: contents:read on <SOURCE>/.github "
                          "refs/stegverse/organization-ledger for this organization's verifier")
 CREDENTIAL_GOAL = "StegVerse-org/.github#162 (credential issuance under TV/TVC custody, StegVerse-Labs/TVC)"
-SIX_FIELDS = mt.SIX_FIELDS
+SIX_FIELDS = path_ledger.SIX_FIELDS
 ALLOW, DENY, FAIL_CLOSED = "ALLOW", "DENY", "FAIL_CLOSED"
 
 NOT_CARRIED = "INTR_PATH_SOURCE_RECEIPT_NOT_CARRIED"
@@ -76,12 +90,16 @@ CREDENTIAL_NOT_ISSUED = "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"
 SOURCE_NOT_LEDGERED = "INTR_PATH_RECEIPT_NOT_LEDGERED"
 SOURCE_LINK_UNVERIFIED = "INTR_PATH_RECEIPT_LINK_UNVERIFIED"
 
-sha = ingress.sha
-sealed = mt.sealed
+def sha(value: Any) -> str:
+    return ledger.sha(value)
+
+
+def sealed(receipt: Any) -> bool:
+    return ledger.sealed(receipt)
 
 
 def repository() -> str:
-    return mt.repository()
+    return ledger.repository()
 
 
 def organization() -> str:
@@ -118,7 +136,7 @@ def check_source_pair(org_receipt: Any, repo_receipt: Any, path_id: str, communi
         return refusal(FAIL_CLOSED, NOT_CARRIED, "SOURCE_PATH_RECEIPTS_ARE_SUPPLIED_SEALED",
                        "the source's sealed INTR_MESH_PATH_TRANSFER organization receipt and its sealed repository receipt",
                        "supply both receipts and re-run; nothing was appended", **base)
-    boundary = mt._boundary(org_receipt)
+    boundary = ledger.boundary(org_receipt)
     evidence = repo_receipt.get("evidence") if isinstance(repo_receipt.get("evidence"), Mapping) else {}
     problems = []
     if boundary.get("operation") != SOURCE_OPERATION or boundary.get("path_id") != path_id \
@@ -189,14 +207,16 @@ def ingress_evidence(checked: Mapping[str, Any]) -> dict[str, Any]:
 
 def find_destination(path_id: str, communication_id: str, organization_store: Any = None,
                      repository_store: Any = None) -> tuple[Any, Any, str | None]:
-    organization_store = organization_store if organization_store is not None else mt.org_store()
-    repository_store = repository_store if repository_store is not None else mt.repo_store()
-    for digest, receipt in mt.org_chain(organization_store):
+    if organization_store is None or repository_store is None:
+        bound = ledger.readers()
+        organization_store = organization_store if organization_store is not None else bound[0]
+        repository_store = repository_store if repository_store is not None else bound[1]
+    for digest, receipt in ledger.chain(organization_store):
         if not sealed(receipt):
             return None, None, "organization receipt " + digest + " on the chain is absent or unsealed"
-        b = mt._boundary(receipt)
+        b = ledger.boundary(receipt)
         if b.get("operation") == OPERATION and b.get("path_id") == path_id and b.get("communication_id") == communication_id:
-            return receipt, mt._receipt(repository_store, receipt.get("repo_receipt_sha256")), None
+            return receipt, ledger.receipt(repository_store, receipt.get("repo_receipt_sha256")), None
     return None, None, None
 
 
@@ -213,24 +233,34 @@ def consume(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
         if checked["disposition"] != ALLOW:
             out.append(checked)
             continue
-        existing, existing_repo, _ = find_destination(pid, cid)
+        try:
+            existing, existing_repo, _ = find_destination(pid, cid)
+        except Refused as exc:
+            out.append({**exc.result, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
+            continue
         if existing is not None:
             ok = verify_destination_pair(existing, existing_repo, checked)
             out.append({**ok, "replayed": True} if ok["disposition"] == ALLOW else ok)
             continue
-        epoch, failed = mt.head_epoch(mt.org_store())   # read only when a row is to be appended
+        try:
+            epoch, failed = ledger.head_epoch()   # read only when a row is to be appended
+        except Refused as exc:
+            epoch, failed = None, exc.result
         if failed is not None:
             out.append({**failed, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
             continue
         evidence = ingress_evidence(checked)
         try:
-            appended, replayed = ingress._append(
+            appended, replayed = ledger.append(
                 TRANSITION_CLASS, pid + "@" + cid, evidence, epoch, operation=OPERATION, profile_id=ingress.PROFILE_ID,
                 boundary_extra={"path_id": pid, "source_repository": checked["source_repository"],
                                 "source_organization_receipt_sha256": checked["source_organization_receipt_sha256"],
                                 "source_repository_receipt_sha256": checked["source_repository_receipt_sha256"]})
+        except Refused as exc:
+            out.append({**exc.result, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
+            continue
         except (ValueError, SystemExit) as exc:
-            out.append(refusal(FAIL_CLOSED, mt.WRITER_REFUSED, "LEDGER_WRITER_ADMITS_THE_APPEND",
+            out.append(refusal(FAIL_CLOSED, path_ledger.WRITER_REFUSED, "LEDGER_WRITER_ADMITS_THE_APPEND",
                                "repair what the ledger writer refused: " + str(exc),
                                "re-run once repaired; nothing was written for this row", path_id=pid, communication_id=cid))
             continue
@@ -253,7 +283,11 @@ def verify_inbound(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
         if checked["disposition"] != ALLOW:
             out.append(checked)
             continue
-        found, found_repo, broken = find_destination(pid, cid)
+        try:
+            found, found_repo, broken = find_destination(pid, cid)
+        except Refused as exc:
+            out.append({**exc.result, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
+            continue
         result = verify_destination_pair(found, found_repo, checked)
         out.append({**result, "detail": broken} if broken else result)
     return out
@@ -273,7 +307,7 @@ def verify_destination_pair(org_receipt: Any, repo_receipt: Any, source: Mapping
                        + destination_repository + "'s ledger, linked to its sealed repository receipt",
                        "receipts appear only after the inbound row lands on " + destination_repository
                        + " main and " + ENTRYPOINT + " consumes it", **base)
-    b = mt._boundary(org_receipt)
+    b = ledger.boundary(org_receipt)
     evidence = repo_receipt.get("evidence") if isinstance(repo_receipt.get("evidence"), Mapping) else {}
     problems = []
     if org_receipt.get("repo_receipt_sha256") != repo_receipt["receipt_sha256"]:
@@ -352,11 +386,11 @@ def verify_end_to_end(path_id: str, communication_id: str, source_readback: Any,
 
 def readback(path_id: str, communication_id: str, operation: str, ledger_tip: str | None = None) -> dict[str, Any]:
     """Read this repository's own ledger (the bound stores) into a stegverse.intr-path-ledger-readback/v1 object."""
-    org, rep = mt.org_store(), mt.repo_store()
-    chain = [r for _, r in mt.org_chain(org) if isinstance(r, Mapping)]
-    found = next((r for r in chain if mt._boundary(r).get("operation") == operation
-                  and mt._boundary(r).get("path_id") == path_id
-                  and mt._boundary(r).get("communication_id") == communication_id), None)
+    org, rep = ledger.readers()
+    chain = [r for _, r in ledger.chain(org) if isinstance(r, Mapping)]
+    found = next((r for r in chain if ledger.boundary(r).get("operation") == operation
+                  and ledger.boundary(r).get("path_id") == path_id
+                  and ledger.boundary(r).get("communication_id") == communication_id), None)
     head = chain[0]["receipt_sha256"] if chain else None
     if found is not None:
         cut = [r for r in chain]
@@ -364,7 +398,7 @@ def readback(path_id: str, communication_id: str, operation: str, ledger_tip: st
     return {"schema": READBACK_SCHEMA, "repository": repository(), "ledger_tip": ledger_tip,
             "head_receipt_sha256": head, "chain": chain if found is not None else [],
             "organization_receipt": found,
-            "repository_receipt": mt._receipt(rep, found.get("repo_receipt_sha256")) if found else None}
+            "repository_receipt": ledger.receipt(rep, found.get("repo_receipt_sha256")) if found else None}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -396,8 +430,10 @@ def main(argv: list[str] | None = None) -> int:
         result = verify_inbound(args.inbound)
         code = 0 if all(x["disposition"] == ALLOW for x in result) else 1
     elif args.command == "readback":
-        result = readback(args.path_id, args.communication_id, args.operation, args.ledger_tip)
-        code = 0
+        try:
+            result, code = readback(args.path_id, args.communication_id, args.operation, args.ledger_tip), 0
+        except Refused as exc:
+            result, code = {**exc.result, "schema": RESULT_SCHEMA}, 1
     else:
         load = lambda p: json.loads(Path(p).read_text(encoding="utf-8")) if p and Path(p).is_file() else None
         result = verify_end_to_end(args.path_id, args.communication_id, load(args.source_readback),
