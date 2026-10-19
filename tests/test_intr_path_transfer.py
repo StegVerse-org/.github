@@ -130,8 +130,9 @@ class Append(unittest.TestCase):
             self.assertEqual(source["transfer_commit"], TRANSFER)
             whole = pt.verify_path(p, cid(p))
             self.assertEqual((whole["disposition"], whole["failure_code"]),
-                             ("FAIL_CLOSED", "INTR_PATH_DESTINATION_RECEIPT_UNOBSERVED"))
+                             ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"))
             self.assertEqual(whole["halves"], {"source": "ALLOW", "destination": "FAIL_CLOSED"})
+            self.assertIn("StegVerse-Labs/TVC", whole["retry_entrypoint"])
             self.assertEqual(whole["classification"], "B")
             for field in pt.SIX_FIELDS:
                 self.assertTrue(whole[field], field)
@@ -218,42 +219,48 @@ class Append(unittest.TestCase):
 class DestinationHalf(unittest.TestCase):
     """Destination receipts here are SYNTHETIC (built and sealed in this test), not read from any ledger."""
 
-    def receipts(self, p, communication_id):
-        repo = {"schema": "stegverse.repo-transition-receipt/v1", "repository": p["destination"] + "/.github",
-                "evidence": {"communication_id": communication_id, "disposition": "ALLOW"}}
-        repo = reseal(repo)
+    def readback(self, p, source, communication_id, link=None):
+        link = link or source
+        evidence_core = {"schema": "stegverse.intr-path-ingress-evidence/v1", "path_id": p["path_id"],
+                         "source_organization_receipt_sha256": link["organization_receipt_sha256"],
+                         "source_repository_receipt_sha256": link["repository_receipt_sha256"]}
+        evidence = {**evidence_core, "payload_sha256": pt.sha(evidence_core), "disposition": "ALLOW",
+                    "communication_id": communication_id}
+        repo = reseal({"schema": "stegverse.repo-transition-receipt/v1", "repository": p["destination"] + "/.github",
+                       "evidence": evidence, "synthetic": "NOT_LEDGERED_NOT_AUTHENTIC"})
         org = reseal({"schema": "stegverse.organization-transition-receipt/v1",
                       "source_repository": p["destination"] + "/.github", "repo_receipt_sha256": repo["receipt_sha256"],
-                      "boundary_evidence": {"operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
-                                            "communication_id": communication_id}})
-        return {"schema": pt.READBACK_SCHEMA, "organization": p["destination"],
-                "organization_receipt": org, "repository_receipt": repo}
+                      "previous_receipt_sha256": None, "synthetic": "NOT_LEDGERED_NOT_AUTHENTIC",
+                      "boundary_evidence": {"operation": "ORGANIZATION_INTR_DESTINATION_INGRESS", "path_id": p["path_id"],
+                                            "communication_id": communication_id,
+                                            "source_organization_receipt_sha256": link["organization_receipt_sha256"],
+                                            "source_repository_receipt_sha256": link["repository_receipt_sha256"]}})
+        return {"schema": "stegverse.intr-path-ledger-readback/v1", "repository": p["destination"] + "/.github",
+                "head_receipt_sha256": org["receipt_sha256"], "chain": [org], "organization_receipt": org,
+                "repository_receipt": repo}
 
     def test_both_halves_verify_only_with_a_destination_readback(self):
         ledger = Ledger()
         try:
             pt.append_transfers(TRANSFER)
             p = mine()[0]
-            whole = pt.verify_path(p, cid(p), destination_readback=self.receipts(p, cid(p)))
+            source = pt.verify_source(p, cid(p))
+            whole = pt.verify_path(p, cid(p), destination_readback=self.readback(p, source, cid(p)))
+            other = dict(source, repository_receipt_sha256="sha256:" + "0" * 64)
+            denied = pt.verify_path(p, cid(p), destination_readback=self.readback(p, source, cid(p), link=other))
         finally:
             ledger.close()
         self.assertEqual((whole["disposition"], whole["path"]), ("ALLOW", "VERIFIED"), whole)
+        self.assertEqual((denied["disposition"], denied["failure_code"]),
+                         ("DENY", "INTR_PATH_DESTINATION_RECEIPT_LINK_UNVERIFIED"))
 
     def test_destination_refusals(self):
         p = mine()[0]
         absent = pt.verify_destination(p, cid(p))
         self.assertEqual((absent["disposition"], absent["failure_code"], absent["classification"]),
-                         ("FAIL_CLOSED", "INTR_PATH_DESTINATION_RECEIPT_UNOBSERVED", "B"))
-        unsealed = self.receipts(p, cid(p))
-        unsealed["organization_receipt"]["source_repository"] = "x"
-        self.assertEqual(pt.verify_destination(p, cid(p), unsealed)["disposition"], "FAIL_CLOSED")
-        other = self.receipts(p, "another-communication")
-        contradicted = pt.verify_destination(p, cid(p), other)
-        self.assertEqual((contradicted["disposition"], contradicted["failure_code"]),
-                         ("DENY", "INTR_PATH_DESTINATION_RECEIPT_CONTRADICTED"))
-        for result in (absent, contradicted):
-            for field in pt.SIX_FIELDS:
-                self.assertTrue(result[field], field)
+                         ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED", "B"))
+        for field in pt.SIX_FIELDS:
+            self.assertTrue(absent[field], field)
 
 
 if __name__ == "__main__":

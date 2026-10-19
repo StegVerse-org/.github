@@ -126,20 +126,38 @@
   "mesh_path_transfer": {
     "evidence_schema": "stegverse.intr-path-transfer-evidence/v1",
     "declaration_schema": "stegverse.intr-path-transfer-declaration/v1",
-    "destination_readback_schema": "stegverse.intr-path-destination-readback/v1",
+    "destination_readback_schema": "stegverse.intr-path-ledger-readback/v1",
     "operation": "INTR_MESH_PATH_TRANSFER",
     "capability": "intr-destination",
     "declared_paths": "every ordered pair of distinct organizations whose destination documents conform in tests/fixtures/intr-protocol/destinations/manifest.json; path_id <SOURCE>-><DESTINATION>:intr-destination",
     "transition": "a row of .stegverse/intr-path-transfer/transfers.json landing on main; .github/workflows/intr-path-transfer.yml appends after the push's main-merge transfer is ledgered (workflow_run, no dispatch)",
     "verifier": "resident-runtime/intr_path_transfer.py verify",
-    "allow_when": "source half (sealed INTR_MESH_PATH_TRANSFER organization receipt linked to its sealed repository receipt and to the transfer commit's sealed main-merge transfer receipt) and destination half (the destination ledger's sealed ORGANIZATION_INTR_DESTINATION_INGRESS receipt for the same communication_id) both verify",
+    "allow_when": "source half (sealed INTR_MESH_PATH_TRANSFER organization receipt linked to its sealed repository receipt and to the transfer commit's sealed main-merge transfer receipt) and destination half (the destination ledger's sealed ORGANIZATION_INTR_DESTINATION_INGRESS receipt for the same path_id and communication_id whose boundary_evidence and repository evidence carry the source organization and repository receipt seals) both verify, each read back from its own ledger",
     "failure_codes": {
       "INTR_PATH_RECEIPT_NOT_LEDGERED": "FAIL_CLOSED",
       "INTR_PATH_RECEIPT_LINK_UNVERIFIED": "DENY",
-      "INTR_PATH_DESTINATION_RECEIPT_UNOBSERVED": "FAIL_CLOSED",
-      "INTR_PATH_DESTINATION_RECEIPT_CONTRADICTED": "DENY",
-      "INTR_PATH_TRANSFER_COMMIT_NOT_LEDGERED": "FAIL_CLOSED"
+      "INTR_PATH_TRANSFER_COMMIT_NOT_LEDGERED": "FAIL_CLOSED",
+      "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED": "FAIL_CLOSED",
+      "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED": "FAIL_CLOSED",
+      "INTR_PATH_DESTINATION_RECEIPT_LINK_UNVERIFIED": "DENY"
     },
-    "class_b": "the destination half needs a carrier that delivers the message to the destination's ingress and a TV/TVC-issued least-privilege read credential for the destination's ledger ref; paths sourced in another organization need the transition installed there"
+    "destination_carrier": {
+      "consumer": "resident-runtime/intr_path_ingress.py consume",
+      "inbound": ".stegverse/intr-path-transfer/inbound.json (schema stegverse.intr-path-inbound/v1): rows of path_id, communication_id and carried copies of the source organization and repository receipts",
+      "transition": "an inbound row landing on the destination's main; .github/workflows/intr-path-ingress.yml appends after that push's main-merge transfer is ledgered (workflow_run, no dispatch), through resident-runtime/intr_destination_ingress.py _append",
+      "evidence_schema": "stegverse.intr-path-ingress-evidence/v1",
+      "transition_class": "INTR_MESH_PATH_INGRESS",
+      "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+      "end_to_end_verifier": "resident-runtime/intr_path_ingress.py end-to-end --source-readback --destination-readback",
+      "failure_codes": {
+        "INTR_PATH_SOURCE_RECEIPT_NOT_CARRIED": "FAIL_CLOSED",
+        "INTR_PATH_CARRIED_RECEIPT_CONTRADICTED": "DENY",
+        "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED": "FAIL_CLOSED",
+        "INTR_PATH_DESTINATION_RECEIPT_LINK_UNVERIFIED": "DENY",
+        "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED": "FAIL_CLOSED"
+      },
+      "cross_org_read": "the carried copies are checked for seal, link and shape; their inclusion in the source ledger is not observable with GITHUB_TOKEN (repository-scoped; repositories are internal). It is recorded FAIL_CLOSED INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED (class B, retry: StegVerse-Labs/TVC least-privilege issuance) and the end-to-end ALLOW needs both ledgers read back"
+    },
+    "class_b": "the destination half needs a TV/TVC-issued least-privilege read credential for the destination's ledger ref (INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED) and the inbound row landing in the destination; paths sourced in another organization need the transition installed there"
   }
 }

@@ -70,7 +70,6 @@ CAPABILITY = "intr-destination"
 EVIDENCE_SCHEMA = "stegverse.intr-path-transfer-evidence/v1"
 RESULT_SCHEMA = "stegverse.intr-path-transfer-result/v1"
 DECLARATION_SCHEMA = "stegverse.intr-path-transfer-declaration/v1"
-READBACK_SCHEMA = "stegverse.intr-path-destination-readback/v1"
 DESTINATION_OPERATION = "ORGANIZATION_INTR_DESTINATION_INGRESS"
 GOAL = "StegVerse-org/.github#162"
 ENTRYPOINT = (".github/workflows/intr-path-transfer.yml (after Organization Ledger Main Merge "
@@ -82,8 +81,9 @@ ALLOW, DENY, FAIL_CLOSED = "ALLOW", "DENY", "FAIL_CLOSED"
 
 NOT_LEDGERED = "INTR_PATH_RECEIPT_NOT_LEDGERED"
 LINK_UNVERIFIED = "INTR_PATH_RECEIPT_LINK_UNVERIFIED"
-DESTINATION_UNOBSERVED = "INTR_PATH_DESTINATION_RECEIPT_UNOBSERVED"
-DESTINATION_CONTRADICTED = "INTR_PATH_DESTINATION_RECEIPT_CONTRADICTED"
+CREDENTIAL_NOT_ISSUED = "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"
+DESTINATION_NOT_LEDGERED = "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED"
+DESTINATION_LINK_UNVERIFIED = "INTR_PATH_DESTINATION_RECEIPT_LINK_UNVERIFIED"
 TRANSFER_NOT_LEDGERED = "INTR_PATH_TRANSFER_COMMIT_NOT_LEDGERED"
 PATH_UNDECLARED = "INTR_PATH_UNDECLARED"
 MESSAGE_REFUSED = "INTR_PATH_MESSAGE_NONCONFORMANT"
@@ -228,42 +228,32 @@ def verify_source(path: Mapping[str, Any], communication_id: str, organization_s
 
 # -- destination half --------------------------------------------------------
 
-def verify_destination(path: Mapping[str, Any], communication_id: str, readback: Any = None) -> dict[str, Any]:
-    base = {"path_id": path["path_id"], "communication_id": communication_id, "half": "destination"}
-    if readback is None:
-        return refusal(FAIL_CLOSED, DESTINATION_UNOBSERVED, "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-                       "class B (missing capability): a carrier that delivers the message to "
-                       + path["destination_address"] + " so " + path["destination"] + "'s ingress appends a "
-                       + DESTINATION_OPERATION + " receipt, and a TV/TVC-issued read credential for "
-                       + path["destination"] + "'s ledger ref (repositories are internal)",
-                       "after TV/TVC issues a least-privilege read credential and the carrier exists, supply a "
-                       + READBACK_SCHEMA + " readback and verify again", **base, classification="B")
-    ok_shape = isinstance(readback, Mapping) and readback.get("schema") == READBACK_SCHEMA
-    org_receipt = readback.get("organization_receipt") if ok_shape else None
-    repo_receipt = readback.get("repository_receipt") if ok_shape else None
-    if not sealed(org_receipt) or not sealed(repo_receipt):
-        return refusal(FAIL_CLOSED, DESTINATION_UNOBSERVED, "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-                       "a sealed destination organization receipt and its sealed repository receipt",
-                       "supply both receipts read back from the destination ledger", **base, classification="B")
-    boundary = mt._boundary(org_receipt)
-    evidence = repo_receipt.get("evidence") if isinstance(repo_receipt.get("evidence"), Mapping) else {}
-    problems = []
-    if readback.get("organization") != path["destination"]:
-        problems.append("readback organization is " + repr(readback.get("organization")))
-    if boundary.get("operation") != DESTINATION_OPERATION:
-        problems.append("destination receipt operation is " + repr(boundary.get("operation")))
-    if boundary.get("communication_id") != communication_id or evidence.get("communication_id") != communication_id:
-        problems.append("destination receipts name communication_id " + repr(boundary.get("communication_id")))
-    if org_receipt.get("repo_receipt_sha256") != repo_receipt["receipt_sha256"]:
-        problems.append("destination organization receipt does not link the supplied repository receipt")
-    if org_receipt.get("source_repository", org_receipt.get("repository")) != path["destination"] + "/.github":
-        problems.append("destination receipt repository is " + repr(org_receipt.get("source_repository")))
-    if problems:
-        return refusal(DENY, DESTINATION_CONTRADICTED, "PATH_DESTINATION_RECEIPT_NAMES_THE_TRANSFER",
-                       "the destination's ingress receipt must name this communication_id and link its repository receipt",
-                       "inspect the destination receipts; nothing was verified", **base, detail="; ".join(problems))
-    return {"schema": RESULT_SCHEMA, "disposition": ALLOW, "half": "destination", "path_id": path["path_id"],
-            "communication_id": communication_id, "organization_receipt_sha256": org_receipt["receipt_sha256"]}
+def path_ingress():
+    return _module("intr_path_ingress_for_path_transfer", "resident-runtime/intr_path_ingress.py")
+
+
+def verify_destination(path: Mapping[str, Any], communication_id: str, source: Mapping[str, Any] | None = None,
+                       readback: Any = None) -> dict[str, Any]:
+    """The destination ledger's ingress receipts for this path, linking the source receipts by seal.
+
+    The destination is another organization's internal repository: without a supplied readback
+    (stegverse.intr-path-ledger-readback/v1) it is FAIL_CLOSED INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED."""
+    pi = path_ingress()
+    if readback is None or source is None or source.get("disposition") != ALLOW:
+        return {**pi.inclusion_refusal(path["destination"] + "/.github", path["path_id"], communication_id),
+                "half": "destination", "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+                "required_evidence_or_repair":
+                    "class B: the destination's sealed " + DESTINATION_OPERATION + " receipt for this path, read from "
+                    + path["destination"] + "/.github refs/stegverse/organization-ledger with a TV/TVC-issued "
+                    "least-privilege read credential (GITHUB_TOKEN is scoped to this repository; the destination is "
+                    "internal). The receipt itself exists only after the inbound row lands on the destination's main"}
+    link = {"path_id": path["path_id"], "communication_id": communication_id,
+            "source_organization_receipt_sha256": source["organization_receipt_sha256"],
+            "source_repository_receipt_sha256": source["repository_receipt_sha256"]}
+    if not isinstance(readback, Mapping) or not pi._included(readback, readback.get("organization_receipt") or {}):
+        return pi.verify_destination_pair(None, None, link, path["destination"] + "/.github")
+    return pi.verify_destination_pair(readback.get("organization_receipt"), readback.get("repository_receipt"), link,
+                                      path["destination"] + "/.github")
 
 
 def verify_path(path: Mapping[str, Any], communication_id: str | None, organization_store: Any = None,
@@ -280,7 +270,7 @@ def verify_path(path: Mapping[str, Any], communication_id: str | None, organizat
                          detail="no transfer for this path is declared in this organization")
     else:
         source = verify_source(path, communication_id, organization_store, repository_store)
-    destination = verify_destination(path, communication_id or "", destination_readback)
+    destination = verify_destination(path, communication_id or "", source, destination_readback)
     halves = {"source": source["disposition"], "destination": destination["disposition"]}
     if source["disposition"] == ALLOW and destination["disposition"] == ALLOW:
         return {"schema": RESULT_SCHEMA, "disposition": ALLOW, "path_id": path["path_id"], "path": "VERIFIED",

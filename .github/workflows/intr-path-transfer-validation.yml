@@ -9,25 +9,31 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/intr-path-transfer.yml'
+      - '.github/workflows/intr-path-ingress.yml'
       - '.github/workflows/intr-path-transfer-validation.yml'
       - '.stegverse/intr-path-transfer/**'
       - 'resident-runtime/intr_path_transfer.py'
+      - 'resident-runtime/intr_path_ingress.py'
       - 'resident-runtime/merge_transfer.py'
       - 'resident-runtime/intr_destination_ingress.py'
       - 'org-runtime/intr_protocol.py'
       - 'data/intr-protocol/v1/protocol.json'
       - 'tests/fixtures/intr-protocol/destinations/**'
       - 'tests/test_intr_path_transfer.py'
+      - 'tests/test_intr_path_ingress.py'
       - 'tests/fixtures/intr-path-transfer/**'
       - 'docs/INTR_PATH_TRANSFER_V1.md'
   push:
     branches: [main]
     paths:
       - '.github/workflows/intr-path-transfer.yml'
+      - '.github/workflows/intr-path-ingress.yml'
       - '.github/workflows/intr-path-transfer-validation.yml'
       - '.stegverse/intr-path-transfer/**'
       - 'resident-runtime/intr_path_transfer.py'
+      - 'resident-runtime/intr_path_ingress.py'
       - 'tests/test_intr_path_transfer.py'
+      - 'tests/test_intr_path_ingress.py'
       - 'tests/fixtures/intr-path-transfer/**'
 
 permissions:
@@ -51,6 +57,9 @@ jobs:
 
       - name: Declared paths, append, two-half verify, refusals (temp ledgers from the pinned tip)
         run: python3 -m unittest tests.test_intr_path_transfer -v
+
+      - name: Destination carrier, ingress append, link and end-to-end checks (synthetic source receipts, temp ledgers)
+        run: python3 -m unittest tests.test_intr_path_ingress -v
 
   dry-run:
     runs-on: ubuntu-latest
