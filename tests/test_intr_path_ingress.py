@@ -1,7 +1,7 @@
 """InTr mesh path ingress: the destination half (carried source receipts -> this organization's ingress receipts).
 
 Every source receipt here is SYNTHETIC: built and sealed in this test for a path
-into StegVerse-org, never read from any ledger. Destination receipts are written
+into this organization, never read from any ledger. Destination receipts are written
 to temporary copies of the pinned ledger tip. Nothing here is ledgered or
 authentic. Real destination receipts appear only once an inbound row carrying
 real source receipts lands on main and .github/workflows/intr-path-ingress.yml
@@ -20,8 +20,9 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LEDGER_TIP = json.loads((ROOT / "tests/fixtures/intr-path-transfer/expected-real-state.json").read_text())["ledger_tip"]
-NAMESPACE = "repository-ledger/StegVerse-org/.github"
+LEDGER_TIP = json.loads((ROOT / "tests/fixtures/intr-path-ingress/pin.json").read_text())["ledger_tip"]
+NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").read_text())[
+    "repository_ledger_location"]["namespace"]
 
 
 def load(name, relative):
@@ -33,9 +34,11 @@ def load(name, relative):
 
 
 pi = load("intr_path_ingress_under_test", "resident-runtime/intr_path_ingress.py")
-SOURCE = "SV-011"
-PID = SOURCE + "->StegVerse-org:intr-destination"
-CID = "intr-path-v1:" + SOURCE + "->StegVerse-org"
+DESTINATION = pi.organization()
+SOURCE = "SV-011" if DESTINATION != "SV-011" else "StegVerse-org"
+OTHER = "SV-LLM"
+PID = SOURCE + "->" + DESTINATION + ":intr-destination"
+CID = "intr-path-v1:" + SOURCE + "->" + DESTINATION
 
 
 def seal(body):
@@ -43,7 +46,7 @@ def seal(body):
     return {**body, "receipt_sha256": pi.sha(body)}
 
 
-def synthetic_source(path_id=PID, cid=CID, destination="StegVerse-org", **evidence_overrides):
+def synthetic_source(path_id=PID, cid=CID, destination=DESTINATION, **evidence_overrides):
     message = {"message_class": "ecosystem.communication", "communication_id": cid,
                "body": {"schema": pi.ingress.PAYLOAD_SCHEMA, "path_id": path_id, "transfer_commit": "a" * 40}}
     core = {"schema": pi.SOURCE_EVIDENCE_SCHEMA, "repository": SOURCE + "/.github", "path_id": path_id,
@@ -72,7 +75,7 @@ class Ledger:
         self.inbound = Path(self.dir.name) / "inbound.json"
 
     def write_inbound(self, rows):
-        self.inbound.write_text(json.dumps({"schema": pi.INBOUND_SCHEMA, "destination_repository": "StegVerse-org/.github",
+        self.inbound.write_text(json.dumps({"schema": pi.INBOUND_SCHEMA, "destination_repository": DESTINATION + "/.github",
                                             "transfers": rows}))
         return self.inbound
 
@@ -145,7 +148,7 @@ class Consume(unittest.TestCase):
         self.assertEqual((blind["disposition"], blind["failure_code"]),
                          ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"))
         self.assertIn("StegVerse-Labs/TVC", blind["retry_entrypoint"])
-        self.assertIn("SV-011/.github", blind["retry_entrypoint"])
+        self.assertIn(SOURCE + "/.github", blind["retry_entrypoint"])
         self.six(blind)
         other_org, other_repo = synthetic_source(cid="intr-path-v1:other")
         mismatch = pi.verify_end_to_end(PID, CID, source_readback(other_org, other_repo), destination)
@@ -169,8 +172,8 @@ class Consume(unittest.TestCase):
         before = self.ledger.files()
         cases = [
             (row(None, None), "FAIL_CLOSED", "INTR_PATH_SOURCE_RECEIPT_NOT_CARRIED"),
-            (row(*synthetic_source(destination="SV-LLM")), "DENY", "INTR_PATH_CARRIED_RECEIPT_CONTRADICTED"),
-            (row(*synthetic_source(destination_address="sv-llm.intr-destination")), "DENY",
+            (row(*synthetic_source(destination=OTHER)), "DENY", "INTR_PATH_CARRIED_RECEIPT_CONTRADICTED"),
+            (row(*synthetic_source(destination_address=pi.address(OTHER))), "DENY",
              "INTR_PATH_CARRIED_RECEIPT_CONTRADICTED"),
             (row(org, synthetic_source(cid="intr-path-v1:other")[1]), "DENY", "INTR_PATH_CARRIED_RECEIPT_CONTRADICTED"),
         ]

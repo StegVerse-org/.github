@@ -21,6 +21,7 @@ on:
       - 'tests/fixtures/intr-protocol/destinations/**'
       - 'tests/test_intr_path_transfer.py'
       - 'tests/test_intr_path_ingress.py'
+      - 'tests/fixtures/intr-path-ingress/**'
       - 'tests/fixtures/intr-path-transfer/**'
       - 'docs/INTR_PATH_TRANSFER_V1.md'
   push:
@@ -34,6 +35,7 @@ on:
       - 'resident-runtime/intr_path_ingress.py'
       - 'tests/test_intr_path_transfer.py'
       - 'tests/test_intr_path_ingress.py'
+      - 'tests/fixtures/intr-path-ingress/**'
       - 'tests/fixtures/intr-path-transfer/**'
 
 permissions:
