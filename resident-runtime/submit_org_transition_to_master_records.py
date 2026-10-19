@@ -120,9 +120,11 @@ def release(a):
  # clock-derived or absent head epoch is refused rather than stamped on the
  # frame as derived_from_clock false (or sampled from this host's clock).
  epoch=carried_head_epoch(receipts[-1])
- packet["payload"]["hb_epoch_provenance"]={"source":"CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT",
-  "head_receipt_sha256":receipts[-1]["receipt_sha256"],"derived_from_clock":False}
- try:published=K.publish_packet(packet,root=a.mesh_root,epoch=epoch)
+ provenance={"source":"CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT","head_receipt_sha":receipts[-1]["receipt_sha256"]}
+ # Marked in the frame's heartbeat reference (where provenance is read), with
+ # a copy in the payload.
+ packet["payload"]["hb_epoch_provenance"]={**provenance,"derived_from_clock":False}
+ try:published=K.publish_packet(packet,root=a.mesh_root,epoch=epoch,provenance=provenance)
  except (OSError,ValueError,KeyError,TypeError) as exc:raise ReleaseRefused("PACKET_PUBLISHED_TO_SUPPLIED_MESH",str(exc))
  return {"status":"PUBLISHED_FOR_ORGANIZATION_RECORD","disposition":"ALLOW","packet_id":packet["packet_id"],"receipt_count":len(receipts),
   "frame_sha256":published["frame"]["frame_sha256"],"organization_transition_blocked":False,"master_records_awaited":False,

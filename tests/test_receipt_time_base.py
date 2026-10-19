@@ -591,10 +591,25 @@ class ReleasedSegmentHeadEpochTests(unittest.TestCase):
             self.assertEqual(len(frames), 1)
             self.assertEqual(frames[0]["heartbeat_reference"]["epoch"], 4096)
             self.assertIs(frames[0]["heartbeat_reference"]["derived_from_clock"], False)
+            reference = frames[0]["heartbeat_reference"]
+            self.assertEqual((reference["source"], reference["head_receipt_sha"]),
+                             ("CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT", head["receipt_sha256"]))
+            self.assertNotIn("sampled_unix_ns", reference)
+            self.assertIsNone(org.reference_provenance_failure(reference))
             payload = org.kernel.recover_packet(frames[0])["payload"]
             self.assertEqual(payload["hb_epoch_provenance"],
                              {"source": "CARRIED:RELEASED_SEGMENT_HEAD_RECEIPT",
-                              "head_receipt_sha256": head["receipt_sha256"], "derived_from_clock": False})
+                              "head_receipt_sha": head["receipt_sha256"], "derived_from_clock": False})
+
+    def test_carried_provenance_needs_a_supplied_epoch_and_only_its_two_keys(self):
+        packet = org.kernel.build_packet(origin_org="O", origin_service="o.org-control", destination_org="D",
+                                         destination_service="d.org-control", payload={"body": {}},
+                                         standing={"mode": "ESTABLISH_GENESIS", "node_ref": "m", "predecessor": None})
+        good = {"source": "CARRIED:X", "head_receipt_sha": "sha256:" + "a" * 64}
+        for kwargs in ({"provenance": good}, {"epoch": 4096, "provenance": {**good, "derived_from_clock": False}},
+                       {"epoch": 4096, "provenance": {**good, "source": "SUPPLIED"}}):
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                org.kernel.carrier_frame(packet, **kwargs)
 
 
 class EgressCloseCliEpochTests(unittest.TestCase):

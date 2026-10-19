@@ -1429,7 +1429,7 @@
     },
     {
       "file": "tests/test_receipt_time_base.py",
-      "line": 484,
+      "line": 548,
       "text": "SUBMITTER = ROOT / \"resident-runtime/submit_org_transition_to_master_records.py\"",
       "classification": "NAMING_ONLY",
       "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."

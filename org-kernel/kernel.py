@@ -91,8 +91,19 @@ def derive_channel(payload_hash:str)->dict[str,Any]:
     return {"channel_id":f"HB:H1:P{slot}","phase_slot":slot,"phase_slot_count":CHANNEL_COUNT,
             "derivation":"PAYLOAD_SHA256_FIRST64_MOD_16","authority_effect":"NONE_CARRIER_ONLY"}
 
-def carrier_frame(packet:dict[str,Any], *, now_ns:int|None=None, epoch:int|None=None)->dict[str,Any]:
+CARRIED_PROVENANCE_KEYS=("source","head_receipt_sha")
+
+def carrier_frame(packet:dict[str,Any], *, now_ns:int|None=None, epoch:int|None=None,
+                  provenance:dict[str,Any]|None=None)->dict[str,Any]:
+    # `provenance` marks a CARRIED epoch in the reference itself: source
+    # "CARRIED:<origin>" and the head_receipt_sha it was read from. Additive and
+    # optional; only a supplied epoch can be carried, so it is refused without one.
+    if provenance is not None and (epoch is None or set(provenance)!=set(CARRIED_PROVENANCE_KEYS)
+                                   or not str(provenance.get("source")).startswith("CARRIED:")):
+        raise ValueError("carried_provenance_invalid")
     raw=canon(packet); payload_hash=sha(packet.get("payload",{})); ref=hb_reference(now_ns,epoch=epoch); channel=derive_channel(payload_hash)
+    if provenance is not None:
+        ref={**ref,**{k:provenance[k] for k in CARRIED_PROVENANCE_KEYS}}
     body={"schema":CARRIER_SCHEMA,"packet_id":packet["packet_id"],"packet_sha256":sha(raw),
           "packet_base64":base64.b64encode(raw).decode("ascii"),"heartbeat_reference":ref,
           "channel":channel,"origin_org":packet["origin"]["org"],"destination_org":packet["destination"]["org"],
@@ -433,10 +444,10 @@ def build_packet(*, origin_org:str, origin_service:str, destination_org:str, des
     }
 
 def publish_packet(packet:dict[str,Any], *, root:Path|None=None, now_ns:int|None=None,
-                   epoch:int|None=None)->dict[str,Any]:
+                   epoch:int|None=None, provenance:dict[str,Any]|None=None)->dict[str,Any]:
     # A supplied epoch makes the frame reproducible: the same packet at the same
     # epoch is the same frame, so publishing it again is a write-once no-op.
-    frame=carrier_frame(packet,now_ns=now_ns,epoch=epoch)
+    frame=carrier_frame(packet,now_ns=now_ns,epoch=epoch,provenance=provenance)
     path=publish_frame(frame,root=root)
     return {"packet":packet,"frame":frame,"path":str(path)}
 
