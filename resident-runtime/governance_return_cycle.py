@@ -45,9 +45,15 @@ def _refused(refusal):
             "authority_effect": "NONE_REFUSAL_ONLY"}
 
 
-def run(*, mesh_root, node_state_root):
+def run(*, mesh_root, node_state_root, hb_epoch=None):
     if mesh_root is None:
         return _refused(cycle.mesh_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
+    # A cycle without a supplied epoch consumes nothing (§Q): it refuses
+    # NOT_SUPPLIED before the mesh is read, so every frame stays pending on the
+    # mesh, with no quarantine and no seen-marker, for a cycle that has one.
+    refused = cycle.epoch_refused(hb_epoch)
+    if refused is not None:
+        return _refused({**refused, "retry_entrypoint": RETRY_ENTRYPOINT, "consequence_committed": False})
     repo_ledger_root = cycle.supplied_ledger("STEGVERSE_REPO_LEDGER_ROOT")
     org_ledger_root = cycle.supplied_ledger("STEGVERSE_ORG_LEDGER_ROOT")
     try:
@@ -77,8 +83,10 @@ def main(argv=None):
     parser.add_argument("--mesh-root", required=True, help="this organization's bound mesh locator")
     parser.add_argument("--node-state-root", type=Path, required=True)
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--hb-epoch", default=None,
+                        help="the supplied heartbeat epoch (ASCII digits >= 32); without one nothing is consumed")
     args = parser.parse_args(argv)
-    result = run(mesh_root=args.mesh_root, node_state_root=args.node_state_root)
+    result = run(mesh_root=args.mesh_root, node_state_root=args.node_state_root, hb_epoch=args.hb_epoch)
     text = json.dumps(result, indent=2, sort_keys=True, default=str)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

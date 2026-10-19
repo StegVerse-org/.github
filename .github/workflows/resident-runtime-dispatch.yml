@@ -1,0 +1,81 @@
+name: Resident Runtime Dispatch
+
+# The in-tree dispatcher of this organization's epoch-requiring resident
+# entrypoints (resident-runtime/activation-manifest.json epoch_binding):
+# resident-runtime/resident_executor.py and resident-runtime/federation_cycle.py.
+# A cycle needs a supplied heartbeat epoch and reads none from a clock, so the
+# dispatch supplies hb_epoch and nothing else does. There is deliberately no
+# push or schedule trigger: neither is a dispatcher that can supply one.
+#
+# The epoch is gated first, by the shared rule
+# (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH), before anything is invoked. The
+# manifest declares github_actions_is_runtime_authority false, and the
+# executor refuses a hosted runtime, so this run does not execute the cycle:
+# it states RUNTIME_DISPATCHER_PENDING_SUBSTRATE with the six fields (which does
+# not fail the run) and hands the resident substrate the exact invocation, each
+# entrypoint carrying the supplied hb_epoch, as the run's evidence.
+on:
+  workflow_dispatch:
+    inputs:
+      hb_epoch:
+        description: "The supplied heartbeat epoch (ASCII digits >= 32) the cycle carries; it is never derived from a clock"
+        required: true
+        default: ""
+        type: string
+      mesh_root:
+        description: "The mesh locator the resident node is materialized with"
+        required: true
+        default: ""
+        type: string
+      node_state_root:
+        description: "The node state location the resident node is materialized with"
+        required: true
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      HB_EPOCH: ${{ github.event.inputs.hb_epoch }}
+      MESH_ROOT: ${{ github.event.inputs.mesh_root }}
+      NODE_STATE_ROOT: ${{ github.event.inputs.node_state_root }}
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+
+      # Gate first: an empty, signed, padded, fullwidth or sub-anchor epoch is
+      # refused six-field and nothing below runs. A workflow_dispatch string
+      # input cannot tell empty from absent, so "" is HB_EPOCH_NOT_SUPPLIED.
+      - name: Gate the supplied epoch before any entrypoint
+        run: |
+          python - <<'PY'
+          import importlib.util, json, os, sys
+          spec = importlib.util.spec_from_file_location("dispatch_epoch_rule", "resident-runtime/aggregate_repo_transition.py")
+          rule = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(rule)
+          refusal = rule.epoch_refusal(os.environ.get("HB_EPOCH") or None)
+          if refusal is not None:
+              print(json.dumps({**refusal, "retry_entrypoint": ".github/workflows/resident-runtime-dispatch.yml (hb_epoch input)",
+                                "consequence_committed": False}, sort_keys=True))
+              sys.exit(1)
+          PY
+
+      - name: Hand the resident substrate each entrypoint with the supplied epoch
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/results"
+          python resident-runtime/resident_dispatch.py --hb-epoch "$HB_EPOCH" \
+            --mesh-root "$MESH_ROOT" --node-state-root "$NODE_STATE_ROOT" \
+            --out "$RUNNER_TEMP/results/dispatch.json"
+
+      - name: Retain the dispatch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resident-runtime-dispatch
+          path: ${{ runner.temp }}/results
+          if-no-files-found: ignore

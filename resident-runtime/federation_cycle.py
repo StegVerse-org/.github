@@ -27,18 +27,27 @@ def returns_for_consumed(results, *, mesh_root):
              and str((((item["result"].get("packet") or {}).get("payload")) or {}).get("communication_id") or "").startswith("governance:")]
     if not answers:
         return []
-    spec=importlib.util.spec_from_file_location("governance_decision_return",ROOT/"resident-runtime"/"governance_decision_return.py")
-    module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    module=None
     mesh=K.mesh_store(mesh_root)
     out=[]
     for item in answers:
-        # The closure is stamped with the epoch of the answer frame it observes,
+        # The closure is stamped with the supplied epoch of the answer frame it observes,
         # as the kernel stamps an answer with the epoch of the frame it answers:
         # consuming the same answer again (a fresh node state, a further run)
         # then returns the closure already recorded instead of minting another.
         frame=mesh.get(K.node_store_module.MESH_FRAME_PREFIX+K.node_store_module.frame_name(str(item["path"])))
-        epoch=((frame or {}).get("heartbeat_reference") or {}).get("epoch")
-        returned=module.return_on_consumption(item["result"]["packet"], mesh_root=mesh_root, hb_epoch=epoch)
+        reference=(frame or {}).get("heartbeat_reference") or {}
+        if "epoch_lent" in item["result"] or K.supplied_epoch_failure(reference.get("epoch"),reference) is not None:
+            # A consumed CLOCK answer lends no epoch (NARROW S1), and an unmarked or
+            # clock-flagged reference is not a supplied one: the closure is never
+            # stamped from it (F10). It refuses NOT_SUPPLIED and nothing is appended.
+            out.append(clock_answer_refusal(item["result"]["packet"]))
+            continue
+        if module is None:
+            spec=importlib.util.spec_from_file_location("governance_decision_return",ROOT/"resident-runtime"/"governance_decision_return.py")
+            module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        returned=module.return_on_consumption(item["result"]["packet"], mesh_root=mesh_root,
+                                              hb_epoch=reference.get("epoch"))
         if returned is not None:
             out.append({key:returned.get(key) for key in (
               "disposition","trigger","decision_returned","governance_disposition","governance_failed_predicate","failed_predicate",
@@ -46,6 +55,21 @@ def returns_for_consumed(results, *, mesh_root):
               "closure_transition_class","closure_organization_receipt_sha256",
               "deciding_organization_receipt_sha256","retry_entrypoint")})
     return out
+
+def clock_answer_refusal(packet):
+    """The six-field NOT_SUPPLIED refusal of returning a decision whose answer frame lent no epoch."""
+    payload=packet.get("payload") or {}
+    return {"disposition":"FAIL_CLOSED","trigger":"DECISION_FRAME_CONSUMED","decision_returned":False,
+            "failure_code":"HB_EPOCH_NOT_SUPPLIED",
+            "failed_predicate":PR.organization_ledger.HB_EPOCH_PREDICATE,
+            "required_evidence_or_repair":"the deciding organization republishes its answer with a supplied epoch",
+            "retry_entrypoint":"resident-runtime/governance_decision_return.py::return_on_consumption",
+            "owning_existing_goal":PR.organization_ledger.INTR_PROTOCOL_GOAL,
+            "next_attempt":"on a republished answer with a supplied epoch; the clock-stamped one is consumed and "
+                           "nothing was appended for it",
+            "governance_request_packet_id":(payload.get("body") or {}).get("request_packet_id"),
+            "governance_communication_id":payload.get("communication_id"),
+            "response_packet_id":packet.get("packet_id")}
 
 def ledger_location_refusal(*, retry_entrypoint):
     """The consumption's own six-field disposition when the kernel refused custody for

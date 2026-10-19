@@ -16,7 +16,10 @@ name: Organization Governance Decision Return
 # Action is by manifest: a return request committed under
 # .stegverse/governance-return-requests/ (schema
 # stegverse.organization-governance-return-request/v1) declares the locators
-# this run uses, and the push that lands it starts the run. A dispatch with the
+# this run uses, and the push that lands it starts the run. A push supplies no
+# epoch, so the request declares its own hb_epoch; an absent or invalid one
+# fails closed with six fields when the inputs are resolved, before anything is
+# taken in, consumed or published. A dispatch with the
 # same inputs is still accepted; none is required
 # (resident-runtime/manifest_directed_run_inputs.py).
 on:
@@ -38,6 +41,10 @@ on:
         default: ""
       deciding_ledger:
         description: "The deciding organization's published git+repository#refs/... ledger; when given, each return is verified for end-to-end acceptance"
+        required: false
+        default: ""
+      hb_epoch:
+        description: "The supplied heartbeat epoch (ASCII digits >= 32) this cycle carries; a committed return request declares it as hb_epoch instead. Without one nothing is consumed"
         required: false
         default: ""
 
@@ -66,6 +73,7 @@ jobs:
           DISPATCH_PEER_MESH: ${{ github.event.inputs.peer_mesh }}
           DISPATCH_SDK_REF: ${{ github.event.inputs.sdk_ref }}
           DISPATCH_DECIDING_LEDGER: ${{ github.event.inputs.deciding_ledger }}
+          DISPATCH_HB_EPOCH: ${{ github.event.inputs.hb_epoch }}
           BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
@@ -76,6 +84,7 @@ jobs:
           if ! resolved=$(python resident-runtime/manifest_directed_run_inputs.py governance-return \
               --dispatch-mesh-root "$DISPATCH_MESH_ROOT" --dispatch-peer-mesh "$DISPATCH_PEER_MESH" \
               --dispatch-sdk-ref "$DISPATCH_SDK_REF" --dispatch-deciding-ledger "$DISPATCH_DECIDING_LEDGER" \
+              --dispatch-hb-epoch "$DISPATCH_HB_EPOCH" \
               --changed "$RUNNER_TEMP/changed.txt"); then
             echo "$resolved"; exit 1
           fi
@@ -83,7 +92,7 @@ jobs:
           python - "$resolved" >> "$GITHUB_ENV" <<'PY'
           import json, sys
           resolved = json.loads(sys.argv[1])
-          for name in ("mesh_root", "peer_mesh", "sdk_ref", "deciding_ledger"):
+          for name in ("mesh_root", "peer_mesh", "sdk_ref", "deciding_ledger", "hb_epoch"):
               print("RETURN_" + name.upper() + "=" + resolved[name])
           PY
 
@@ -161,7 +170,8 @@ jobs:
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           status=0
           python resident-runtime/governance_return_cycle.py --mesh-root "$OWN_MESH" \
-            --node-state-root "$RUNNER_TEMP/node-state" --out "$RUNNER_TEMP/results/return-cycle.json" || status=$?
+            --node-state-root "$RUNNER_TEMP/node-state" --hb-epoch "$RETURN_HB_EPOCH" \
+            --out "$RUNNER_TEMP/results/return-cycle.json" || status=$?
           echo "RETURN_CYCLE_STATUS=$status" >> "$GITHUB_ENV"
 
       - name: Publish the designated mesh ref (fast-forward only)

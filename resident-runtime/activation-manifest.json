@@ -40,5 +40,22 @@
     "state_location": "SUPPLIED_NODE_STATE_ROOT",
     "receiver_unavailable": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION",
     "github_actions_runtime_authority": "NONE"
+  },
+  "epoch_binding": {
+    "rule": "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+    "hb_epoch": "SUPPLIED_BY_DISPATCH",
+    "clock_fallback": "NONE",
+    "entrypoints": [
+      "resident-runtime/resident_executor.py",
+      "resident-runtime/federation_cycle.py"
+    ],
+    "dispatcher": ".github/workflows/resident-runtime-dispatch.yml",
+    "dispatcher_implementation": "resident-runtime/resident_dispatch.py",
+    "dispatcher_triggers": [
+      "workflow_dispatch"
+    ],
+    "gate_precedes_invocation": true,
+    "dispatcher_is_runtime_authority": false,
+    "runtime_dispatcher_state": "RUNTIME_DISPATCHER_PENDING_SUBSTRATE"
   }
 }

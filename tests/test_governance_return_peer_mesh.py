@@ -109,7 +109,7 @@ class PeerAnswerReturned(unittest.TestCase):
         return packet
 
     def return_cycle(self, name):
-        return cycle.run(mesh_root=self.own, node_state_root=Path(self.temp.name) / name)
+        return cycle.run(mesh_root=self.own, node_state_root=Path(self.temp.name) / name, hb_epoch=4096)
 
     def ledger_tip(self):
         return subprocess.run(["git", "--git-dir", str(self.ledger), "rev-parse", LEDGER_REF],
@@ -165,7 +165,7 @@ class PeerAnswerReturned(unittest.TestCase):
         with mock.patch.object(runtime, "derive_execution_request", another_sdk):
             result = self.return_cycle("node-b")
             status = cycle.main(["--mesh-root", self.own, "--node-state-root",
-                                 str(Path(self.temp.name) / "node-c")])
+                                 str(Path(self.temp.name) / "node-c"), "--hb-epoch", "4096"])
         replayed = result["governance_returns"][0]
         self.assertEqual(self.ledger_tip(), tip, "a replayed answer appended to the ledger")
         self.assertEqual(replayed["disposition"], "CLOSURE_ALREADY_RECORDED", replayed)
@@ -412,7 +412,7 @@ class ReturnCycleCustodyRefusals(unittest.TestCase):
         with mock.patch.dict(os.environ, cleared):
             for name in self.LEDGERS:
                 os.environ.pop(name)
-            refused = cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node")
+            refused = cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node", hb_epoch=4096)
             with mock.patch.object(cycle.cycle.PR, "propagate_all", return_value={
                     "repositories_declared": 0, "repositories_present": 0,
                     "receipts_propagated": 0, "receipts_already_carried": 0}), \
@@ -433,12 +433,12 @@ class ReturnCycleCustodyRefusals(unittest.TestCase):
         out = Path(self.temp.name) / "out.json"
         with mock.patch.object(cycle.K, "consume_and_respond", side_effect=typed), mock.patch("builtins.print"):
             status = cycle.main(["--mesh-root", str(self.mesh), "--node-state-root", str(Path(self.temp.name) / "node"),
-                                 "--out", str(out)])
+                                 "--out", str(out), "--hb-epoch", "4096"])
         self.assertEqual(status, 1)
         self.assert_six_fields(json.loads(out.read_text()))
         with mock.patch.object(cycle.K, "consume_and_respond", side_effect=ValueError("something_else")):
             with self.assertRaises(ValueError):
-                cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node")
+                cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node", hb_epoch=4096)
 
 
 class ReturnWorkflowShape(unittest.TestCase):

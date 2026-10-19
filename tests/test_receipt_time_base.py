@@ -27,6 +27,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 EMIT = ROOT / ".stegverse/transition-ledger/emit.py"
@@ -35,6 +36,13 @@ REPO_CONTRACT = json.loads((ROOT / ".stegverse/transition-ledger/contract.json")
 spec = importlib.util.spec_from_file_location("org_append_time", ROOT / "resident-runtime/aggregate_repo_transition.py")
 org = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(org)
+
+
+def load_module(name, relative):
+    module_spec = importlib.util.spec_from_file_location(name, ROOT / relative)
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+    return module
 
 EPOCH = 4_200
 STATE_BEFORE = "sha256:" + "a" * 64
@@ -676,11 +684,37 @@ class ClockProbeTests(unittest.TestCase):
         self.assertEqual({name: row["failure_code"] for name, row in integrity["rows"].items()},
                          {"generation": "HB_REFERENCE_INVALID", "heartbeat_id": "HB_REFERENCE_INVALID",
                           "frame_hash": "FRAME_INTEGRITY_INVALID", "clock_epoch_abc": "HB_EPOCH_INVALID",
-                          "clock_epoch_5": "HB_EPOCH_INVALID", "valid": None})
+                          "clock_epoch_5": "HB_EPOCH_INVALID",
+                          # B-P36o explicit check: incoherent with its epoch on a CLOCK frame,
+                          # refused before the CLOCK branch rather than consumed as clock.
+                          "clock_generation": "HB_REFERENCE_INVALID",
+                          # F11: a self-asserted CARRIED claim on an unflagged sampled frame.
+                          "clock_forged_carried": "CARRIED_PROVENANCE_UNVERIFIED",
+                          "valid": None})
         self.assertEqual(integrity["rows"]["valid"]["status"], "CONSUMED")
         self.assertGreater(integrity["valid_in_ledgers"], 0)
         self.assertEqual(integrity["bad_in_ledgers"], 0)
         self.assertEqual(integrity["second_offered"], 0)
+        # F12 / B-P36p: unreadable frames.d entries sorted before a valid frame are
+        # each quarantined by file name as six-field FRAME_INGEST_FAILED, with no
+        # clock read and no ledger file; the valid frame is still ledgered.
+        scan = probe["scan"]
+        corrupt = ("0000-not-json.json", "0001-a-list.json", "0002-not-utf8.json", "0003-oversized.json",
+                   "0004-a-directory.json", "0005-read-error.json")
+        self.assertEqual(probe["phases"]["scan_clock_calls"], 0)
+        self.assertEqual(tuple(scan["order"][:6]), corrupt)
+        self.assertEqual(scan["corrupt_only_rows"], 6)
+        self.assertEqual(scan["corrupt_only_ledger_files"], 0)
+        for name in corrupt:
+            self.assertEqual(scan["rows"][name], {"status": "REFUSED", "failure_code": "FRAME_INGEST_FAILED"}, name)
+            marker = scan["markers"][name]
+            self.assertEqual((marker["failure_code"], marker["refusal_failure_code"]),
+                             ("FRAME_REFUSED_QUARANTINED", "FRAME_INGEST_FAILED"), name)
+            for field in SIX_FIELDS:
+                self.assertTrue(marker[field], (name, field))
+        self.assertEqual(scan["rows"]["valid"]["status"], "CONSUMED")
+        self.assertGreater(scan["valid_in_ledgers"], 0)
+        self.assertEqual(scan["second_offered"], 0)
         # B-P36m: a frame whose CARRIED claim names the current supplied head is
         # consumed, and every receipt it produces keeps the claim.
         carried = probe["carried"]
@@ -862,6 +896,206 @@ class WorkflowEpochGateTests(unittest.TestCase):
             with self.subTest(workflow=workflow, epoch="4096"):
                 completed = self.run_gate(source, "4096")
                 self.assertEqual((completed.returncode, completed.stdout), (0, ""), completed.stderr)
+
+
+class GovernanceReturnEpochTests(unittest.TestCase):
+    """F10: a governance closure is never stamped from a consumed CLOCK answer; §Q: no epoch, nothing consumed."""
+
+    COMMUNICATION = "governance:" + "a" * 64
+
+    def setUp(self):
+        self.fed = load_module("f10_federation_cycle", "resident-runtime/federation_cycle.py")
+        self.kernel = self.fed.K
+        self.work = tempfile.TemporaryDirectory()
+        self.addCleanup(self.work.cleanup)
+        self.mesh = Path(self.work.name) / "mesh"
+        self.mesh.mkdir()
+        registry = self.kernel.load_registry(ROOT)
+        self.packet = self.kernel.build_packet(
+            origin_org="Probe-Origin", origin_service="probe-origin.org-control",
+            destination_org=registry["organization"],
+            destination_service=self.kernel.organization_slug(registry["organization"]) + ".org-control",
+            payload={"communication_id": self.COMMUNICATION, "message_class": "ecosystem.communication.ack",
+                     "subject": "s", "body": {"request_packet_id": "pkt-request"}},
+            standing={"mode": "ESTABLISH_GENESIS", "node_ref": "f10", "predecessor": None})
+
+    def consumed(self, **result):
+        item = self.kernel.scan_addressed_frames(self.packet["destination"]["org"], root=self.mesh)[0]
+        return [{"path": item["path"], "result": {"status": "CONSUMED", "packet": self.packet, **result}}]
+
+    def returns(self, results):
+        # The return operation (and the SDK it imports) is never loaded for a CLOCK answer.
+        with mock.patch.object(self.fed.importlib.util, "spec_from_file_location",
+                               side_effect=AssertionError("governance_decision_return loaded")):
+            return self.fed.returns_for_consumed(results, mesh_root=self.mesh)
+
+    def assert_not_supplied(self, returned):
+        self.assertEqual(len(returned), 1)
+        refusal = returned[0]
+        self.assertEqual((refusal["disposition"], refusal["failure_code"], refusal["decision_returned"]),
+                         ("FAIL_CLOSED", "HB_EPOCH_NOT_SUPPLIED", False))
+        for field in SIX_FIELDS:
+            self.assertTrue(refusal[field], field)
+        self.assertNotIn(str(FIXED_CLOCK_NS), json.dumps(refusal))
+
+    def test_a_consumed_clock_answer_lends_the_closure_no_epoch(self):
+        self.kernel.publish_packet(self.packet, root=self.mesh, now_ns=FIXED_CLOCK_NS)
+        self.assert_not_supplied(self.returns(self.consumed(epoch_lent=None)))
+
+    def test_a_clock_flagged_or_unmarked_answer_frame_is_not_a_supplied_epoch(self):
+        self.kernel.publish_packet(self.packet, root=self.mesh, now_ns=FIXED_CLOCK_NS)
+        self.assert_not_supplied(self.returns(self.consumed()))
+
+    def test_a_cycle_without_a_supplied_epoch_consumes_nothing_and_marks_nothing(self):
+        cycle = load_module("q_governance_return_cycle", "resident-runtime/governance_return_cycle.py")
+        self.kernel.publish_packet(self.packet, root=self.mesh, epoch=4096)
+        for epoch, code in ((None, "HB_EPOCH_NOT_SUPPLIED"), ("abc", "HB_EPOCH_INVALID"), ("31", "HB_EPOCH_INVALID")):
+            with self.subTest(epoch=epoch):
+                node = Path(self.work.name) / ("node-" + str(epoch))
+                with mock.patch.object(cycle.K, "consume_and_respond",
+                                       side_effect=AssertionError("consumed without an epoch")):
+                    refused = cycle.run(mesh_root=self.mesh, node_state_root=node, hb_epoch=epoch)
+                self.assertEqual((refused["disposition"], refused["failure_code"]), ("FAIL_CLOSED", code))
+                for field in SIX_FIELDS:
+                    self.assertTrue(refused[field], field)
+                self.assertEqual(refused["retry_entrypoint"], cycle.RETRY_ENTRYPOINT)
+                # Pending: no quarantine, no seen-marker, the frame is still offered.
+                self.assertFalse(node.exists())
+                self.assertEqual(len(self.kernel.scan_addressed_frames(self.packet["destination"]["org"],
+                                                                       root=self.mesh)), 1)
+
+
+class RequestEpochResolutionTests(unittest.TestCase):
+    """Trigger probe: a push-triggered run's committed request carries its own hb_epoch, gate first."""
+
+    def setUp(self):
+        self.inputs = load_module("probe_run_inputs", "resident-runtime/manifest_directed_run_inputs.py")
+
+    def test_a_request_without_a_supplied_epoch_fails_closed_with_six_fields(self):
+        cases = (({}, "", "HB_EPOCH_NOT_SUPPLIED"), ({"hb_epoch": "+33"}, "", "HB_EPOCH_INVALID"),
+                 ({"hb_epoch": 31}, "", "HB_EPOCH_INVALID"), ({}, "abc", "HB_EPOCH_INVALID"),
+                 ({"hb_epoch": "4096"}, "4097", "HB_EPOCH_INVALID"))
+        for request, dispatch, code in cases:
+            with self.subTest(request=request, dispatch=dispatch):
+                refused = self.inputs.request_epoch(dispatch, request, "entry")
+                self.assertEqual((refused["disposition"], refused["failure_code"]), ("FAIL_CLOSED", code))
+                for field in SIX_FIELDS:
+                    self.assertTrue(refused[field], field)
+
+    def test_the_request_or_the_dispatch_supplies_it(self):
+        for request, dispatch, source in (({"hb_epoch": 4096}, "", "COMMITTED_REQUEST"),
+                                          ({}, "4096", "WORKFLOW_DISPATCH"),
+                                          ({"hb_epoch": "4096"}, "4096", "WORKFLOW_DISPATCH")):
+            with self.subTest(request=request, dispatch=dispatch):
+                resolved = self.inputs.request_epoch(dispatch, request, "entry")
+                self.assertEqual((resolved["disposition"], resolved["hb_epoch"], resolved["source"]),
+                                 ("ALLOW", "4096", source))
+
+    def test_a_governance_return_request_without_an_epoch_is_refused_before_anything_runs(self):
+        with tempfile.TemporaryDirectory() as work:
+            path = Path(work) / ".stegverse/governance-return-requests/r.json"
+            path.parent.mkdir(parents=True)
+            request = {"schema": self.inputs.RETURN_REQUEST_SCHEMA, "owning_existing_goal": "G",
+                       "mesh_root": "git+a#refs/m", "peer_mesh": "git+b#refs/m"}
+            path.write_text(json.dumps(request))
+            cwd = os.getcwd()
+            os.chdir(work)
+            try:
+                refused = self.inputs.governance_return_inputs({}, [".stegverse/governance-return-requests/r.json"])
+                path.write_text(json.dumps({**request, "hb_epoch": "4096"}))
+                allowed = self.inputs.governance_return_inputs({}, [".stegverse/governance-return-requests/r.json"])
+            finally:
+                os.chdir(cwd)
+        self.assertEqual((refused["disposition"], refused["failure_code"]), ("FAIL_CLOSED", "HB_EPOCH_NOT_SUPPLIED"))
+        for field in SIX_FIELDS:
+            self.assertTrue(refused[field], field)
+        self.assertEqual((allowed["disposition"], allowed["hb_epoch"]), ("ALLOW", "4096"))
+
+
+def workflow_triggers(path):
+    import re
+    text = path.read_text(encoding="utf-8")
+    on = text.split("\non:\n", 1)[1].split("\n\n", 1)[0] if "\non:\n" in text else ""
+    return {name for name in ("push", "schedule", "workflow_dispatch", "pull_request")
+            if re.search(r"^  " + name + r":", on, re.M)}, text
+
+
+class WorkflowTriggerProbeTests(unittest.TestCase):
+    """No push or schedule trigger reaches an epoch-requiring production entrypoint without a gate first."""
+
+    def test_the_resident_entrypoints_are_dispatched_in_tree_and_only_by_dispatch(self):
+        manifest = json.loads((ROOT / "resident-runtime/activation-manifest.json").read_text())
+        binding = manifest["epoch_binding"]
+        self.assertEqual(binding["entrypoints"], ["resident-runtime/resident_executor.py",
+                                                  "resident-runtime/federation_cycle.py"])
+        self.assertEqual((binding["hb_epoch"], binding["clock_fallback"]), ("SUPPLIED_BY_DISPATCH", "NONE"))
+        dispatcher = ROOT / binding["dispatcher"]
+        self.assertTrue(dispatcher.is_file())
+        triggers, text = workflow_triggers(dispatcher)
+        self.assertEqual(triggers, {"workflow_dispatch"})
+        gate = text.index("Gate the supplied epoch before any entrypoint")
+        self.assertLess(gate, text.index("resident-runtime/resident_dispatch.py"))
+        names = [(w, step) for w, step, _ in workflow_epoch_gates()]
+        self.assertIn(("resident-runtime-dispatch.yml", "Gate the supplied epoch before any entrypoint"), names)
+        # Nothing else triggers the resident entrypoints. (The push-triggered
+        # governance return is gated on its request's own epoch, tested below.)
+        for path in sorted(WORKFLOWS.glob("*.yml")):
+            triggers, text = workflow_triggers(path)
+            if triggers & {"push", "schedule"}:
+                for entrypoint in ("resident_executor.py", "resident_dispatch.py", "federation_cycle.py"):
+                    self.assertNotIn("python resident-runtime/" + entrypoint, text, path.name)
+
+    def test_push_triggered_production_writers_resolve_the_request_epoch_first(self):
+        _, transition = workflow_triggers(WORKFLOWS / "organization-ledger-transition.yml")
+        loop = transition.split('while IFS= read -r request; do', 1)[1]
+        self.assertLess(loop.index("manifest_directed_run_inputs.py request-epoch"),
+                        loop.index("from stegverse.manifest_builder import build_manifest"))
+        self.assertIn('epoch_args=(--hb-epoch "$request_epoch")', loop)
+        self.assertIn("Fail a run whose committed request carried no supplied epoch", transition)
+        _, ret = workflow_triggers(WORKFLOWS / "organization-governance-return.yml")
+        self.assertLess(ret.index("--dispatch-hb-epoch"), ret.index("python resident-runtime/peer_mesh_intake.py"))
+        self.assertIn('--hb-epoch "$RETURN_HB_EPOCH"', ret)
+        self.assertNotIn("schedule:", transition + ret)
+
+
+class ResidentDispatchTests(unittest.TestCase):
+    """B-P36n: the in-tree dispatcher gates first and hands each entrypoint the supplied epoch."""
+
+    def setUp(self):
+        self.dispatch = load_module("probe_resident_dispatch", "resident-runtime/resident_dispatch.py")
+
+    def test_an_absent_or_invalid_epoch_is_refused_and_nothing_runs(self):
+        for epoch, code in ((None, "HB_EPOCH_NOT_SUPPLIED"), ("", "HB_EPOCH_NOT_SUPPLIED"), ("+33", "HB_EPOCH_INVALID")):
+            with self.subTest(epoch=epoch):
+                refused = self.dispatch.dispatch(hb_epoch=epoch, mesh_root="m", node_state_root="n",
+                                                 run=mock.Mock(side_effect=AssertionError("ran")))
+                self.assertEqual((refused["disposition"], refused["failure_code"]), ("FAIL_CLOSED", code))
+                for field in SIX_FIELDS:
+                    self.assertTrue(refused[field], field)
+
+    def test_the_manifest_is_not_runtime_authority_so_the_substrate_is_pending_and_nothing_is_executed(self):
+        result = self.dispatch.dispatch(hb_epoch="4096", mesh_root="m", node_state_root="n",
+                                        run=mock.Mock(side_effect=AssertionError("ran")))
+        self.assertEqual((result["disposition"], result["executed"]), ("ALLOW", False))
+        self.assertEqual([i["entrypoint"] for i in result["invocations"]],
+                         ["resident-runtime/resident_executor.py", "resident-runtime/federation_cycle.py"])
+        for invocation in result["invocations"]:
+            argv = invocation["argv"]
+            self.assertEqual(argv[argv.index("--hb-epoch") + 1], "4096")
+        pending = result["runtime_dispatcher"]
+        self.assertEqual((pending["failure_code"], pending["blocking"]), ("RUNTIME_DISPATCHER_PENDING_SUBSTRATE", False))
+        for field in SIX_FIELDS:
+            self.assertTrue(pending[field], field)
+
+    def test_a_runtime_authority_runs_the_executor_with_the_supplied_epoch(self):
+        manifest = json.loads((ROOT / "resident-runtime/activation-manifest.json").read_text())
+        run = mock.Mock(return_value=mock.Mock(returncode=0))
+        result = self.dispatch.dispatch(hb_epoch="4096", mesh_root="m", node_state_root="n",
+                                        manifest={**manifest, "github_actions_is_runtime_authority": True}, run=run)
+        self.assertEqual((result["disposition"], result["executed"]), ("ALLOW", True))
+        argv = run.call_args[0][0]
+        self.assertTrue(argv[1].endswith("resident_executor.py"))
+        self.assertEqual(argv[argv.index("--hb-epoch") + 1], "4096")
 
 
 class OrganizationReceiptTests(unittest.TestCase):

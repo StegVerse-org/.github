@@ -214,6 +214,17 @@ for epoch in ("abc", 5):
     clock_bad["heartbeat_reference"]["epoch"] = epoch
     clock_bad["heartbeat_reference"]["derived_from_clock"] = True
     bad["clock_epoch_" + str(epoch)] = reseal(clock_bad)
+# B-P36o on a CLOCK frame: an incoherent reference is refused explicitly before
+# the CLOCK branch, never consumed as a clock frame. F11: a self-asserted CARRIED
+# claim on an unflagged sampled frame is checked before CLOCK is returned.
+clock_generation = copy.deepcopy(kernel.carrier_frame(addressed("c-clock-gen"), now_ns=FIXED_NS))
+clock_generation["heartbeat_reference"]["generation"] = clock_generation["heartbeat_reference"]["epoch"] + 1
+bad["clock_generation"] = reseal(clock_generation)
+forged_sampled = copy.deepcopy(kernel.carrier_frame(addressed("c-clock-forged"), now_ns=FIXED_NS))
+del forged_sampled["heartbeat_reference"]["derived_from_clock"]
+forged_sampled["heartbeat_reference"].update({"source": "CARRIED:ORGANIZATION_LEDGER_HEAD",
+                                              "head_receipt_sha": "sha256:" + "f" * 64})
+bad["clock_forged_carried"] = reseal(forged_sampled)
 for frame in bad.values():
     kernel.publish_frame(frame, root=imesh)
 good = addressed("c-integrity-valid")
@@ -233,6 +244,64 @@ integrity = {"rows": {names.get((r.get("result") or {}).get("packet_id")
              "valid_in_ledgers": len(receipts_for(good["packet_id"])),
              "bad_in_ledgers": sum(len(receipts_for(f["packet_id"])) for f in bad.values())}
 
+# F12 / B-P36p: frames.d entries that are not readable frames -- a read error,
+# bytes that are not UTF-8, text that is not a JSON object, an oversized entry,
+# a directory named *.json -- sort before a valid frame. Each is quarantined by
+# its file name as six-field FRAME_INGEST_FAILED with no clock read and no
+# ledger file, and the valid frame behind them is still consumed and ledgered.
+def corrupt_mesh(name):
+    root = WORK / name
+    frames = root / "frames.d"
+    frames.mkdir(parents=True)
+    (frames / "0000-not-json.json").write_text("{not json")
+    (frames / "0001-a-list.json").write_text("[1,2,3]")
+    (frames / "0002-not-utf8.json").write_bytes(b"\xff\xfe{}")
+    (frames / "0003-oversized.json").write_text('{"pad": "' + "x" * (kernel.FRAME_ENTRY_LIMIT_BYTES + 1) + '"}')
+    (frames / "0004-a-directory.json").mkdir()
+    (frames / "0005-read-error.json").write_text("{}")
+    return root
+
+
+real_read = kernel.node_store_module.PosixStateStore.read_bounded
+
+
+def failing_read(self, key, limit):
+    if key.endswith("0005-read-error.json"):
+        raise PermissionError(13, "Permission denied", key)
+    return real_read(self, key, limit)
+
+
+kernel.node_store_module.PosixStateStore.read_bounded = failing_read
+corrupt_only = corrupt_mesh("s0-mesh")
+before_ledgers = ledger_files()
+start = CALLS["n"]
+only_rows = kernel.consume_and_respond(ROOT, mesh_root=corrupt_only, node_state_root=WORK / "s0-node", **roots)
+corrupt_only_ledger_files = len([f for f in ledger_files() if f not in before_ledgers])
+smesh = corrupt_mesh("s-mesh")
+scan_valid = addressed("c-scan-valid")
+kernel.publish_packet(scan_valid, root=smesh, epoch=4096)
+first = kernel.consume_and_respond(ROOT, mesh_root=smesh, node_state_root=WORK / "s-node", **roots)
+second = kernel.consume_and_respond(ROOT, mesh_root=smesh, node_state_root=WORK / "s-node", **roots)
+phases["scan_clock_calls"] = CALLS["n"] - start
+kernel.node_store_module.PosixStateStore.read_bounded = real_read
+scan_markers = {m["frame_name"]: m for m in (json.loads(p.read_text()) for p in (WORK / "s-node").rglob("*.json"))
+                if isinstance(m, dict) and "frame_name" in m}
+def scan_row_name(r):
+    result = r.get("result") or {}
+    packet_id = result.get("packet_id") or (result.get("packet") or {}).get("packet_id")
+    return "valid" if packet_id == scan_valid["packet_id"] else Path(str(r["path"])).name
+
+
+scan = {"rows": {scan_row_name(r):
+                 {"status": (r.get("result") or {}).get("status"),
+                  "failure_code": (r.get("result") or {}).get("failure_code")} for r in first},
+        "order": [Path(str(r["path"])).name for r in first],
+        "corrupt_only_rows": len(only_rows),
+        "corrupt_only_ledger_files": corrupt_only_ledger_files,
+        "valid_in_ledgers": len(receipts_for(scan_valid["packet_id"])),
+        "second_offered": len(second),
+        "markers": scan_markers}
+
 # A frame-only publication with no epoch: the WU-B13 helper default, marked.
 start = CALLS["n"]
 kernel.publish_packet(dict(packet, packet_id="probe-frame-only"), root=WORK / "frame-only-mesh")
@@ -241,10 +310,10 @@ phases["frame_only_clock_calls"] = CALLS["n"] - start
 found = []
 # Every reference this run wrote; the deliberately forged input frames in
 # i-mesh are inputs, not something the system wrote.
-for path in (p for p in WORK.rglob("*.json") if "i-mesh" not in p.parts):
+for path in (p for p in WORK.rglob("*.json") if p.is_file() and not {"i-mesh", "s-mesh", "s0-mesh"} & set(p.parts)):
     try:
         references(json.loads(path.read_text()), found)
     except ValueError:
         pass
 print(json.dumps({"phases": phases, "references": found, "responses": responses, "quarantine": quarantine,
-                  "carried": carried_out, "integrity": integrity}, sort_keys=True))
+                  "carried": carried_out, "integrity": integrity, "scan": scan}, sort_keys=True))

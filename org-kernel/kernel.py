@@ -430,17 +430,55 @@ def publish_frame(frame:dict[str,Any], *, root:Path|None=None, store:Any|None=No
         raise ValueError("federation_frame_write_once_collision")
     return Path(target.locator(key))
 
+FRAME_ENTRY_LIMIT_BYTES=1<<20
+
+def read_frame_entry(target:Any, key:str)->dict[str,Any]:
+    """One frames.d entry as a frame object, or ValueError naming why it is not one.
+
+    A read error, bytes that are not UTF-8, text that is not a JSON object, an
+    entry over FRAME_ENTRY_LIMIT_BYTES, or a directory named *.json is the
+    entry's own fault, never the scan's (B-P36p).
+    """
+    try:
+        bounded=getattr(target,"read_bounded",None)
+        if bounded is not None:
+            frame=json.loads(bounded(key,FRAME_ENTRY_LIMIT_BYTES).decode("utf-8"))
+        else:
+            frame=target.get(key)
+            if frame is not None and len(canon(frame))>FRAME_ENTRY_LIMIT_BYTES:
+                raise ValueError("frame_entry_oversized: more than "+str(FRAME_ENTRY_LIMIT_BYTES)+" bytes")
+    except UnicodeDecodeError as exc:
+        raise ValueError("frame_entry_not_utf8: "+str(exc)[:120])
+    except json.JSONDecodeError as exc:
+        raise ValueError("frame_entry_not_json: "+str(exc)[:120])
+    except OSError as exc:
+        raise ValueError("frame_entry_read_error: "+type(exc).__name__+": "+str(exc)[:120])
+    if not isinstance(frame,dict):
+        raise ValueError("frame_entry_not_a_json_object: "+type(frame).__name__)
+    return frame
+
 def scan_addressed_frames(organization:str, *, root:Path|None=None, store:Any|None=None,
-                          seen:set[str]|None=None)->list[dict[str,Any]]:
-    """Frames in the mesh addressed to `organization` and not already consumed."""
+                          seen:set[str]|None=None, unreadable:list[dict[str,Any]]|None=None)->list[dict[str,Any]]:
+    """Frames in the mesh addressed to `organization` and not already consumed.
+
+    An entry that cannot be read as a frame never stops the scan: it is
+    appended to `unreadable` (its key, name, locator and reason) when the
+    caller collects them, and skipped otherwise.
+    """
     target=store or mesh_store(root)
     consumed=seen or set()
     out=[]
     for key in target.list_prefix(node_store_module.MESH_FRAME_PREFIX):
         if node_store_module.frame_name(key) in consumed:
             continue
-        frame=target.get(key)
-        if frame is not None and frame.get("destination_org")==organization:
+        try:
+            frame=read_frame_entry(target,key)
+        except ValueError as exc:
+            if unreadable is not None:
+                unreadable.append({"key":key,"name":node_store_module.frame_name(key),
+                                   "path":target.locator(key),"reason":str(exc)})
+            continue
+        if frame.get("destination_org")==organization:
             out.append({"key":key,"name":node_store_module.frame_name(key),
                         "path":target.locator(key),"frame":frame})
     return out
@@ -934,7 +972,18 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
     durable_seen=federation_seen_frame_names(repo_root,store=node_state)
     effective_seen=set(seen or set())|durable_seen
     out=[]
-    for item in scan_addressed_frames(organization,root=mesh_root,seen=effective_seen):
+    unreadable=[]
+    frames=scan_addressed_frames(organization,root=mesh_root,seen=effective_seen,unreadable=unreadable)
+    # An entry that is not a readable frame is quarantined by its file name with
+    # the six fields, and the scan goes on to the frames behind it (B-P36p).
+    for entry in unreadable:
+        refused=unreadable_entry_refusal(entry["reason"],custody)
+        marker=quarantine_federation_frame(entry["path"],{},refused,store=node_state)
+        out.append({"path":entry["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
+                    "failed_predicate":refused["failed_predicate"],"failure_code":refused["failure_code"],
+                    "packet_id":None,"quarantined":True},
+                    "response_publication":None,"organization_record":None,"seen_marker":str(marker)})
+    for item in frames:
         # An error in this one frame -- its heartbeat reference, its digests, or
         # an adapter ingesting it -- is its own six-field refusal and a terminal
         # quarantine, and the cycle goes on to the next frame (B-P36o). A ledger
@@ -1107,26 +1156,50 @@ def frame_epoch_class(frame:dict[str,Any], custody:dict[str,Any])->tuple[str|Non
     # HB_EPOCH_INVALID (absent is NOT_SUPPLIED) even on a clock frame (F-S1a),
     # and is quarantined, never raised.
     failure=supplied_epoch_failure(epoch) if isinstance(ref,dict) else supplied_epoch_failure(epoch,ref)
-    if failure is None and (ref.get("derived_from_clock") is True
-                            or ("derived_from_clock" not in ref and "sampled_unix_ns" in ref)):
-        return "CLOCK",None,None
-    failure=failure or supplied_epoch_failure(epoch,ref)
+    predicate=ledger.HB_EPOCH_PREDICATE
+    # Then the reference's coherence with that epoch, explicitly and on every
+    # class, so a CLOCK frame is classified here and recover_packet never raises
+    # on its reference before the CLOCK branch (B-P36o).
+    if failure is None:
+        incoherent=heartbeat_incoherence(ref)
+        if incoherent is not None:
+            failure,predicate=("HB_REFERENCE_INVALID",incoherent),"FRAME_HEARTBEAT_REFERENCE_IS_COHERENT"
+    clock=failure is None and (ref.get("derived_from_clock") is True
+                               or ("derived_from_clock" not in ref and "sampled_unix_ns" in ref))
     provenance=None
     if failure is None and ("source" in ref or "head_receipt_sha" in ref):
+        # A self-asserted CARRIED claim is checked before CLOCK is returned (F11):
+        # only a supplied epoch can be carried, so a claim on a clock reference is
+        # refused, and a forged one is never consumed as a quiet CLOCK frame.
         provenance={k:ref.get(k) for k in CARRIED_PROVENANCE_KEYS}
-        failure=ledger.carried_provenance_failure(provenance,epoch,custody["organization_store"])
+        failure=(("CARRIED_PROVENANCE_UNVERIFIED","a CARRIED claim on a clock reference; only a supplied "
+                  "epoch can be carried") if clock
+                 else ledger.carried_provenance_failure(provenance,epoch,custody["organization_store"]))
+    elif clock:
+        return "CLOCK",None,None
+    failure=failure or supplied_epoch_failure(epoch,ref)
     if failure is None:
         return ("CARRIED" if provenance else "SUPPLIED"),provenance,None
     code,detail=failure
     return None,None,{"disposition":"FAIL_CLOSED","failure_code":code,
-            "failed_predicate":ledger.HB_EPOCH_PREDICATE,"detail":detail,
+            "failed_predicate":predicate,"detail":detail,
             "required_evidence_or_repair":("a frame carries a supplied epoch: derived_from_clock false, no "
                                            "sampled_unix_ns, ASCII digits >= "+str(HB_ANCHOR_EPOCH)
-                                           +"; a CARRIED claim names this organization's current supplied head"),
+                                           +", generation and heartbeat_id equal to it; a CARRIED claim names "
+                                           "this organization's current supplied head"),
             "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
             "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
             "next_attempt":"the sender republishes the crossing with a supplied epoch; this frame is quarantined "
                            "and not offered again"}
+
+def heartbeat_incoherence(ref:dict[str,Any])->str|None:
+    """Why a reference with a valid epoch is incoherent with it, or None. Nothing raises."""
+    epoch=int(str(ref["epoch"]))
+    if ref.get("generation")!=epoch: return "heartbeat_generation_mismatch: generation "+repr(ref.get("generation"))+" is not epoch "+str(epoch)
+    if ref.get("heartbeat_id")!=f"HB:{epoch}": return "heartbeat_id_mismatch: heartbeat_id "+repr(ref.get("heartbeat_id"))+" is not HB:"+str(epoch)
+    if ref.get("frequency_hz")!=HB_HZ: return "heartbeat_frequency_mismatch"
+    if ref.get("progression_dependency")!="OSCILLATOR_ONLY": return "heartbeat_progression_not_oscillator"
+    return None
 
 HB_REFERENCE_ERRORS=("heartbeat_generation_mismatch","heartbeat_id_mismatch","heartbeat_frequency_mismatch",
                      "heartbeat_progression_not_oscillator","heartbeat_reference_invalid")
@@ -1158,6 +1231,17 @@ def frame_ingest_refusal(exc:BaseException, custody:dict[str,Any])->dict[str,Any
             "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
             "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
             "next_attempt":"on a republished frame; this one is quarantined and not offered again"}
+
+def unreadable_entry_refusal(reason:str, custody:dict[str,Any])->dict[str,Any]:
+    """The six-field FRAME_INGEST_FAILED refusal of a frames.d entry that is not a readable frame."""
+    ledger=custody["organization_ledger"]
+    return {"disposition":"FAIL_CLOSED","failure_code":"FRAME_INGEST_FAILED",
+            "failed_predicate":"FRAME_ENTRY_IS_A_READABLE_JSON_OBJECT","detail":reason[:240],
+            "required_evidence_or_repair":("the sender republishes the frame as a UTF-8 JSON object of at most "
+                                           +str(FRAME_ENTRY_LIMIT_BYTES)+" bytes"),
+            "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
+            "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
+            "next_attempt":"on a republished frame; this entry is quarantined by its file name and not offered again"}
 
 def not_supplied_record(custody:dict[str,Any])->dict[str,Any]:
     """The six-field NOT_SUPPLIED refusal of recording a CLOCK frame's crossing; nothing is written."""

@@ -242,7 +242,8 @@ class ManifestDirectedRunInputs(unittest.TestCase):
 
     def _return_request(self, **overrides):
         document = {"schema": self.inputs.RETURN_REQUEST_SCHEMA, "owning_existing_goal": "SDK-MR-A-VALIDATION-CUSTODY-001",
-                    "mesh_root": "git+.#refs/stegverse/mesh", "peer_mesh": "git+StegVerse-Labs/.github#refs/stegverse/mesh"}
+                    "mesh_root": "git+.#refs/stegverse/mesh", "peer_mesh": "git+StegVerse-Labs/.github#refs/stegverse/mesh",
+                    "hb_epoch": "4096"}
         document.update(overrides)
         return self._write(".stegverse/governance-return-requests/R1.json", document)
 
@@ -259,6 +260,7 @@ class ManifestDirectedRunInputs(unittest.TestCase):
         self.assertEqual(result["peer_mesh"], "git+StegVerse-Labs/.github#refs/stegverse/mesh")
         self.assertEqual(result["sdk_ref"], "e" * 40)
         self.assertEqual(result["deciding_ledger"], "")
+        self.assertEqual(result["hb_epoch"], "4096")
         self.assertTrue(result["source"].startswith("COMMITTED_RETURN_REQUEST:"))
 
     def _resolve(self, path, dispatch=None):
@@ -271,7 +273,7 @@ class ManifestDirectedRunInputs(unittest.TestCase):
 
     def test_a_return_needs_exactly_one_committed_request_or_a_dispatch(self):
         self._six(self._resolve(None))
-        dispatched = self._resolve(None, {"mesh_root": "git+.#refs/m", "peer_mesh": "git+p#refs/m"})
+        dispatched = self._resolve(None, {"mesh_root": "git+.#refs/m", "peer_mesh": "git+p#refs/m", "hb_epoch": "4096"})
         self.assertEqual((dispatched["disposition"], dispatched["source"]), ("ALLOW", "WORKFLOW_DISPATCH"))
 
     def test_an_invalid_return_request_fails_closed(self):
@@ -279,6 +281,9 @@ class ManifestDirectedRunInputs(unittest.TestCase):
         self._six(self._resolve(self._return_request(peer_mesh="")))
         self._six(self._resolve(self._return_request(sdk_ref="main")))
         self._six(self._resolve(self._return_request(deciding_ledger="git+x#refs/l\nX=1")))
+        # A push supplies no epoch: the request declares its own, checked first.
+        self._six(self._resolve(self._return_request(hb_epoch=None)))
+        self._six(self._resolve(self._return_request(hb_epoch="+33")))
 
     def test_both_runtime_workflows_resolve_their_inputs_through_the_committed_request(self):
         transition = WORKFLOW.read_text()
