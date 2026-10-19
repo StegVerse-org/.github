@@ -55,7 +55,6 @@ permissions:
 
 env:
   LEDGER_REF: refs/stegverse/organization-ledger
-  DRY_RUN_REF: refs/dry-run/organization-ledger
 
 jobs:
   unit:
@@ -86,24 +85,35 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Copy the published ledger to a scratch ref
+      - name: Copy the published ledger into a scratch git dir
+        # The scratch git dir carries the ledger at its designated ref name: an organization's
+        # writer holds the organization half to org-contract.json's declared ref
+        # (StegVerse-Labs: organization_ledger_locus_mismatch otherwise). It is never pushed.
         run: |
           set -euo pipefail
-          git fetch --no-tags origin "+$LEDGER_REF:$DRY_RUN_REF"
-          echo "published ledger tip: $(git rev-parse "$DRY_RUN_REF")"
+          git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
+          published=$(git rev-parse "$LEDGER_REF")
+          echo "PUBLISHED_TIP=$published" >> "$GITHUB_ENV"
+          echo "published ledger tip: $published"
+          scratch="$RUNNER_TEMP/scratch-ledger.git"
+          git init -q --bare "$scratch"
+          git --git-dir="$scratch" fetch -q "$GITHUB_WORKSPACE" "+$LEDGER_REF:$LEDGER_REF"
           namespace=$(python3 -c 'import json; print(json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]["namespace"])')
-          echo "REPO_LEDGER_NAMESPACE=$namespace" >> "$GITHUB_ENV"
+          {
+            echo "SCRATCH=$scratch"
+            echo "STEGVERSE_ORG_LEDGER_ROOT=git+$scratch#$LEDGER_REF"
+            echo "STEGVERSE_ORG_LEDGER_GIT_DIR=$scratch"
+            echo "STEGVERSE_REPO_LEDGER_ROOT=git+$scratch#$LEDGER_REF:$namespace"
+          } >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/results"
 
       - name: "Real state, read-only: every declared path is FAIL_CLOSED (no path receipt)"
         run: |
           set -euo pipefail
-          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
-          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
           python3 resident-runtime/intr_path_transfer.py verify --expect-source FAIL_CLOSED --out "$RUNNER_TEMP/results/real-state.json" > /dev/null
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["counts"]["ALLOW"] == 0, r["counts"]; print("INTR_PATH_REAL_STATE", json.dumps(r["counts"]))' "$RUNNER_TEMP/results/real-state.json"
 
-      - name: The writer's append on the scratch ref, linked to the last ledgered main merge
+      - name: The writer's append on the scratch copy, linked to the last ledgered main merge
         env:
           GIT_AUTHOR_NAME: dry-run
           GIT_AUTHOR_EMAIL: dry-run@invalid
@@ -112,19 +122,20 @@ jobs:
         run: |
           python3 resident-runtime/intr_path_ledger.py which
           set -euo pipefail
-          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
-          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
           # a main merge whose main-merge transfer receipt is on the ledger (pinned in the expected real state)
           base=$(python3 -c 'import json; print(json.load(open("tests/fixtures/intr-path-transfer/expected-real-state.json"))["verified_transfer_commit"])')
-          # an organization with no main-merge transfer receipt yet: append the pinned merges to the scratch ref first
+          # an organization with no main-merge transfer receipt yet: append the pinned merges to the scratch copy first
           for c in $(python3 -c 'import json; print(" ".join(json.load(open("tests/fixtures/intr-path-transfer/expected-real-state.json")).get("temp_merge_transfers") or []))'); do
             python3 resident-runtime/intr_path_ledger.py append-merge-transfer --commit "$c" > /dev/null
           done
           python3 resident-runtime/intr_path_transfer.py append --transfer-commit "$base" --out "$RUNNER_TEMP/results/append.json" > /dev/null
           python3 resident-runtime/intr_path_transfer.py verify --expect-source ALLOW --out "$RUNNER_TEMP/results/verify.json" > /dev/null
-          tip=$(git rev-parse "$DRY_RUN_REF")
+          tip=$(git --git-dir="$SCRATCH" rev-parse "$LEDGER_REF")
           python3 resident-runtime/intr_path_transfer.py append --transfer-commit "$base" --out "$RUNNER_TEMP/results/replay.json" > /dev/null
-          test "$(git rev-parse "$DRY_RUN_REF")" = "$tip"
+          test "$(git --git-dir="$SCRATCH" rev-parse "$LEDGER_REF")" = "$tip"
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert all(x.get("replayed") is True for x in r), r' "$RUNNER_TEMP/results/replay.json"
-          test "$(git rev-parse "$DRY_RUN_REF")" != "$(git ls-remote origin "$LEDGER_REF" | cut -f1)"
+          # the appends landed on the scratch copy only: the workspace ref and the published ref are unchanged
+          test "$tip" != "$PUBLISHED_TIP"
+          test "$(git rev-parse "$LEDGER_REF")" = "$PUBLISHED_TIP"
+          test "$(git ls-remote origin "$LEDGER_REF" | cut -f1)" != "$tip"
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); print("INTR_PATH_DRY_RUN", json.dumps(r["counts"]))' "$RUNNER_TEMP/results/verify.json"

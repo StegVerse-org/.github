@@ -89,8 +89,9 @@ def cid(path):
 
 class Selection(unittest.TestCase):
     def test_merge_transfer_py_organizations_are_unchanged(self):
-        self.assertEqual(pt.ledger.kind, "MERGE_TRANSFER_PY")
-        self.assertEqual(pi.ledger.kind, "MERGE_TRANSFER_PY")
+        own = "MERGE_TRANSFER_GITSTORE" if pl.pin_for(ORG) else "MERGE_TRANSFER_PY"   # this checkout's own pin
+        self.assertEqual(pt.ledger.kind, own)
+        self.assertEqual(pi.ledger.kind, own)
         for org in ("StegVerse-org", "SV-011", "StegGhost", "SV-LLM"):
             self.assertIsNone(pl.pin_for(org))
 
@@ -116,7 +117,8 @@ class Selection(unittest.TestCase):
         self.assertEqual(result["failure_code"], "INTR_PATH_LEDGER_VERIFIER_DIGEST_UNPINNED")
         for field in SIX:
             self.assertTrue(result[field], field)
-        unbound = pl.bound(ROOT, organization="StegVerse-Labs")   # this checkout carries no gitstore file
+        with tempfile.TemporaryDirectory() as empty:   # a checkout that carries no gitstore file
+            unbound = pl.bound(ROOT, organization="StegVerse-Labs", module_root=empty)
         self.assertEqual(unbound.kind, "UNBOUND")
         bound = Bound(unbound)
         try:
@@ -129,7 +131,10 @@ class Selection(unittest.TestCase):
 
 class GitstoreBackend(unittest.TestCase):
     def run_both(self, check):
-        for git in (False, True):
+        # An organization pinned to the git store (StegVerse-Labs, GCAT-BCAT-Engine) keeps its ledger on the git
+        # ref, and its writer refuses a POSIX copy as an ungoverned relocation; it runs the git store only. Every
+        # other organization runs both stores.
+        for git in ((True,) if pl.pin_for(ORG) else (False, True)):
             with self.subTest(store="git" if git else "posix"):
                 ledger = TempLedger(ROOT, EXPECTED["ledger_tip"], NAMESPACE, git=git)
                 try:

@@ -59,6 +59,8 @@ jobs:
             echo "no inbound rows; no transition"; echo "NO_INBOUND=1" >> "$GITHUB_ENV"; exit 0
           fi
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_GIT_REF="$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_GIT_DIR="$GITHUB_WORKSPACE/.git"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           python3 resident-runtime/intr_path_ingress.py consume --out "$RUNNER_TEMP/results/consume.json"
 
@@ -83,6 +85,8 @@ jobs:
           fi
           git --git-dir="$fresh" -c "http.https://github.com/.extraheader=$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
           export STEGVERSE_ORG_LEDGER_ROOT="git+$fresh#$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_GIT_REF="$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_GIT_DIR="$fresh"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$fresh#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           python3 resident-runtime/intr_path_ingress.py verify --out "$RUNNER_TEMP/results/verify.json" > /dev/null
           python3 -c 'import json,sys; [print(r["disposition"], r["path_id"]) for r in json.load(open(sys.argv[1]))]' "$RUNNER_TEMP/results/verify.json"
