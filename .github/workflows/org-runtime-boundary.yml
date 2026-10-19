@@ -76,6 +76,8 @@ on:
       - 'tests/test_organization_role_runtime_reality_deployment.py'
       - 'ORG_RESIDENT_RUNTIME_INTR_BOUNDARY_MIRROR_HANDOFF.md'
       - '.github/workflows/org-runtime-boundary.yml'
+      - '.github/workflows/**'
+      - 'tests/test_workflow_action_pins.py'
   push:
     branches: [main]
     paths:
@@ -150,6 +152,8 @@ on:
       - 'tests/test_organization_role_runtime_reality_deployment.py'
       - 'ORG_RESIDENT_RUNTIME_INTR_BOUNDARY_MIRROR_HANDOFF.md'
       - '.github/workflows/org-runtime-boundary.yml'
+      - '.github/workflows/**'
+      - 'tests/test_workflow_action_pins.py'
   workflow_dispatch:
 
 permissions:
@@ -159,7 +163,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Test every workflow action is pinned to a full commit sha
+        run: python -m unittest tests.test_workflow_action_pins -v
       - name: Test serialized organization ledger append
         run: python -m unittest discover -s tests -p 'test_org_ledger_atomic_append.py' -v
       - name: Test predecessor resolution, explicit genesis and exact source retention
