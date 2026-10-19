@@ -5,9 +5,10 @@ resident-runtime/merge_transfer.py verify (StegVerse-org/.github#202,
 SV-011/.github#15), pinned by sha256 in data/intr-protocol/v1/protocol.json.
 It reads supplied readbacks only: no ledger, git, clock or network.
 
-The expected receipts are the ones #202 and SV-011#15 compute in a temporary
-copy of each ledger tip; they are not ledgered and are not authentic receipts.
-The real state (manifest.json) is FAIL_CLOSED for both merges.
+The expected receipts are the ones #202 and SV-011#15 computed in a temporary
+copy of each ledger tip. readbacks-before-append.json is the state before the
+first append (both merges FAIL_CLOSED); manifest.json is read back from the
+ledger refs after it (four merges VERIFIED, f40ad7dd not ledgered).
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DESTINATIONS = ROOT / "tests" / "fixtures" / "intr-protocol" / "destinations" / "manifest.json"
 FIXTURES = ROOT / "tests" / "fixtures" / "intr-protocol" / "merge-transfer"
 MANIFEST = FIXTURES / "manifest.json"
+BEFORE_APPEND = FIXTURES / "readbacks-before-append.json"
 EXPECTED = FIXTURES / "expected-receipts.json"
 VERIFIER = ROOT / "resident-runtime" / "merge_transfer.py"
 spec = importlib.util.spec_from_file_location("intr_protocol_mt", ROOT / "org-runtime" / "intr_protocol.py")
@@ -63,15 +65,18 @@ class Contract(unittest.TestCase):
         self.assertEqual(mt["schema_ref"], predicate["evidence_schema"])
         self.assertEqual(mt["operation"], predicate["operation"])
         self.assertRegex(mt["verifier"]["sha256"], r"^sha256:[0-9a-f]{64}$")
-        self.assertEqual({p["pull_request"] for p in mt["verifier"]["pinned_at"]},
-                         {"StegVerse-org/.github#202", "SV-011/.github#15"})
+        landed = {row["repository"]: row for row in mt["verifier"]["landed_at"]}
+        self.assertEqual(set(landed), {"StegVerse-org/.github", "SV-011/.github"})
+        self.assertEqual(landed["StegVerse-org/.github"]["merge_commit"], "41035e9e4bca6d4114f2f6a181b03dda2de85481")
+        self.assertEqual(landed["SV-011/.github"]["merge_commit"], "a636fafca237a0f928fa0eccfe4585866bfecf9d")
+        # One digest today: the file landed byte-identical in both organizations.
+        for row in landed.values():
+            self.assertEqual(row["sha256"], mt["verifier"]["sha256"])
 
-    def test_contract_agrees_with_the_verifier_when_it_is_present(self):
-        """Before #202 lands the contract must declare that dependency; after, the names must agree."""
+    def test_contract_agrees_with_the_landed_verifier(self):
+        """merge_transfer.py is on main (#202); its names must agree and its digest must equal this org's pin."""
         mt = intr.load_contract()["main_merge_transfer"]
-        if not VERIFIER.is_file():
-            self.assertIn("StegVerse-org/.github#202", mt["verifier"]["admission_depends_on"])
-            return
+        self.assertTrue(VERIFIER.is_file(), "resident-runtime/merge_transfer.py landed with #202")
         text = VERIFIER.read_text(encoding="utf-8")
         constant = lambda name: re.search(r'^%s = "([^"]+)"' % name, text, re.M).group(1)
         self.assertEqual(constant("OPERATION"), mt["operation"])
@@ -84,8 +89,9 @@ class Contract(unittest.TestCase):
         self.assertIn('"' + intr.LEDGERED_PREDICATE + '"', text)
         self.assertIn('"' + intr.LINK_PREDICATE + '"', text)
         digest = "sha256:" + hashlib.sha256(VERIFIER.read_bytes()).hexdigest()
-        if digest != mt["verifier"]["sha256"]:
-            self.fail("resident-runtime/merge_transfer.py is " + digest + "; re-pin main_merge_transfer.verifier.sha256")
+        pin = next(r["sha256"] for r in mt["verifier"]["landed_at"] if r["repository"] == "StegVerse-org/.github")
+        if digest != pin:
+            self.fail("resident-runtime/merge_transfer.py is " + digest + "; re-pin main_merge_transfer.verifier")
 
 
 class Allow(unittest.TestCase):
@@ -107,30 +113,56 @@ class Allow(unittest.TestCase):
 
 
 class RealState(unittest.TestCase):
-    def test_current_mains_are_fail_closed_not_ledgered(self):
-        dimension = intr.merge_transfer_dimension(MANIFEST)
+    def assertSix(self, result):
+        for field in SIX:
+            self.assertTrue(result.get(field), field)
+        self.assertEqual(result["retry_entrypoint"],
+                         ".github/workflows/organization-ledger-merge-transfer.yml (push to main)")
+        self.assertEqual(result["owning_existing_goal"], "StegVerse-org/.github#162")
+
+    def test_before_the_first_append_both_merges_were_not_ledgered(self):
+        dimension = intr.merge_transfer_dimension(BEFORE_APPEND)
         got = {r["subject"]["merge_commit"]: (r["disposition"], r["failure_code"], r["failed_predicate"])
                for r in dimension["results"]}
         self.assertEqual(got, {
             ORG_MERGE: ("FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT"),
             SV011_MERGE: ("FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT")})
-        self.assertEqual(dimension["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 2})
         for result in dimension["results"]:
             self.assertEqual(result["transfer"], "UNVERIFIED")
-            self.assertEqual(result["destination_predicate"], "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED")
-            # the same detail merge_transfer.py verify records at the ledger tip (#202 / SV-011#15 fixtures)
             self.assertEqual(result["detail"], "no organization receipt names ORGANIZATION_MAIN_MERGE_TRANSFER for "
                              + result["subject"]["repository"] + "@" + result["subject"]["merge_commit"])
-            for field in SIX:
-                self.assertTrue(result.get(field), field)
-            self.assertEqual(result["retry_entrypoint"],
-                             ".github/workflows/organization-ledger-merge-transfer.yml (push to main)")
-            self.assertEqual(result["owning_existing_goal"], "StegVerse-org/.github#162")
+            self.assertSix(result)
+
+    def test_after_the_first_append_four_merges_verify_and_203_is_not_ledgered(self):
+        dimension = intr.merge_transfer_dimension(MANIFEST)
+        got = {(r["subject"]["repository"], r["subject"]["merge_commit"][:8]): (r["disposition"], r.get("failure_code"))
+               for r in dimension["results"]}
+        self.assertEqual(got, {
+            ("StegVerse-org/.github", "f160ac7d"): ("ALLOW", None),
+            ("StegVerse-org/.github", "41035e9e"): ("ALLOW", None),
+            ("StegVerse-org/.github", "f40ad7dd"): ("FAIL_CLOSED", "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED"),
+            ("SV-011/.github", "d7beaf59"): ("ALLOW", None),
+            ("SV-011/.github", "a636fafc"): ("ALLOW", None)})
+        self.assertEqual(dimension["counts"], {"ALLOW": 4, "DENY": 0, "FAIL_CLOSED": 1})
+        tips = {r["subject"]["repository"]: r["subject"]["ledger_tip"] for r in dimension["results"]}
+        self.assertEqual(tips, {"StegVerse-org/.github": "824e0b76d470081bcabceb096c59e0695361e6d4",
+                                "SV-011/.github": "6594bafc85d47c041424e6b3f72cfa028a87f5a5"})
+        for result in dimension["results"]:
+            if result["disposition"] == "ALLOW":
+                self.assertEqual(result["transfer"], "VERIFIED")
+            else:
+                self.assertSix(result)
+
+    def test_the_backfilled_receipts_are_the_ones_the_append_predicted(self):
+        live = {r["merge_commit"]: r for r in json.loads(MANIFEST.read_text())["readbacks"]}
+        for row in json.loads(EXPECTED.read_text())["receipts"]:
+            self.assertEqual(live[row["merge_commit"]]["organization_receipt"], row["organization_receipt"])
+            self.assertEqual(live[row["merge_commit"]]["repository_receipt"], row["repository_receipt"])
 
     def test_mesh_conformance_stays_eight_allow_with_the_separate_dimension(self):
         report = intr.conform_mesh(DESTINATIONS, merge_transfer_manifest=MANIFEST)
         self.assertEqual(report["counts"], {"ALLOW": 8, "DENY": 0, "FAIL_CLOSED": 0})
-        self.assertEqual(report["merge_transfer"]["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 2})
+        self.assertEqual(report["merge_transfer"]["counts"], {"ALLOW": 4, "DENY": 0, "FAIL_CLOSED": 1})
         plain = intr.conform_mesh(DESTINATIONS)
         self.assertNotIn("merge_transfer", plain)
         self.assertEqual(plain["results"], report["results"])

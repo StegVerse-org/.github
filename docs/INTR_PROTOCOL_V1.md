@@ -64,15 +64,26 @@ Snapshot result: 8 ALLOW. The SV-011 row pins the head of SV-011/.github#14 (mer
     python org-runtime/intr_protocol.py mesh --manifest tests/fixtures/intr-protocol/destinations/manifest.json \
         --merge-transfer tests/fixtures/intr-protocol/merge-transfer/manifest.json
 
-`merge_transfer.py` is not on main yet. The contract pins it by sha256
-(`032ed727...e20e`, byte-identical at StegVerse-org/.github#202 head `b590fb0a` and SV-011/.github#15
-head `2e74ecb3`), so admission of this predicate depends on #202 (and SV-011#15 for SV-011). Once the
-file is on main, the conformance test checks that its names agree with the contract and its digest
-equals the pin.
+`merge_transfer.py` landed in both organizations byte-identical, sha256 `032ed727...e20e`:
+StegVerse-org/.github#202 (head `b590fb0a`, merge `41035e9e`) and SV-011/.github#15 (head `8c02f276`,
+merge `a636fafc`; not the earlier pinned head `2e74ecb3`, but the file is unchanged between them).
+`main_merge_transfer.verifier.landed_at` pins each organization's digest separately. The conformance
+test checks that the file on this main agrees with the contract's names and equals this
+organization's pin.
+
+State before the first append (`readbacks-before-append.json`): StegVerse-org `f160ac7d` (tip
+`2acec0e1`) and SV-011 `d7beaf59` (tip `2cc58cec`) were both `MERGE_TRANSFER_RECEIPT_NOT_LEDGERED`.
 
 Current state (`tests/fixtures/intr-protocol/merge-transfer/manifest.json`): `merge_transfer`
-0 ALLOW / 0 DENY / 2 FAIL_CLOSED. StegVerse-org merge `f160ac7d` (ledger tip `2acec0e1`) and SV-011
-merge `d7beaf59` (ledger tip `2cc58cec`) have no ledgered transfer receipt, so both are
-`MERGE_TRANSFER_RECEIPT_NOT_LEDGERED` until the merge-transfer append runs. The ALLOW tests use the
-receipts #202 and SV-011#15 compute over a temporary copy of each ledger tip
-(`expected-receipts.json`); those are not ledgered and are not authentic receipts.
+4 ALLOW / 0 DENY / 1 FAIL_CLOSED, read back from the ledger refs at StegVerse-org tip `824e0b76` and
+SV-011 tip `6594bafc`. The first merge-transfer push runs (StegVerse-org run 39184244707 on push
+`41035e9e`, SV-011 run 39184321363 on push `a636fafc`) backfilled `f160ac7d` and `d7beaf59` from
+`.stegverse/merge-transfer/pending.json` and appended `41035e9e` and `a636fafc`; all four are VERIFIED.
+`f40ad7dd` (merge of #203) landed before the workflow existed and is not listed as pending, so it is
+`MERGE_TRANSFER_RECEIPT_NOT_LEDGERED`; a push alone does not append it, it must be listed in
+`.stegverse/merge-transfer/pending.json`. The snapshot is conformance evidence copied from the ledger
+ref, not a claim of authentic receipts.
+
+The ALLOW refusal tests use the receipts #202 and SV-011#15 computed over a temporary copy of each
+ledger tip (`expected-receipts.json`); the receipts later appended for `f160ac7d` and `d7beaf59` are
+equal to them by value.
