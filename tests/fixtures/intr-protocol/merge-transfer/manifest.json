@@ -1,0 +1,32 @@
+{
+  "schema": "stegverse.intr-main-merge-transfer-snapshot/v1",
+  "protocol": "stegverse.intr-protocol/v1",
+  "snapshot_rule": "readbacks of each named merge against the organization ledger at ledger_tip; checks read this file only, never the ledger or network",
+  "authentic_receipt": false,
+  "readbacks": [
+    {
+      "schema": "stegverse.intr-main-merge-transfer-readback/v1",
+      "organization": "StegVerse-org",
+      "repository": "StegVerse-org/.github",
+      "merge_commit": "f160ac7d61891ee8b187368fbf05372eacc8064c",
+      "pull_request": 200,
+      "ledger_ref": "refs/stegverse/organization-ledger",
+      "ledger_tip": "2acec0e1cfd158a6a3313ad422737caf41badda3",
+      "observation": "no organization receipt with operation ORGANIZATION_MAIN_MERGE_TRANSFER names this merge on the ledger at ledger_tip (read back by StegVerse-org/.github#202 tests at its pinned head)",
+      "organization_receipt": null,
+      "repository_receipt": null
+    },
+    {
+      "schema": "stegverse.intr-main-merge-transfer-readback/v1",
+      "organization": "SV-011",
+      "repository": "SV-011/.github",
+      "merge_commit": "d7beaf593a15c8e170540cbbf9ee3273003e645a",
+      "pull_request": 14,
+      "ledger_ref": "refs/stegverse/organization-ledger",
+      "ledger_tip": "2cc58cec07117909750a760933641725b86a204b",
+      "observation": "no organization receipt with operation ORGANIZATION_MAIN_MERGE_TRANSFER names this merge on the ledger at ledger_tip (read back by SV-011/.github#15 tests at its pinned head)",
+      "organization_receipt": null,
+      "repository_receipt": null
+    }
+  ]
+}

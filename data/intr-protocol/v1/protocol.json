@@ -83,5 +83,50 @@
       {"id": "SERVICE_ACCEPTS_DESTINATION_PAYLOAD", "row_path": "accepts", "contains": "stegverse.org-intr-destination-diagnostic/v1"},
       {"id": "SERVICE_DOES_NOT_SELECT_PROCESSING", "row_path": "selects_processing_at_this_address", "equals": false}
     ]
+  },
+  "main_merge_transfer": {
+    "schema_ref": "stegverse.main-merge-transfer-evidence/v1",
+    "readback_schema": "stegverse.intr-main-merge-transfer-readback/v1",
+    "result_dimension": "merge_transfer",
+    "dimension_rule": "reported beside destination conformance; it never changes a destination conformance disposition",
+    "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+    "profile_id": "main-merge-transfer",
+    "ref": "refs/heads/main",
+    "organization_receipt_schema": "stegverse.organization-transition-receipt/v1",
+    "repository_receipt_schema": "stegverse.repo-transition-receipt/v1",
+    "retry_entrypoint": ".github/workflows/organization-ledger-merge-transfer.yml (push to main)",
+    "verifier": {
+      "path": "resident-runtime/merge_transfer.py",
+      "command": "python resident-runtime/merge_transfer.py verify --commit <MERGE_COMMIT>",
+      "sha256": "sha256:6d41ff2066c738c31d6c6c98a49091def39e6d97d206479f340922d9da357946",
+      "pinned_at": [
+        {"pull_request": "StegVerse-org/.github#202", "head": "c7ff2b07a2bd0350f742da40e6aa294d1702fb76"},
+        {"pull_request": "SV-011/.github#15", "head": "1dfe0a10c261c7884ff3c39fe21f7ac360879211"}
+      ],
+      "admission_depends_on": ["StegVerse-org/.github#202", "SV-011/.github#15"]
+    },
+    "destination_predicates": [
+      {
+        "id": "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED",
+        "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+        "evidence_schema": "stegverse.main-merge-transfer-evidence/v1",
+        "checked_by": "resident-runtime/merge_transfer.py verify",
+        "verified_when": "a sealed organization receipt whose boundary_evidence names this operation, repository and merge_commit, and whose repo_receipt_sha256 is the seal of a sealed repository receipt whose evidence carries the same merge_commit and repository on refs/heads/main with a matching payload_sha256",
+        "unobserved": "FAIL_CLOSED",
+        "unobserved_failure_code": "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED",
+        "contradicted": "DENY",
+        "contradicted_failure_code": "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED"
+      }
+    ],
+    "evidence_predicates": [
+      {"id": "READBACK_NAMES_THE_MERGE", "unknown": "FAIL_CLOSED"},
+      {"id": "MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED", "unknown": "FAIL_CLOSED"},
+      {"id": "ORGANIZATION_RECEIPT_IS_SEALED", "unknown": "FAIL_CLOSED"},
+      {"id": "ORGANIZATION_RECEIPT_NAMES_THE_MERGE", "mismatch": "DENY"},
+      {"id": "REPOSITORY_RECEIPT_IS_SEALED", "unknown": "FAIL_CLOSED"},
+      {"id": "ORGANIZATION_RECEIPT_LINKS_THE_REPOSITORY_RECEIPT", "mismatch": "DENY"},
+      {"id": "REPOSITORY_RECEIPT_EVIDENCE_SCHEMA_IS_V1", "unknown": "FAIL_CLOSED"},
+      {"id": "REPOSITORY_RECEIPT_CARRIES_THE_MERGE", "mismatch": "DENY"}
+    ]
   }
 }

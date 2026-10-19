@@ -17,6 +17,7 @@ on:
       - 'data/intr-protocol/v1/protocol.json'
       - 'org-runtime/intr_protocol.py'
       - 'tests/test_intr_protocol_conformance.py'
+      - 'tests/test_intr_protocol_conformance_merge_transfer.py'
       - 'tests/fixtures/intr-protocol/**'
       - 'docs/INTR_PROTOCOL_V1.md'
   push:
@@ -35,6 +36,7 @@ on:
       - 'data/intr-protocol/v1/protocol.json'
       - 'org-runtime/intr_protocol.py'
       - 'tests/test_intr_protocol_conformance.py'
+      - 'tests/test_intr_protocol_conformance_merge_transfer.py'
       - 'tests/fixtures/intr-protocol/**'
       - 'docs/INTR_PROTOCOL_V1.md'
   workflow_dispatch:
@@ -80,10 +82,15 @@ jobs:
       # Conformance evidence only; not admission, routing or execution authority.
       - name: Validate InTr protocol v1 conformance across the mesh snapshot
         run: |
-          python -m unittest tests.test_intr_protocol_conformance -v
-          python org-runtime/intr_protocol.py mesh --manifest tests/fixtures/intr-protocol/destinations/manifest.json > mesh.json
+          python -m unittest tests.test_intr_protocol_conformance tests.test_intr_protocol_conformance_merge_transfer -v
+          python org-runtime/intr_protocol.py mesh --manifest tests/fixtures/intr-protocol/destinations/manifest.json --merge-transfer tests/fixtures/intr-protocol/merge-transfer/manifest.json > mesh.json
           python - <<'PY'
           import json
           r = json.load(open("mesh.json"))
+          assert r["counts"] == {"ALLOW": 8, "DENY": 0, "FAIL_CLOSED": 0}, r["counts"]
           print("INTR_PROTOCOL_V1_MESH", json.dumps(r["counts"], sort_keys=True), r["report_digest"])
+          # Separate dimension: a main merge is a VERIFIED transfer only with a sealed, linked ledger receipt.
+          print("INTR_PROTOCOL_V1_MERGE_TRANSFER", json.dumps(r["merge_transfer"]["counts"], sort_keys=True))
+          for row in r["merge_transfer"]["results"]:
+              print(" ", row["subject"]["repository"], row["subject"]["merge_commit"][:8], row["disposition"], row.get("failure_code", ""))
           PY
