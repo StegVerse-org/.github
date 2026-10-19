@@ -1,0 +1,3270 @@
+{
+  "schema": "stegverse.lane-b-admission-input-registration/v1",
+  "form": "P1 stegverse.sv_change.v1 (schemas/sv-change.v1.schema.json @ StegVerse-Labs/.github#3264 e65ee21b), consumed by SV_CHANGE_ADMIT (StegVerse-Labs/TVC#519, Lane C GitHub Product 6329a668)",
+  "author_session": "Lane B (91117956)",
+  "authentic_receipt": false,
+  "records": [
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "StegVerse-org/.github",
+      "base_ref": {
+        "tree_sha": "a81de3e1a23dde924f4554c166f8ddbe0b2f96ae",
+        "ledger_head": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-destination-capability-validation.yml",
+          "blob_digest": "sha256:63cad528ed53b486f0a36892b6d1ea4e1e58c355a35f429c7c9cb4b6f538d036",
+          "deleted": false
+        },
+        {
+          "path": "data/master-records-role-audit.json",
+          "blob_digest": "sha256:ffa80c2501a72db0782069ca6f7baf31d5c8eb5b1b262da8200c92e420a4534c",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PROTOCOL_V1.md",
+          "blob_digest": "sha256:9ad180e06eefbf438a9aad1395c711e60cff5fe6a3c88f7a6a5edee8f01f594b",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:02569051ca76ef467d94a96ed64bb3d7e021341fbc88e78f6a05e912e785ac1b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/AaCT-E.interlock-intr.json",
+          "blob_digest": "sha256:79c4a7362f2c52fb4e88a06514aa13ce67ec08ef798d0ef59ff163610c939d5a",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/AaCT-E.services.json",
+          "blob_digest": "sha256:ed1da9119ef18fa98626161edb6d38794527a7f8486dab4fa5ce00509487c5f1",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/AdmittedCode.services.json",
+          "blob_digest": "sha256:123423564b943c24e14e94dbde37950dc4ad512d89a21bb8f12b9845f7700123",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Data-Continuation.interlock-intr.json",
+          "blob_digest": "sha256:7dee1ae1a73f7905bbc9e2ae7db1da623260e035558ff9b55696caf27a5f680e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Data-Continuation.services.json",
+          "blob_digest": "sha256:38356c96a9dd0ccda85531856b1285d7cca70eb5e6df7457b68df8463fd04620",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/ECAT-ICAT-Formal.interlock-intr.json",
+          "blob_digest": "sha256:1a4c990d06b74d0c22501eea82dcc79d57e37d22a4c5e302664a89b204dcdf2d",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/ECAT-ICAT-Formal.services.json",
+          "blob_digest": "sha256:ab0e51ed8fbafe8362f06fad502b27cc7d0f722ae1f47a1c82e9c756c62cab0f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Infrastructure-Continuity-Ventures.interlock-intr.json",
+          "blob_digest": "sha256:c6fa3068ff6d06cacd1230e97ad9904daefade7cef2adc53cb896e940c4801a9",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Infrastructure-Continuity-Ventures.services.json",
+          "blob_digest": "sha256:b2683a2ec8eabd01b6d8750181ac909a186586870898fbaf399d9726dcce369b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Triad-Test.interlock-intr.json",
+          "blob_digest": "sha256:3f6c0822ad7e95006d7726d160d7df29cd6e81ddc74eed8d29b550c4444487b4",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Triad-Test.services.json",
+          "blob_digest": "sha256:b9cb163638953c48dc9d77b7df7023e2f9c1d5f5f35c267478b7ffe77ccb87eb",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/formalism-tests.interlock-intr.json",
+          "blob_digest": "sha256:a19f04835b33f398245b476e095020b8185834f4a5b24fbf85db476d5ad7294d",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/formalism-tests.services.json",
+          "blob_digest": "sha256:26e44b0888968b8416198f60bf45f15af16bddf92e9afe5aed1a34cdfd4f1ca1",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/manifest.json",
+          "blob_digest": "sha256:eda68249f06949b45a80e0622234d38af888f715f8724b9208aa0bf9b45047eb",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/master-records.interlock-intr.json",
+          "blob_digest": "sha256:49b6e41cf3f46e05b1361b6b05ffbaff5e8f4cafbcd60eb2eb01a5a845f106ec",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+          "blob_digest": "sha256:bb64e211feecf5148d65242c2106edb6cdf9af2d50c597567819996929172307",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_protocol_conformance.py",
+          "blob_digest": "sha256:3caa4a8f856d46a87cc64265b136ce87a812cdc7fb9cee8011aeafe3f0808278",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_protocol_conformance_merge_transfer.py",
+          "blob_digest": "sha256:fc071d72f8244b6fd80768a42ed717bc6920b56906d215a73f4333d170b9ae02",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-destination-capability-validation.yml",
+        "data/master-records-role-audit.json",
+        "docs/INTR_PROTOCOL_V1.md",
+        "org-runtime/intr_protocol.py",
+        "tests/fixtures/intr-protocol/destinations/AaCT-E.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/AaCT-E.services.json",
+        "tests/fixtures/intr-protocol/destinations/AdmittedCode.services.json",
+        "tests/fixtures/intr-protocol/destinations/Data-Continuation.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/Data-Continuation.services.json",
+        "tests/fixtures/intr-protocol/destinations/ECAT-ICAT-Formal.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/ECAT-ICAT-Formal.services.json",
+        "tests/fixtures/intr-protocol/destinations/Infrastructure-Continuity-Ventures.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/Infrastructure-Continuity-Ventures.services.json",
+        "tests/fixtures/intr-protocol/destinations/Triad-Test.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/Triad-Test.services.json",
+        "tests/fixtures/intr-protocol/destinations/formalism-tests.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/formalism-tests.services.json",
+        "tests/fixtures/intr-protocol/destinations/manifest.json",
+        "tests/fixtures/intr-protocol/destinations/master-records.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+        "tests/test_intr_protocol_conformance.py",
+        "tests/test_intr_protocol_conformance_merge_transfer.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/StegVerse-org/.github/pull/208",
+        "head_ref": "laneb/intr-mesh-16-orgs",
+        "head_sha": "3585f28890025ccb42388e8590af556ef67bc2bb",
+        "base_commit": "5acbacc1bd8a74acf3a8c4d4abdfb0352a72fd81",
+        "title": "InTr protocol v1: conformance across all 16 federation organizations (Lane B 91117956)"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:4624934ca904df032f982e4967a41c9e06a4a5d2fbdbf9531b71aa6158b2dbaa",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "StegVerse-org/.github",
+      "base_ref": {
+        "tree_sha": "a81de3e1a23dde924f4554c166f8ddbe0b2f96ae",
+        "ledger_head": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-path-ingress.yml",
+          "blob_digest": "sha256:573ac01c5265038ae7b9c59efbe9519b2563de3fdb059c2d338bd62893496c2a",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer-validation.yml",
+          "blob_digest": "sha256:8c1fd658ded4b1c6031ffa832d7481c49a2c386172d40e74251ae47f8d36794d",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer.yml",
+          "blob_digest": "sha256:3048b1029974f06d2b87cb5564febf24435fdc6b2e475a9b92cff75578ee128c",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/intr-path-transfer/transfers.json",
+          "blob_digest": "sha256:c7ff7e5a2eadb8d6e9ae933352cd45ee0b8bd30ff337801ea8e8e7d27d32c888",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:7100e4c70413e8a5514dddbfd336d0d3c3210a22dbacb4ed6cbebfc6f7c789b1",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PATH_TRANSFER_V1.md",
+          "blob_digest": "sha256:be8c54aeef3797e54e1a4a0befee21f1a27ab1df532182f6d849e4e8e4d7e375",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ingress.py",
+          "blob_digest": "sha256:056ba90679f8932b0ad9ab08506c56a975ea9e4580788b539ff551c8920e8102",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_transfer.py",
+          "blob_digest": "sha256:2909ec9480467ad8622726686b1808b87e3f794bc477566806cd86376db7592d",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_tvc_read.py",
+          "blob_digest": "sha256:a3f14f99fe50b598d90173709efa186608acb50921a2bb564ef616fccf8e3afe",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ingress/pin.json",
+          "blob_digest": "sha256:fb8ed4e4598223178b90918a589ef9e3f5facc1d4c0ed51dfdd967a892e9d742",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
+          "blob_digest": "sha256:af284f9b1f475b65b05e2dc03a41c11f1e43179fb642495f174fcfe5d03fb85f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+          "blob_digest": "sha256:41c6d58d3958a38ba4c3ce6bb6d1ce656dda4a6d2b2ee0cf44d7d1ab3a5de684",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ingress.py",
+          "blob_digest": "sha256:f4c4fea41c012aca6a95653d2ebf333d0b726d0336be5a39a8719e4c6a985897",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_transfer.py",
+          "blob_digest": "sha256:c9cd30b1117e9b633f2dbc3293ac4882f6271b0c14ee52b12559a7bee16de9f2",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_tvc_read.py",
+          "blob_digest": "sha256:882878499f539a339bbbc8771ddee7a48ae9e1170d8deebb6eebaf18028b1e63",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-path-ingress.yml",
+        ".github/workflows/intr-path-transfer-validation.yml",
+        ".github/workflows/intr-path-transfer.yml",
+        ".stegverse/intr-path-transfer/transfers.json",
+        "data/intr-protocol/v1/protocol.json",
+        "docs/INTR_PATH_TRANSFER_V1.md",
+        "resident-runtime/intr_path_ingress.py",
+        "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/intr_path_tvc_read.py",
+        "tests/fixtures/intr-path-ingress/pin.json",
+        "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+        "tests/test_intr_path_ingress.py",
+        "tests/test_intr_path_transfer.py",
+        "tests/test_intr_path_tvc_read.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/StegVerse-org/.github/pull/209",
+        "head_ref": "laneb/intr-mesh-path-transfer",
+        "head_sha": "d941d51d816e9b8f661eab87cc1679e98ac9a60e",
+        "base_commit": "5acbacc1bd8a74acf3a8c4d4abdfb0352a72fd81",
+        "title": "InTr mesh path transfer: path receipts on main + two-half verifier (Lane B 91117956)"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:e9f708d5310ad22a1098342f4c1d18971c4ec1b9dd069880f60b4257a77210cb",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "StegVerse-org/.github",
+      "base_ref": {
+        "tree_sha": "a81de3e1a23dde924f4554c166f8ddbe0b2f96ae",
+        "ledger_head": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-ingress-ledger-component-validation.yml",
+          "blob_digest": "sha256:2cc18dc0847104078a31bb8948604894d0f0f90deb32b6fe1ae4ff149f178966",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/bindings.json",
+          "blob_digest": "sha256:f1253c85260260df57c3082d0412899703b0abbfc3c8bf27e8068dbf4b8951f9",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/component.json",
+          "blob_digest": "sha256:50497da990d436ccc7b355425ac33c611e529fb1aea382f39e33c22a9f31d1a1",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/files/.stegverse/transition-ledger/emit.py",
+          "blob_digest": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/files/data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:f59ce9457cff9df312d5f6c57827654d3f7de4daaef74b79169c534c48cfdeea",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/files/org-boundary/runtime/capability_ingress.py",
+          "blob_digest": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/files/org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/files/resident-runtime/aggregate_repo_transition.py",
+          "blob_digest": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/files/resident-runtime/ledger_store.py",
+          "blob_digest": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/templates/.github/workflows/intr-ingress-ledger-component-validation.yml.tmpl",
+          "blob_digest": "sha256:2675c735e88a91371e93be424527f52b357977b7e4b5977d5f0b37246d28fbe0",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/templates/.github/workflows/organization-ledger-transition.yml.tmpl",
+          "blob_digest": "sha256:ae58a956bb25e7a6926eaf9a1a26446b45db0b0f82b7fcaf77060b7c38a0f0b8",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/templates/.stegverse/transition-ledger/contract.json.tmpl",
+          "blob_digest": "sha256:b6072f4b3f21320c5a0e17ef164abfc4012b7d9873ca7514463e57ffde1e915c",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/templates/.stegverse/transition-ledger/org-contract.json.tmpl",
+          "blob_digest": "sha256:beec1819cc44fbdfbf9987076a1fdcc485797eaf4d48dcc5cfbd80f4b32af4bb",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/templates/resident-runtime/intr_destination_ingress.py.tmpl",
+          "blob_digest": "sha256:c41fb032d1ac8842b4c2debb8f57ae2e6d6d5b9fcde364511f5976de5299f039",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/templates/resident-runtime/organization_ledger_readback.py.tmpl",
+          "blob_digest": "sha256:e24650287c04a964686a331c8e19af572617aff91d0a2885ec376f3e8db790b8",
+          "deleted": false
+        },
+        {
+          "path": "components/intr-ingress-ledger/v1/templates/tests/test_intr_ingress_ledger_component.py.tmpl",
+          "blob_digest": "sha256:91e1d8ff9b1d24ac9daeaf526c5a9ddf9974c7851f703b6085e91fe0f7983702",
+          "deleted": false
+        },
+        {
+          "path": "data/master-records-role-audit.json",
+          "blob_digest": "sha256:8b36776a1df43b62a05c38a2147237ce423bcdf5441dbc0ea09235b070d0dd5f",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_INGRESS_LEDGER_COMPONENT_V1.md",
+          "blob_digest": "sha256:538bcc27db15b62ce9e956fdad2db1cee16de803c60e85f1cf95b63b4da4fa4c",
+          "deleted": false
+        },
+        {
+          "path": "orchestration/task-registry.json",
+          "blob_digest": "sha256:05fe6040ec9474b4e4d4efcf8e0742857fe87cf281237db8ba8e2970bec7b1e2",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_ingress_ledger_component.py",
+          "blob_digest": "sha256:e3a04740830c03c1548616a62b99ad4de7dae44e837dc2afb79b422ccef570d0",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-ingress-ledger-component/manifest.json",
+          "blob_digest": "sha256:0367cef1014df0793c7c6633fa6951e484e827da819524ec1ead1a4c69a058ea",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-ingress-ledger-component/target/org-boundary/registry/services.json",
+          "blob_digest": "sha256:ed1da9119ef18fa98626161edb6d38794527a7f8486dab4fa5ce00509487c5f1",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-ingress-ledger-component/target/org-kernel/kernel.py",
+          "blob_digest": "sha256:94db9b4efda6bed65659c797f0859c101c50c7923791abd619a4d010178c934a",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-ingress-ledger-component/target/org-runtime/interlock-intr.json",
+          "blob_digest": "sha256:79c4a7362f2c52fb4e88a06514aa13ce67ec08ef798d0ef59ff163610c939d5a",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_ingress_ledger_component_package.py",
+          "blob_digest": "sha256:a270580801c55ea3d3f32cda798ae1c424211121c3e201384eb640aa53d0b6bf",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-ingress-ledger-component-validation.yml",
+        "components/intr-ingress-ledger/v1/bindings.json",
+        "components/intr-ingress-ledger/v1/component.json",
+        "components/intr-ingress-ledger/v1/files/.stegverse/transition-ledger/emit.py",
+        "components/intr-ingress-ledger/v1/files/data/intr-protocol/v1/protocol.json",
+        "components/intr-ingress-ledger/v1/files/org-boundary/runtime/capability_ingress.py",
+        "components/intr-ingress-ledger/v1/files/org-runtime/intr_protocol.py",
+        "components/intr-ingress-ledger/v1/files/resident-runtime/aggregate_repo_transition.py",
+        "components/intr-ingress-ledger/v1/files/resident-runtime/ledger_store.py",
+        "components/intr-ingress-ledger/v1/templates/.github/workflows/intr-ingress-ledger-component-validation.yml.tmpl",
+        "components/intr-ingress-ledger/v1/templates/.github/workflows/organization-ledger-transition.yml.tmpl",
+        "components/intr-ingress-ledger/v1/templates/.stegverse/transition-ledger/contract.json.tmpl",
+        "components/intr-ingress-ledger/v1/templates/.stegverse/transition-ledger/org-contract.json.tmpl",
+        "components/intr-ingress-ledger/v1/templates/resident-runtime/intr_destination_ingress.py.tmpl",
+        "components/intr-ingress-ledger/v1/templates/resident-runtime/organization_ledger_readback.py.tmpl",
+        "components/intr-ingress-ledger/v1/templates/tests/test_intr_ingress_ledger_component.py.tmpl",
+        "data/master-records-role-audit.json",
+        "docs/INTR_INGRESS_LEDGER_COMPONENT_V1.md",
+        "orchestration/task-registry.json",
+        "resident-runtime/intr_ingress_ledger_component.py",
+        "tests/fixtures/intr-ingress-ledger-component/manifest.json",
+        "tests/fixtures/intr-ingress-ledger-component/target/org-boundary/registry/services.json",
+        "tests/fixtures/intr-ingress-ledger-component/target/org-kernel/kernel.py",
+        "tests/fixtures/intr-ingress-ledger-component/target/org-runtime/interlock-intr.json",
+        "tests/test_intr_ingress_ledger_component_package.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/StegVerse-org/.github/pull/210",
+        "head_ref": "laneb/intr-ingress-ledger-component",
+        "head_sha": "e5b7d17c66038db557f39249af6f6de067e4dfcc",
+        "base_commit": "5acbacc1bd8a74acf3a8c4d4abdfb0352a72fd81",
+        "title": "Task Registry component intr-ingress-ledger/v1 (InTr ingress + organization ledger) [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:7f59d3c68dd191cf845e5d4da3a35f0498dae1f637b87994ed8febc74f369d44",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "StegVerse-org/.github",
+      "base_ref": {
+        "tree_sha": "a81de3e1a23dde924f4554c166f8ddbe0b2f96ae",
+        "ledger_head": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-destination-capability-validation.yml",
+          "blob_digest": "sha256:051e85e03134e72346484a3d16c0f3650e19ec73c24248f195fed302f26ee254",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:264ad801850b49db5610761fa9008fba12bd5e2c1d8cd60e1d90d52c52b8335f",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PROTOCOL_V1.md",
+          "blob_digest": "sha256:223265f4357ca6112e1ef58689a223be51e33f93a4b9a13fe96e4a76dd267468",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:632248756a242f6111281271ef7425c7bb8bc8b6a52767a030af800bf7170ee9",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/merge-transfer-gitstore/expected-receipts.json",
+          "blob_digest": "sha256:1cd63f8d33fc60d8e5d5c1c4a74727e4959ec067c813c3caa9a1f88fd709ed7c",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/merge-transfer-gitstore/manifest.json",
+          "blob_digest": "sha256:dd33fcbaf71b59f5921ffe3f5e7d93e28d82ecbfaf6031828a2177b42239e35d",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/merge-transfer-gitstore/merge_transfer_gitstore.py",
+          "blob_digest": "sha256:bf9f1c15420b1c9c8e21655fe176d6b009e190357e09e433bac170bf09247176",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py",
+          "blob_digest": "sha256:1610ded946a84e13d192c6810c423e8103ad102c773c52d4fdfd0efcb36ea57b",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-destination-capability-validation.yml",
+        "data/intr-protocol/v1/protocol.json",
+        "docs/INTR_PROTOCOL_V1.md",
+        "org-runtime/intr_protocol.py",
+        "tests/fixtures/intr-protocol/merge-transfer-gitstore/expected-receipts.json",
+        "tests/fixtures/intr-protocol/merge-transfer-gitstore/manifest.json",
+        "tests/fixtures/intr-protocol/merge-transfer-gitstore/merge_transfer_gitstore.py",
+        "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/StegVerse-org/.github/pull/212",
+        "head_ref": "laneb/intr-merge-transfer-gitstore-pin",
+        "head_sha": "7ac35e89d4ed00836c23f8f2e4f3f8c3b92cfc87",
+        "base_commit": "5acbacc1bd8a74acf3a8c4d4abdfb0352a72fd81",
+        "title": "InTr main_merge_transfer: pin merge_transfer_gitstore.py (bf9f1c15) for StegVerse-Labs and GCAT-BCAT-Engine [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:05855cbaee29ceee62c43a5676131e4125a82aa0e4c5749c53828d2eb760856a",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "StegVerse-org/.github",
+      "base_ref": {
+        "tree_sha": "a81de3e1a23dde924f4554c166f8ddbe0b2f96ae",
+        "ledger_head": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-destination-capability-validation.yml",
+          "blob_digest": "sha256:051e85e03134e72346484a3d16c0f3650e19ec73c24248f195fed302f26ee254",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-ingress.yml",
+          "blob_digest": "sha256:24d165c1223885c6a3780926b921e8917a2f2b3c132b63a3579a20a7f52a52a1",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer-validation.yml",
+          "blob_digest": "sha256:e9b6a5d5a1a083204e0f1f6104c2ae14f7b59ac93f5c3b31e74dc8910e50bf37",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer.yml",
+          "blob_digest": "sha256:86097ded2b774079928b9c2eb4a03ace825f8d5738cbce7e4d925d73ddc3cd95",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/intr-path-transfer/transfers.json",
+          "blob_digest": "sha256:c7ff7e5a2eadb8d6e9ae933352cd45ee0b8bd30ff337801ea8e8e7d27d32c888",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:b6c84a87e03934d75f7b3042a995218a16b148d4fd9125af32d8b38dcea7e579",
+          "deleted": false
+        },
+        {
+          "path": "data/master-records-role-audit.json",
+          "blob_digest": "sha256:56668d3bd98798348ef5d5f1cbe1820bf9b4d32538d587b1b491bd7b4ab25ff1",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PATH_TRANSFER_V1.md",
+          "blob_digest": "sha256:90794fcd773daaf57efb522e5c0abdd41e2938fdb7844b919cf0e644bab22a43",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PROTOCOL_V1.md",
+          "blob_digest": "sha256:223265f4357ca6112e1ef58689a223be51e33f93a4b9a13fe96e4a76dd267468",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:632248756a242f6111281271ef7425c7bb8bc8b6a52767a030af800bf7170ee9",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ingress.py",
+          "blob_digest": "sha256:9d5f77ad29925456344a5c8e9b7927a2d013edec7a7db024250f98e99bff0902",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ledger.py",
+          "blob_digest": "sha256:311b660ed4ddff59e26249f9408a783253cf806f7fe866e1d0cd889feb2cdd91",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_transfer.py",
+          "blob_digest": "sha256:ada9d7fe987c1da161e1dbae73c2fd269addbf4b8955696792006444dc7d4009",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_tvc_read.py",
+          "blob_digest": "sha256:a3f14f99fe50b598d90173709efa186608acb50921a2bb564ef616fccf8e3afe",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ingress/pin.json",
+          "blob_digest": "sha256:fb8ed4e4598223178b90918a589ef9e3f5facc1d4c0ed51dfdd967a892e9d742",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/ledger_gitstore.py",
+          "blob_digest": "sha256:258e1cf555d8080a3174ac1962dff2d735ccbb1caa01a4966c1bddd3e2e09241",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/merge_transfer_gitstore.py",
+          "blob_digest": "sha256:bf9f1c15420b1c9c8e21655fe176d6b009e190357e09e433bac170bf09247176",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+          "blob_digest": "sha256:14fc580cee8b09997552e5f039aa95ab23c527e89b298060084bdbad631c5597",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
+          "blob_digest": "sha256:af284f9b1f475b65b05e2dc03a41c11f1e43179fb642495f174fcfe5d03fb85f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+          "blob_digest": "sha256:41c6d58d3958a38ba4c3ce6bb6d1ce656dda4a6d2b2ee0cf44d7d1ab3a5de684",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/merge-transfer-gitstore/expected-receipts.json",
+          "blob_digest": "sha256:1cd63f8d33fc60d8e5d5c1c4a74727e4959ec067c813c3caa9a1f88fd709ed7c",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/merge-transfer-gitstore/manifest.json",
+          "blob_digest": "sha256:dd33fcbaf71b59f5921ffe3f5e7d93e28d82ecbfaf6031828a2177b42239e35d",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/merge-transfer-gitstore/merge_transfer_gitstore.py",
+          "blob_digest": "sha256:bf9f1c15420b1c9c8e21655fe176d6b009e190357e09e433bac170bf09247176",
+          "deleted": false
+        },
+        {
+          "path": "tests/intr_path_temp_ledger.py",
+          "blob_digest": "sha256:627a63977a59b78214f0b1de774aa9e5b5195bc2f33b458f4cef59ccf1ab3207",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ingress.py",
+          "blob_digest": "sha256:93a7c2251dae5ccfa192bfd4b3e27e33701a2c6d98e7d354aa7e11432a8d6a80",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ledger.py",
+          "blob_digest": "sha256:3b7a94e62f63be80d7db32b7bc753b6af5ff9d9872b23710b70b030d1aeccaef",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_transfer.py",
+          "blob_digest": "sha256:34da46080687d51128c992c7abe6c0895ddf8eeb201c97f010ae303a52180106",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_tvc_read.py",
+          "blob_digest": "sha256:882878499f539a339bbbc8771ddee7a48ae9e1170d8deebb6eebaf18028b1e63",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py",
+          "blob_digest": "sha256:1610ded946a84e13d192c6810c423e8103ad102c773c52d4fdfd0efcb36ea57b",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-destination-capability-validation.yml",
+        ".github/workflows/intr-path-ingress.yml",
+        ".github/workflows/intr-path-transfer-validation.yml",
+        ".github/workflows/intr-path-transfer.yml",
+        ".stegverse/intr-path-transfer/transfers.json",
+        "data/intr-protocol/v1/protocol.json",
+        "data/master-records-role-audit.json",
+        "docs/INTR_PATH_TRANSFER_V1.md",
+        "docs/INTR_PROTOCOL_V1.md",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/intr_path_ingress.py",
+        "resident-runtime/intr_path_ledger.py",
+        "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/intr_path_tvc_read.py",
+        "tests/fixtures/intr-path-ingress/pin.json",
+        "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/ledger_gitstore.py",
+        "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/merge_transfer_gitstore.py",
+        "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+        "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+        "tests/fixtures/intr-protocol/merge-transfer-gitstore/expected-receipts.json",
+        "tests/fixtures/intr-protocol/merge-transfer-gitstore/manifest.json",
+        "tests/fixtures/intr-protocol/merge-transfer-gitstore/merge_transfer_gitstore.py",
+        "tests/intr_path_temp_ledger.py",
+        "tests/test_intr_path_ingress.py",
+        "tests/test_intr_path_ledger.py",
+        "tests/test_intr_path_transfer.py",
+        "tests/test_intr_path_tvc_read.py",
+        "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/StegVerse-org/.github/pull/214",
+        "head_ref": "laneb/intr-path-gitstore",
+        "head_sha": "d80f80f68e865647676f0d1b8bbcb8e1249f1496",
+        "base_commit": "5acbacc1bd8a74acf3a8c4d4abdfb0352a72fd81",
+        "title": "InTr path transfer: per-org ledger binding; Labs and GCAT through ledger_gitstore.py [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:157c80bd35de4627c437975cb5545394a341dddff35852cae68e4762ceadf243",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "StegVerse-Labs/.github",
+      "base_ref": {
+        "tree_sha": "aa03459f7ead08113a08692aea279ec05a0ea195",
+        "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-path-ingress.yml",
+          "blob_digest": "sha256:24d165c1223885c6a3780926b921e8917a2f2b3c132b63a3579a20a7f52a52a1",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer-validation.yml",
+          "blob_digest": "sha256:aadc98f8e1116d51b9045c203c43bd0537d19f56eb525079043ebafdcde0e37d",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer.yml",
+          "blob_digest": "sha256:86097ded2b774079928b9c2eb4a03ace825f8d5738cbce7e4d925d73ddc3cd95",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/merge-transfer-gitstore-validation.yml",
+          "blob_digest": "sha256:f9c28e1869655c1385f25709b3436c959375492fa009ff6bd5dd2cbeb8fa33a7",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-merge-transfer.yml",
+          "blob_digest": "sha256:33f86db5d67ea6c371aace4230482a8e2b2388cc54e186540f72e1aa204b92dc",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition-validation.yml",
+          "blob_digest": "sha256:a4ae47b4db4a14304a5d305cd7a0121242ad1f445183bb40a17cc9ca5caea40e",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition.yml",
+          "blob_digest": "sha256:5e7338c068cc58f54f0f8f0a5cb1678c6cf3061ad2a34a5725219efff2afc392",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/intr-path-transfer/transfers.json",
+          "blob_digest": "sha256:91309a6c548e0e9966cefa435a0fb316cfacc0ea2125c37b715d3c4a131195e4",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/merge-transfer/pending.json",
+          "blob_digest": "sha256:942521024abb3d751daf1038fc9db8235f5bacd1c5f8de3c50ba3b05f0276da0",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:9f86cf281353609ff3c0f31e0e0076d6eb19114d61915e499b80d3c05d4ad4f7",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PATH_TRANSFER_V1.md",
+          "blob_digest": "sha256:b23607cce205034b7c18ef8fd789c671a30f4966194f188f554df30ba403fa37",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:632248756a242f6111281271ef7425c7bb8bc8b6a52767a030af800bf7170ee9",
+          "deleted": false
+        },
+        {
+          "path": "receipts/sovereign-host/resident-request-dispatch.by-receipt/3880e40cdb883944eb88c8005d3ab083b8ff369573cfbc0e14f9444b8cefc33b.json",
+          "blob_digest": "sha256:3880e40cdb883944eb88c8005d3ab083b8ff369573cfbc0e14f9444b8cefc33b",
+          "deleted": false
+        },
+        {
+          "path": "receipts/sovereign-host/resident-request-dispatch.latest.json",
+          "blob_digest": "sha256:3880e40cdb883944eb88c8005d3ab083b8ff369573cfbc0e14f9444b8cefc33b",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:0b4bcd9cb9ae4c98d85c07f324d014ae80d0052f6cfe8ea104b9f89ddfbdfe8a",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ingress.py",
+          "blob_digest": "sha256:37e64e74ab1db36ecca66d6aced9f26222141c9ee106d74fe212ff9d48a4e209",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ledger.py",
+          "blob_digest": "sha256:311b660ed4ddff59e26249f9408a783253cf806f7fe866e1d0cd889feb2cdd91",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_transfer.py",
+          "blob_digest": "sha256:2d704e780b2f600ce0a67cfdfcc12d9728ae0ea3b75e3697fb8b01d7753f9b3b",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/ledger_gitstore.py",
+          "blob_digest": "sha256:258e1cf555d8080a3174ac1962dff2d735ccbb1caa01a4966c1bddd3e2e09241",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/merge_transfer_gitstore.py",
+          "blob_digest": "sha256:bf9f1c15420b1c9c8e21655fe176d6b009e190357e09e433bac170bf09247176",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/self_closure_packet.py",
+          "blob_digest": "sha256:f17d2cd55556b451f5f579e98a3308df7e86e6fecd8a4745e3ce112bb310a25d",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ingress/pin.json",
+          "blob_digest": "sha256:60b78082fea0db1bdc4da7cab48e373bafc0b916981a713a9808170b43e8a3bd",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/ledger_gitstore.py",
+          "blob_digest": "sha256:258e1cf555d8080a3174ac1962dff2d735ccbb1caa01a4966c1bddd3e2e09241",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/merge_transfer_gitstore.py",
+          "blob_digest": "sha256:bf9f1c15420b1c9c8e21655fe176d6b009e190357e09e433bac170bf09247176",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/snapshots/a5bb54d81893b392a3ce28182986fc39857807e1.json",
+          "blob_digest": "sha256:b49e0d1defb7929c9b2dc28719ecd5a61211b9069e3f1a09af7eadac62713d7a",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
+          "blob_digest": "sha256:15cd6ff9e7d926c605f947001bd7147810f21408d38a03ae5f50ae3ada3c70d3",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+          "blob_digest": "sha256:5557687d572fecf4299bed8b501f7a9ce667a39410263213532e27a35cc93274",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+          "blob_digest": "sha256:8537cc1089814a2865b3c2fb796d5a96b9d42e1c16c868df0543841b1391029f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+          "blob_digest": "sha256:77c5c988ed678fc04d3f2e66acb8ba31ae389d9e084c36f370ddeba7233585c6",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+          "blob_digest": "sha256:90eb861ec2b2e8b1b7e1cdb41ab90649b290bb39a6a0fbd39f070fb04d7ffe3b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+          "blob_digest": "sha256:e26e7f521a2c8d99ee8031da85550a90ae8d4ae5281dadc035a87e8c32a54f7b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+          "blob_digest": "sha256:fb84e00e4adccd31f3a52f251d3582826fae267c67f03883e9df2532f4c1be4f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+          "blob_digest": "sha256:39994f03ec945079ec270b734891ca825899895d646224f527e210ae1ffba941",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+          "blob_digest": "sha256:8ee45f4581907f1f1305022bb6cbf74225d827c9aca01c0c5c50aa35711a7e74",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+          "blob_digest": "sha256:db686b84097b4f8dcad9a1a77fcfb33a1542985796136405623c54feb298c6e8",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+          "blob_digest": "sha256:c539d7e3cc00dd0e90406cf2d994d055ecc77d7ee4c508fbf8c91e41683d0c62",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+          "blob_digest": "sha256:967e7c5b8b4864dc7d01769f9a74caf465973eda8184e2f2f4532d7b0acbf99e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+          "blob_digest": "sha256:7368eb0dd28cdd3bcc8e675133e712f9cf1618d01991a342051a9f13251bd6c2",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+          "blob_digest": "sha256:6c94383c34865dc92dee3a9e724223de3c434a95180b4a27e26ebc396026eca3",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+          "blob_digest": "sha256:609f8a0a04568c0edf8f8f26e985b3d3f36311f1de345c32478f8db970295e0e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+          "blob_digest": "sha256:cecc950bf1402438a7375d6a0b96100e02387e93565bbb1a7083ff0f2ad55495",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+          "blob_digest": "sha256:bfdaeed8b5aebc9df7893d95798ded8b57e982b6c7b95fd55ddf0c3ed9fdab41",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/manifest.json",
+          "blob_digest": "sha256:0d71ccd4619a33233379d3d06b6c7a595f2e953dfa78969fd17cfb19085a9d90",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+          "blob_digest": "sha256:5e348737d32cb05fcb4f83193785aed3500f3f85473dec3f6fa19e5606cafb3b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/merge-transfer-gitstore/pin.json",
+          "blob_digest": "sha256:a86a043c05a3a2dc7e41657ec4c7c9569be2c054c9b96e878de2f124d232f43d",
+          "deleted": false
+        },
+        {
+          "path": "tests/intr_path_temp_ledger.py",
+          "blob_digest": "sha256:627a63977a59b78214f0b1de774aa9e5b5195bc2f33b458f4cef59ccf1ab3207",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ingress.py",
+          "blob_digest": "sha256:93a7c2251dae5ccfa192bfd4b3e27e33701a2c6d98e7d354aa7e11432a8d6a80",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ledger.py",
+          "blob_digest": "sha256:3b7a94e62f63be80d7db32b7bc753b6af5ff9d9872b23710b70b030d1aeccaef",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_transfer.py",
+          "blob_digest": "sha256:4b4e835efabb76c2f75d676aca966a60e36c5b2fd40b9b52fcae9718981615a5",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_ledger_gitstore.py",
+          "blob_digest": "sha256:08536b9ac6afbae83bc643d40db692a92ccfea01706e9bc4daa06728de6dd8ed",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_merge_transfer_gitstore.py",
+          "blob_digest": "sha256:63e609a508274d2411a0fb504c458b569df2a6175d8a38d6dd1af588965bfec5",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_organization_ledger_transition_writer.py",
+          "blob_digest": "sha256:d1e4c947327f8477aef77e1db47eeec0768469c558dd7ff75e057d3d49af56f4",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_self_closure_packet.py",
+          "blob_digest": "sha256:21b1a0d9318308c75f73025ba44de12425bf1519b1ba8a25138345bee97c9e16",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-path-ingress.yml",
+        ".github/workflows/intr-path-transfer-validation.yml",
+        ".github/workflows/intr-path-transfer.yml",
+        ".github/workflows/merge-transfer-gitstore-validation.yml",
+        ".github/workflows/organization-ledger-merge-transfer.yml",
+        ".github/workflows/organization-ledger-transition-validation.yml",
+        ".github/workflows/organization-ledger-transition.yml",
+        ".stegverse/intr-path-transfer/transfers.json",
+        ".stegverse/merge-transfer/pending.json",
+        "data/intr-protocol/v1/protocol.json",
+        "docs/INTR_PATH_TRANSFER_V1.md",
+        "org-runtime/intr_protocol.py",
+        "receipts/sovereign-host/resident-request-dispatch.by-receipt/3880e40cdb883944eb88c8005d3ab083b8ff369573cfbc0e14f9444b8cefc33b.json",
+        "receipts/sovereign-host/resident-request-dispatch.latest.json",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/intr_path_ingress.py",
+        "resident-runtime/intr_path_ledger.py",
+        "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/ledger_gitstore.py",
+        "resident-runtime/merge_transfer_gitstore.py",
+        "resident-runtime/self_closure_packet.py",
+        "tests/fixtures/intr-path-ingress/pin.json",
+        "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/ledger_gitstore.py",
+        "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/merge_transfer_gitstore.py",
+        "tests/fixtures/intr-path-ledger/snapshots/a5bb54d81893b392a3ce28182986fc39857807e1.json",
+        "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+        "tests/fixtures/intr-protocol/destinations/manifest.json",
+        "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+        "tests/fixtures/merge-transfer-gitstore/pin.json",
+        "tests/intr_path_temp_ledger.py",
+        "tests/test_intr_path_ingress.py",
+        "tests/test_intr_path_ledger.py",
+        "tests/test_intr_path_transfer.py",
+        "tests/test_ledger_gitstore.py",
+        "tests/test_merge_transfer_gitstore.py",
+        "tests/test_organization_ledger_transition_writer.py",
+        "tests/test_self_closure_packet.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/StegVerse-Labs/.github/pull/3294",
+        "head_ref": "laneb/intr-path-gitstore-port",
+        "head_sha": "9e4f15e500ca85df9533abb7e980dd81301816b4",
+        "base_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+        "title": "InTr path transfer + ingress bound to Lane D's ledger_gitstore.py (port of StegVerse-org/.github#214)"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:ee45e7314e37de26e966f9c2d00f79988c0b82abc8583f112ceda86db73e9c37",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "GCAT-BCAT-Engine/.github",
+      "base_ref": {
+        "tree_sha": "934179a02bb635651064a7dcafb60245b16534f5",
+        "ledger_head": "ba0098da45beb277c514fd9625e453ea2b640fbc",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-path-ingress.yml",
+          "blob_digest": "sha256:24d165c1223885c6a3780926b921e8917a2f2b3c132b63a3579a20a7f52a52a1",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer-validation.yml",
+          "blob_digest": "sha256:aadc98f8e1116d51b9045c203c43bd0537d19f56eb525079043ebafdcde0e37d",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer.yml",
+          "blob_digest": "sha256:86097ded2b774079928b9c2eb4a03ace825f8d5738cbce7e4d925d73ddc3cd95",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/merge-transfer-gitstore-validation.yml",
+          "blob_digest": "sha256:f9c28e1869655c1385f25709b3436c959375492fa009ff6bd5dd2cbeb8fa33a7",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-merge-transfer.yml",
+          "blob_digest": "sha256:33f86db5d67ea6c371aace4230482a8e2b2388cc54e186540f72e1aa204b92dc",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition-validation.yml",
+          "blob_digest": "sha256:8da3271b028eaaf4c0f98d2d9323479a98c5c41bd30c231e2f105e63290b77e5",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition.yml",
+          "blob_digest": "sha256:4a42bc1a081f3f70527da0ffff8839bbe5707bafb4f43fa3c748a751cab69a51",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/intr-path-transfer/transfers.json",
+          "blob_digest": "sha256:6a62a404baeea2f58746274f09bf3585b3ae8d94467762859069da121dc1b34b",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/merge-transfer/pending.json",
+          "blob_digest": "sha256:c3cceb77ae78c3dcb3380120a65719969750f87a8ea7a8025706e1923b3e40a1",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:9f86cf281353609ff3c0f31e0e0076d6eb19114d61915e499b80d3c05d4ad4f7",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_DESTINATION_CAPABILITY_MIRROR_HANDOFF.md",
+          "blob_digest": "sha256:fd7cb46355292543e175fdc98618c45e4d3e4c00e75dfe92b37fe82200732e3f",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PATH_TRANSFER_V1.md",
+          "blob_digest": "sha256:b23607cce205034b7c18ef8fd789c671a30f4966194f188f554df30ba403fa37",
+          "deleted": false
+        },
+        {
+          "path": "docs/TRANSITION_LEDGER_MIRROR_HANDOFF.md",
+          "blob_digest": "sha256:a1684f923fee1991b2ba70fde0448a90bc65f7464b79bd4b7ce0a3879ec11e66",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:632248756a242f6111281271ef7425c7bb8bc8b6a52767a030af800bf7170ee9",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:df72783f26f82ff9ec84f6b2d4c5a6111da24e9addbb1e19a00ea00661dade60",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ingress.py",
+          "blob_digest": "sha256:37e64e74ab1db36ecca66d6aced9f26222141c9ee106d74fe212ff9d48a4e209",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ledger.py",
+          "blob_digest": "sha256:311b660ed4ddff59e26249f9408a783253cf806f7fe866e1d0cd889feb2cdd91",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_transfer.py",
+          "blob_digest": "sha256:2d704e780b2f600ce0a67cfdfcc12d9728ae0ea3b75e3697fb8b01d7753f9b3b",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/ledger_gitstore.py",
+          "blob_digest": "sha256:258e1cf555d8080a3174ac1962dff2d735ccbb1caa01a4966c1bddd3e2e09241",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/merge_transfer_gitstore.py",
+          "blob_digest": "sha256:bf9f1c15420b1c9c8e21655fe176d6b009e190357e09e433bac170bf09247176",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/self_closure_packet.py",
+          "blob_digest": "sha256:f17d2cd55556b451f5f579e98a3308df7e86e6fecd8a4745e3ce112bb310a25d",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ingress/pin.json",
+          "blob_digest": "sha256:a8ad61906ce49f39163e9b773384846fb45f9a97f6e5cd874cc199dfcf4722f7",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/ledger_gitstore.py",
+          "blob_digest": "sha256:258e1cf555d8080a3174ac1962dff2d735ccbb1caa01a4966c1bddd3e2e09241",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/merge_transfer_gitstore.py",
+          "blob_digest": "sha256:bf9f1c15420b1c9c8e21655fe176d6b009e190357e09e433bac170bf09247176",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger/snapshots/ba0098da45beb277c514fd9625e453ea2b640fbc.json",
+          "blob_digest": "sha256:33e68156640a3939b377f8cf12efd2359aa359b6d385e75d99287308c219d8ab",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
+          "blob_digest": "sha256:2ed95853d2ca44e4feec58c285160e2b1105139b49982d42bbf0772a6fcf2591",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+          "blob_digest": "sha256:5557687d572fecf4299bed8b501f7a9ce667a39410263213532e27a35cc93274",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+          "blob_digest": "sha256:8537cc1089814a2865b3c2fb796d5a96b9d42e1c16c868df0543841b1391029f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+          "blob_digest": "sha256:77c5c988ed678fc04d3f2e66acb8ba31ae389d9e084c36f370ddeba7233585c6",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+          "blob_digest": "sha256:90eb861ec2b2e8b1b7e1cdb41ab90649b290bb39a6a0fbd39f070fb04d7ffe3b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+          "blob_digest": "sha256:e26e7f521a2c8d99ee8031da85550a90ae8d4ae5281dadc035a87e8c32a54f7b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+          "blob_digest": "sha256:fb84e00e4adccd31f3a52f251d3582826fae267c67f03883e9df2532f4c1be4f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+          "blob_digest": "sha256:39994f03ec945079ec270b734891ca825899895d646224f527e210ae1ffba941",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+          "blob_digest": "sha256:8ee45f4581907f1f1305022bb6cbf74225d827c9aca01c0c5c50aa35711a7e74",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+          "blob_digest": "sha256:db686b84097b4f8dcad9a1a77fcfb33a1542985796136405623c54feb298c6e8",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+          "blob_digest": "sha256:c539d7e3cc00dd0e90406cf2d994d055ecc77d7ee4c508fbf8c91e41683d0c62",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+          "blob_digest": "sha256:967e7c5b8b4864dc7d01769f9a74caf465973eda8184e2f2f4532d7b0acbf99e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+          "blob_digest": "sha256:7368eb0dd28cdd3bcc8e675133e712f9cf1618d01991a342051a9f13251bd6c2",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+          "blob_digest": "sha256:6c94383c34865dc92dee3a9e724223de3c434a95180b4a27e26ebc396026eca3",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+          "blob_digest": "sha256:609f8a0a04568c0edf8f8f26e985b3d3f36311f1de345c32478f8db970295e0e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+          "blob_digest": "sha256:cecc950bf1402438a7375d6a0b96100e02387e93565bbb1a7083ff0f2ad55495",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+          "blob_digest": "sha256:bfdaeed8b5aebc9df7893d95798ded8b57e982b6c7b95fd55ddf0c3ed9fdab41",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/manifest.json",
+          "blob_digest": "sha256:0d71ccd4619a33233379d3d06b6c7a595f2e953dfa78969fd17cfb19085a9d90",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+          "blob_digest": "sha256:5bab9e07a0859a4cffb36bab6b985ba03bc5fbe4229ce3f090378ad9090366d7",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/merge-transfer-gitstore/pin.json",
+          "blob_digest": "sha256:12e224f1239965449505a66add310004d8ff0cc2de79e165a451242cc9f1ef7e",
+          "deleted": false
+        },
+        {
+          "path": "tests/intr_path_temp_ledger.py",
+          "blob_digest": "sha256:627a63977a59b78214f0b1de774aa9e5b5195bc2f33b458f4cef59ccf1ab3207",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ingress.py",
+          "blob_digest": "sha256:93a7c2251dae5ccfa192bfd4b3e27e33701a2c6d98e7d354aa7e11432a8d6a80",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ledger.py",
+          "blob_digest": "sha256:3b7a94e62f63be80d7db32b7bc753b6af5ff9d9872b23710b70b030d1aeccaef",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_transfer.py",
+          "blob_digest": "sha256:4b4e835efabb76c2f75d676aca966a60e36c5b2fd40b9b52fcae9718981615a5",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_ledger_gitstore.py",
+          "blob_digest": "sha256:08536b9ac6afbae83bc643d40db692a92ccfea01706e9bc4daa06728de6dd8ed",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_merge_transfer_gitstore.py",
+          "blob_digest": "sha256:63e609a508274d2411a0fb504c458b569df2a6175d8a38d6dd1af588965bfec5",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_self_closure_packet.py",
+          "blob_digest": "sha256:21b1a0d9318308c75f73025ba44de12425bf1519b1ba8a25138345bee97c9e16",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-path-ingress.yml",
+        ".github/workflows/intr-path-transfer-validation.yml",
+        ".github/workflows/intr-path-transfer.yml",
+        ".github/workflows/merge-transfer-gitstore-validation.yml",
+        ".github/workflows/organization-ledger-merge-transfer.yml",
+        ".github/workflows/organization-ledger-transition-validation.yml",
+        ".github/workflows/organization-ledger-transition.yml",
+        ".stegverse/intr-path-transfer/transfers.json",
+        ".stegverse/merge-transfer/pending.json",
+        "data/intr-protocol/v1/protocol.json",
+        "docs/INTR_DESTINATION_CAPABILITY_MIRROR_HANDOFF.md",
+        "docs/INTR_PATH_TRANSFER_V1.md",
+        "docs/TRANSITION_LEDGER_MIRROR_HANDOFF.md",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/intr_path_ingress.py",
+        "resident-runtime/intr_path_ledger.py",
+        "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/ledger_gitstore.py",
+        "resident-runtime/merge_transfer_gitstore.py",
+        "resident-runtime/self_closure_packet.py",
+        "tests/fixtures/intr-path-ingress/pin.json",
+        "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/ledger_gitstore.py",
+        "tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/merge_transfer_gitstore.py",
+        "tests/fixtures/intr-path-ledger/snapshots/ba0098da45beb277c514fd9625e453ea2b640fbc.json",
+        "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+        "tests/fixtures/intr-protocol/destinations/manifest.json",
+        "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+        "tests/fixtures/merge-transfer-gitstore/pin.json",
+        "tests/intr_path_temp_ledger.py",
+        "tests/test_intr_path_ingress.py",
+        "tests/test_intr_path_ledger.py",
+        "tests/test_intr_path_transfer.py",
+        "tests/test_ledger_gitstore.py",
+        "tests/test_merge_transfer_gitstore.py",
+        "tests/test_self_closure_packet.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/GCAT-BCAT-Engine/.github/pull/18",
+        "head_ref": "laneb/intr-path-gitstore-port",
+        "head_sha": "4207637576fd5f5aaadb7d5349c9a42c5c03e236",
+        "base_commit": "c3cf1b1ab171d0ea04a1d345e7567860f00519a3",
+        "title": "InTr path transfer + ingress bound to Lane D's ledger_gitstore.py (port of StegVerse-org/.github#214)"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:9b238e747839240eccecba1491842390449558bbc82a0859680d7a62c6429448",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "SV-011/.github",
+      "base_ref": {
+        "tree_sha": "4a235804b56f26d22b9f30295762dd6a8b73cc17",
+        "ledger_head": "6594bafc85d47c041424e6b3f72cfa028a87f5a5",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-path-ingress-validation.yml",
+          "blob_digest": "sha256:9d70c9087ea6cdd93aa936c6126bfaf6731f6d87d025e2316c0c7a13d97f6c28",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-ingress.yml",
+          "blob_digest": "sha256:573ac01c5265038ae7b9c59efbe9519b2563de3fdb059c2d338bd62893496c2a",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer-validation.yml",
+          "blob_digest": "sha256:92b882b7c7fa3397aba3bdc05ddd1bf8d028ec028a944023311d79a756ce2505",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer.yml",
+          "blob_digest": "sha256:3048b1029974f06d2b87cb5564febf24435fdc6b2e475a9b92cff75578ee128c",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/intr-path-transfer/transfers.json",
+          "blob_digest": "sha256:cbeb245e5760011a83401e6f5b7084382021aa59752a8f853977698eec4dd785",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:a144c616c4fa082fa1f79a53c85ec1c8e3212ece5a585749bac701a64338d41f",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PATH_INGRESS_V1.md",
+          "blob_digest": "sha256:7ef74bae5d12331091b883660697afb4149dde7b0f1bbcf707a235fb23cb2477",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PATH_TRANSFER_V1.md",
+          "blob_digest": "sha256:470a380d800ccb8d9982f56131e8819d40942b1c3aa18c2873f59ffd3d0df94e",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ingress.py",
+          "blob_digest": "sha256:36156360eb88eaeb7fae59c2b2233daa7cdd261acf6c1f1eea3ec824b7496a82",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_transfer.py",
+          "blob_digest": "sha256:11c44de132cb69d60ba471294eddbf3ab9c5304866e2fddecf49b79a9d1f2e24",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ingress/pin.json",
+          "blob_digest": "sha256:75c1bcd93ccd6da7909dea3ec1ee2267206601457a8172a7d2f5a4a313bed48c",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
+          "blob_digest": "sha256:49d64a2be052e8568bb0ddd7bd2e20962d6633149d2bb35575c62fc93b534231",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+          "blob_digest": "sha256:5557687d572fecf4299bed8b501f7a9ce667a39410263213532e27a35cc93274",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+          "blob_digest": "sha256:8537cc1089814a2865b3c2fb796d5a96b9d42e1c16c868df0543841b1391029f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+          "blob_digest": "sha256:77c5c988ed678fc04d3f2e66acb8ba31ae389d9e084c36f370ddeba7233585c6",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+          "blob_digest": "sha256:90eb861ec2b2e8b1b7e1cdb41ab90649b290bb39a6a0fbd39f070fb04d7ffe3b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+          "blob_digest": "sha256:e26e7f521a2c8d99ee8031da85550a90ae8d4ae5281dadc035a87e8c32a54f7b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+          "blob_digest": "sha256:fb84e00e4adccd31f3a52f251d3582826fae267c67f03883e9df2532f4c1be4f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+          "blob_digest": "sha256:39994f03ec945079ec270b734891ca825899895d646224f527e210ae1ffba941",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+          "blob_digest": "sha256:8ee45f4581907f1f1305022bb6cbf74225d827c9aca01c0c5c50aa35711a7e74",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+          "blob_digest": "sha256:db686b84097b4f8dcad9a1a77fcfb33a1542985796136405623c54feb298c6e8",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+          "blob_digest": "sha256:c539d7e3cc00dd0e90406cf2d994d055ecc77d7ee4c508fbf8c91e41683d0c62",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+          "blob_digest": "sha256:967e7c5b8b4864dc7d01769f9a74caf465973eda8184e2f2f4532d7b0acbf99e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+          "blob_digest": "sha256:7368eb0dd28cdd3bcc8e675133e712f9cf1618d01991a342051a9f13251bd6c2",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+          "blob_digest": "sha256:6c94383c34865dc92dee3a9e724223de3c434a95180b4a27e26ebc396026eca3",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+          "blob_digest": "sha256:609f8a0a04568c0edf8f8f26e985b3d3f36311f1de345c32478f8db970295e0e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+          "blob_digest": "sha256:cecc950bf1402438a7375d6a0b96100e02387e93565bbb1a7083ff0f2ad55495",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+          "blob_digest": "sha256:bfdaeed8b5aebc9df7893d95798ded8b57e982b6c7b95fd55ddf0c3ed9fdab41",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/manifest.json",
+          "blob_digest": "sha256:0d71ccd4619a33233379d3d06b6c7a595f2e953dfa78969fd17cfb19085a9d90",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ingress.py",
+          "blob_digest": "sha256:f4c4fea41c012aca6a95653d2ebf333d0b726d0336be5a39a8719e4c6a985897",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_transfer.py",
+          "blob_digest": "sha256:6c8ffcb0a80bde3305e5adeea471f7cd7a3e354f08ca2afedb8e91708ff0a887",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-path-ingress-validation.yml",
+        ".github/workflows/intr-path-ingress.yml",
+        ".github/workflows/intr-path-transfer-validation.yml",
+        ".github/workflows/intr-path-transfer.yml",
+        ".stegverse/intr-path-transfer/transfers.json",
+        "data/intr-protocol/v1/protocol.json",
+        "docs/INTR_PATH_INGRESS_V1.md",
+        "docs/INTR_PATH_TRANSFER_V1.md",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/intr_path_ingress.py",
+        "resident-runtime/intr_path_transfer.py",
+        "tests/fixtures/intr-path-ingress/pin.json",
+        "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+        "tests/fixtures/intr-protocol/destinations/manifest.json",
+        "tests/test_intr_path_ingress.py",
+        "tests/test_intr_path_transfer.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/SV-011/.github/pull/17",
+        "head_ref": "laneb/intr-path-ingress",
+        "head_sha": "a2d1281a18c73e52af55075dd093472c20464527",
+        "base_commit": "a636fafca237a0f928fa0eccfe4585866bfecf9d",
+        "title": "InTr mesh path transfer + destination carrier [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:8b126bb84a04d10c5df3f5e725b7c3401b0b19efe3013991754a8c509c04687a",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "StegGhost/.github",
+      "base_ref": {
+        "tree_sha": "a3fa2c5ce76d84bc097c53a8f05219a2edad4a13",
+        "ledger_head": "9ddff143116ba267bccaa182504697c255efcddb",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-path-ingress.yml",
+          "blob_digest": "sha256:573ac01c5265038ae7b9c59efbe9519b2563de3fdb059c2d338bd62893496c2a",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer-validation.yml",
+          "blob_digest": "sha256:92b882b7c7fa3397aba3bdc05ddd1bf8d028ec028a944023311d79a756ce2505",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer.yml",
+          "blob_digest": "sha256:3048b1029974f06d2b87cb5564febf24435fdc6b2e475a9b92cff75578ee128c",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-merge-transfer.yml",
+          "blob_digest": "sha256:eb571aa22589d4922d78299bc85f52da97aa965c74756fa79e3d0ec8699ad065",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/intr-path-transfer/transfers.json",
+          "blob_digest": "sha256:0d6e39bcd356f7adb6e753d2fd3c0f83aa51b3679aee6defc571592981a12600",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/merge-transfer/pending.json",
+          "blob_digest": "sha256:2d207a5ee2fd69ebe816b4feb1544371d5588386fc81c5f11a146c9253b899d2",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:a144c616c4fa082fa1f79a53c85ec1c8e3212ece5a585749bac701a64338d41f",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PATH_TRANSFER_V1.md",
+          "blob_digest": "sha256:470a380d800ccb8d9982f56131e8819d40942b1c3aa18c2873f59ffd3d0df94e",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:ec3231fd73d8252ae609b0fa518d617a1644be314c37a347dbe9461c7d33b00a",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ingress.py",
+          "blob_digest": "sha256:36156360eb88eaeb7fae59c2b2233daa7cdd261acf6c1f1eea3ec824b7496a82",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_transfer.py",
+          "blob_digest": "sha256:11c44de132cb69d60ba471294eddbf3ab9c5304866e2fddecf49b79a9d1f2e24",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/merge_transfer.py",
+          "blob_digest": "sha256:032ed727358d56f33369b35e6cc50d65f6af5dc0035f0b69fe7cddb3f4f4e20e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ingress/pin.json",
+          "blob_digest": "sha256:a1a1c9432eb9c3378a6a5b670c4450367f63a2ad2c297347750a887381c8bea2",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
+          "blob_digest": "sha256:352fcaa30046d38eb7fe488b9dd328a241332c8d7c1a596c0f23cfbc7661b104",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+          "blob_digest": "sha256:5557687d572fecf4299bed8b501f7a9ce667a39410263213532e27a35cc93274",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+          "blob_digest": "sha256:8537cc1089814a2865b3c2fb796d5a96b9d42e1c16c868df0543841b1391029f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+          "blob_digest": "sha256:77c5c988ed678fc04d3f2e66acb8ba31ae389d9e084c36f370ddeba7233585c6",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+          "blob_digest": "sha256:90eb861ec2b2e8b1b7e1cdb41ab90649b290bb39a6a0fbd39f070fb04d7ffe3b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+          "blob_digest": "sha256:e26e7f521a2c8d99ee8031da85550a90ae8d4ae5281dadc035a87e8c32a54f7b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+          "blob_digest": "sha256:fb84e00e4adccd31f3a52f251d3582826fae267c67f03883e9df2532f4c1be4f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+          "blob_digest": "sha256:39994f03ec945079ec270b734891ca825899895d646224f527e210ae1ffba941",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+          "blob_digest": "sha256:8ee45f4581907f1f1305022bb6cbf74225d827c9aca01c0c5c50aa35711a7e74",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+          "blob_digest": "sha256:db686b84097b4f8dcad9a1a77fcfb33a1542985796136405623c54feb298c6e8",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+          "blob_digest": "sha256:c539d7e3cc00dd0e90406cf2d994d055ecc77d7ee4c508fbf8c91e41683d0c62",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+          "blob_digest": "sha256:967e7c5b8b4864dc7d01769f9a74caf465973eda8184e2f2f4532d7b0acbf99e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+          "blob_digest": "sha256:7368eb0dd28cdd3bcc8e675133e712f9cf1618d01991a342051a9f13251bd6c2",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+          "blob_digest": "sha256:6c94383c34865dc92dee3a9e724223de3c434a95180b4a27e26ebc396026eca3",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+          "blob_digest": "sha256:609f8a0a04568c0edf8f8f26e985b3d3f36311f1de345c32478f8db970295e0e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+          "blob_digest": "sha256:cecc950bf1402438a7375d6a0b96100e02387e93565bbb1a7083ff0f2ad55495",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+          "blob_digest": "sha256:bfdaeed8b5aebc9df7893d95798ded8b57e982b6c7b95fd55ddf0c3ed9fdab41",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/manifest.json",
+          "blob_digest": "sha256:0d71ccd4619a33233379d3d06b6c7a595f2e953dfa78969fd17cfb19085a9d90",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ingress.py",
+          "blob_digest": "sha256:f4c4fea41c012aca6a95653d2ebf333d0b726d0336be5a39a8719e4c6a985897",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_transfer.py",
+          "blob_digest": "sha256:6c8ffcb0a80bde3305e5adeea471f7cd7a3e354f08ca2afedb8e91708ff0a887",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-path-ingress.yml",
+        ".github/workflows/intr-path-transfer-validation.yml",
+        ".github/workflows/intr-path-transfer.yml",
+        ".github/workflows/organization-ledger-merge-transfer.yml",
+        ".stegverse/intr-path-transfer/transfers.json",
+        ".stegverse/merge-transfer/pending.json",
+        "data/intr-protocol/v1/protocol.json",
+        "docs/INTR_PATH_TRANSFER_V1.md",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/intr_path_ingress.py",
+        "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/merge_transfer.py",
+        "tests/fixtures/intr-path-ingress/pin.json",
+        "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+        "tests/fixtures/intr-protocol/destinations/manifest.json",
+        "tests/test_intr_path_ingress.py",
+        "tests/test_intr_path_transfer.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/StegGhost/.github/pull/24",
+        "head_ref": "laneb/intr-mesh-path",
+        "head_sha": "d4413b3bc95f23d412ad35c3fedd279f1ffb3c5a",
+        "base_commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+        "title": "InTr mesh path transfer + destination carrier (with main-merge transfer) [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:10aaefc59a99efa29bdde980e72dec9a1fef24b08acf81ca003f9964143e8ffb",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "SV-LLM/.github",
+      "base_ref": {
+        "tree_sha": "02b8b609432ae7c39eb22512b7482387d45fc06d",
+        "ledger_head": "e9ee01335e757b5d179b71e889c99d9016bfce73",
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-path-ingress.yml",
+          "blob_digest": "sha256:573ac01c5265038ae7b9c59efbe9519b2563de3fdb059c2d338bd62893496c2a",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer-validation.yml",
+          "blob_digest": "sha256:92b882b7c7fa3397aba3bdc05ddd1bf8d028ec028a944023311d79a756ce2505",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/intr-path-transfer.yml",
+          "blob_digest": "sha256:3048b1029974f06d2b87cb5564febf24435fdc6b2e475a9b92cff75578ee128c",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-merge-transfer.yml",
+          "blob_digest": "sha256:eb571aa22589d4922d78299bc85f52da97aa965c74756fa79e3d0ec8699ad065",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/intr-path-transfer/transfers.json",
+          "blob_digest": "sha256:fbad2702c4a04beeca0d04571e6013abe9cd2360fbf66990d6c35a8d7f21805f",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/merge-transfer/pending.json",
+          "blob_digest": "sha256:b4b8d22f14b8e0e24d26a750fe7d32e0830e6db2da99ba6b46eae5d0f3782388",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:a144c616c4fa082fa1f79a53c85ec1c8e3212ece5a585749bac701a64338d41f",
+          "deleted": false
+        },
+        {
+          "path": "data/master-records-role-audit.json",
+          "blob_digest": "sha256:0f90f8c462681530a6a4e91b125b4e69a29524f4af37918299b19df5cacf601b",
+          "deleted": false
+        },
+        {
+          "path": "docs/INTR_PATH_TRANSFER_V1.md",
+          "blob_digest": "sha256:470a380d800ccb8d9982f56131e8819d40942b1c3aa18c2873f59ffd3d0df94e",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:3dd7ff24cff3fe0a1e948203bb1d4eea5f7248edf1ea63190cb44e39309fb5f7",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_ingress.py",
+          "blob_digest": "sha256:36156360eb88eaeb7fae59c2b2233daa7cdd261acf6c1f1eea3ec824b7496a82",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_path_transfer.py",
+          "blob_digest": "sha256:11c44de132cb69d60ba471294eddbf3ab9c5304866e2fddecf49b79a9d1f2e24",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/merge_transfer.py",
+          "blob_digest": "sha256:032ed727358d56f33369b35e6cc50d65f6af5dc0035f0b69fe7cddb3f4f4e20e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ingress/pin.json",
+          "blob_digest": "sha256:904b7550e46ba53361523b9a75348c391af351445b958302a4f335e1de70dbbb",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-transfer/expected-real-state.json",
+          "blob_digest": "sha256:886ad10c517efdf801dd77f54ab2a3f30512cdffc66e83d2951060d9ed78e944",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+          "blob_digest": "sha256:5557687d572fecf4299bed8b501f7a9ce667a39410263213532e27a35cc93274",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+          "blob_digest": "sha256:8537cc1089814a2865b3c2fb796d5a96b9d42e1c16c868df0543841b1391029f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+          "blob_digest": "sha256:77c5c988ed678fc04d3f2e66acb8ba31ae389d9e084c36f370ddeba7233585c6",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+          "blob_digest": "sha256:90eb861ec2b2e8b1b7e1cdb41ab90649b290bb39a6a0fbd39f070fb04d7ffe3b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+          "blob_digest": "sha256:e26e7f521a2c8d99ee8031da85550a90ae8d4ae5281dadc035a87e8c32a54f7b",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+          "blob_digest": "sha256:fb84e00e4adccd31f3a52f251d3582826fae267c67f03883e9df2532f4c1be4f",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+          "blob_digest": "sha256:39994f03ec945079ec270b734891ca825899895d646224f527e210ae1ffba941",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+          "blob_digest": "sha256:8ee45f4581907f1f1305022bb6cbf74225d827c9aca01c0c5c50aa35711a7e74",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+          "blob_digest": "sha256:db686b84097b4f8dcad9a1a77fcfb33a1542985796136405623c54feb298c6e8",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+          "blob_digest": "sha256:c539d7e3cc00dd0e90406cf2d994d055ecc77d7ee4c508fbf8c91e41683d0c62",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+          "blob_digest": "sha256:967e7c5b8b4864dc7d01769f9a74caf465973eda8184e2f2f4532d7b0acbf99e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+          "blob_digest": "sha256:7368eb0dd28cdd3bcc8e675133e712f9cf1618d01991a342051a9f13251bd6c2",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+          "blob_digest": "sha256:6c94383c34865dc92dee3a9e724223de3c434a95180b4a27e26ebc396026eca3",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+          "blob_digest": "sha256:609f8a0a04568c0edf8f8f26e985b3d3f36311f1de345c32478f8db970295e0e",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+          "blob_digest": "sha256:cecc950bf1402438a7375d6a0b96100e02387e93565bbb1a7083ff0f2ad55495",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+          "blob_digest": "sha256:bfdaeed8b5aebc9df7893d95798ded8b57e982b6c7b95fd55ddf0c3ed9fdab41",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-protocol/destinations/manifest.json",
+          "blob_digest": "sha256:0d71ccd4619a33233379d3d06b6c7a595f2e953dfa78969fd17cfb19085a9d90",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_ingress.py",
+          "blob_digest": "sha256:f4c4fea41c012aca6a95653d2ebf333d0b726d0336be5a39a8719e4c6a985897",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_path_transfer.py",
+          "blob_digest": "sha256:6c8ffcb0a80bde3305e5adeea471f7cd7a3e354f08ca2afedb8e91708ff0a887",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-path-ingress.yml",
+        ".github/workflows/intr-path-transfer-validation.yml",
+        ".github/workflows/intr-path-transfer.yml",
+        ".github/workflows/organization-ledger-merge-transfer.yml",
+        ".stegverse/intr-path-transfer/transfers.json",
+        ".stegverse/merge-transfer/pending.json",
+        "data/intr-protocol/v1/protocol.json",
+        "data/master-records-role-audit.json",
+        "docs/INTR_PATH_TRANSFER_V1.md",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/intr_path_ingress.py",
+        "resident-runtime/intr_path_transfer.py",
+        "resident-runtime/merge_transfer.py",
+        "tests/fixtures/intr-path-ingress/pin.json",
+        "tests/fixtures/intr-path-transfer/expected-real-state.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/Admissible-Existence.services.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/GCAT-BCAT-Engine.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-011.services.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/SV-LLM.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegGhost.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-002.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.services.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+        "tests/fixtures/intr-protocol/destinations/StegVerse-org.services.json",
+        "tests/fixtures/intr-protocol/destinations/manifest.json",
+        "tests/test_intr_path_ingress.py",
+        "tests/test_intr_path_transfer.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/SV-LLM/.github/pull/50",
+        "head_ref": "laneb/intr-mesh-path",
+        "head_sha": "2df47daa1e682ce72b8e5b5133c6e8fd023fdab3",
+        "base_commit": "398326a27bc5816a5d06bffac8894a19d997ccdf",
+        "title": "InTr mesh path transfer + destination carrier (with main-merge transfer) [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:9cf4826d5dcb762f2d3b2ce562bac03d4d3231156eaa830961547e5ae6836deb",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "AaCT-E/.github",
+      "base_ref": {
+        "tree_sha": "3c109ae08b18e1a7e2fb95022365a4aba8547079",
+        "ledger_head": null,
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-ingress-ledger-component-validation.yml",
+          "blob_digest": "sha256:46c9b811228a7448e220c1447fe4f60c9d15e9be89b23e51d9e72569c74b1914",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition.yml",
+          "blob_digest": "sha256:66329e0214179599c33c5479304ec28ed197962a6c47427fe934badc1ddfdb95",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/components/intr-ingress-ledger-v1.json",
+          "blob_digest": "sha256:014fd34acc732e5f671a1d37b36b1e374faf1d0a2d9a0a8a057863257102410c",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/contract.json",
+          "blob_digest": "sha256:16c50f78b373daa1c7273e31957a4ed594d0bce4980e60d150b35787e6c350c0",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/emit.py",
+          "blob_digest": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/org-contract.json",
+          "blob_digest": "sha256:5b458612320f14910a8f988467c4db46f8d784746802ee647eacf9d890548a84",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:f59ce9457cff9df312d5f6c57827654d3f7de4daaef74b79169c534c48cfdeea",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/registry/services.json",
+          "blob_digest": "sha256:f367fe40e2ced9b6e46f38162a103fc47804000172df02fdf4c52e808140ad77",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/runtime/capability_ingress.py",
+          "blob_digest": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44",
+          "deleted": false
+        },
+        {
+          "path": "org-kernel/kernel.py",
+          "blob_digest": "sha256:01aaae0da8012471dbe12b227ef1421b5e84c9167061cbffdfe4466f329afe11",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "blob_digest": "sha256:69293ee2194f8ba0d97478948311c958fab7ab5e1c85097a3d3c1cc756883626",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/aggregate_repo_transition.py",
+          "blob_digest": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:6ecd03cfb3406fde2b0c0184179183f2bbd7245acd0069b474e5b4158bbb1018",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/ledger_store.py",
+          "blob_digest": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/organization_ledger_readback.py",
+          "blob_digest": "sha256:e24650287c04a964686a331c8e19af572617aff91d0a2885ec376f3e8db790b8",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_ingress_ledger_component.py",
+          "blob_digest": "sha256:bc503e898ac34b71fdadb7f2e85ddd11b566404616be3165d5525a8c4deddca0",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-ingress-ledger-component-validation.yml",
+        ".github/workflows/organization-ledger-transition.yml",
+        ".stegverse/components/intr-ingress-ledger-v1.json",
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "data/intr-protocol/v1/protocol.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-kernel/kernel.py",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/ledger_store.py",
+        "resident-runtime/organization_ledger_readback.py",
+        "tests/test_intr_ingress_ledger_component.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/AaCT-E/.github/pull/7",
+        "head_ref": "laneb/intr-ingress-ledger-adopt",
+        "head_sha": "0932d7a1a316ebe1ecd52819bd6d45e73bbf8115",
+        "base_commit": "f63382baca536a740324f8d1ede80f1d12f5cd07",
+        "title": "Adopt InTr ingress + organization ledger component intr-ingress-ledger/v1 [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:d71536802a8598a81a774d28ec2e3f9f090dd74c8dcb4aba9bba9acc333157c9",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts",
+        "/base_ref/ledger_head"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "Data-Continuation/.github",
+      "base_ref": {
+        "tree_sha": "4f76598a452ed23e5001d560cb0740972cdb9755",
+        "ledger_head": null,
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-ingress-ledger-component-validation.yml",
+          "blob_digest": "sha256:d5fafa0fe8c246f40b6f3138ff8a6ff417ae0fe3100e943ad3f38603c6e2b5c6",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition.yml",
+          "blob_digest": "sha256:17a018d876ec2c32aa0ba93d9bf5bedf80d19dbd13ab7713a27ba49138dbbecb",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/components/intr-ingress-ledger-v1.json",
+          "blob_digest": "sha256:31dc1f2613408ffb64986ed627313128a2a11b1ef7462e7da1ccbb1486f547fa",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/contract.json",
+          "blob_digest": "sha256:8a9d1cad2192945819156e83d548f974ff3f739197e1aad3cbdeb89cf19c4588",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/emit.py",
+          "blob_digest": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/org-contract.json",
+          "blob_digest": "sha256:13296e4ba013d39216b59823c53ec37f9d9fa721dde1841f0bb6db97386785e5",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:f59ce9457cff9df312d5f6c57827654d3f7de4daaef74b79169c534c48cfdeea",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/registry/services.json",
+          "blob_digest": "sha256:5701696ea7b53dcc5ae57f48abe48a5f484be99bcbbf372b54c239ad9516af5f",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/runtime/capability_ingress.py",
+          "blob_digest": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44",
+          "deleted": false
+        },
+        {
+          "path": "org-kernel/kernel.py",
+          "blob_digest": "sha256:01aaae0da8012471dbe12b227ef1421b5e84c9167061cbffdfe4466f329afe11",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "blob_digest": "sha256:f47d8ae9cab44fbb2fe5701b9f03a632afc4e6a8fd871c51310f72125237f59c",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/aggregate_repo_transition.py",
+          "blob_digest": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:ecdb097b7caed597e7d7017a24b8c99d829e50d10a13f19fe05cfff937c38729",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/ledger_store.py",
+          "blob_digest": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/organization_ledger_readback.py",
+          "blob_digest": "sha256:e24650287c04a964686a331c8e19af572617aff91d0a2885ec376f3e8db790b8",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_ingress_ledger_component.py",
+          "blob_digest": "sha256:92c6a6cdfd23e562fac39e8152b5e4b8c2e422789eaad5f2d450dd25366fc076",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-ingress-ledger-component-validation.yml",
+        ".github/workflows/organization-ledger-transition.yml",
+        ".stegverse/components/intr-ingress-ledger-v1.json",
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "data/intr-protocol/v1/protocol.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-kernel/kernel.py",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/ledger_store.py",
+        "resident-runtime/organization_ledger_readback.py",
+        "tests/test_intr_ingress_ledger_component.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/Data-Continuation/.github/pull/9",
+        "head_ref": "laneb/intr-ingress-ledger-adopt",
+        "head_sha": "14c028cbae38f6b9848a91cfa9285bd003bd989a",
+        "base_commit": "99ba313b296c3a5a1d82ae7c5368283f9869a11e",
+        "title": "Adopt InTr ingress + organization ledger component intr-ingress-ledger/v1 [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:1d233a3f44754b0f133fdd5b6c2a7d5c32ef197e127ba0be71aeb3b9f1059cbe",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts",
+        "/base_ref/ledger_head"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "ECAT-ICAT-Formal/.github",
+      "base_ref": {
+        "tree_sha": "b80460c53ccedfa90b2ecfd60f26d5dbef24c010",
+        "ledger_head": null,
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-ingress-ledger-component-validation.yml",
+          "blob_digest": "sha256:c407ad20629652644b7c8095289f065959a501ae8b442429065526b930f5eb30",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition.yml",
+          "blob_digest": "sha256:83489bdbce96aa03cd6e7f14f7eb98b3b9f2e3ff4e1bce692e73e55073e3f1d2",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/components/intr-ingress-ledger-v1.json",
+          "blob_digest": "sha256:7391ddbefcb0b9dd5596dbd3c6d15684d5ddf2ec7124025ac04dd356de96243e",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/contract.json",
+          "blob_digest": "sha256:9ddec90572cf1a9d854122065104535a87cec3202cfcc3c2f5162e24e43356c1",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/emit.py",
+          "blob_digest": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/org-contract.json",
+          "blob_digest": "sha256:293e44567d47eb6c6a0eeb0e912cc4629c9391d2b52d7163eb2ddc050d81b40b",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:f59ce9457cff9df312d5f6c57827654d3f7de4daaef74b79169c534c48cfdeea",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/registry/services.json",
+          "blob_digest": "sha256:a7f6fa3f7be7a59118696ee04697fb3145c87caec3f42df950c72dc54741e6a9",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/runtime/capability_ingress.py",
+          "blob_digest": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44",
+          "deleted": false
+        },
+        {
+          "path": "org-kernel/kernel.py",
+          "blob_digest": "sha256:01aaae0da8012471dbe12b227ef1421b5e84c9167061cbffdfe4466f329afe11",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "blob_digest": "sha256:a0c668722f5dad64a035f15a173a7b0e05b47e3a57ebe65544b53a1b9270e689",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/aggregate_repo_transition.py",
+          "blob_digest": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:1f90ff95935eef24bb8f3ebb29b6ccd791668455ee3599199b6e86b354c88694",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/ledger_store.py",
+          "blob_digest": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/organization_ledger_readback.py",
+          "blob_digest": "sha256:e24650287c04a964686a331c8e19af572617aff91d0a2885ec376f3e8db790b8",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_ingress_ledger_component.py",
+          "blob_digest": "sha256:32c4f4ee4463393b92e8401046dc68bcb8cb60533e4130242c0a95efae91faeb",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-ingress-ledger-component-validation.yml",
+        ".github/workflows/organization-ledger-transition.yml",
+        ".stegverse/components/intr-ingress-ledger-v1.json",
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "data/intr-protocol/v1/protocol.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-kernel/kernel.py",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/ledger_store.py",
+        "resident-runtime/organization_ledger_readback.py",
+        "tests/test_intr_ingress_ledger_component.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/ECAT-ICAT-Formal/.github/pull/7",
+        "head_ref": "laneb/intr-ingress-ledger-adopt",
+        "head_sha": "0bc7daacd1deebed6777ab6c347148a6cb73818c",
+        "base_commit": "21a10956301c57e50c3f2171ed63fd5cc5362421",
+        "title": "Adopt InTr ingress + organization ledger component intr-ingress-ledger/v1 [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:6c490dcd7654258e5e5a7025f84f6b9ac71a38660f2c9179b04b302bdce52690",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts",
+        "/base_ref/ledger_head"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "Infrastructure-Continuity-Ventures/.github",
+      "base_ref": {
+        "tree_sha": "9b7e9c8e4eca4b65da284e29d2a497525c65bec9",
+        "ledger_head": null,
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-ingress-ledger-component-validation.yml",
+          "blob_digest": "sha256:c625822c0de7f2cecfde3b84e6bfa67ce718a68b3a4347d31dac7cc532a69608",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition.yml",
+          "blob_digest": "sha256:9fb91f1f52c336b180a6cb2609b3219717e0e1b974a3778bb70edfa79ef607be",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/components/intr-ingress-ledger-v1.json",
+          "blob_digest": "sha256:25ee1539f6eddec13c1ffc5bcba781642148e1f11d68adc511680e6c4e9fe334",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/contract.json",
+          "blob_digest": "sha256:dcddda90a6bf73b80f740663312ec5b3a9cf872c59f6a8f2a0f7fbe3cfac38ee",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/emit.py",
+          "blob_digest": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/org-contract.json",
+          "blob_digest": "sha256:4526d3e142658b3cd9e79b21d3078643062971ace4ffa8966ce18b80064b0504",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:f59ce9457cff9df312d5f6c57827654d3f7de4daaef74b79169c534c48cfdeea",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/registry/services.json",
+          "blob_digest": "sha256:e464497080dd64743299f008cfb7e279dc47e31c52ef04798935c3f6dacd1d0f",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/runtime/capability_ingress.py",
+          "blob_digest": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44",
+          "deleted": false
+        },
+        {
+          "path": "org-kernel/kernel.py",
+          "blob_digest": "sha256:01aaae0da8012471dbe12b227ef1421b5e84c9167061cbffdfe4466f329afe11",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "blob_digest": "sha256:6d816a4e75bb44d074a5a93b96eb3b17e25e39405724b3b7e188e24df3883ab8",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/aggregate_repo_transition.py",
+          "blob_digest": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:5f660cc83c310a180eaed8e432e0f3252b349d22d66ade6f1728ff06530e4071",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/ledger_store.py",
+          "blob_digest": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/organization_ledger_readback.py",
+          "blob_digest": "sha256:e24650287c04a964686a331c8e19af572617aff91d0a2885ec376f3e8db790b8",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_ingress_ledger_component.py",
+          "blob_digest": "sha256:9ec59eb4574ef76f1e7f70654f7aaa29fc3fce25b663a11285cc2b73d5d1d1d8",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-ingress-ledger-component-validation.yml",
+        ".github/workflows/organization-ledger-transition.yml",
+        ".stegverse/components/intr-ingress-ledger-v1.json",
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "data/intr-protocol/v1/protocol.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-kernel/kernel.py",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/ledger_store.py",
+        "resident-runtime/organization_ledger_readback.py",
+        "tests/test_intr_ingress_ledger_component.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/Infrastructure-Continuity-Ventures/.github/pull/37",
+        "head_ref": "laneb/intr-ingress-ledger-adopt",
+        "head_sha": "ac68493216090e5b017f693dc5884e20ba53d9e2",
+        "base_commit": "c727be53148d1a802305b83c40432f345d61c1a1",
+        "title": "Adopt InTr ingress + organization ledger component intr-ingress-ledger/v1 [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:8952a8343fd5163d8980d18d8652d4a3cc5959e776c13182cb0062c97f235aa1",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts",
+        "/base_ref/ledger_head"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "Triad-Test/.github",
+      "base_ref": {
+        "tree_sha": "8391e93f9de289bcd4cc60275657dd3a9f7a851c",
+        "ledger_head": null,
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-ingress-ledger-component-validation.yml",
+          "blob_digest": "sha256:b858d0b4ef58476916e03932950aab80cbe8b75a46588b24617c42e132e36e23",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition.yml",
+          "blob_digest": "sha256:594f4d6f29b3c145b59d4d44055ceecd5586f5d9d740408ed7ee5cd0beb4dcfe",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/components/intr-ingress-ledger-v1.json",
+          "blob_digest": "sha256:67c568046fdbdc3dd31fe41c4675f58b16f47280e9aa029fd1f2b285646910d2",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/contract.json",
+          "blob_digest": "sha256:33d61087d48eede4f2fc7ee69cd2859d9ca5f67afd7d39773c344b441ba1a556",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/emit.py",
+          "blob_digest": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/org-contract.json",
+          "blob_digest": "sha256:2c339635aa7ca46798cec9a1f4f286a7a9f485a309c00e62c2feeed6f7d39c1e",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:f59ce9457cff9df312d5f6c57827654d3f7de4daaef74b79169c534c48cfdeea",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/registry/services.json",
+          "blob_digest": "sha256:eb554ac4d0722a53deff2d1172b4af03369af9675f438f19d20bec8b0cb184d0",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/runtime/capability_ingress.py",
+          "blob_digest": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44",
+          "deleted": false
+        },
+        {
+          "path": "org-kernel/kernel.py",
+          "blob_digest": "sha256:01aaae0da8012471dbe12b227ef1421b5e84c9167061cbffdfe4466f329afe11",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "blob_digest": "sha256:5e069853de9aee9b12a02e59ee301bf9db1f50b56803e258102c4c93e0df0ead",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/aggregate_repo_transition.py",
+          "blob_digest": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:2bc9ef487041eced73c2742fef4070d170367ae8749981a6e1b5d34617143583",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/ledger_store.py",
+          "blob_digest": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/organization_ledger_readback.py",
+          "blob_digest": "sha256:e24650287c04a964686a331c8e19af572617aff91d0a2885ec376f3e8db790b8",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_ingress_ledger_component.py",
+          "blob_digest": "sha256:d58d179a9439911b79b95cd0234bb996477d862b79c2633230feef4dec859c64",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-ingress-ledger-component-validation.yml",
+        ".github/workflows/organization-ledger-transition.yml",
+        ".stegverse/components/intr-ingress-ledger-v1.json",
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "data/intr-protocol/v1/protocol.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-kernel/kernel.py",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/ledger_store.py",
+        "resident-runtime/organization_ledger_readback.py",
+        "tests/test_intr_ingress_ledger_component.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/Triad-Test/.github/pull/7",
+        "head_ref": "laneb/intr-ingress-ledger-adopt",
+        "head_sha": "e3b43f6274baeeb5ade92d1632d15a0bc0110a28",
+        "base_commit": "ce21996770709fe817c62d8e039314cfc85b9c4d",
+        "title": "Adopt InTr ingress + organization ledger component intr-ingress-ledger/v1 [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:141d3a0809aaef5b7d0cf7c9652b39cd79a5f972d44d69f07cab27297f621add",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts",
+        "/base_ref/ledger_head"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "formalism-tests/.github",
+      "base_ref": {
+        "tree_sha": "ea88921369c92d3e5784ae619beef908e1014d72",
+        "ledger_head": null,
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-ingress-ledger-component-validation.yml",
+          "blob_digest": "sha256:c4fc5422e5e1a1075f8988f520122161673955fef44ae12fc1348d3949b847ad",
+          "deleted": false
+        },
+        {
+          "path": ".github/workflows/organization-ledger-transition.yml",
+          "blob_digest": "sha256:a3474763b055363d640e3e7bc72ae2960801ac259ffbb1e0fbb74b1e75036b3b",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/components/intr-ingress-ledger-v1.json",
+          "blob_digest": "sha256:0cc202fbf59a0dd03a6258149de045975606afbf1b47d97c81398c9b4bcc8211",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/contract.json",
+          "blob_digest": "sha256:54b7ea1721b7e78996cd71fedac7c0aa795e85cefffbde26f1c762a8ec9d7d42",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/emit.py",
+          "blob_digest": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7",
+          "deleted": false
+        },
+        {
+          "path": ".stegverse/transition-ledger/org-contract.json",
+          "blob_digest": "sha256:14a6008fd0dfb7fea685e9f5fef1bc0d7602a38461522d0b568395b18bf859ec",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-protocol/v1/protocol.json",
+          "blob_digest": "sha256:f59ce9457cff9df312d5f6c57827654d3f7de4daaef74b79169c534c48cfdeea",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/registry/services.json",
+          "blob_digest": "sha256:e947d859cf0cb037729190a5f2a16e335e0258d4306bad03c83fe00087401a35",
+          "deleted": false
+        },
+        {
+          "path": "org-boundary/runtime/capability_ingress.py",
+          "blob_digest": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44",
+          "deleted": false
+        },
+        {
+          "path": "org-kernel/kernel.py",
+          "blob_digest": "sha256:01aaae0da8012471dbe12b227ef1421b5e84c9167061cbffdfe4466f329afe11",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "blob_digest": "sha256:06605c7d41629689591f8b538600549884a1b68baf98f7fd4b4d44d57b1515a8",
+          "deleted": false
+        },
+        {
+          "path": "org-runtime/intr_protocol.py",
+          "blob_digest": "sha256:9cd92d47f9a697f557029d9271455fe4a1b31de25f1d1ee39063a0776c72b843",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/aggregate_repo_transition.py",
+          "blob_digest": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/intr_destination_ingress.py",
+          "blob_digest": "sha256:e8f21a8698d76e8053b10663a297468d8f5dc7189ba01a3559d2927eb06725e5",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/ledger_store.py",
+          "blob_digest": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5",
+          "deleted": false
+        },
+        {
+          "path": "resident-runtime/organization_ledger_readback.py",
+          "blob_digest": "sha256:e24650287c04a964686a331c8e19af572617aff91d0a2885ec376f3e8db790b8",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_intr_ingress_ledger_component.py",
+          "blob_digest": "sha256:b9fcbddae5684ac58c35b2ace105748b9154e3cb62dda95e0fc319104eddc4be",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-ingress-ledger-component-validation.yml",
+        ".github/workflows/organization-ledger-transition.yml",
+        ".stegverse/components/intr-ingress-ledger-v1.json",
+        ".stegverse/transition-ledger/contract.json",
+        ".stegverse/transition-ledger/emit.py",
+        ".stegverse/transition-ledger/org-contract.json",
+        "data/intr-protocol/v1/protocol.json",
+        "org-boundary/registry/services.json",
+        "org-boundary/runtime/capability_ingress.py",
+        "org-kernel/kernel.py",
+        "org-runtime/interlock-intr.json",
+        "org-runtime/intr_protocol.py",
+        "resident-runtime/aggregate_repo_transition.py",
+        "resident-runtime/intr_destination_ingress.py",
+        "resident-runtime/ledger_store.py",
+        "resident-runtime/organization_ledger_readback.py",
+        "tests/test_intr_ingress_ledger_component.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/formalism-tests/.github/pull/7",
+        "head_ref": "laneb/intr-ingress-ledger-adopt",
+        "head_sha": "691074cc001c7656d94abadb1da992d80b9bf10c",
+        "base_commit": "f76f3b0681e136cb4d5475a3fc6d01a74acb58a6",
+        "title": "Adopt InTr ingress + organization ledger component intr-ingress-ledger/v1 [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:3e9a780ff1a29ebcbef8654b8cc1243657c5824b8314c9051af92616ff4475d4",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts",
+        "/base_ref/ledger_head"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    },
+    {
+      "schema": "stegverse.sv_change.v1",
+      "record_mode": "NATIVE",
+      "lifecycle_state": "PROPOSED",
+      "target_repository": "StegVerse-Labs/TVC",
+      "base_ref": {
+        "tree_sha": "53a90c37a91d67118add7b4d9e6467608986da1e",
+        "ledger_head": null,
+        "registry_generation": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+      },
+      "content": [
+        {
+          "path": ".github/workflows/intr-path-ledger-read-validation.yml",
+          "blob_digest": "sha256:8ba620adae441767fa7f418a6fd19c194b0e17c2a83deed49637b5a36b2e931e",
+          "deleted": false
+        },
+        {
+          "path": "data/intr-path-ledger-read/v1/manifest.json",
+          "blob_digest": "sha256:58da5e6203ecb4ba81901b141cd653019291993d685965ff334780927547ee7b",
+          "deleted": false
+        },
+        {
+          "path": "docs/TVC_INTR_PATH_LEDGER_READ_MIRROR_HANDOFF.md",
+          "blob_digest": "sha256:c7bc140a206a971e6cba30cfef5b144780fe6ab91a922632313c76bb25ae20ee",
+          "deleted": false
+        },
+        {
+          "path": "scripts/run_intr_path_ledger_reads.py",
+          "blob_digest": "sha256:617d5184fd5ad060da3132e6b6109b973baba4e6befb23438ef62bb83555c417",
+          "deleted": false
+        },
+        {
+          "path": "tasks/TVC-PRIVATE-SOURCE-READ-001.json",
+          "blob_digest": "sha256:65084f5bd53a82eafc2deb2f379397abe57f0ecbe76a8ea190781c605955f8f0",
+          "deleted": false
+        },
+        {
+          "path": "tests/fixtures/intr-path-ledger-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+          "blob_digest": "sha256:41c6d58d3958a38ba4c3ce6bb6d1ce656dda4a6d2b2ee0cf44d7d1ab3a5de684",
+          "deleted": false
+        },
+        {
+          "path": "tests/intr_path_ledger_read_fixture.py",
+          "blob_digest": "sha256:f6af73375e9687742f555a9de1b63421f862f5f2352aeaa86a622b30ead20bad",
+          "deleted": false
+        },
+        {
+          "path": "tests/test_run_intr_path_ledger_reads.py",
+          "blob_digest": "sha256:81eeb115bee9957c89fc243e259a6c06b21ddf8c4ab88723576dc6fc393b578e",
+          "deleted": false
+        }
+      ],
+      "touched_paths": [
+        ".github/workflows/intr-path-ledger-read-validation.yml",
+        "data/intr-path-ledger-read/v1/manifest.json",
+        "docs/TVC_INTR_PATH_LEDGER_READ_MIRROR_HANDOFF.md",
+        "scripts/run_intr_path_ledger_reads.py",
+        "tasks/TVC-PRIVATE-SOURCE-READ-001.json",
+        "tests/fixtures/intr-path-ledger-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+        "tests/intr_path_ledger_read_fixture.py",
+        "tests/test_run_intr_path_ledger_reads.py"
+      ],
+      "declared_session": "Lane B (91117956)",
+      "owning_goal": "StegVerse-org/.github#162",
+      "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+      "resolves": [],
+      "signoffs": [],
+      "validation_receipts": [],
+      "required_checks_ref": {
+        "file": "data/sv-work-items/required-checks.json",
+        "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+        "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+      },
+      "projection": {
+        "github_pull_request": "https://github.com/StegVerse-Labs/TVC/pull/528",
+        "head_ref": "laneb/intr-path-ledger-read",
+        "head_sha": "988d175e16833ba168f103a11f14b817f3d35fc2",
+        "base_commit": "d986dbda3089038fdd745d7c0a7e1e0c8c49a214",
+        "title": "TVC-PRIVATE-SOURCE-READ-001: InTr path ledger read consumer (56 paths x 2, contents:read per ledger ref) [Lane B, #162]"
+      },
+      "content_identity_digest_without_registry_generation": "sha256:03a2dc97a5e7a658b7a9d9956ff441f55e9c1f65d4b0ffecce19c7236c885751",
+      "unobserved_fields": [
+        "/base_ref/registry_generation",
+        "/hb_epoch",
+        "/resolves",
+        "/signoffs",
+        "/validation_receipts",
+        "/base_ref/ledger_head"
+      ],
+      "change_id": null,
+      "head": null,
+      "request_digest": null,
+      "admission_input_note": "change_id/head.change_digest/request_digest are not computed: P1 change_identity hashes base_ref.registry_generation, which is not observed for this repository (TVC#519 sv_change_base_state REGISTRY_PATHS declares only StegVerse-Labs/.github and StegVerse-org/.github; StegVerse-org is REGISTRY_GENERATION_NOT_DECLARED, Q-ORG-REGISTRY-GENERATION). SV_CHANGE_ADMIT would answer DENY SV_CHANGE_BASE_UNBOUND until the base-state readback supplies it."
+    }
+  ]
+}
