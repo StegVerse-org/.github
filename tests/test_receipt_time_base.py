@@ -334,7 +334,11 @@ class ResidentExecutorEpochTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as work:
             mesh, state = Path(work) / "mesh", Path(work) / "state"
             mesh.mkdir()
-            env = dict(os.environ, STEGVERSE_ORG_LEDGER_ROOT=str(Path(work) / "org"),
+            # A node materialization, not a hosted runner: the executor refuses
+            # to run at all under GITHUB_ACTIONS / CI (resident_executor.HOSTED).
+            hosted = ("GITHUB_ACTIONS", "CI", "RENDER", "VERCEL", "CF_PAGES", "CLOUDFLARE_WORKERS")
+            env = {k: v for k, v in os.environ.items() if k not in hosted and not k.startswith("STEGVERSE_")}
+            env.update(STEGVERSE_ORG_LEDGER_ROOT=str(Path(work) / "org"),
                        STEGVERSE_REPO_LEDGER_ROOT=str(Path(work) / "repo"))
             completed = subprocess.run([sys.executable, "-B", str(ROOT / "resident-runtime/resident_executor.py"),
                                         "--mesh-root", str(mesh), "--node-state-root", str(state)],
@@ -344,6 +348,114 @@ class ResidentExecutorEpochTests(unittest.TestCase):
             self.assertEqual(record["failed_predicate"], "FEDERATION_CYCLE_FAILED")
             self.assertIn("HB_EPOCH_NOT_SUPPLIED", record["error"])
             self.assertEqual(list(state.rglob("cycles.d/*.json")), [])
+
+
+INTR = ROOT / "resident-runtime/intr_destination_ingress.py"
+FIXED_CLOCK_NS = org.kernel.HB_ANCHOR_UNIX_NS + 7_000_000_000
+
+
+class CarriedEpochTests(unittest.TestCase):
+    """An epoch read back from a repository receipt is CARRIED, never passed on as supplied."""
+
+    def receipt(self, reference):
+        return {"receipt_sha256": "sha256:" + "c" * 64, "hb_reference": reference}
+
+    def test_a_supplied_reference_is_carried(self):
+        self.assertEqual(org.carried_epoch(self.receipt(org.kernel.hb_reference(epoch=4096)),
+                                           retry_entrypoint="t"), 4096)
+
+    def test_a_clock_derived_or_unmarked_or_invalid_reference_is_refused_six_field(self):
+        clocked = org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
+        self.assertIs(clocked["derived_from_clock"], True)
+        unmarked = {k: v for k, v in org.kernel.hb_reference(epoch=4096).items() if k != "derived_from_clock"}
+        for reference in (clocked, unmarked, {"epoch": 31, "derived_from_clock": False},
+                          {"epoch": "+33", "derived_from_clock": False}, None, "4096"):
+            with self.subTest(reference=reference):
+                with self.assertRaises(org.OrgLedgerEpochRefused) as caught:
+                    org.carried_epoch(self.receipt(reference), retry_entrypoint="t")
+                refusal = caught.exception.refusal
+                self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+                for field in SIX_FIELDS:
+                    self.assertTrue(refusal[field], field)
+
+
+class IngressEpochProvenanceProbe(unittest.TestCase):
+    """B-P36f probe: no organization receipt says derived_from_clock false for an epoch nobody supplied."""
+
+    def setUp(self):
+        self.work = tempfile.TemporaryDirectory()
+        self.addCleanup(self.work.cleanup)
+        roots = {"STEGVERSE_REPO_LEDGER_ROOT": str(Path(self.work.name) / "repo"),
+                 "STEGVERSE_ORG_LEDGER_ROOT": str(Path(self.work.name) / "org")}
+        previous = {k: os.environ.get(k) for k in roots}
+        os.environ.update(roots)
+        self.addCleanup(lambda: [os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
+                                 for k, v in previous.items()])
+        spec = importlib.util.spec_from_file_location("intr_destination_ingress_probe", INTR)
+        self.intr = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = self.intr
+        self.addCleanup(sys.modules.pop, spec.name, None)
+        spec.loader.exec_module(self.intr)
+
+    def evidence(self, communication_id):
+        return {"payload_sha256": "sha256:" + "e" * 64, "disposition": "ALLOW",
+                "communication_id": communication_id}
+
+    def org_receipts(self):
+        root = Path(self.work.name) / "org"
+        return [json.loads(p.read_text()) for p in root.rglob("*.json")
+                if p.is_file() and json.loads(p.read_text()).get("schema") == "stegverse.organization-transition-receipt/v1"]
+
+    def test_a_supplied_epoch_reaches_both_receipts(self):
+        pair, replayed = self.intr._append("PROBE", "probe-1", self.evidence("c-1"), "4096")
+        for name in ("repository_receipt", "organization_receipt"):
+            self.assertEqual(pair[name]["hb_reference"]["epoch"], 4096, name)
+            self.assertIs(pair[name]["hb_reference"]["derived_from_clock"], False, name)
+        self.assertEqual([r["receipt_sha256"] for r in self.org_receipts()],
+                         [pair["organization_receipt"]["receipt_sha256"]])
+
+    def test_an_absent_epoch_writes_nothing_with_the_clock_at_a_fixed_value(self):
+        class FixedClock:
+            @staticmethod
+            def now(tz=None):
+                import datetime as _dt
+                return _dt.datetime.fromtimestamp(FIXED_CLOCK_NS / 1e9, tz)
+
+        kernel = self.intr.repository_ledger.kernel
+        clock = kernel.datetime
+        kernel.datetime = FixedClock
+        try:
+            with self.assertRaises(SystemExit) as caught:
+                self.intr._append("PROBE", "probe-2", self.evidence("c-2"), None)
+        finally:
+            kernel.datetime = clock
+        self.assertEqual(caught.exception.refusal["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+        self.assertEqual(self.org_receipts(), [])
+
+    def test_a_replayed_clock_derived_repository_receipt_is_not_laundered(self):
+        # A repository receipt minted before the writers required a supplied
+        # epoch carries a clock-derived reference; replaying its transition
+        # returns it, and its epoch must not reach the organization receipt.
+        kernel = self.intr.repository_ledger.kernel
+        real = kernel.hb_reference
+        kernel.hb_reference = lambda *a, **k: real(now_ns=FIXED_CLOCK_NS)
+        try:
+            legacy = self.intr.repository_ledger.append(
+                "PROBE:probe-3", "PROBE", "sha256:" + "e" * 64,
+                self.intr.sha({"disposition": "ALLOW", "packet_id": "probe-3", "communication_id": "c-3",
+                               "payload_sha256": "sha256:" + "e" * 64}),
+                self.evidence("c-3"), "NONE", hb_epoch=4096,
+                idempotent_on=("communication_id", "payload_sha256", "disposition"))
+        finally:
+            kernel.hb_reference = real
+        self.assertIs(legacy["hb_reference"]["derived_from_clock"], True)
+        with self.assertRaises(SystemExit) as caught:
+            self.intr._append("PROBE", "probe-3", self.evidence("c-3"), "4096")
+        refusal = caught.exception.refusal
+        self.assertEqual(refusal["failure_code"], "HB_EPOCH_INVALID")
+        for field in SIX_FIELDS:
+            self.assertTrue(refusal[field], field)
+        self.assertEqual(self.org_receipts(), [])
 
 
 class EgressCloseCliEpochTests(unittest.TestCase):

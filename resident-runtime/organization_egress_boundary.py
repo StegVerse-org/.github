@@ -579,7 +579,9 @@ def _record(transition_id: str, transition_class: str, predecessor: str, success
          "intended_action": record["intended_action"],
          "disposition": record["disposition"],
          "crossed_an_organization_boundary": record["crossed_an_organization_boundary"]},
-        "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"] if idempotent else hb_epoch,
+        "NONE", hb_epoch=organization_ledger.carried_epoch(
+            repository_receipt, retry_entrypoint="resident-runtime/organization_egress_boundary.py::_record")
+        if idempotent else hb_epoch,
         idempotent=idempotent)
     return {"repository_receipt": repository_receipt,
             "organization_receipt": organization_receipt}

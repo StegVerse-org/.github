@@ -145,6 +145,43 @@ def epoch_refusal(hb_epoch):
     }
 
 
+def carried_epoch(source_receipt, *, retry_entrypoint):
+    """The epoch a consumed repository receipt carries, admitted, or OrgLedgerEpochRefused.
+
+    An ingress that appends at both levels hands the organization writer the
+    epoch on the repository receipt it just appended, so a replay rebuilds the
+    same organization receipt. That epoch is CARRIED, not supplied: it is
+    admissible only when the receipt's own heartbeat reference says it was
+    supplied (derived_from_clock exactly false) and the shared rule admits it.
+    A clock-derived one -- a receipt minted before the writers required a
+    supplied epoch, returned by an idempotent replay -- is refused six-field
+    rather than passed on, where it would be stamped derived_from_clock false.
+    Nothing is written and no clock is read.
+    """
+    reference = source_receipt.get("hb_reference") if isinstance(source_receipt, dict) else None
+    epoch = reference.get("epoch") if isinstance(reference, dict) else None
+    failure = supplied_epoch_failure(epoch, reference)
+    if failure is None and reference.get("derived_from_clock") is not False:
+        failure = ("HB_EPOCH_INVALID", "the carried heartbeat reference does not say derived_from_clock false")
+    if failure is None:
+        return int(str(epoch))
+    code, detail = failure
+    raise OrgLedgerEpochRefused({
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": HB_EPOCH_PREDICATE,
+        "detail": ("carried epoch from repository receipt "
+                   + str((source_receipt or {}).get("receipt_sha256") if isinstance(source_receipt, dict) else None)
+                   + ": " + detail),
+        "required_evidence_or_repair": (
+            "the repository receipt must carry a supplied epoch (derived_from_clock false, ASCII digits >= "
+            + str(HB_ANCHOR_EPOCH) + "); a clock-derived epoch is never passed on as supplied"),
+        "retry_entrypoint": retry_entrypoint,
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "append the transition at a new identity with a supplied epoch; nothing was written",
+    })
+
+
 def require_state_digest(field, value):
     """A field named *_sha256 must carry one, or the chain records a claim it cannot check."""
     if not isinstance(value, str) or not SHA256_REF.match(value):

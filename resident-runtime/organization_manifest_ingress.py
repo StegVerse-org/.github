@@ -206,6 +206,9 @@ def _module(name: str, relative: str):
 
 crossing_module = _module("sdk_manifest_crossing", "resident-runtime/sdk_manifest_crossing.py")
 repository_ledger = _module("repo_transition_emit", ".stegverse/transition-ledger/emit.py")
+#: This checkout's organization writer, for the carried-epoch rule: the writers
+#: above can be rebound to another ledger component, the rule is not.
+EPOCH_RULE = _module("aggregate_repo_transition_carried_epoch", "resident-runtime/aggregate_repo_transition.py")
 organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
 
@@ -579,7 +582,9 @@ def _record_refusal(record: Mapping[str, Any], hb_epoch: int | None) -> dict[str
          "intended_action": INTENDED_ACTION,
          "disposition": record["disposition"],
          "failed_predicate": record["failed_predicate"]},
-        "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"], idempotent=True)
+        "NONE", hb_epoch=EPOCH_RULE.carried_epoch(
+            repository_receipt, retry_entrypoint="resident-runtime/organization_manifest_ingress.py::_refused"),
+        idempotent=True)
     return {"repository_receipt": repository_receipt,
             "organization_receipt": organization_receipt}
 
@@ -1189,7 +1194,8 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     # Everything after the repository receipt takes its epoch from that receipt,
     # so a replay rebuilds the same organization receipt and the same outbound
     # frame rather than ones stamped with whatever epoch this attempt carried.
-    hb_epoch = repository_receipt["hb_reference"]["epoch"]
+    hb_epoch = EPOCH_RULE.carried_epoch(repository_receipt,
+                                        retry_entrypoint="resident-runtime/organization_manifest_ingress.py::receive")
     organization_receipt = _ledger_write(organization_ledger.append,
         repository_receipt, "REPO_STATE_PROPAGATION",
         predecessor_state, successor_state,
