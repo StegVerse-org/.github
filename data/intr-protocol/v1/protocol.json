@@ -122,5 +122,24 @@
       {"id": "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT", "disposition": "FAIL_CLOSED", "failure_code": "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED", "when": "the organization receipt or the repository receipt is absent or unsealed, or the organization receipt's boundary_evidence does not name this operation, repository and merge_commit"},
       {"id": "ORGANIZATION_RECEIPT_LINKS_TO_THE_MERGE_COMMIT", "disposition": "DENY", "failure_code": "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED", "when": "present, sealed evidence contradicts the merge: the organization receipt names another repository or links a different repository receipt, or the repository receipt evidence names another schema, merge_commit, repository or ref, or does not carry the payload_sha256 it claims"}
     ]
+  },
+  "mesh_path_transfer": {
+    "evidence_schema": "stegverse.intr-path-transfer-evidence/v1",
+    "declaration_schema": "stegverse.intr-path-transfer-declaration/v1",
+    "destination_readback_schema": "stegverse.intr-path-destination-readback/v1",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "capability": "intr-destination",
+    "declared_paths": "every ordered pair of distinct organizations whose destination documents conform in tests/fixtures/intr-protocol/destinations/manifest.json; path_id <SOURCE>-><DESTINATION>:intr-destination",
+    "transition": "a row of .stegverse/intr-path-transfer/transfers.json landing on main; .github/workflows/intr-path-transfer.yml appends after the push's main-merge transfer is ledgered (workflow_run, no dispatch)",
+    "verifier": "resident-runtime/intr_path_transfer.py verify",
+    "allow_when": "source half (sealed INTR_MESH_PATH_TRANSFER organization receipt linked to its sealed repository receipt and to the transfer commit's sealed main-merge transfer receipt) and destination half (the destination ledger's sealed ORGANIZATION_INTR_DESTINATION_INGRESS receipt for the same communication_id) both verify",
+    "failure_codes": {
+      "INTR_PATH_RECEIPT_NOT_LEDGERED": "FAIL_CLOSED",
+      "INTR_PATH_RECEIPT_LINK_UNVERIFIED": "DENY",
+      "INTR_PATH_DESTINATION_RECEIPT_UNOBSERVED": "FAIL_CLOSED",
+      "INTR_PATH_DESTINATION_RECEIPT_CONTRADICTED": "DENY",
+      "INTR_PATH_TRANSFER_COMMIT_NOT_LEDGERED": "FAIL_CLOSED"
+    },
+    "class_b": "the destination half needs a carrier that delivers the message to the destination's ingress and a TV/TVC-issued least-privilege read credential for the destination's ledger ref; paths sourced in another organization need the transition installed there"
   }
 }
