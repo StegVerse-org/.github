@@ -1468,19 +1468,42 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
                     self.assertEqual(completed.returncode, 65, completed.stderr)
                     self.assert_record(completed, "PROCESS_BOUNDARY_INPUT_FAULT", True)
 
-    def test_an_installed_adapter_that_fails_is_70_and_not_the_frames_fault(self):
+    def test_a_failing_adapter_is_terminal_65(self):
+        """Only the boundary's own write is non-terminal; an adapter failure is terminal (VALIDATOR 10:07Z)."""
         with tempfile.TemporaryDirectory() as work:
-            out = Path(work) / "execution.json"
-            with mock.patch.dict(os.environ):
-                completed = subprocess.run(
-                    [sys.executable, "-c", "import runpy,sys,subprocess as s;"
-                     "s.run=lambda *a,**k: s.CompletedProcess(a,1,'','adapter-unavailable');"
-                     "sys.argv=sys.argv[1:];runpy.run_path(sys.argv[0],run_name='__main__')",
-                     str(self.BOUNDARY), "--envelope", str(self.envelope(work)),
-                     "--registry", str(ROOT / "org-boundary/registry/services.json"), "--out", str(out)],
-                    capture_output=True, text=True, cwd=str(ROOT))
-            self.assertEqual(completed.returncode, 70, completed.stderr)
-            self.assert_record(completed, "PROCESS_BOUNDARY_ADAPTER_FAULT", False)
+            completed = subprocess.run(
+                [sys.executable, "-c", "import runpy,sys,subprocess as s;"
+                 "s.run=lambda *a,**k: s.CompletedProcess(a,1,'','adapter-unavailable');"
+                 "sys.argv=sys.argv[1:];runpy.run_path(sys.argv[0],run_name='__main__')",
+                 str(self.BOUNDARY), "--envelope", str(self.envelope(work)),
+                 "--registry", str(ROOT / "org-boundary/registry/services.json"),
+                 "--out", str(Path(work) / "execution.json")],
+                capture_output=True, text=True, cwd=str(ROOT))
+            self.assertEqual(completed.returncode, 65, completed.stderr)
+            self.assert_record(completed, "PROCESS_BOUNDARY_INPUT_FAULT", True)
+
+    def test_the_kernel_makes_only_75_non_terminal(self):
+        """75 -> writer fault (no marker); 65, 1, an unknown code, a crash, a missing result -> terminal."""
+        packet = org.kernel.build_packet(
+            origin_org="Probe-Origin", origin_service="probe-origin.org-control", destination_org="StegVerse-org",
+            destination_service="stegverse-org.llm-adapter",
+            payload={"manifest": {"processing": {"capability": "ecosystem_diagnostic",
+                                                 "route_id": "stegverse.route.ecosystem-diagnostic.v1"}}},
+            standing={"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None})
+        for status, stderr in ((75, "PROCESS_BOUNDARY_WRITE_FAULT"), (65, "refused"), (1, "missing:payload"),
+                               (3, "unknown"), (1, "Traceback (most recent call last):\n  boom"), (0, "")):
+            with self.subTest(exit=status, stderr=stderr[:12]), mock.patch.object(
+                    org.kernel.subprocess, "run",
+                    return_value=subprocess.CompletedProcess([], status, stdout="", stderr=stderr)):
+                with self.assertRaises(Exception) as raised:
+                    org.kernel.dispatch(ROOT, packet)
+                if status == 75:
+                    self.assertIsInstance(raised.exception, org.kernel.BoundaryWriteFault)
+                    self.assertTrue(org.kernel.writer_fault(raised.exception))
+                else:
+                    self.assertIsInstance(raised.exception, ValueError)
+                    self.assertFalse(org.kernel.writer_fault(raised.exception))
+                    self.assertEqual(org.kernel.refusal_disposition(str(raised.exception)), "DENY")
 
     def test_every_caller_keeps_75_and_65_apart(self):
         kernel = (ROOT / "org-kernel/kernel.py").read_text()

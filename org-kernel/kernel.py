@@ -282,17 +282,16 @@ def dispatch(root:Path, packet:dict[str,Any], *, mesh_root:Path|None=None,
             if node_state is not None:
                 command+=["--node-state-root",str(node_state.root)]
             completed=subprocess.run(command,cwd=root,capture_output=True,text=True,check=False)
-            # The boundary's exit-code split (PB-EXIT-SPLIT): 75 is a fault in this
-            # node's own write -- a writer fault, never the frame's, so the consuming
-            # pass leaves the frame pending with no marker and no receipt. 65 is the
-            # frame refused or unreadable: terminal, recorded DENY and marked.
+            # The boundary's exit-code split (PB-EXIT-SPLIT): only 75, a fault in this
+            # node's own write, is non-terminal -- a writer fault, never the frame's,
+            # so the consuming pass leaves the frame pending with no marker and no
+            # receipt. Every other non-zero exit (65, 1, an unknown code, a crash) and
+            # a missing result are terminal: recorded DENY and marked, FRAME_INGEST_FAILED.
             if completed.returncode==PROCESS_BOUNDARY_WRITE_FAULT_EXIT:
                 raise BoundaryWriteFault("PROCESS_BOUNDARY_WRITE_FAULT:"+completed.stderr[-512:])
-            if completed.returncode==PROCESS_BOUNDARY_INPUT_FAULT_EXIT:
-                raise ValueError("PROCESS_BOUNDARY_INPUT_FAULT:endpoint_adapter_execution_failed:"
-                                 +completed.stderr[-512:])
             if completed.returncode!=0 or not out.is_file():
-                raise ValueError("endpoint_adapter_execution_failed:"+completed.stderr[-512:])
+                raise ValueError("PROCESS_BOUNDARY_INPUT_FAULT:exit "+str(completed.returncode)
+                                 +":endpoint_adapter_execution_failed:"+completed.stderr[-512:])
             result=json.loads(out.read_text())
             if not isinstance(result,dict): raise ValueError("endpoint_adapter_result_invalid")
             return {**result,**standing}

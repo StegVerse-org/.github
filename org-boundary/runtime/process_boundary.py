@@ -107,17 +107,13 @@ def main():
   raise WriteFault(type(exc).__name__+": "+str(exc)[:200])
  print(json.dumps({"status":"PASS","terminal_receipt_id":prev}))
 
-# The exit-code split callers depend on (Data-Continuation/.github#10): a fault in
-# this node's own write is non-terminal and the frame is offered again (75); a
-# frame this boundary refuses or cannot read is terminal (65). An installed
-# adapter that fails to run or answers malformed is this node's own component,
-# not the frame's: non-terminal (70), retried. Each prints a six-field record on
-# stdout and its message last on stderr; never a traceback.
+# The exit-code split callers depend on (Data-Continuation/.github#10): only a
+# fault in this node's own --out write is non-terminal and the frame is offered
+# again (75). Everything else -- a frame this boundary refuses or cannot read, an
+# adapter that fails or answers malformed -- is terminal (65). Each prints a
+# six-field record on stdout and its message last on stderr; never a traceback.
 INPUT_FAULT_EXIT=65
-ADAPTER_FAULT_EXIT=70
 WRITE_FAULT_EXIT=75
-ADAPTER_FAULTS=("endpoint-adapter-execution-failed","endpoint-adapter-result-invalid",
-                "FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_MATERIALIZED")
 
 class InputFault(Exception):
  pass
@@ -144,17 +140,14 @@ def fault_record(code,detail,terminal):
          "retry_entrypoint":"org-boundary/runtime/process_boundary.py --envelope --registry --out",
          "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
          "next_attempt":("terminal for this frame; it is refused, not retried" if terminal
-                         else "rerun unchanged; nothing durable was written and the frame is offered again")}
+                         else "rerun unchanged; nothing durable was written and the frame is consumed once")}
 
 def cli():
  try:
   main(); return 0
  except SystemExit as exc:
   if exc.code is None or isinstance(exc.code,int): raise
-  if str(exc.code).startswith(ADAPTER_FAULTS):
-   code,detail,terminal,status="PROCESS_BOUNDARY_ADAPTER_FAULT",str(exc.code),False,ADAPTER_FAULT_EXIT
-  else:
-   code,detail,terminal,status="PROCESS_BOUNDARY_INPUT_FAULT",str(exc.code),True,INPUT_FAULT_EXIT
+  code,detail,terminal,status="PROCESS_BOUNDARY_INPUT_FAULT",str(exc.code),True,INPUT_FAULT_EXIT
  except WriteFault as exc:
   code,detail,terminal,status="PROCESS_BOUNDARY_WRITE_FAULT",str(exc),False,WRITE_FAULT_EXIT
  except Exception as exc:  # noqa: BLE001 -- a frame this boundary cannot process is the frame's
