@@ -352,8 +352,11 @@ def ingest_frame(root:Path, frame:dict[str,Any], *, mesh_root:Path|None=None,
     if frame["destination_org"]!=registry["organization"]:
         return {"status":"IGNORED_NOT_ADDRESSED","packet_id":frame["packet_id"]}
     # The epoch of the frame being consumed, which recovery has validated. What
-    # the answer embeds is then a function of the frame, not of this pass.
-    epoch=(frame.get("heartbeat_reference") or {}).get("epoch")
+    # the answer embeds is then a function of the frame, not of this pass. A
+    # frame stamped from a clock lends none (NARROW S1): its epoch is not supplied.
+    ref=frame.get("heartbeat_reference") or {}
+    epoch=(ref.get("epoch") if ref.get("derived_from_clock") is False and "sampled_unix_ns" not in ref
+           else None)
     result=dispatch(root,packet,mesh_root=mesh_root,node_state=node_state,epoch=epoch)
     return {"status":"CONSUMED","packet":packet,"execution_result":result}
 
@@ -505,15 +508,26 @@ def consume_addressed_frames(repo_root:Path, *, mesh_root:Path|None=None, seen:s
     node_state=addressed_node_state_store(node_state_root) if node_state_root is not None else None
     results=[]
     for item in scan_addressed_frames(organization,root=mesh_root,seen=seen):
-        refused=frame_epoch_refusal(item["frame"],custody)
+        kind,provenance,refused=frame_epoch_class(item["frame"],custody)
         if refused is not None:
             results.append({"path":item["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
                             "failed_predicate":refused["failed_predicate"],"failure_code":refused["failure_code"],
                             "packet_id":item["frame"].get("packet_id")},"organization_record":None})
             continue
+        if kind=="CLOCK":
+            try:
+                result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
+            except ValueError as exc:
+                if any(marker in str(exc) for marker in CUSTODY_REFUSALS):
+                    raise
+                result={"status":"REFUSED","disposition":"FAIL_CLOSED","failed_predicate":str(exc),
+                        "packet_id":item["frame"].get("packet_id")}
+            results.append({"path":item["path"],"result":{**result,"epoch_lent":None},
+                            "organization_record":not_supplied_record(custody)})
+            continue
         epoch=(item["frame"].get("heartbeat_reference") or {}).get("epoch")
         result,recorded=ingest_recorded(repo_root,item,custody,registry,mesh_root=mesh_root,
-                                        node_state=node_state,epoch=epoch)
+                                        node_state=node_state,epoch=epoch,provenance=provenance)
         results.append({"path":item["path"],"result":result,"organization_record":recorded})
     return results
 
@@ -666,7 +680,11 @@ def handle_control_message(root:Path, packet:dict[str,Any], registry:dict[str,An
       "execution_authority_effect":packet["transition"]["authority_effect"]
     }
     if message_class=="ecosystem.monitor.request":
-        result["monitor_status"]=resident_status(root,registry,epoch=epoch)
+        # An answer needs the epoch of the frame it answers. A CLOCK frame lends
+        # none, so the status is refused NOT_SUPPLIED rather than sampled here.
+        result["monitor_status"]=(resident_status(root,registry,epoch=epoch) if epoch is not None else
+                                  {"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_NOT_SUPPLIED",
+                                   "detail":"the frame lent no epoch; no clock is read for the answer"})
     elif message_class=="ecosystem.work.request":
         result["work_intake"]=persist_work_request(root,packet,store=node_state)
     elif message_class=="ecosystem.communication":
@@ -803,7 +821,7 @@ def refusal_disposition(reason:str)->str:
     return "DENY" if any(marker in reason for marker in DETERMINISTIC_REFUSALS) else "FAIL_CLOSED"
 
 def record_refusal(custody:dict[str,Any], item:dict[str,Any], reason:str, disposition:str, *,
-                   service:dict[str,Any]|None, epoch:int|None)->dict[str,Any]:
+                   service:dict[str,Any]|None, epoch:int|None, provenance:dict[str,Any]|None=None)->dict[str,Any]:
     """Append the repository and organization receipts for a refused crossing.
 
     The crossing arrived, so its disposition is a transition of this
@@ -826,19 +844,21 @@ def record_refusal(custody:dict[str,Any], item:dict[str,Any], reason:str, dispos
     repository_receipt=emitter.append(
         "ORGANIZATION-FEDERATION-CROSSING-"+hashlib.sha256(name.encode()).hexdigest()[:16],
         CROSSING_REFUSED_CLASS,predecessor,successor,evidence,"NONE",hb_epoch=epoch,
+        hb_provenance=provenance,provenance_head_store=custody["organization_store"] if provenance else None,
         store=custody["repository_store"],idempotent_on=("frame_sha256","packet_id"))
     organization_receipt=organization_ledger.append(
         repository_receipt,"REPO_STATE_PROPAGATION",predecessor,successor,
         {"operation":CROSSING_REFUSED_CLASS,"packet_id":packet_id,
          "disposition":disposition,"failed_predicate":reason},
-        "NONE",hb_epoch=epoch,
+        "NONE",hb_epoch=epoch,hb_provenance=provenance,
         store=custody["organization_store"],idempotent=True)
     return {"repository_receipt_sha256":repository_receipt["receipt_sha256"],
             "organization_receipt_sha256":organization_receipt["receipt_sha256"],
             "disposition":disposition}
 
 def ingest_recorded(repo_root:Path, item:dict[str,Any], custody:dict[str,Any], registry:dict[str,Any], *,
-                    mesh_root:Path|None, node_state:Any|None, epoch:int|None)->tuple[dict[str,Any],dict[str,Any]|None]:
+                    mesh_root:Path|None, node_state:Any|None, epoch:int|None,
+                    provenance:dict[str,Any]|None=None)->tuple[dict[str,Any],dict[str,Any]|None]:
     """Ingest one frame and record its disposition, admitted or refused.
 
     A refusal used to leave the consuming pass by exception, recorded nowhere
@@ -856,13 +876,13 @@ def ingest_recorded(repo_root:Path, item:dict[str,Any], custody:dict[str,Any], r
                 or (service or {}).get("boundary_role")==CAPABILITY_INGRESS_ROLE):
             raise
         disposition=refusal_disposition(reason)
-        recorded=record_refusal(custody,item,reason,disposition,service=service,epoch=epoch)
+        recorded=record_refusal(custody,item,reason,disposition,service=service,epoch=epoch,provenance=provenance)
         return {"status":"REFUSED","disposition":disposition,"failed_predicate":reason,
                 "packet_id":item["frame"].get("packet_id")},recorded
-    return result,record_crossing(custody,item,result,service=service,epoch=epoch)
+    return result,record_crossing(custody,item,result,service=service,epoch=epoch,provenance=provenance)
 
 def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,Any], *,
-                    service:dict[str,Any]|None, epoch:int|None)->dict[str,Any]|None:
+                    service:dict[str,Any]|None, epoch:int|None, provenance:dict[str,Any]|None=None)->dict[str,Any]|None:
     """Append the repository and organization receipts for one consumed crossing.
 
     Identified by the frame, which is content addressed, so consuming the same
@@ -890,12 +910,13 @@ def record_crossing(custody:dict[str,Any], item:dict[str,Any], result:dict[str,A
     repository_receipt=emitter.append(
         "ORGANIZATION-FEDERATION-CROSSING-"+hashlib.sha256(name.encode()).hexdigest()[:16],
         CROSSING_CONSUMED_CLASS,predecessor,successor,evidence,"NONE",hb_epoch=epoch,
+        hb_provenance=provenance,provenance_head_store=custody["organization_store"] if provenance else None,
         store=custody["repository_store"],idempotent_on=("frame_sha256","packet_id"))
     organization_receipt=organization_ledger.append(
         repository_receipt,"REPO_STATE_PROPAGATION",predecessor,successor,
         {"operation":CROSSING_CONSUMED_CLASS,"packet_id":packet["packet_id"],
          "service_id":execution.get("service_id"),"disposition":"ALLOW"},
-        "NONE",hb_epoch=epoch,
+        "NONE",hb_epoch=epoch,hb_provenance=provenance,
         store=custody["organization_store"],idempotent=True)
     return {"repository_receipt_sha256":repository_receipt["receipt_sha256"],
             "organization_receipt_sha256":organization_receipt["receipt_sha256"]}
@@ -917,7 +938,8 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
         # A frame whose epoch is not supplied (or whose CARRIED claim does not
         # verify) is refused before it is recovered or consumed, and made
         # terminal: quarantined, never offered again, nothing else written.
-        refused=frame_epoch_refusal(item["frame"],custody) if now_ns is None else None
+        kind,provenance,refused=(frame_epoch_class(item["frame"],custody) if now_ns is None
+                                 else ("SUPPLIED",None,None))
         if refused is not None:
             marker=quarantine_federation_frame(item["path"],item["frame"],refused,store=node_state)
             out.append({"path":item["path"],"result":{"status":"REFUSED","disposition":"FAIL_CLOSED",
@@ -934,12 +956,29 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
         payload=packet.get("payload") or {}
         message_class=payload.get("message_class")
         service=next((svc for svc in registry["services"] if svc.get("service_id")==packet["destination"]["service"]),None)
+        if kind=="CLOCK":
+            # NARROW S1: consumed, lending no epoch. Dispatch runs without one;
+            # recording the crossing and publishing an answer need one, so both
+            # refuse NOT_SUPPLIED and nothing is written for them. The frame is
+            # marked seen, so it is terminal and never blocks a later cycle.
+            try:
+                result=ingest_frame(repo_root,item["frame"],mesh_root=mesh_root,node_state=node_state)
+            except ValueError as exc:
+                if any(marker in str(exc) for marker in CUSTODY_REFUSALS):
+                    raise
+                result={"status":"REFUSED","disposition":"FAIL_CLOSED","failed_predicate":str(exc),
+                        "packet_id":item["frame"].get("packet_id")}
+            result={**result,"epoch_lent":None}
+            marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result,store=node_state)
+            out.append({"path":item["path"],"result":result,"response_publication":None,
+                        "organization_record":not_supplied_record(custody),"seen_marker":str(marker)})
+            continue
         # Recorded before anything leaves this node: no answer is published and
         # no consumption marker written for a crossing the organization has not
         # recorded. A failed append leaves the frame unmarked, so the next pass
         # offers it again and the idempotent append completes it.
         result,recorded=ingest_recorded(repo_root,item,custody,registry,mesh_root=mesh_root,
-                                        node_state=node_state,epoch=epoch)
+                                        node_state=node_state,epoch=epoch,provenance=provenance)
         if result.get("status")=="REFUSED" and result["disposition"]!="DENY":
             # FAIL_CLOSED: recorded, not marked, offered again on the next pass.
             out.append({"path":item["path"],"result":result,"response_publication":None,
@@ -948,11 +987,13 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
         response_publication=None
         if result.get("status")=="CONSUMED" and message_class in RESPONDED_REQUEST_CLASSES:
             response=build_control_response(packet,result["execution_result"])
-            response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=epoch)
+            response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=epoch,
+                                                provenance=provenance)
         elif result.get("status")=="CONSUMED" and not payload.get("response_to_packet_id"):
             if service and service.get("endpoint_adapter"):
                 response=build_endpoint_response(packet,result["execution_result"])
-                response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=epoch)
+                response_publication=publish_packet(response,root=mesh_root,now_ns=now_ns,epoch=epoch,
+                                                provenance=provenance)
         marker=mark_federation_frame_seen(repo_root,item["path"],item["frame"],result,store=node_state)
         out.append({"path":item["path"],"result":result,"response_publication":response_publication,
                     "organization_record":recorded,"seen_marker":str(marker)})
@@ -1031,46 +1072,33 @@ def federation_seen_frame_names(repo_root:Path, *, store:Any|None=None)->set[str
 
 FRAME_REFUSED_QUARANTINED="FRAME_REFUSED_QUARANTINED"
 
-def frame_epoch_refusal(frame:dict[str,Any], custody:dict[str,Any])->dict[str,Any]|None:
-    """The six-field refusal of a consumed frame's epoch, or None. No clock is read.
+def frame_epoch_class(frame:dict[str,Any], custody:dict[str,Any])->tuple[str|None,dict[str,Any]|None,dict[str,Any]|None]:
+    """Classify a consumed frame's epoch: (kind, provenance, refusal). No clock is read.
 
-    A frame's epoch reaches this organization's receipts, so it must be one
-    the frame says was supplied: derived_from_clock exactly false, no clock
-    sample, and the shared rule's [0-9]+ >= 32. A frame stamped from a clock
-    used to be consumed at its clock epoch and recorded as derived_from_clock
-    false. A frame that claims CARRIED provenance (source, head_receipt_sha)
-    is verified against this organization's current ledger head -- that head,
-    supplied, at the same epoch -- or refused CARRIED_PROVENANCE_UNVERIFIED;
-    the claim is never stripped to read the frame as SUPPLIED.
+    kind is SUPPLIED (derived_from_clock false), CARRIED (false plus a source
+    and head_receipt_sha that verify against this organization's current
+    supplied ledger head at the same epoch), or CLOCK (flagged true, or a bare
+    clock sample with no flag). A CLOCK frame is consumed but lends no epoch
+    (NARROW S1): every route that needs one refuses HB_EPOCH_NOT_SUPPLIED.
+    Refused -- (None, None, refusal) -- are an UNMARKED reference (no flag, no
+    sample), an unverified CARRIED claim (never stripped to read as SUPPLIED),
+    a flag-false reference that also carries a sample, and an invalid epoch.
     """
     ledger=custody["organization_ledger"]
     ref=frame.get("heartbeat_reference")
     epoch=ref.get("epoch") if isinstance(ref,dict) else None
+    if isinstance(ref,dict) and (ref.get("derived_from_clock") is True
+                                 or ("derived_from_clock" not in ref and "sampled_unix_ns" in ref)):
+        return "CLOCK",None,None
     failure=supplied_epoch_failure(epoch,ref)
-    if isinstance(ref,dict) and (ref.get("derived_from_clock") is True or "sampled_unix_ns" in ref):
-        # NARROW S1: a clock-flagged frame lends no epoch. Every route that
-        # consumes a crossing here records it at both ledger levels, which takes
-        # a supplied epoch, so it ends NOT_SUPPLIED -- quarantined, not partly
-        # consumed (CLOCK_FLAGGED_FRAMES_CONSUMED_PENDING_WU_B13).
-        failure=("HB_EPOCH_NOT_SUPPLIED","a clock-flagged frame lends no epoch, and recording its crossing "
-                 "needs a supplied one; no clock is read")
-    if failure is None and isinstance(ref,dict) and ("source" in ref or "head_receipt_sha" in ref):
-        store=custody["organization_store"]; ls=custody["emitter"].ledger_store
-        head=store.get(ls.HEAD_KEY)
-        head_sha=(head or {}).get("receipt_sha256") if isinstance(head,dict) else None
-        receipt=store.get(ls.receipt_key(head_sha)) if isinstance(head_sha,str) else None
-        head_ref=(receipt or {}).get("hb_reference") if isinstance(receipt,dict) else None
-        if not (str(ref.get("source","")).startswith("CARRIED:") and head_sha is not None
-                and ref.get("head_receipt_sha")==head_sha and isinstance(head_ref,dict)
-                and head_ref.get("derived_from_clock") is False and "sampled_unix_ns" not in head_ref
-                and head_ref.get("epoch")==epoch):
-            failure=("CARRIED_PROVENANCE_UNVERIFIED",
-                     "the frame's CARRIED claim "+repr(ref.get("head_receipt_sha"))
-                     +" is not this organization's current supplied ledger head at epoch "+repr(epoch))
+    provenance=None
+    if failure is None and ("source" in ref or "head_receipt_sha" in ref):
+        provenance={k:ref.get(k) for k in CARRIED_PROVENANCE_KEYS}
+        failure=ledger.carried_provenance_failure(provenance,epoch,custody["organization_store"])
     if failure is None:
-        return None
+        return ("CARRIED" if provenance else "SUPPLIED"),provenance,None
     code,detail=failure
-    return {"disposition":"FAIL_CLOSED","failure_code":code,
+    return None,None,{"disposition":"FAIL_CLOSED","failure_code":code,
             "failed_predicate":ledger.HB_EPOCH_PREDICATE,"detail":detail,
             "required_evidence_or_repair":("a frame carries a supplied epoch: derived_from_clock false, no "
                                            "sampled_unix_ns, ASCII digits >= "+str(HB_ANCHOR_EPOCH)
@@ -1079,6 +1107,18 @@ def frame_epoch_refusal(frame:dict[str,Any], custody:dict[str,Any])->dict[str,An
             "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
             "next_attempt":"the sender republishes the crossing with a supplied epoch; this frame is quarantined "
                            "and not offered again"}
+
+def not_supplied_record(custody:dict[str,Any])->dict[str,Any]:
+    """The six-field NOT_SUPPLIED refusal of recording a CLOCK frame's crossing; nothing is written."""
+    ledger=custody["organization_ledger"]
+    return {"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_NOT_SUPPLIED",
+            "failed_predicate":ledger.HB_EPOCH_PREDICATE,
+            "detail":"a clock-flagged frame lends no epoch, and recording its crossing needs a supplied one",
+            "required_evidence_or_repair":"the sender republishes the crossing with a supplied epoch",
+            "retry_entrypoint":"org-kernel/kernel.py::consume_and_respond",
+            "owning_existing_goal":ledger.INTR_PROTOCOL_GOAL,
+            "next_attempt":"on a republished crossing with a supplied epoch (CLOCK_FLAGGED_FRAMES_CONSUMED_PENDING_WU_B13); "
+                           "nothing was recorded","consequence_committed":False}
 
 def quarantine_federation_frame(frame_path:str, frame:dict[str,Any], refusal:dict[str,Any], *,
                                 store:Any|None=None)->Path:

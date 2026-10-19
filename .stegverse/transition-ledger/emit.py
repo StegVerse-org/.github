@@ -87,7 +87,7 @@ def recorded(target,head,transition_id,transition_class):
   if found is None and receipt.get("transition_id")==transition_id and receipt.get("transition_class")==transition_class:found=receipt
  return found
 _ABSENT=object()
-def append(transition_id,transition_class,predecessor_state_sha256,successor_state_sha256,evidence=None,authority_effect="NONE",hb_epoch=None,store=None,idempotent_on=None):
+def append(transition_id,transition_class,predecessor_state_sha256,successor_state_sha256,evidence=None,authority_effect="NONE",hb_epoch=None,store=None,idempotent_on=None,hb_provenance=None,provenance_head_store=None):
  """Append one repository transition receipt through the substrate transaction.
 
  With `idempotent_on` (a tuple of evidence keys, possibly empty) a transition
@@ -106,8 +106,13 @@ def append(transition_id,transition_class,predecessor_state_sha256,successor_sta
  so no receipt is ever minted on top of a broken chain.
  """
  failure=supplied_epoch_failure(hb_epoch)
+ # A CARRIED epoch (hb_provenance) is recorded as CARRIED only when its claim
+ # names the current supplied head of provenance_head_store (B-P36m); it is
+ # never stripped to read as SUPPLIED, and nothing is written otherwise.
+ if failure is None and hb_provenance is not None:
+  failure=_org_rule.carried_provenance_failure(hb_provenance,hb_epoch,provenance_head_store)
  if failure is not None:raise RepoLedgerEpochRefused(*failure)
- heartbeat=kernel.hb_reference(epoch=int(str(hb_epoch)))
+ heartbeat=kernel.hb_reference(epoch=int(str(hb_epoch))) if hb_provenance is None else _org_rule.carried_heartbeat(hb_epoch,hb_provenance)
  target=store or ledger_store.open_store(lr());target.initialize()
  for _attempt in range(128):
   expected_head=target.get(ledger_store.HEAD_KEY)

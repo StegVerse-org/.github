@@ -104,39 +104,83 @@ def addressed(communication_id):
                                standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})
 
 
-qmesh = WORK / "q-mesh"
-qmesh.mkdir()
-kernel.publish_packet(addressed("c-clock-frame"), root=qmesh)  # stamped from the (fixed) clock
-kernel.publish_packet(addressed("c-forged-carried"), root=qmesh, epoch=4096,
-                      provenance={"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "f" * 64})
-kernel.publish_packet(addressed("c-valid"), root=qmesh, epoch=4096)
-ledger_files = lambda: sorted(str(p) for p in (WORK / "repo").rglob("*") if p.is_file()) + \
-    sorted(str(p) for p in (WORK / "org").rglob("*") if p.is_file())
-before_ledgers = ledger_files()
-start = CALLS["n"]
 roots = {"repo_ledger_root": os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
          "org_ledger_root": os.environ["STEGVERSE_ORG_LEDGER_ROOT"]}
+ledger_files = lambda: sorted(str(p) for p in (WORK / "repo").rglob("*") if p.is_file()) + \
+    sorted(str(p) for p in (WORK / "org").rglob("*") if p.is_file())
+
+
+def receipts_for(packet_id):
+    found = []
+    for f in ledger_files():
+        try:
+            doc = json.loads(Path(f).read_text())
+        except ValueError:
+            continue
+        if isinstance(doc, dict) and isinstance(doc.get("hb_reference"), dict) and packet_id in json.dumps(doc):
+            found.append({"schema": doc.get("schema"), "hb_reference": doc["hb_reference"]})
+    return found
+
+
+# B-P36m: a frame whose CARRIED claim names this organization's current
+# supplied org-ledger head is consumed, and every receipt it produces keeps
+# the claim (source, head_receipt_sha) -- never stripped to SUPPLIED.
+custody = kernel.crossing_custody(ROOT, **roots)
+org_store, ls = custody["organization_store"], custody["emitter"].ledger_store
+head_sha = org_store.get(ls.HEAD_KEY)["receipt_sha256"]
+head_epoch = org_store.get(ls.receipt_key(head_sha))["hb_reference"]["epoch"]
+cmesh = WORK / "c-mesh"
+cmesh.mkdir()
+carried = addressed("c-carried-verified")
+kernel.publish_packet(carried, root=cmesh, epoch=head_epoch,
+                      provenance={"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": head_sha})
+start = CALLS["n"]
+carried_rows = kernel.consume_and_respond(ROOT, mesh_root=cmesh, node_state_root=WORK / "c-node", **roots)
+phases["carried_clock_calls"] = CALLS["n"] - start
+carried_out = {"status": [(r.get("result") or {}).get("status") for r in carried_rows],
+               "receipts": receipts_for(carried["packet_id"])}
+
+# B-P36j/k + NARROW S1: CLOCK frames (a communication and a monitor request)
+# are consumed but lend no epoch; a forged CARRIED claim is quarantined.
+qmesh = WORK / "q-mesh"
+qmesh.mkdir()
+clock_comm = addressed("c-clock-frame")
+clock_monitor = kernel.build_packet(origin_org="Probe-Origin", origin_service="probe-origin.org-control",
+                                    destination_org=registry["organization"],
+                                    destination_service=kernel.organization_slug(registry["organization"]) + ".org-control",
+                                    payload={"communication_id": "c-clock-monitor", "message_class": "ecosystem.monitor.request",
+                                             "subject": "s", "body": {}},
+                                    standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})
+kernel.publish_packet(clock_comm, root=qmesh)       # stamped from the (fixed) clock
+kernel.publish_packet(clock_monitor, root=qmesh)    # stamped from the (fixed) clock
+forged = addressed("c-forged-carried")
+kernel.publish_packet(forged, root=qmesh, epoch=4096,
+                      provenance={"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "f" * 64})
+valid = addressed("c-valid")
+kernel.publish_packet(valid, root=qmesh, epoch=4096)
+before_ledgers = ledger_files()
+start = CALLS["n"]
 first = kernel.consume_and_respond(ROOT, mesh_root=qmesh, node_state_root=WORK / "q-node", **roots)
 second = kernel.consume_and_respond(ROOT, mesh_root=qmesh, node_state_root=WORK / "q-node", **roots)
 phases["quarantine_clock_calls"] = CALLS["n"] - start
-
-
-def communication(row):
-    packet_id = (row.get("result") or {}).get("packet_id") or ""
-    return packet_id.split(":")[0] if ":" in packet_id else packet_id
-
-
+by_id = {packet_id: name for packet_id, name in ((clock_comm["packet_id"], "clock"), (clock_monitor["packet_id"], "clock_monitor"),
+                                                 (forged["packet_id"], "forged"), (valid["packet_id"], "valid"))}
+rows = {}
+for r in first:
+    result = r.get("result") or {}
+    packet_id = result.get("packet_id") or (result.get("packet") or {}).get("packet_id")
+    rows[by_id.get(packet_id, packet_id)] = {
+        "status": result.get("status"), "failure_code": result.get("failure_code"),
+        "epoch_lent": result.get("epoch_lent", "absent"),
+        "organization_record_code": (r.get("organization_record") or {}).get("failure_code"),
+        "response": r.get("response_publication") is not None,
+        "monitor_status": ((result.get("execution_result") or {}).get("application_result") or {}).get("monitor_status")}
 markers = [json.loads(p.read_text()) for p in (WORK / "q-node").rglob("*.json")]
 quarantine = {
-    "first": [{"packet_id": (r.get("result") or {}).get("packet_id"),
-               "status": (r.get("result") or {}).get("status"),
-               "failure_code": (r.get("result") or {}).get("failure_code")} for r in first],
+    "rows": rows,
     "second_offered": len(second),
     "new_ledger_files": len([f for f in ledger_files() if f not in before_ledgers]),
-    "refused_in_new_ledger_files": sum(
-        1 for f in ledger_files() if f not in before_ledgers
-        for r in first if (r.get("result") or {}).get("status") == "REFUSED"
-        if (r.get("result") or {}).get("packet_id") in Path(f).read_text()),
+    "clock_or_forged_in_ledgers": sum(len(receipts_for(p["packet_id"])) for p in (clock_comm, clock_monitor, forged)),
     "markers": markers,
 }
 
@@ -151,5 +195,5 @@ for path in WORK.rglob("*.json"):
         references(json.loads(path.read_text()), found)
     except ValueError:
         pass
-print(json.dumps({"phases": phases, "references": found, "responses": responses, "quarantine": quarantine},
-                 sort_keys=True))
+print(json.dumps({"phases": phases, "references": found, "responses": responses, "quarantine": quarantine,
+                  "carried": carried_out}, sort_keys=True))

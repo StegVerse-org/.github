@@ -387,6 +387,52 @@ class SharedRuleReferenceTests(unittest.TestCase):
         self.assertFalse(hasattr(org, "reference_provenance_failure"))
 
 
+class WriterCarriedProvenanceTests(unittest.TestCase):
+    """A writer handed CARRIED provenance verifies it against the named ledger head, or writes nothing."""
+
+    def seeded_org_store(self, root):
+        store = org.open_store(org.parse_locator(root))
+        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = root
+        try:
+            head = org.append(repo_receipt("carried-head"), "REPO_STATE_PROPAGATION", "GENESIS", STATE_AFTER,
+                              {}, "NONE", hb_epoch=4096, store=store)
+        finally:
+            os.environ.pop("STEGVERSE_ORG_LEDGER_ROOT", None)
+        return store, head
+
+    def test_an_invented_head_sha_is_refused_by_both_writers_and_nothing_written(self):
+        spec = importlib.util.spec_from_file_location("repo_emit_carried", EMIT)
+        emit = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(emit)
+        invented = {"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "f" * 64}
+        with tempfile.TemporaryDirectory() as org_root, tempfile.TemporaryDirectory() as repo_root:
+            org_store, _ = self.seeded_org_store(org_root)
+            before = files_under(org_root)
+            repo_store = emit.ledger_store.open_store(emit.ledger_store.parse_locator(repo_root))
+            with self.assertRaises(emit.RepoLedgerEpochRefused) as caught:
+                emit.append("t-c", "TEST", STATE_BEFORE, STATE_AFTER, hb_epoch=4096, store=repo_store,
+                            hb_provenance=invented, provenance_head_store=org_store)
+            self.assertEqual(caught.exception.refusal["failure_code"], "CARRIED_PROVENANCE_UNVERIFIED")
+            self.assertEqual(files_under(repo_root), [])
+            with self.assertRaises(org.OrgLedgerEpochRefused) as caught:
+                org.append(repo_receipt("carried-2"), "REPO_STATE_PROPAGATION", "FROM_HEAD", STATE_AFTER, {}, "NONE",
+                           hb_epoch=4096, store=org_store, hb_provenance=invented)
+            refusal = caught.exception.refusal
+            self.assertEqual(refusal["failure_code"], "CARRIED_PROVENANCE_UNVERIFIED")
+            for field in SIX_FIELDS:
+                self.assertTrue(refusal[field], field)
+            self.assertEqual(files_under(org_root), before)
+
+    def test_the_current_head_is_carried_with_its_provenance(self):
+        with tempfile.TemporaryDirectory() as org_root:
+            org_store, head = self.seeded_org_store(org_root)
+            claim = {"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": head["receipt_sha256"]}
+            receipt = org.append(repo_receipt("carried-3"), "REPO_STATE_PROPAGATION", "FROM_HEAD", STATE_AFTER, {},
+                                 "NONE", hb_epoch=4096, store=org_store, hb_provenance=claim)
+            self.assertEqual({k: receipt["hb_reference"][k] for k in ("source", "head_receipt_sha", "derived_from_clock")},
+                             {**claim, "derived_from_clock": False})
+
+
 class MarkerVocabularyTests(unittest.TestCase):
     """SUPPLIED is derived_from_clock false with no sample; CLOCK is true with its sample."""
 
@@ -544,30 +590,49 @@ class ClockProbeTests(unittest.TestCase):
             self.assertEqual(response["heartbeat_reference"]["epoch"], 4096)
             self.assertIs(response["heartbeat_reference"]["derived_from_clock"], False)
         self.assertEqual(classes["ecosystem.monitor.response"]["monitor_heartbeat"]["epoch"], 4096)
-        # B-P36j / B-P36k: a CLOCK frame and a forged CARRIED claim (head ff..ff)
-        # beside a valid frame are refused, quarantined terminally with six
-        # fields and no clock read; nothing of theirs reaches a ledger, and a
-        # second cycle proceeds without offering them again.
+        # NARROW S1 / B-P36j / B-P36k: CLOCK frames (a communication and a
+        # monitor request) are consumed but lend no epoch -- recording refuses
+        # NOT_SUPPLIED, no answer is published, the monitor status is refused
+        # rather than sampled -- and are marked seen. A forged CARRIED claim
+        # (head ff..ff) is refused UNVERIFIED and quarantined. Nothing of either
+        # reaches a ledger, no clock is read, and a second cycle offers neither.
         quarantine = probe["quarantine"]
+        rows = quarantine["rows"]
         self.assertEqual(probe["phases"]["quarantine_clock_calls"], 0)
-        refused = {row["failure_code"] for row in quarantine["first"] if row["status"] == "REFUSED"}
-        # NARROW S1: a clock-flagged frame lends no epoch, so recording it is NOT_SUPPLIED.
-        self.assertEqual(refused, {"HB_EPOCH_NOT_SUPPLIED", "CARRIED_PROVENANCE_UNVERIFIED"})
-        self.assertEqual([row["status"] for row in quarantine["first"]].count("CONSUMED"), 1)
+        for name in ("clock", "clock_monitor"):
+            self.assertEqual(rows[name]["status"], "CONSUMED", name)
+            self.assertIsNone(rows[name]["epoch_lent"], name)
+            self.assertEqual(rows[name]["organization_record_code"], "HB_EPOCH_NOT_SUPPLIED", name)
+            self.assertIs(rows[name]["response"], False, name)
+        self.assertEqual(rows["clock_monitor"]["monitor_status"]["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+        self.assertEqual((rows["forged"]["status"], rows["forged"]["failure_code"]),
+                         ("REFUSED", "CARRIED_PROVENANCE_UNVERIFIED"))
+        self.assertEqual((rows["valid"]["status"], rows["valid"]["response"]), ("CONSUMED", True))
         self.assertEqual(quarantine["second_offered"], 0)
         self.assertGreater(quarantine["new_ledger_files"], 0)
-        self.assertEqual(quarantine["refused_in_new_ledger_files"], 0)
-        markers = [m for m in quarantine["markers"] if m.get("status") == "REFUSED"]
-        self.assertEqual(len(markers), 2)
-        for marker in markers:
-            self.assertEqual(marker["failure_code"], "FRAME_REFUSED_QUARANTINED")
-            self.assertIs(marker["quarantined"], True)
-            for field in SIX_FIELDS:
-                self.assertTrue(marker[field], field)
-            # Stamps no clock value: no heartbeat reference, no sample, not the clock's reading.
+        self.assertEqual(quarantine["clock_or_forged_in_ledgers"], 0)
+        quarantined = [m for m in quarantine["markers"] if m.get("status") == "REFUSED"]
+        self.assertEqual(len(quarantined), 1)
+        for marker in quarantine["markers"]:
             for key in ("sampled_unix_ns", "derived_from_clock", "heartbeat_reference", "hb_reference"):
                 self.assertNotIn(key, marker)
             self.assertNotIn(str(FIXED_CLOCK_NS), json.dumps(marker))
+        marker = quarantined[0]
+        self.assertEqual(marker["failure_code"], "FRAME_REFUSED_QUARANTINED")
+        for field in SIX_FIELDS:
+            self.assertTrue(marker[field], field)
+        # B-P36m: a frame whose CARRIED claim names the current supplied head is
+        # consumed, and every receipt it produces keeps the claim.
+        carried = probe["carried"]
+        self.assertEqual(carried["status"], ["CONSUMED"])
+        self.assertEqual(probe["phases"]["carried_clock_calls"], 0)
+        self.assertTrue(carried["receipts"])
+        for receipt in carried["receipts"]:
+            reference = receipt["hb_reference"]
+            self.assertEqual(reference["source"], "CARRIED:ORGANIZATION_LEDGER_HEAD", receipt["schema"])
+            self.assertTrue(reference["head_receipt_sha"].startswith("sha256:"))
+            self.assertIs(reference["derived_from_clock"], False)
+            self.assertNotIn("sampled_unix_ns", reference)
         self.assertIs(classes["ecosystem.monitor.response"]["monitor_heartbeat"]["derived_from_clock"], False)
         for reference in probe["references"]:
             if reference.get("derived_from_clock") is False:

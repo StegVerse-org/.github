@@ -147,6 +147,42 @@ def epoch_refusal(hb_epoch):
     }
 
 
+def carried_provenance_failure(provenance, hb_epoch, head_store):
+    """(failure_code, detail) when a CARRIED claim does not verify, or None. No clock is read.
+
+    A writer handed CARRIED provenance -- {"source": "CARRIED:<origin>",
+    "head_receipt_sha": <sha>} -- records it only when that sha is the
+    current head of `head_store`, and that head receipt is itself supplied
+    (derived_from_clock false, no sample) at the same epoch. Otherwise the
+    claim is CARRIED_PROVENANCE_UNVERIFIED: it is never recorded, and never
+    stripped to read as SUPPLIED.
+    """
+    def unverified(detail):
+        return "CARRIED_PROVENANCE_UNVERIFIED", detail
+    if not isinstance(provenance, dict) or set(provenance) != {"source", "head_receipt_sha"} \
+            or not str(provenance.get("source")).startswith("CARRIED:"):
+        return unverified("CARRIED provenance names exactly source CARRIED:<origin> and head_receipt_sha")
+    if head_store is None:
+        return unverified("no ledger is named whose head the CARRIED claim can be verified against")
+    head = head_store.get(HEAD_KEY)
+    head_sha = head.get("receipt_sha256") if isinstance(head, dict) else None
+    if head_sha is None or provenance["head_receipt_sha"] != head_sha:
+        return unverified("head_receipt_sha " + repr(provenance["head_receipt_sha"])
+                          + " is not the ledger's current head " + repr(head_sha))
+    receipt = head_store.get(receipt_key(head_sha))
+    reference = receipt.get("hb_reference") if isinstance(receipt, dict) else None
+    if not (isinstance(reference, dict) and reference.get("derived_from_clock") is False
+            and "sampled_unix_ns" not in reference and reference.get("epoch") == int(str(hb_epoch))):
+        return unverified("the head receipt " + head_sha + " is not supplied at epoch " + str(hb_epoch))
+    return None
+
+
+def carried_heartbeat(hb_epoch, provenance):
+    """The heartbeat reference of a verified CARRIED epoch: supplied, plus its provenance."""
+    return {**kernel.hb_reference(epoch=int(str(hb_epoch))),
+            "source": provenance["source"], "head_receipt_sha": provenance["head_receipt_sha"]}
+
+
 def clock_provenance(reference):
     """True when a receipt's heartbeat reference is CLOCK: flagged, or a bare legacy sample."""
     return isinstance(reference, dict) and (
@@ -412,7 +448,8 @@ def recorded(store, head, source_transition_sha256):
 
 
 def append(source_receipt, org_transition_class, predecessor_state, successor_state,
-           boundary_evidence, authority_effect, hb_epoch=None, store=None, idempotent=False):
+           boundary_evidence, authority_effect, hb_epoch=None, store=None, idempotent=False,
+           hb_provenance=None):
     # Admission is decided before the append lock is taken; an inadmissible
     # source receipt never contends for the organization ledger.
     source = verify_source(source_receipt)
@@ -427,7 +464,8 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     refusal = epoch_refusal(hb_epoch)
     if refusal is not None:
         raise OrgLedgerEpochRefused(refusal)
-    heartbeat = kernel.hb_reference(epoch=int(str(hb_epoch)))
+    heartbeat = (kernel.hb_reference(epoch=int(str(hb_epoch))) if hb_provenance is None
+                 else carried_heartbeat(hb_epoch, hb_provenance))
     target = store or open_store(ledger_root())
     target.initialize()
     # The storage substrate owns serialization. A lost comparison writes
@@ -448,6 +486,20 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
                     if prior.get("org_transition_class") != org_transition_class:
                         raise ValueError("ledger_receipt_collision")
                     return prior
+            # A CARRIED epoch is recorded as CARRIED only when its claim names
+            # this ledger's current supplied head (B-P36m); nothing is written otherwise.
+            if hb_provenance is not None:
+                failed = carried_provenance_failure(hb_provenance, hb_epoch, target)
+                if failed is not None:
+                    raise OrgLedgerEpochRefused({
+                        "disposition": "FAIL_CLOSED", "failure_code": failed[0],
+                        "failed_predicate": HB_EPOCH_PREDICATE, "detail": failed[1],
+                        "required_evidence_or_repair": (
+                            "a CARRIED claim names this ledger's current head, itself supplied at the same epoch"),
+                        "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
+                        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+                        "next_attempt": "append again with a verifiable CARRIED claim or a supplied epoch; "
+                                        "nothing was written"})
             # Resolved against the HEAD this attempt will compare against, so a
             # retry after a lost comparison re-resolves rather than reusing it.
             if predecessor_state == FROM_HEAD:
