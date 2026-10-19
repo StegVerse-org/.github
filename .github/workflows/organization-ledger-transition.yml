@@ -313,11 +313,21 @@ jobs:
             packet_id="intr-destination-self-closure-${GITHUB_RUN_ID}"
           fi
           # Time is supplied with the dispatch. It is not sampled from a clock.
-          case "$HB_EPOCH" in
-            ''|*[!0-9]*)
-              echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_HB_EPOCH_INVALID","failed_predicate":"HB_EPOCH_IS_SUPPLIED_AS_A_NON_NEGATIVE_INTEGER","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","consequence_committed":false}'
-              exit 1 ;;
-          esac
+          # The dispatch epoch is checked as typed by the organization writer's
+          # shared rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH): an empty,
+          # signed, padded, fullwidth or sub-anchor value is refused six-field
+          # before any writer runs.
+          python - <<'PY'
+          import importlib.util, json, os, sys
+          spec = importlib.util.spec_from_file_location("dispatch_epoch_rule", "resident-runtime/aggregate_repo_transition.py")
+          rule = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(rule)
+          refusal = rule.epoch_refusal(os.environ.get("HB_EPOCH"))
+          if refusal is not None:
+              print(json.dumps({**refusal, "retry_entrypoint": ".github/workflows/organization-ledger-transition.yml (hb_epoch input)",
+                                "consequence_committed": False}, sort_keys=True))
+              sys.exit(1)
+          PY
           # A refusal is recorded too; the publish step below carries it, and
           # the readback step fails the run on any closure that is not ALLOW.
           python resident-runtime/intr_destination_ingress.py \

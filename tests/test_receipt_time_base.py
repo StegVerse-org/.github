@@ -257,6 +257,65 @@ class CliEpochParsingTests(unittest.TestCase):
             self.assertNotIn("host clock", text, script)
 
 
+WORKFLOWS = ROOT / ".github/workflows"
+
+
+def workflow_epoch_gates():
+    """(workflow, step, inline python) for every inline gate reading HB_EPOCH before a writer."""
+    gates = []
+    for path in sorted(WORKFLOWS.glob("*.yml")):
+        for step in path.read_text(encoding="utf-8").split("      - name: ")[1:]:
+            if "HB_EPOCH" not in step or "python - <<'PY'" not in step:
+                continue
+            for block in step.split("python - <<'PY'\n")[1:]:
+                body = block.split("\n          PY\n")[0]
+                if 'os.environ.get("HB_EPOCH")' in body:
+                    lines = body.splitlines()
+                    gates.append((path.name, step.splitlines()[0],
+                                  "\n".join(line[10:] for line in lines)))
+    return gates
+
+
+class WorkflowEpochGateTests(unittest.TestCase):
+    """Each inline dispatch-epoch gate refuses six-field as the writers do; "4096" passes."""
+
+    def run_gate(self, source, hb_epoch):
+        env = {k: v for k, v in os.environ.items() if k != "HB_EPOCH"}
+        if hb_epoch is not None:
+            env["HB_EPOCH"] = hb_epoch
+        return subprocess.run([sys.executable, "-c", source], capture_output=True, text=True,
+                              cwd=str(ROOT), env=env)
+
+    def test_there_is_a_gate_in_front_of_the_self_closure_writer(self):
+        names = [(workflow, step) for workflow, step, _ in workflow_epoch_gates()]
+        self.assertIn(("organization-ledger-transition.yml",
+                       "Close an intr-destination diagnostic against this organization"), names)
+
+    def test_no_workflow_checks_the_epoch_with_a_shell_pattern_or_int(self):
+        for path in sorted(WORKFLOWS.glob("*.yml")):
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn('case "$HB_EPOCH"', text, path.name)
+            self.assertNotIn("int(os.environ", text.replace(" ", ""), path.name)
+
+    def test_each_gate_refuses_six_field_and_admits_ascii_digits(self):
+        expected = {"": "HB_EPOCH_INVALID", None: "HB_EPOCH_NOT_SUPPLIED", "+33": "HB_EPOCH_INVALID",
+                    " 33": "HB_EPOCH_INVALID", "\uff13\uff13": "HB_EPOCH_INVALID",
+                    "33.0": "HB_EPOCH_INVALID", "31": "HB_EPOCH_INVALID", "abc": "HB_EPOCH_INVALID"}
+        for workflow, step, source in workflow_epoch_gates():
+            for epoch, code in expected.items():
+                with self.subTest(workflow=workflow, epoch=epoch):
+                    completed = self.run_gate(source, epoch)
+                    self.assertEqual(completed.returncode, 1, completed.stderr)
+                    refusal = json.loads(completed.stdout.splitlines()[-1])
+                    self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+                    self.assertEqual(refusal["failure_code"], code)
+                    for field in SIX_FIELDS:
+                        self.assertTrue(refusal[field], field)
+            with self.subTest(workflow=workflow, epoch="4096"):
+                completed = self.run_gate(source, "4096")
+                self.assertEqual((completed.returncode, completed.stdout), (0, ""), completed.stderr)
+
+
 class OrganizationReceiptTests(unittest.TestCase):
     def _append(self, root, transition_id="time-base-1", hb_epoch=EPOCH):
         os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = root
