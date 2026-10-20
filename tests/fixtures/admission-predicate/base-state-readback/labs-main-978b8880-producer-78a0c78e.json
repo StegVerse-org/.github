@@ -1,0 +1,37 @@
+{
+  "authority_effect": "NONE_READBACK_ONLY",
+  "base_ref": {
+    "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
+    "registry_generation": 319
+  },
+  "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+  "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+  "disposition": "ALLOW",
+  "hb_epoch": null,
+  "ledger_chain_length": 7,
+  "ledger_chain_verifies": true,
+  "ledger_head_receipt_sha256": "sha256:35810b6598e99cef32d9a0f1f97d07394d9f21c540ed7d3a395d9d78b753db3d",
+  "main_ref": "refs/remotes/origin/main",
+  "main_tip": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+  "open_questions": [
+    {
+      "id": "JD-P4-3",
+      "slot": "hb_epoch",
+      "status": "OPEN: no epoch supplied by the caller; left null, never derived"
+    }
+  ],
+  "readback_writes": false,
+  "repository": "StegVerse-Labs/.github",
+  "result_sha256": "sha256:52e820a39574838829f0246ffbad39fe40da361d8ba5d257de9b4cd02ee7353d",
+  "schema": "stegverse.sv-change-base-state-readback/v1",
+  "sources": [
+    {
+      "blob_sha": "8d3ff1902412ab85c0fafcdb4c2f11cc0b0afbef",
+      "file": "data/canonical-task-registry.json"
+    },
+    {
+      "blob_sha": "5c1a3631639449b9788d16901b5e4f4b57e377ac",
+      "file": "refs/stegverse/organization-ledger:HEAD.json"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "_note": "Pin of Lane A's job-observation predicate (StegVerse-Labs/.github#3262, draft), the single reference for ALL_JOBS_RAN_AND_PASSED / CHECK_SKIPPED_OR_UNOBSERVED. Same pattern as StegVerse-Labs/TVC#519 config/sv-change-admission/lane-a-job-observation.pin.json: it is pure (stdlib, no git, clock, network or credential), so P4's admission_predicate.py delegates to it: the exact bytes are kept at vendored_path and refused unless their git blob sha equals producer.git_blob_sha and their sha256 equals sha256. Not forked; edits go to #3262 and a re-pin. Its test file is pinned for traceability only.",
+  "producer": {
+    "repository": "StegVerse-Labs/.github",
+    "pull_request": 3262,
+    "head": "78ea91280f04cebed02d95a9714670540f30b112",
+    "path": "scripts/evaluate_admission_job_observation.py",
+    "git_blob_sha": "4edc240aa9447b27adfb4a7443dfcf7bb7d9a665"
+  },
+  "vendored_path": "vendor/lane_a/evaluate_admission_job_observation.py",
+  "sha256": "0e962613328ef4acd09973062844d2bf5d46230714abd2b35b110342d6660a0d",
+  "tests": {
+    "path": "tests/test_evaluate_admission_job_observation.py",
+    "git_blob_sha": "83c3d8008f68ff6ea71afc5624e38d9c567595cf"
+  },
+  "result_schema": "stegverse.admission-job-observation/v2",
+  "superseded": {
+    "head": "eef9cc3c61945057fbae5c4594edeba5f657c1d0",
+    "git_blob_sha": "25b2677c263b4d327a5ea0e8148232275bc7d839",
+    "sha256": "b3abfb1ebff4bca9bfa048f9084a4abfc19ece80c17594759a68dcd9d09b57b2",
+    "result_schema": "stegverse.admission-job-observation/v1"
+  }
+}

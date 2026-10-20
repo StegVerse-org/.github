@@ -1,0 +1,48 @@
+name: Validate Resident Runtime Convergence
+
+# The transition is run on request, against target checkouts
+# the materializer supplies; nothing here is scheduled, polls, or appends to a
+# durable ledger. The one append test points the repository ledger at the
+# runner's temporary directory.
+on:
+  workflow_dispatch:
+  # Pull requests that change the transition, its manifest, receipts or tests
+  # run the same offline selftests, so admission input at a PR head includes
+  # them (a dispatch-only test is never evidence at that head). No network,
+  # no durable ledger append.
+  pull_request:
+    paths:
+      - "resident-runtime/resident_runtime_convergence.py"
+      - "resident-runtime/resident-runtime-convergence-manifest.json"
+      - "convergence/**"
+      - "tests/test_resident_runtime_convergence.py"
+      - ".github/workflows/resident-runtime-convergence-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  selftests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Convergence transition selftests
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/convergence-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/convergence-org-ledger
+        run: python -m unittest tests.test_resident_runtime_convergence -v
+
+      - name: The baseline the manifest pins is this checkout's bytes, or the drift is named
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          m = json.load(open("resident-runtime/resident-runtime-convergence-manifest.json"))
+          for role, entry in m["baseline"]["files"].items():
+              data = open(entry["path"], "rb").read()
+              state = "AT_PIN" if hashlib.sha256(data).hexdigest() == entry["sha256"] else "MOVED_SINCE_PIN"
+              print(f"{role} {entry['path']} {state}")
+          PY
