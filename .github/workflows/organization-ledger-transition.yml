@@ -44,7 +44,7 @@ on:
         default: ''
         type: string
       hb_epoch:
-        description: 'supplied heartbeat epoch the self-closure receipts carry (mode=self-closure; non-negative integer); no clock is read for it'
+        description: 'supplied heartbeat epoch (ASCII digits >= 32) every receipt carries (both modes); absent is FAIL_CLOSED HB_EPOCH_NOT_SUPPLIED; no clock is read for it'
         required: false
         default: ''
         type: string
@@ -292,7 +292,8 @@ jobs:
             python resident-runtime/organization_manifest_ingress.py \
               --registry org-boundary/registry/services.json \
               --manifest "$out/manifest.json" --standing "$out/standing.json" \
-              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} --out "$out/ingress.json" || true
+              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} \
+              ${HB_EPOCH:+--hb-epoch "$HB_EPOCH"} --out "$out/ingress.json" || true
             python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
           done < "$RUNNER_TEMP/requests.txt"
 

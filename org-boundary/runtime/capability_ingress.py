@@ -177,6 +177,37 @@ def epoch_refusal(hb_epoch: Any) -> dict[str, Any] | None:
     }
 
 
+def direct_epoch_refusal(hb_epoch: Any, entrypoint: str) -> dict[str, Any] | None:
+    """The six-field FAIL_CLOSED refusal of a direct call's epoch, or None (PR-1b, P1-FC-8).
+
+    A receiving operation called directly, not through `ingest_frame`, is
+    checked by the same rule (`supplied_epoch_failure`). An absent epoch is
+    HB_EPOCH_NOT_SUPPLIED rather than an epoch read from the host clock.
+    Nothing has been appended when this returns a refusal.
+    """
+    failure = supplied_epoch_failure(hb_epoch)
+    if failure is None:
+        return None
+    code, detail = failure
+    return {
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": HB_EPOCH_PREDICATE,
+        "detail": detail,
+        "required_evidence_or_repair": (
+            "call " + entrypoint + " with hb_epoch= (or --hb-epoch) as supplied: ASCII digits "
+            "with value >= " + str(HB_ANCHOR_EPOCH) + "; it is never derived from a clock"),
+        "retry_entrypoint": entrypoint,
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "call again with the supplied epoch; nothing was received or appended",
+    }
+
+
+def supplied_epoch(hb_epoch: Any) -> int:
+    """The admitted epoch as an int (call only after `direct_epoch_refusal` returned None)."""
+    return int(str(hb_epoch))
+
+
 def boundary(root: Path) -> dict[str, Any]:
     path = Path(root) / BOUNDARY_PATH
     if not path.is_file():
