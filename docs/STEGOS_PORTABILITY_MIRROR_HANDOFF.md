@@ -1,13 +1,13 @@
 # StegOS Portability Mirror Handoff
 
-Updated: 2026-10-02
+Updated: 2026-10-05
 Organization: `StegVerse-org`
 Repository: `.github`
 Goal Task ID: `SVORG-STEGOS-PORTABILITY-001`
 Task Registry status: `in_progress`
 Task Registry source: `orchestration/task-registry.json`
 Task Registry baseline: `2901c6a9eb87266545e66e70e1dafba5016c9a56`
-COSV ID: `20011100100000` (source projection candidate; canonical admission pending)
+COSV ID: `20011100100000` (admitted to main by #71, merged 2026-10-05; `control/task-vector-index.json` `vector_state: EMITTED`)
 Status: `ACTIVE / CANONICAL NODE STANDING CONTRACT UNDER REVIEW`
 
 ## Current truth
@@ -100,7 +100,8 @@ projection. `control/task-vector-index.json` and its referenced source metrics i
 StegVerse-org/.github propose `20011100100000`, generated with the existing
 StegVerse-Labs/.github `scripts/cosv.py` encoder. This is source coordination only,
 not a WorkerCoordinator claim/fence or execution authority. Until reviewed/merged,
-the projection remains a candidate and must not be described as canonical main.
+the projection remained a candidate. #71 merged it on 2026-10-05, and
+`control/task-vector-index.json` on main records it as `EMITTED`.
 
 Current SDK declarations already own manifest construction, validation, route
 selection, peer governance execution profiles and local handoff evidence. The
@@ -124,7 +125,7 @@ Remaining portability obligations retain their existing registry ownership.
 
 ### Review artifacts retained — 2026-10-05
 
-- COSV admission: https://github.com/StegVerse-org/.github/pull/71; candidate `20011100100000` is not yet canonical main.
+- COSV admission: https://github.com/StegVerse-org/.github/pull/71 (merged 2026-10-05); `20011100100000` is on main, `vector_state: EMITTED`.
 - SDK source repair: https://github.com/StegVerse-org/StegVerse-SDK/pull/429 at `9dff3c742f291265a74b42dc69c3c560cbe5942a`.
 - Adapter dependency/projection: https://github.com/StegVerse-org/LLM-adapter/pull/364 at `1871b79e219e07a274a0fc72db7ce907ec137533`.
 - Final local validation: 54 SDK tests (including four public neutral-framework CLI source tests) + 4 subtests, 53 adapter tests + 2 subtests; 107 tests + 6 subtests total. SDK bundled runner independently passed 18 affected tests.

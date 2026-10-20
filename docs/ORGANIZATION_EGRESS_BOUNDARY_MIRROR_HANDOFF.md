@@ -3,7 +3,14 @@
 **Repository:** `StegVerse-org/.github`
 **Operation:** `ORGANIZATION_INTER_ORG_EGRESS`
 **Boundary document:** `org-runtime/interlock-intr.json` → `egress.emitting_operation`
-**Status:** OUTBOUND_CROSSING_RECORDED_ORIGIN_UNATTESTED
+**Status:** OUTBOUND_CROSSING_RECORDED; ORIGIN_ATTESTED_WHEN_A_CREDENTIAL_AUTHORITY_IS_SUPPLIED (see `docs/ORIGIN_ATTESTATION_MIRROR_HANDOFF.md`)
+
+> **Current state (2026-10-18, main `40a5d23`).** Later work superseded parts of this record; the sections below keep their original evidence.
+> - `emit` takes a `credential_authority`. With one, the origin is attested through `org-boundary/runtime/origin_attestation.py` and the emission records `origin_attestation_state: PROVEN` (`resident-runtime/organization_egress_boundary.py:590-646`). Without one, it records `NOT_PROVEN` as described below. The declaration in `org-runtime/interlock-intr.json` still reads `NOT_PROVEN` (`runtime_boundary.py:75`).
+> - The signing surface is decided: `egress.origin_attestation` binds `TV_EXPORT_HMAC_SIGN` / `TV_EXPORT_HMAC_VERIFY` with `hmac-sha256`, enforced by `origin_attestation_is_bound` (`org-runtime/runtime_boundary.py:257-305`).
+> - `runtime_boundary.py validate` runs 17 checks, not 13. `tests/test_organization_egress_boundary.py` has 52 tests, not 23.
+> - The round-trip step asserts 4 transitions, `EMITTED, CLOSED, CLOSURE_REFUSED, REFUSED` with `ALLOW ALLOW DENY DENY` (`.github/workflows/organization-egress-boundary-validation.yml:183-188`).
+> - `org-boundary/registry/federation.json` declares 15 peer organizations besides this one (SV-011 was added).
 
 ## Inter-organization transport already worked
 
@@ -17,8 +24,8 @@ StegVerse-org  →  collect_ecosystem_responses         →  1 response, far-sid
 ```
 
 The federation mesh is the substrate, frames are content addressed, and
-`org-boundary/registry/federation.json` already declares fourteen peer
-organizations with their repositories, org-control services and the
+`org-boundary/registry/federation.json` already declared fourteen peer
+organizations (15 today, with SV-011) with their repositories, org-control services and the
 `stegverse.intr.org-boundary.v1` transport profile. Nothing was missing from the
 mechanism.
 
@@ -128,7 +135,7 @@ chain establishes is as wrong as overstating it.
 
 Adding `egress.emitting_operation` to the boundary document without checking it
 would be the declare-without-enforce defect this ecosystem exists to catch, so
-`org-runtime/runtime_boundary.py` gained two checks, bringing its total to 13:
+`org-runtime/runtime_boundary.py` gained two checks, bringing its total to 13 at the time (17 today, see Current state):
 
 ```text
 egress_emitting_operation_bound
@@ -180,7 +187,8 @@ INTER_ORG_ROUND_TRIP_ON_ONE_CHAIN=PASS 3 transitions
 
 The round-trip step asserts the chain end to end:
 `ORGANIZATION_EGRESS_EMITTED → ORGANIZATION_EGRESS_CLOSED →
-ORGANIZATION_EGRESS_REFUSED` with dispositions `ALLOW ALLOW DENY`, every record
+ORGANIZATION_EGRESS_CLOSURE_REFUSED → ORGANIZATION_EGRESS_REFUSED` with dispositions
+`ALLOW ALLOW DENY DENY` (the output above predates the `CLOSURE_REFUSED` record), every record
 carrying an intended action and no record carrying `state_changed`, and the
 organization chain carrying one consumed repository receipt per transition.
 
@@ -218,8 +226,9 @@ transport. It is required before that organization record is written. TVC (`Steg
 authority and evidence provider for scoped execution tokens and receipt-bound
 admissibility evidence, and holds certificate root key custody; which of its
 surfaces issues an organization-level signing authority — as opposed to a
-runtime-package execution token — is a design decision for the repository
-owner and is not taken here.
+runtime-package execution token — was left open here. It has since been bound to
+`TV_EXPORT_HMAC_SIGN` / `TV_EXPORT_HMAC_VERIFY` (`org-runtime/runtime_boundary.py:257-305`;
+`docs/ORIGIN_ATTESTATION_MIRROR_HANDOFF.md`).
 
 ## Receipt lineage for reversibility, and why it is smaller than it looked
 
@@ -267,6 +276,8 @@ chain. What the crossing also showed is why the unchecked field matters.
 StegVerse-org/.github        org-kernel/kernel.py   779 lines   kernel_version 1.3.1
 Admissible-Existence/.github org-kernel/kernel.py   499 lines   kernel_version 1.3.1
 ```
+
+(Line counts as observed then; this repository's kernel is 1023 lines on main `40a5d23`.)
 
 Both declare `1.3.1`. The 779-line kernel resolves `node_standing` and
 `manifest_selection` before admitting anything and records

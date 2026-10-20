@@ -10,7 +10,7 @@ Route:
 
 `StegVerse-org/.github -> InTr -> master-records/.github -> organization.ecosystem-transition-ledger -> master-records/orchestration`
 
-The packet's `destination.service` is `organization.ecosystem-transition-ledger` (legacy wire name: `master-records.ecosystem-transition-ledger`, which receivers still accept). The ledger role belongs to the organization transition ledger; Master Records keeps the organization record.
+The packet's `destination.service` is `organization.ecosystem-transition-ledger` (legacy wire name: `master-records.ecosystem-transition-ledger`, no longer sent by this publisher, `submit_org_transition_to_master_records.py:33-35`; whether Master Records receivers still accept it is their claim and is not verifiable from this repository). The ledger role belongs to the organization transition ledger; Master Records keeps the organization record.
 
 The packet carries the already-hash-bound organization receipts of the released segment. Transport and the organization record do not create source authority and do not replace repo/org replay.
 
