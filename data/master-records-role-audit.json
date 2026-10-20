@@ -22,9 +22,9 @@
       "PROPER": 178,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
-      "HISTORICAL_EVIDENCE": 19,
-      "NAMING_ONLY": 25,
-      "total": 222
+      "HISTORICAL_EVIDENCE": 33,
+      "NAMING_ONLY": 26,
+      "total": 237
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1615,6 +1615,111 @@
       "text": "Receipts are append-only/hash-linked. Only evidence needed by the next higher level propagates (`contract.json` `propagation_rule: PROPAGATE_ONLY_EVIDENCE_NEEDED_BY_NEXT_HIGHER_LEVEL`): from this repository chain to this organization's ledg",
       "classification": "PROPER",
       "reason": "Handoff explains repository-to-organization ledger evidence propagation and downstream Master Records role, without delegating transition authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/4a5cd97fe49b87252ea625fc55bbe5c935e9a8176a25e7ae70962ec10719443b.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/70ce69d4f1235de1c151f7b5cb90f0443dfbf211bf63b2aa003e21146fc19cfa.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/7dc069fe05149757504e4910e66f6b85af8c566fc1b30f85660b026d295c55d6.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/955765fa9df4af030890bed1a0ec18f9a1ce4ce279a363bcacd46615b4d4b297.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/a526295f75472129e4aa9905d86ae00c1932a96fad8e0ba81a7f9c2e88d59549.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/f9000da6171d0595a976b5e4e76fa45304315ddcf35af77d993cdedbe1bf1d0e.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/4a5cd97fe49b87252ea625fc55bbe5c935e9a8176a25e7ae70962ec10719443b.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/70ce69d4f1235de1c151f7b5cb90f0443dfbf211bf63b2aa003e21146fc19cfa.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/7dc069fe05149757504e4910e66f6b85af8c566fc1b30f85660b026d295c55d6.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/8471fbfd9631144cb9c09b5072ed036cfb4b5a50f2e2711cf1805843be8816f2.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/861b33b398c25d333e8308c3fb151ea60f8b634da5311b8a9f5d4c277ef028e2.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/955765fa9df4af030890bed1a0ec18f9a1ce4ce279a363bcacd46615b4d4b297.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/a526295f75472129e4aa9905d86ae00c1932a96fad8e0ba81a7f9c2e88d59549.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/f9000da6171d0595a976b5e4e76fa45304315ddcf35af77d993cdedbe1bf1d0e.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/test_organization_role_runtime_reality_deployment.py",
+      "line": 0,
+      "text": "\"re-measure data/master-records-role-audit.json. \"",
+      "classification": "NAMING_ONLY",
+      "reason": "Test diagnostic names the Master Records audit artifact; no assignment of transition authority."
     }
   ]
 }
