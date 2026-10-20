@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 178,
+      "PROPER": 177,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 33,
       "NAMING_ONLY": 26,
-      "total": 237
+      "total": 236
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1060,13 +1060,6 @@
       "file": "tests/test_organization_role_runtime_reality_deployment.py",
       "line": 463,
       "text": "\"the Master Records role audit has drifted from the tree; \"",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "tests/test_organization_role_runtime_reality_deployment.py",
-      "line": 464,
-      "text": "\"re-measure data/master-records-role-audit.json\")",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
