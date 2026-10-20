@@ -1,0 +1,38 @@
+{
+  "authority_effect": "NONE",
+  "boundary_evidence": {
+    "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
+    "destination_organization": "StegVerse-Labs",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "StegVerse-org/.github",
+    "transfer_commit": "5b98086eb5fe83e2a2f825aadbdc58fb12a8d02d"
+  },
+  "canonical_state_transition_receipt_sha256": null,
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 446655631,
+    "frequency_hz": 100,
+    "generation": 446655631,
+    "heartbeat_id": "HB:446655631",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+  },
+  "org_transition_class": "REPO_STATE_PROPAGATION",
+  "organization": "StegVerse-org",
+  "predecessor_org_state_sha256": "sha256:1d14684da9d85c4de2cac86993f8cb276beba5078ccd70a2fb295578165aec32",
+  "previous_receipt_sha256": "sha256:e4784c90cd70daaa623a5c0db0cd4a825edc827b17fe5814338c9e2712add3c9",
+  "receipt_sha256": "sha256:ea89a155d30e8f00477c47a83c453b154cb7dc501a081704d63312ad59b93f92",
+  "repo_receipt_sha256": "sha256:20234c96727d6b4926bd47d31cc773889deae4ef324725bfcebd8536f31b3034",
+  "repo_transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->StegVerse-Labs:intr-destination@intr-path-v1:StegVerse-org->StegVerse-Labs",
+  "schema": "stegverse.organization-transition-receipt/v1",
+  "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+  "source_repository": "StegVerse-org/.github",
+  "source_transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->StegVerse-Labs:intr-destination@intr-path-v1:StegVerse-org->StegVerse-Labs",
+  "source_transition_sha256": "sha256:20234c96727d6b4926bd47d31cc773889deae4ef324725bfcebd8536f31b3034",
+  "subject_or_correlation_id": null,
+  "successor_org_state_sha256": "sha256:6806f178d6f40e9894d43599eeb0fafa0c18c004a1e19638ae665ccbcdbf0ed9"
+}
