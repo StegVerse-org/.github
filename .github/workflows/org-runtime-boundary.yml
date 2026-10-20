@@ -165,7 +165,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Test serialized organization ledger append
         run: python -m unittest discover -s tests -p 'test_org_ledger_atomic_append.py' -v
       - name: Test predecessor resolution, explicit genesis and exact source retention

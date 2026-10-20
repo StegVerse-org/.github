@@ -291,8 +291,14 @@ class EnvironmentCredentialTests(unittest.TestCase):
             if not named:
                 continue
             with self.subTest(module=path.relative_to(ROOT).as_posix()):
-                self.assertEqual(path.name, "run_sv002_self_characterization_roundtrip.py")
-                self.assertTrue(named <= set(refuser.FORBIDDEN_CREDENTIAL_ENV))
+                # InTr path modules document the forbidden GITHUB_TOKEN
+                # shortcut, but do not read it. The AST environment-read
+                # check above rejects credential access on every module.
+                if path.name in ("intr_path_transfer.py", "intr_path_tvc_read.py"):
+                    self.assertEqual(named, {"GITHUB_TOKEN"})
+                else:
+                    self.assertEqual(path.name, "run_sv002_self_characterization_roundtrip.py")
+                    self.assertTrue(named <= set(refuser.FORBIDDEN_CREDENTIAL_ENV))
 
     def test_a_credential_bearing_or_hosted_environment_is_refused_rather_than_used(self):
         base = {k: v for k, v in os.environ.items() if k not in CREDENTIAL_VARIABLES

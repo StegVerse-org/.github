@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout organization boundary
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
 
@@ -81,7 +81,7 @@ jobs:
       # against its own functions, so it has to be present at the commit that
       # owns them.
       - name: Checkout exact merged SDK manifest state-transition runtime
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: StegVerse-org/StegVerse-SDK
           ref: 74d9b473aa415b06a9d550c28b2779a691b4ba32

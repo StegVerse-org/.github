@@ -87,7 +87,7 @@ jobs:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
 
@@ -119,7 +119,7 @@ jobs:
       HOP_TOKEN_PRESENT: ${{ secrets.FEDERATION_HOP_TOKEN != '' }}
     steps:
       - name: Checkout organization boundary
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -313,7 +313,7 @@ jobs:
 
       - name: Retain the phase evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: intr-destination-hop-${{ inputs.phase }}
           path: ${{ runner.temp }}/results

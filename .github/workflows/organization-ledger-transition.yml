@@ -74,7 +74,7 @@ jobs:
       HB_EPOCH: ${{ github.event.inputs.hb_epoch }}
     steps:
       - name: Checkout organization boundary
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -88,7 +88,7 @@ jobs:
       # every non-ALLOW, with its calculated route; a request received under
       # the previous pin (e8a34b6d) names it as sdk_ref on its return.
       - name: Checkout exact merged SDK manifest state-transition runtime
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: StegVerse-org/StegVerse-SDK
           ref: 74d9b473aa415b06a9d550c28b2779a691b4ba32
@@ -450,7 +450,7 @@ jobs:
 
       - name: Retain the run's evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: organization-ledger-transition
           path: ${{ runner.temp }}/results
