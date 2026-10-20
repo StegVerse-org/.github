@@ -56,6 +56,7 @@ jobs:
           set -euo pipefail
           git fetch --no-tags origin "+$LEDGER_REF:$DRY_RUN_REF"
           echo "published ledger tip: $(git rev-parse "$DRY_RUN_REF")"
+          echo "LEDGER_TIP_INITIAL=$(git rev-parse "$DRY_RUN_REF")" >> "$GITHUB_ENV"
           namespace=$(python3 -c 'import json; print(json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]["namespace"])')
           echo "REPO_LEDGER_NAMESPACE=$namespace" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/results"
@@ -64,13 +65,32 @@ jobs:
           cat "$RUNNER_TEMP/results/commits.txt"
           test -s "$RUNNER_TEMP/results/commits.txt"
 
-      - name: "Real state, read-only: each pending merge is FAIL_CLOSED (no receipt)"
+      - name: "Read-only published state: accept only sealed ALLOW or six-field FAIL_CLOSED"
         run: |
           set -euo pipefail
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
+          # The live ledger may already contain a verified transfer. Capture its
+          # actual disposition rather than pretending every merge is unledgered.
           python3 resident-runtime/merge_transfer.py verify --expect FAIL_CLOSED \
-            --commits-file "$RUNNER_TEMP/results/commits.txt" --out "$RUNNER_TEMP/results/real-state.json"
+            --commits-file "$RUNNER_TEMP/results/commits.txt" --out "$RUNNER_TEMP/results/real-state.json" || test "$?" -eq 1
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          rows = json.loads((Path(os.environ["RUNNER_TEMP"]) / "results/real-state.json").read_text())
+          fields = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                    "retry_entrypoint", "owning_existing_goal", "next_attempt")
+          assert rows, "no pending merge was examined"
+          for row in rows:
+              disposition = row.get("disposition")
+              if disposition == "ALLOW":
+                  assert row.get("transfer") == "VERIFIED", row
+                  assert row.get("repository_receipt_sha256") and row.get("organization_receipt_sha256"), row
+              elif disposition == "FAIL_CLOSED":
+                  assert all(row.get(field) for field in fields), row
+              else:
+                  raise AssertionError("unexpected live merge-transfer disposition: " + repr(row))
+          PY
 
       - name: The writer's append on the scratch ref, then VERIFIED, then an idempotent replay
         run: |
@@ -86,6 +106,15 @@ jobs:
             --out "$RUNNER_TEMP/results/replay.json"
           test "$(git rev-parse "$DRY_RUN_REF")" = "$tip"
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert all(x["replayed"] is True for x in r), r' "$RUNNER_TEMP/results/replay.json"
-          # the published ref is untouched by this run
-          test "$(git rev-parse "$DRY_RUN_REF")" != "$(git ls-remote origin "$LEDGER_REF" | cut -f1)"
+          # Already-verified merges replay without moving the scratch tip;
+          # unledgered merges append only to the scratch ref. Never push.
+          python3 - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          rows = json.loads((Path(os.environ["RUNNER_TEMP"]) / "results/real-state.json").read_text())
+          tip = subprocess.check_output(["git", "rev-parse", os.environ["DRY_RUN_REF"]], text=True).strip()
+          initial = os.environ["LEDGER_TIP_INITIAL"]
+          expected_move = any(row["disposition"] == "FAIL_CLOSED" for row in rows)
+          assert (tip != initial) == expected_move, (tip, initial, rows)
+          PY
           { echo '### dry run (scratch ref, not published)'; echo '```json'; cat "$RUNNER_TEMP/results/verify.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
