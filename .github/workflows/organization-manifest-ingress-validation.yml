@@ -21,6 +21,7 @@ on:
       - 'tests/test_manifest_ingress_d7_fail_closed.py'
       - 'tests/test_p1_supplied_epoch_and_ledger_paths.py'
       - 'tests/test_pr1b_direct_entrypoint_epoch.py'
+      - 'tests/test_ingress_refusal_precedence.py'
       - 'org-boundary/runtime/capability_ingress.py'
       - 'resident-runtime/intr_destination_ingress.py'
       - 'tests/fixtures/d6-far-side-non-allow.json'
@@ -51,6 +52,7 @@ on:
       - 'tests/test_manifest_ingress_d7_fail_closed.py'
       - 'tests/test_p1_supplied_epoch_and_ledger_paths.py'
       - 'tests/test_pr1b_direct_entrypoint_epoch.py'
+      - 'tests/test_ingress_refusal_precedence.py'
       - 'org-boundary/runtime/capability_ingress.py'
       - 'resident-runtime/intr_destination_ingress.py'
       - 'tests/fixtures/d6-far-side-non-allow.json'
@@ -376,3 +378,11 @@ jobs:
           STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/pr1b-repo-ledger
           STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/pr1b-org-ledger
         run: python -m unittest tests.test_pr1b_direct_entrypoint_epoch -v
+
+      # Q-N-2: one refusal precedence for every capability-ingress entrypoint;
+      # the supplied epoch is refused before any other input or state.
+      - name: Every ingress entrypoint refuses an absent epoch first (Q-N-2)
+        env:
+          STEGVERSE_REPO_LEDGER_ROOT: ${{ runner.temp }}/qn2-repo-ledger
+          STEGVERSE_ORG_LEDGER_ROOT: ${{ runner.temp }}/qn2-org-ledger
+        run: python -m unittest tests.test_ingress_refusal_precedence -v
