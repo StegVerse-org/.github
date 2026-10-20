@@ -1,0 +1,47 @@
+{
+  "authority_effect": "NONE_READBACK_ONLY",
+  "base_ref": {
+    "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
+    "registry_generation": 319
+  },
+  "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+  "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+  "cross_checked": true,
+  "disposition": "DENY",
+  "expected_hb_epoch": "469411751",
+  "failed_predicate": "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH",
+  "failure_code": "HB_EPOCH_MISMATCH",
+  "flag_failure_code": "HB_EPOCH_FLAG_MISMATCH",
+  "hb_epoch": "469411750",
+  "hb_epoch_source": {
+    "field": "$.hb_reference.epoch",
+    "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
+    "receipt": "receipts/35810b6598e99cef32d9a0f1f97d07394d9f21c540ed7d3a395d9d78b753db3d.json"
+  },
+  "main_ref": "refs/remotes/origin/main",
+  "main_tip": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+  "next_attempt": "rerun with --hb-epoch omitted or equal to the observed epoch; nothing is written",
+  "owning_existing_goal": "StegVerse-org/.github#164",
+  "readback_writes": false,
+  "repository": "StegVerse-Labs/.github",
+  "required_evidence_or_repair": "--hb-epoch, when supplied, is ASCII digits equal to the bound ledger head receipt's epoch 469411750, or omit it (it is a cross-check only)",
+  "result_sha256": "sha256:6b63449489e717fe1cc4ca9161e290857eed6d8f73a4496d980c74b1ce556613",
+  "retry_entrypoint": "resident-runtime/sv_change_base_state_readback.py::evaluate",
+  "schema": "stegverse.sv-change-base-state-readback/v1",
+  "sources": [
+    {
+      "blob_sha": "8d3ff1902412ab85c0fafcdb4c2f11cc0b0afbef",
+      "file": "data/canonical-task-registry.json"
+    },
+    {
+      "blob_sha": "5c1a3631639449b9788d16901b5e4f4b57e377ac",
+      "file": "refs/stegverse/organization-ledger:HEAD.json"
+    },
+    {
+      "blob_sha": "068854be56b9f6159728d9e67681e8de05819692",
+      "file": "refs/stegverse/organization-ledger:receipts/35810b6598e99cef32d9a0f1f97d07394d9f21c540ed7d3a395d9d78b753db3d.json"
+    }
+  ],
+  "supplied_hb_epoch": "469411751",
+  "supplied_hb_epoch_well_formed": true
+}

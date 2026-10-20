@@ -1,0 +1,40 @@
+{
+  "schema_version": "triad-test.service-registry.v1",
+  "organization": "Triad-Test",
+  "services": [
+    {
+      "service_id": "triad-test.org-control",
+      "repository": "Triad-Test/.github",
+      "boundary_role": "BOUNDARY_LOCAL_CONTROL",
+      "profile_status": "ACTIVE",
+      "accepts": [
+        "ecosystem.communication",
+        "ecosystem.monitor.request",
+        "ecosystem.work.request"
+      ],
+      "runtime_required_for_consumption": false
+    },
+    {
+      "service_id": "triad-test.boundary-diagnostic",
+      "repository": "Triad-Test/.github",
+      "boundary_role": "BOUNDARY_LOCAL_DIAGNOSTIC",
+      "profile_status": "ACTIVE",
+      "runtime_required_for_consumption": false
+    },
+    {
+      "service_id": "triad-test.documentation",
+      "repository": "Triad-Test/Documentation",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    },
+    {
+      "service_id": "triad-test.tests",
+      "repository": "Triad-Test/tests",
+      "boundary_role": "INTERNAL_ENDPOINT",
+      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "runtime_required_for_consumption": true
+    }
+  ],
+  "boundary_rule": "Cross-organization ingress/egress semantics are defined by the organization boundary; endpoint authority remains transition-governed."
+}

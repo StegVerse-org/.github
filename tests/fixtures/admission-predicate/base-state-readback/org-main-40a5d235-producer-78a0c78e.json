@@ -1,0 +1,37 @@
+{
+  "authority_effect": "NONE_READBACK_ONLY",
+  "base_ref": {
+    "ledger_head": null,
+    "registry_generation": null
+  },
+  "bound_main_commit": "40a5d235551077185d9f7849a2c866ff5acf2796",
+  "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+  "disposition": "FAIL_CLOSED",
+  "failed_predicate": "REGISTRY_DECLARES_GENERATION",
+  "failure_code": "REGISTRY_GENERATION_NOT_DECLARED",
+  "hb_epoch": null,
+  "joint_item": "Q-ORG-REGISTRY-GENERATION",
+  "main_ref": "refs/heads/main",
+  "main_tip": "40a5d235551077185d9f7849a2c866ff5acf2796",
+  "next_attempt": "after joint item Q-ORG-REGISTRY-GENERATION decides how this registry declares its generation",
+  "open_questions": [
+    {
+      "id": "JD-P4-3",
+      "slot": "hb_epoch",
+      "status": "OPEN: no epoch supplied by the caller; left null, never derived"
+    }
+  ],
+  "owning_existing_goal": "StegVerse-org/.github#164",
+  "readback_writes": false,
+  "repository": "StegVerse-org/.github",
+  "required_evidence_or_repair": "orchestration/task-registry.json at 40a5d235551077185d9f7849a2c866ff5acf2796 declares an integer generation >= 0; it declares none (this component proposes and makes no registry edit)",
+  "result_sha256": "sha256:6324f1bb432b21de3a357faf902b0ff437fb0c51dd1a0a019600d03382094913",
+  "retry_entrypoint": "resident-runtime/sv_change_base_state_readback.py::evaluate",
+  "schema": "stegverse.sv-change-base-state-readback/v1",
+  "sources": [
+    {
+      "blob_sha": "de0f66b149fa2df9f837ebcbcfdb14596fe30d90",
+      "file": "orchestration/task-registry.json"
+    }
+  ]
+}
