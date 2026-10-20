@@ -9,6 +9,7 @@ on:
       - '.stegverse/transition-ledger/emit.py'
       - 'resident-runtime/propagate_repository_receipts.py'
       - 'tests/test_ledger_location_supplied.py'
+      - 'tests/test_p1_fc10_cli_epoch_str.py'
       - 'resident-runtime/federation_cycle.py'
       - 'tests/test_federation_cycle_propagation_location.py'
       - 'tests/test_federation_cycle_supplied_epoch.py'
@@ -87,6 +88,7 @@ on:
       - '.stegverse/transition-ledger/emit.py'
       - 'resident-runtime/propagate_repository_receipts.py'
       - 'tests/test_ledger_location_supplied.py'
+      - 'tests/test_p1_fc10_cli_epoch_str.py'
       - 'resident-runtime/federation_cycle.py'
       - 'tests/test_federation_cycle_propagation_location.py'
       - 'tests/test_federation_cycle_supplied_epoch.py'
@@ -168,6 +170,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_org_ledger_atomic_append.py' -v
       - name: Test predecessor resolution, explicit genesis and exact source retention
         run: python -m unittest discover -s tests -p 'test_org_ledger_predecessor_resolution.py' -v
+      - name: Test --hb-epoch is taken as typed and checked by the shared supplied-epoch rule (P1-FC-10)
+        run: python -m unittest tests.test_p1_fc10_cli_epoch_str -v
       - name: Test organization ledger store contract
         run: python -m unittest tests.test_ledger_store_contract -v
       - name: Test the git-ref ledger store against temporary repositories only
