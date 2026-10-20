@@ -1,0 +1,38 @@
+{
+  "authority_effect": "NONE",
+  "boundary_evidence": {
+    "communication_id": "intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+    "destination_organization": "GCAT-BCAT-Engine",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "StegVerse-org/.github",
+    "transfer_commit": "5b98086eb5fe83e2a2f825aadbdc58fb12a8d02d"
+  },
+  "canonical_state_transition_receipt_sha256": null,
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 446655631,
+    "frequency_hz": 100,
+    "generation": 446655631,
+    "heartbeat_id": "HB:446655631",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+  },
+  "org_transition_class": "REPO_STATE_PROPAGATION",
+  "organization": "StegVerse-org",
+  "predecessor_org_state_sha256": "sha256:7e401d2731daed84ceb9146f0edcec746521600b2b2dce100d13fb6e6018363c",
+  "previous_receipt_sha256": "sha256:33a872d3f5f96d22438bd83b5f613ec3d8a1fc2e57b3a583063994ed6f3d9cd1",
+  "receipt_sha256": "sha256:21c66ee8d6d204785a9db2cf13b6915427b4d76a4b7eb7a9f1650e87d29170c8",
+  "repo_receipt_sha256": "sha256:eeb97dfde3594677f6594dbeebaf9c1c44c97647ea5a26bc8625e095be18ea8e",
+  "repo_transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->GCAT-BCAT-Engine:intr-destination@intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+  "schema": "stegverse.organization-transition-receipt/v1",
+  "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+  "source_repository": "StegVerse-org/.github",
+  "source_transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->GCAT-BCAT-Engine:intr-destination@intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+  "source_transition_sha256": "sha256:eeb97dfde3594677f6594dbeebaf9c1c44c97647ea5a26bc8625e095be18ea8e",
+  "subject_or_correlation_id": null,
+  "successor_org_state_sha256": "sha256:620397870e124897a7266f6b06c9c4756dd2d7f402e2ca797be04074f64a478e"
+}
