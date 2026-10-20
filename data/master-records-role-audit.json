@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 177,
+      "PROPER": 178,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 19,
       "NAMING_ONLY": 25,
-      "total": 221
+      "total": 222
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -484,15 +484,8 @@
     },
     {
       "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
-      "line": 13,
-      "text": "The packet's `destination.service` is `organization.ecosystem-transition-ledger` (legacy wire name: `master-records.ecosystem-transition-ledger`, which receivers still accept). The ledger role belongs to the organization transition ledger; ",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
       "line": 19,
-      "text": "Master Records is the **recorder of released organization batch receipts** \u2014 downstream evidence preservation only (`docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md`, \"master-records restated\"). It cannot create, admit, authorize, infe",
+      "text": "Master Records is the **recorder of released organization batch receipts** — downstream evidence preservation only (`docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md`, \"master-records restated\"). It cannot create, admit, authorize, infe",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -1178,7 +1171,7 @@
     {
       "file": "README.md",
       "line": 174,
-      "text": "External LLM ingress stays on the declared `healthy node \u2192 LLM-adapter \u2192 SDK \u2192 StegVerse-org/.github \u2192 Interlock/InTr \u2192 Organization Ledger` path. HCB is optional and never a required hop; already-admitted internal Sandbox work does not re-",
+      "text": "External LLM ingress stays on the declared `healthy node → LLM-adapter → SDK → StegVerse-org/.github → Interlock/InTr → Organization Ledger` path. HCB is optional and never a required hop; already-admitted internal Sandbox work does not re-",
       "classification": "PROPER",
       "reason": "States Master Records is downstream and non-gating on the declared external ingress path."
     },
@@ -1608,6 +1601,20 @@
       "text": "\"Infrastructure-Continuity-Ventures\", \"Triad-Test\", \"formalism-tests\", \"master-records\"]",
       "classification": "NAMING_ONLY",
       "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
+      "line": 0,
+      "text": "The packet's `destination.service` is `organization.ecosystem-transition-ledger` (legacy wire name: `master-records.ecosystem-transition-ledger`, no longer sent by this publisher, `submit_org_transition_to_master_records.py:33-35`; whether ",
+      "classification": "PROPER",
+      "reason": "Handoff clarifies the legacy service wire name is no longer emitted; Master Records remains downstream and not an admission authority."
+    },
+    {
+      "file": "docs/TRANSITION_LEDGER_MIRROR_HANDOFF.md",
+      "line": 0,
+      "text": "Receipts are append-only/hash-linked. Only evidence needed by the next higher level propagates (`contract.json` `propagation_rule: PROPAGATE_ONLY_EVIDENCE_NEEDED_BY_NEXT_HIGHER_LEVEL`): from this repository chain to this organization's ledg",
+      "classification": "PROPER",
+      "reason": "Handoff explains repository-to-organization ledger evidence propagation and downstream Master Records role, without delegating transition authority."
     }
   ]
 }
