@@ -421,6 +421,9 @@ def conform_mesh(manifest_path: Path | str, contract: Mapping[str, Any] | None =
         documents = {}
         for key in ("interlock", "services"):
             entry = row[key]
+            if not entry or not entry.get("file"):
+                documents[key] = None
+                continue
             path = base / entry["file"]
             if not path.is_file():
                 documents[key] = None

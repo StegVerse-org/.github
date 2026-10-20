@@ -161,7 +161,7 @@ class RealState(unittest.TestCase):
 
     def test_mesh_conformance_stays_eight_allow_with_the_separate_dimension(self):
         report = intr.conform_mesh(DESTINATIONS, merge_transfer_manifest=MANIFEST)
-        self.assertEqual(report["counts"], {"ALLOW": 8, "DENY": 0, "FAIL_CLOSED": 0})
+        self.assertEqual(report["counts"], {"ALLOW": 8, "DENY": 0, "FAIL_CLOSED": 8})
         self.assertEqual(report["merge_transfer"]["counts"], {"ALLOW": 4, "DENY": 0, "FAIL_CLOSED": 1})
         plain = intr.conform_mesh(DESTINATIONS)
         self.assertNotIn("merge_transfer", plain)

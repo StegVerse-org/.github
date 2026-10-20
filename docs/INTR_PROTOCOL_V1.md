@@ -26,7 +26,23 @@ organization's default-branch documents at the `source_commit` recorded in `mani
 with sha256 per file; altered bytes fail closed. It is conformance evidence only, not an
 authentic receipt and not proof that a live peer serves the capability.
 
-Snapshot result: 8 ALLOW. The SV-011 row pins the head of SV-011/.github#14 (merged as
+The snapshot covers all 16 organizations of the federation directory
+(`org-boundary/registry/federation.json`, generation 3, denominator 16; the StegVerse-Labs copy and
+the StegVerse account's organization memberships list the same 16). One disagreement: the directory
+lists SV-011 as `SV-011/entity` (`sv-011.boundary-diagnostic`), while this snapshot checks
+`SV-011/.github`, which serves `sv-011.intr-destination`.
+
+Snapshot result: 8 ALLOW, 8 FAIL_CLOSED. AaCT-E, Data-Continuation, ECAT-ICAT-Formal,
+Infrastructure-Continuity-Ventures, Triad-Test, formalism-tests and the records organization fail closed at
+`PEER_ADDRESS_FORM_IS_SLUG_DOT_PROFILE`, and AdmittedCode at `INTERLOCK_DOCUMENT_IS_AN_OBJECT` (no
+`org-runtime/interlock-intr.json`). Each row records `observed_gaps`: none of the eight declares an
+`intr-destination` binding or serves the address, and none installs the receiving operation
+(`resident-runtime/intr_destination_ingress.py`) or the ledger. This is class B (missing capability).
+A destination entry alone would declare a receiver that does not exist, so no per-organization
+entry drafts are opened. The repair is installing the capability, as StegGhost/.github `cffd741`
+and `03d8b94` did.
+
+Original eight: The SV-011 row pins the head of SV-011/.github#14 (merged as
 `d7beaf59`), which declares `authority_effect: NONE_BINDING_ONLY` on its `intr-destination` binding.
 
 ## Main-merge transfer (`MAIN_MERGE_TRANSFER_RECEIPT_LEDGERED`)
