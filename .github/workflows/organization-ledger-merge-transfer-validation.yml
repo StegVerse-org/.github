@@ -14,11 +14,13 @@ on:
       - '.stegverse/transition-ledger/**'
       - 'resident-runtime/merge_transfer.py'
       - 'resident-runtime/merge_transfer_range.py'
+      - 'resident-runtime/merge_transfer_dry_run_check.py'
       - 'resident-runtime/intr_destination_ingress.py'
       - 'resident-runtime/aggregate_repo_transition.py'
       - 'resident-runtime/ledger_store.py'
       - 'tests/test_merge_transfer.py'
       - 'tests/test_merge_transfer_range.py'
+      - 'tests/test_merge_transfer_dry_run_check.py'
       - 'tests/fixtures/merge-transfer/**'
 
 permissions:
@@ -41,7 +43,7 @@ jobs:
         run: git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
 
       - name: Append, verify, refuse (temp ledgers from the pinned tip)
-        run: python3 -m unittest tests.test_merge_transfer tests.test_merge_transfer_range -v
+        run: python3 -m unittest tests.test_merge_transfer tests.test_merge_transfer_range tests.test_merge_transfer_dry_run_check -v
 
   dry-run:
     runs-on: ubuntu-latest
@@ -75,19 +77,12 @@ jobs:
           set -euo pipefail
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
-          # exit status is not the check here: a mix of ledgered and unledgered merges is expected
+          # a mix of ledgered and unledgered merges is expected, so verify may exit 1; any other status is a failure
+          rc=0
           python3 resident-runtime/merge_transfer.py verify \
-            --commits-file "$RUNNER_TEMP/results/commits.txt" --out "$RUNNER_TEMP/results/real-state.json" > /dev/null || true
-          python3 - "$RUNNER_TEMP/results/real-state.json" <<'PY'
-          import json, sys
-          six = ("failure_code", "failed_predicate", "required_evidence_or_repair",
-                 "retry_entrypoint", "owning_existing_goal", "next_attempt")
-          results = json.load(open(sys.argv[1]))
-          assert results, "no merges selected"
-          for r in results:
-              print(r["merge_commit"], r["disposition"], r.get("transfer"), r.get("failure_code"))
-              assert r["disposition"] == "ALLOW" or (r["disposition"] == "FAIL_CLOSED" and all(r.get(f) for f in six)), r
-          PY
+            --commits-file "$RUNNER_TEMP/results/commits.txt" --out "$RUNNER_TEMP/results/real-state.json" > /dev/null || rc=$?
+          test "$rc" -le 1
+          python3 resident-runtime/merge_transfer_dry_run_check.py "$RUNNER_TEMP/results/real-state.json"
 
       - name: The writer's append on the scratch ref, then VERIFIED, then an idempotent replay
         run: |
