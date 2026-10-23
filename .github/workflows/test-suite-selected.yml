@@ -37,6 +37,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Tests that read this organization's ledger (test_merge_transfer_range:
+      # "the ledger ref and full history must be in this clone") get the ref
+      # the way organization-ledger-merge-transfer-validation.yml fetches it:
+      # read-only, here anonymously from this public repository, nothing pushed.
+      - name: Fetch the organization ledger ref read-only
+        run: git fetch --quiet --no-tags "https://github.com/${GITHUB_REPOSITORY}" "+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger"
+
       # Skips satisfied from an existing StegVerse source, no new third-party
       # dependency: the public StegVerse-SDK at the pin this repository's
       # workflows already check out most (74d9b473), which declares no
