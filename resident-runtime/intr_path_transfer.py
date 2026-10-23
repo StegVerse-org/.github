@@ -363,6 +363,10 @@ def real_state(declaration: Path | str = DECLARATION, manifest: Path | str = SNA
             "counts": counts, "paths": rows}
 
 
+def _intra_org() -> Any:
+    return _module("intr_intra_org_destination", "resident-runtime/intr_intra_org_destination.py")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -377,10 +381,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "paths":
         print(json.dumps(declared_paths(), indent=2))
         return 0
+    # The intra-organization destination (resident-runtime/intr_intra_org_destination.py) rides the same writer
+    # run: a repository of this organization whose chain is a subtree of this ledger ref.
+    intra = _intra_org()
     if args.command == "append":
-        result: Any = append_transfers(args.transfer_commit)
+        result: Any = append_transfers(args.transfer_commit) + intra.append_transfers(args.transfer_commit)
     else:
-        result = real_state()
+        result = {**real_state(), "intra_org_paths": intra.real_state()}
     text = json.dumps(result, indent=2, sort_keys=True)
     if args.out:
         Path(args.out).write_text(text + "\n", encoding="utf-8")
@@ -389,7 +396,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if all(r["disposition"] == ALLOW for r in result) else 1
     if args.expect_source:
         mine = [p for p in result["paths"] if p["path_id"].startswith(organization() + "->")]
-        return 0 if mine and all(p["halves"]["source"] == args.expect_source for p in mine) else 1
+        if not (mine and all(p["halves"]["source"] == args.expect_source for p in mine)):
+            return 1
+        declared = {r["path_id"] for r in intra.load_declaration()}
+        crossings = [p for p in result["intra_org_paths"]["paths"] if p["path_id"] in declared]
+        return 0 if args.expect_source != ALLOW or all(p["disposition"] == ALLOW for p in crossings) else 1
     return 0
 
 
