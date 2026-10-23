@@ -6,7 +6,7 @@ Repository: `.github`
 Goal Task ID: `SVORG-STEGOS-PORTABILITY-001`
 Related Task ID: `SDK-GENERIC-MANIFEST-ECOSYSTEM-INVARIANT-005`
 Settled specification: `StegVerse-org/.github:docs/NODE_INGRESS_SETTLED_SPECIFICATION.md`
-Status: `BINDING PUBLISHED / RESOLVES AGAINST THE SDK RESOLVER / CROSSING NOT YET DRIVEN BY IT`
+Status: `BINDING PUBLISHED / RESOLVES AGAINST THE SDK RESOLVER / CROSSING DRIVEN BY resident-runtime/organization_manifest_ingress.py`
 
 ## What was missing
 
@@ -66,4 +66,4 @@ with the boundary document     ALLOW        MANIFESTED_FOR_INTERLOCK_INTR_HANDOF
 
 A named destination is not a reached one. On a resolved handoff the SDK still reports `intr_admission_observed`, `far_side_transition_observed`, `organization_receipt_observed`, `master_records_reconstruction_observed`, `receiver_contacted` and `consequence_committed` as false, and this binding changes none of them.
 
-What remains unbuilt is the join on the other side: no surface in this repository yet calls `execute_manifest` with this document, so the resolved handoff is not yet driven into `ORGANIZATION_SDK_MANIFEST_INGRESS`. That is the next transition, not a claim of this one.
+The join on the other side was unbuilt when this binding landed. It now exists: `resident-runtime/organization_manifest_ingress.py` (`OPERATION_ID = "ORGANIZATION_SDK_MANIFEST_INGRESS"`, line 107) drives a resolved handoff through the SDK's `derive_execution_request`, the crossing, the receipts and `admit_runtime_result`; see `docs/ORGANIZATION_MANIFEST_INGRESS_MIRROR_HANDOFF.md`. This binding's own claims are unchanged.

@@ -99,8 +99,10 @@ RE scores it: 0.08 | CONVERGED_CANDIDATE | lower bound: false
 **The whole score is one dimension.** `unresolved_actor_identity` is `1.0`
 because every inter-organization crossing's origin is asserted by its sender and
 verified by nothing. The attestation gap is now a measured quantity rather than
-a prose caveat, and it is the only disorder this ecosystem's receipt state
-currently carries. `replay_divergence` is `0.0` because the egress closure
+a prose caveat, and it was the only disorder this ecosystem's receipt state
+carried at the time. Origin attestation has since been bound
+(`docs/ORIGIN_ATTESTATION_MIRROR_HANDOFF.md`): an attested crossing records
+`PROVEN` and is not counted here, so this dimension now counts only unattested crossings. `replay_divergence` is `0.0` because the egress closure
 recomputes the far side's chain rather than trusting it.
 
 `lower bound: false` is the part that matters. With all ten observed, the score
@@ -124,7 +126,8 @@ defect that did not exist.
 ## Validation
 
 ```text
-tests.test_receipt_disorder_measurement        15 tests OK
+tests.test_receipt_disorder_measurement        15 tests OK  (18 on main 40a5d23; the three added
+                                               with the Correction below are listed last)
   all ten declared classes are measured
   why all ten rather than most
   every class reports what it counted
@@ -140,6 +143,9 @@ tests.test_receipt_disorder_measurement        15 tests OK
   the severity map is what RE's scorer consumes
   the measurement grants nothing
   measuring nothing is refused
+  + an inbound resolution is measured against the overlay, not the directory
+  + a resolution through an undeclared surface is a finding
+  + a submission received on an unbound operation is a mismatch
 
 full per-file sweep                            24 of 25
 actionlint on the new workflow                 clean

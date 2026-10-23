@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 152,
+      "PROPER": 177,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
-      "HISTORICAL_EVIDENCE": 19,
-      "NAMING_ONLY": 20,
-      "total": 191
+      "HISTORICAL_EVIDENCE": 33,
+      "NAMING_ONLY": 26,
+      "total": 236
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -479,13 +479,6 @@
       "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
       "line": 11,
       "text": "`StegVerse-org/.github -> InTr -> master-records/.github -> organization.ecosystem-transition-ledger -> master-records/orchestration`",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
-      "line": 13,
-      "text": "The packet's `destination.service` is `organization.ecosystem-transition-ledger` (legacy wire name: `master-records.ecosystem-transition-ledger`, which receivers still accept). The ledger role belongs to the organization transition ledger; ",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -1072,13 +1065,6 @@
     },
     {
       "file": "tests/test_organization_role_runtime_reality_deployment.py",
-      "line": 464,
-      "text": "\"re-measure data/master-records-role-audit.json\")",
-      "classification": "PROPER",
-      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
-    },
-    {
-      "file": "tests/test_organization_role_runtime_reality_deployment.py",
       "line": 467,
       "text": "entries = [e for e in self.audit[\"occurrences\"] if \"MASTER_RECORDS_RECONSTRUCTED\" in e[\"text\"]]",
       "classification": "NAMING_ONLY",
@@ -1398,6 +1384,335 @@
       "text": "\"MASTER_RECORDS_RECONSTRUCTED\", \"END_TO_END\")",
       "classification": "NAMING_ONLY",
       "reason": "Registry-wide completion evidence class, named so terminal tasks can be held to it; renaming it is a registry-wide vocabulary migration requiring its own registration. Classified, not renamed."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/StegVerse-Labs.interlock-intr.json",
+      "line": 240,
+      "text": "\"master_records_in_path\": false,",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of StegVerse-Labs/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+      "line": 240,
+      "text": "\"master_records_in_path\": false,",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of StegVerse-org/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/StegVerse-org.interlock-intr.json",
+      "line": 262,
+      "text": "\"master_records_in_path\": false,",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of StegVerse-org/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture; it repeats that binding's declaration that Master Records is not in the path (downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody)."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/manifest.json",
+      "line": 310,
+      "text": "\"organization\": \"master-records\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/manifest.json",
+      "line": 311,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/manifest.json",
+      "line": 315,
+      "text": "\"file\": \"master-records.interlock-intr.json\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/manifest.json",
+      "line": 320,
+      "text": "\"file\": \"master-records.services.json\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.interlock-intr.json",
+      "line": 3,
+      "text": "\"organization\": \"master-records\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.interlock-intr.json",
+      "line": 4,
+      "text": "\"owner_repository\": \"master-records/.github\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-runtime/interlock-intr.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 2,
+      "text": "\"schema_version\": \"master-records.service-registry.v1\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 3,
+      "text": "\"organization\": \"master-records\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 6,
+      "text": "\"service_id\": \"master-records.org-control\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 7,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 19,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 18,
+      "text": "\"service_id\": \"master-records.boundary-diagnostic\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 25,
+      "text": "\"service_id\": \"master-records.orchestration\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 26,
+      "text": "\"repository\": \"master-records/orchestration\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 37,
+      "text": "\"repository\": \"master-records/orchestration\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 76,
+      "text": "\"repository\": \"master-records/orchestration\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 34,
+      "text": "\"master-records.ecosystem-transition-ledger\"",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 36,
+      "text": "\"legacy_reference\": \"MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 54,
+      "text": "\"service_id\": \"master-records.monitoring\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 55,
+      "text": "\"repository\": \"master-records/monitoring\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 61,
+      "text": "\"service_id\": \"master-records.core-lite\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 62,
+      "text": "\"repository\": \"master-records/core-lite\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 68,
+      "text": "\"service_id\": \"master-records.telemetry\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 69,
+      "text": "\"repository\": \"master-records/telemetry\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 75,
+      "text": "\"service_id\": \"master-records.sv002-self-characterization-reconstruction\",",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/fixtures/intr-protocol/destinations/master-records.services.json",
+      "line": 93,
+      "text": "\"boundary_rule\": \"Cross-organization ingress/egress semantics are defined by the organization boundary; endpoint authority remains transition-governed. Master Records records released organization batch receipts only; it holds no transition",
+      "classification": "PROPER",
+      "reason": "Byte snapshot of master-records/.github org-boundary/registry/services.json used as an InTr protocol v1 conformance fixture (16-organization mesh); it repeats that organization's own declaration and is not a statement by this repository."
+    },
+    {
+      "file": "tests/test_intr_protocol_conformance.py",
+      "line": 23,
+      "text": "\"Infrastructure-Continuity-Ventures\", \"Triad-Test\", \"formalism-tests\", \"master-records\"]",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
+    },
+    {
+      "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
+      "line": 0,
+      "text": "The packet's `destination.service` is `organization.ecosystem-transition-ledger` (legacy wire name: `master-records.ecosystem-transition-ledger`, no longer sent by this publisher, `submit_org_transition_to_master_records.py:33-35`; whether ",
+      "classification": "PROPER",
+      "reason": "Handoff clarifies the legacy service wire name is no longer emitted; Master Records remains downstream and not an admission authority."
+    },
+    {
+      "file": "docs/TRANSITION_LEDGER_MIRROR_HANDOFF.md",
+      "line": 0,
+      "text": "Receipts are append-only/hash-linked. Only evidence needed by the next higher level propagates (`contract.json` `propagation_rule: PROPAGATE_ONLY_EVIDENCE_NEEDED_BY_NEXT_HIGHER_LEVEL`): from this repository chain to this organization's ledg",
+      "classification": "PROPER",
+      "reason": "Handoff explains repository-to-organization ledger evidence propagation and downstream Master Records role, without delegating transition authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/4a5cd97fe49b87252ea625fc55bbe5c935e9a8176a25e7ae70962ec10719443b.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/70ce69d4f1235de1c151f7b5cb90f0443dfbf211bf63b2aa003e21146fc19cfa.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/7dc069fe05149757504e4910e66f6b85af8c566fc1b30f85660b026d295c55d6.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/955765fa9df4af030890bed1a0ec18f9a1ce4ce279a363bcacd46615b4d4b297.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/a526295f75472129e4aa9905d86ae00c1932a96fad8e0ba81a7f9c2e88d59549.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"repository-ledger/StegVerse-org/.github/receipts/f9000da6171d0595a976b5e4e76fa45304315ddcf35af77d993cdedbe1bf1d0e.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/4a5cd97fe49b87252ea625fc55bbe5c935e9a8176a25e7ae70962ec10719443b.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/70ce69d4f1235de1c151f7b5cb90f0443dfbf211bf63b2aa003e21146fc19cfa.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/7dc069fe05149757504e4910e66f6b85af8c566fc1b30f85660b026d295c55d6.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/8471fbfd9631144cb9c09b5072ed036cfb4b5a50f2e2711cf1805843be8816f2.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/861b33b398c25d333e8308c3fb151ea60f8b634da5311b8a9f5d4c277ef028e2.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/955765fa9df4af030890bed1a0ec18f9a1ce4ce279a363bcacd46615b4d4b297.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/a526295f75472129e4aa9905d86ae00c1932a96fad8e0ba81a7f9c2e88d59549.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/fixtures/merge-transfer-gitstore/ledger-snapshot.json",
+      "line": 0,
+      "text": "\"source-receipts/f9000da6171d0595a976b5e4e76fa45304315ddcf35af77d993cdedbe1bf1d0e.json\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Preserved immutable synthetic ledger snapshot fixture showing historical receipts and manifest content, not production authority."
+    },
+    {
+      "file": "tests/test_organization_role_runtime_reality_deployment.py",
+      "line": 0,
+      "text": "\"re-measure data/master-records-role-audit.json. \"",
+      "classification": "NAMING_ONLY",
+      "reason": "Test diagnostic names the Master Records audit artifact; no assignment of transition authority."
     }
   ]
 }

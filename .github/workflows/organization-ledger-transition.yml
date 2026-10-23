@@ -44,7 +44,7 @@ on:
         default: ''
         type: string
       hb_epoch:
-        description: 'supplied heartbeat epoch the self-closure receipts carry (mode=self-closure; non-negative integer); no clock is read for it'
+        description: 'supplied heartbeat epoch (ASCII digits >= 32) every receipt carries (both modes); absent is FAIL_CLOSED HB_EPOCH_NOT_SUPPLIED; no clock is read for it'
         required: false
         default: ''
         type: string
@@ -74,7 +74,7 @@ jobs:
       HB_EPOCH: ${{ github.event.inputs.hb_epoch }}
     steps:
       - name: Checkout organization boundary
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -88,7 +88,7 @@ jobs:
       # every non-ALLOW, with its calculated route; a request received under
       # the previous pin (e8a34b6d) names it as sdk_ref on its return.
       - name: Checkout exact merged SDK manifest state-transition runtime
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: StegVerse-org/StegVerse-SDK
           ref: 74d9b473aa415b06a9d550c28b2779a691b4ba32
@@ -100,6 +100,7 @@ jobs:
 
       - name: Validate committed request and readback implementation before any append
         run: |
+          trap 'echo '"'"'{"disposition":"FAIL_CLOSED","failure_code":"ORGANIZATION_LEDGER_CONTRACT_OR_REQUEST_INVALID","failed_predicate":"CONTRACTS_BIND_THE_DESIGNATED_REF_AND_EVERY_REQUEST_CARRIES_ONE_MANIFEST_FORM","required_evidence_or_repair":"org-contract.json and contract.json name StegVerse-org/.github refs/stegverse/organization-ledger with a repository subtree, the readback and ingress sources compile, and every committed transition request declares owning_existing_goal, standing and exactly one of build_manifest or manifest; nothing was appended","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"commit the repaired contract or a successor transition request, then run again","consequence_committed":false}'"'"' >&2' ERR
           python -m py_compile resident-runtime/organization_ledger_readback.py \
             resident-runtime/intr_destination_ingress.py
           python - <<'PY'
@@ -124,6 +125,7 @@ jobs:
 
       - name: Bind the designated organization ledger ref and the repository ledger subtree within it
         run: |
+          trap 'echo '"'"'{"disposition":"FAIL_CLOSED","failure_code":"ORGANIZATION_LEDGER_REF_BINDING_FAILED","failed_predicate":"DESIGNATED_REF_AND_SUBTREE_BIND_FROM_THE_CONTRACT","required_evidence_or_repair":"org-contract.json organization_ledger_ref equals LEDGER_REF, contract.json names its subtree on that ref, and an existing ref fetches; nothing was appended","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"repair the contract or the ref fetch, then run again","consequence_committed":false}'"'"' >&2' ERR
           ref=$(python -c 'import json; c=json.load(open(".stegverse/transition-ledger/org-contract.json")); assert c["organization_ledger_repository"]=="StegVerse-org/.github", c; print(c["organization_ledger_ref"])')
           test "$ref" = "$LEDGER_REF"
           namespace=$(python -c 'import json; l=json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]; assert l["ref"]=="refs/stegverse/organization-ledger", l; print(l["namespace"])')
@@ -143,7 +145,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ -z "$INPUT_REQUEST" ]; then
-            echo "FAIL_CLOSED: DISPATCH_REQUEST_REQUIRED (mode=request names a committed transition request)" >&2
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_REQUEST_REQUIRED","failed_predicate":"REQUEST_MODE_DISPATCH_NAMES_A_COMMITTED_TRANSITION_REQUEST","required_evidence_or_repair":"dispatch mode=request with request=.stegverse/transition-requests/<name>.json (mode=request names a committed transition request)","retry_entrypoint":".github/workflows/organization-ledger-transition.yml mode=request","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-dispatch mode=request naming a committed transition request","consequence_committed":false}' >&2
             exit 1
           fi
           if [ -n "$INPUT_REQUEST" ]; then
@@ -151,19 +153,19 @@ jobs:
             # request from the checked-out revision, never an arbitrary path.
             case "$INPUT_REQUEST" in
               .stegverse/transition-requests/*.json) ;;
-              *) echo "FAIL_CLOSED: DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS" >&2; exit 1 ;;
+              *) echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS","failed_predicate":"REQUEST_PATH_IS_UNDER_STEGVERSE_TRANSITION_REQUESTS","required_evidence_or_repair":"a request path matching .stegverse/transition-requests/*.json","retry_entrypoint":".github/workflows/organization-ledger-transition.yml mode=request","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-dispatch mode=request naming a committed transition request","consequence_committed":false}' >&2; exit 1 ;;
             esac
             case "$INPUT_REQUEST" in
-              *../*|*/../*|*' '*) echo "FAIL_CLOSED: DISPATCH_REQUEST_PATH_INVALID" >&2; exit 1 ;;
+              *../*|*/../*|*' '*) echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_REQUEST_PATH_INVALID","failed_predicate":"REQUEST_PATH_HAS_NO_PARENT_SEGMENT_OR_SPACE","required_evidence_or_repair":"a request path with no ../ segment and no space","retry_entrypoint":".github/workflows/organization-ledger-transition.yml mode=request","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-dispatch mode=request naming a committed transition request","consequence_committed":false}' >&2; exit 1 ;;
             esac
             # Reject control characters, including newline and carriage return,
             # without interpolating the input into shell source.
             if ! INPUT_REQUEST="$INPUT_REQUEST" python -c 'import os,sys; p=os.environ["INPUT_REQUEST"]; sys.exit(0 if all(32 <= ord(c) <= 126 for c in p) else 1)'; then
-              echo "FAIL_CLOSED: DISPATCH_REQUEST_CONTROL_CHARACTER" >&2
+              echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_REQUEST_CONTROL_CHARACTER","failed_predicate":"REQUEST_PATH_IS_PRINTABLE_ASCII","required_evidence_or_repair":"a request path of printable ASCII only (no newline, carriage return or other control character)","retry_entrypoint":".github/workflows/organization-ledger-transition.yml mode=request","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-dispatch mode=request naming a committed transition request","consequence_committed":false}' >&2
               exit 1
             fi
             if ! git ls-files --error-unmatch -- "$INPUT_REQUEST" >/dev/null 2>&1 || [ ! -f "$INPUT_REQUEST" ]; then
-              echo "FAIL_CLOSED: DISPATCH_REQUEST_NOT_COMMITTED" >&2
+              echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_REQUEST_NOT_COMMITTED","failed_predicate":"REQUEST_PATH_IS_A_COMMITTED_FILE_AT_THIS_REVISION","required_evidence_or_repair":"a transition request file committed at the dispatched revision","retry_entrypoint":".github/workflows/organization-ledger-transition.yml mode=request","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-dispatch mode=request naming a committed transition request","consequence_committed":false}' >&2
               exit 1
             fi
             printf '%s\n' "$INPUT_REQUEST" > "$RUNNER_TEMP/requests.txt"
@@ -290,7 +292,8 @@ jobs:
             python resident-runtime/organization_manifest_ingress.py \
               --registry org-boundary/registry/services.json \
               --manifest "$out/manifest.json" --standing "$out/standing.json" \
-              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} --out "$out/ingress.json" || true
+              --packet-id "$name" ${mesh_args[@]+"${mesh_args[@]}"} \
+              ${HB_EPOCH:+--hb-epoch "$HB_EPOCH"} --out "$out/ingress.json" || true
             python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("ingress disposition:", x["disposition"], x.get("failed_predicate"), x.get("organization_receipt_sha256"))' "$out/ingress.json"
           done < "$RUNNER_TEMP/requests.txt"
 
@@ -315,7 +318,7 @@ jobs:
           # Time is supplied with the dispatch. It is not sampled from a clock.
           case "$HB_EPOCH" in
             ''|*[!0-9]*)
-              echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_HB_EPOCH_INVALID","failed_predicate":"HB_EPOCH_IS_SUPPLIED_AS_A_NON_NEGATIVE_INTEGER","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","consequence_committed":false}'
+              echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_HB_EPOCH_INVALID","failed_predicate":"HB_EPOCH_IS_SUPPLIED_AS_A_NON_NEGATIVE_INTEGER","required_evidence_or_repair":"dispatch hb_epoch as ASCII decimal digits (a non-negative integer); no clock is read for it","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-dispatch mode=self-closure with a supplied hb_epoch","consequence_committed":false}'
               exit 1 ;;
           esac
           # A refusal is recorded too; the publish step below carries it, and
@@ -327,7 +330,10 @@ jobs:
             --communication-id "$INPUT_COMMUNICATION_ID" \
             --packet-id "$packet_id" \
             --out "$out/closure.json" || true
-          test -f "$out/closure.json"
+          if [ ! -f "$out/closure.json" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"SELF_CLOSURE_RESULT_ABSENT","failed_predicate":"SELF_CLOSURE_WRITES_ITS_RESULT","required_evidence_or_repair":"intr_destination_ingress.py --self-close writes closure.json; this run has no closure result to publish or read back","retry_entrypoint":".github/workflows/organization-ledger-transition.yml mode=self-closure","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-dispatch mode=self-closure with a new packet_id once the self-close writes its result"}'
+            exit 1
+          fi
           python -c 'import json,sys; x=json.load(open(sys.argv[1])); print("closure disposition:", x["disposition"], x.get("communication_id"), x.get("organization_receipt_sha256"))' "$out/closure.json"
 
       # The frames a request left on the designated mesh are published before
@@ -438,12 +444,13 @@ jobs:
                  "emitted_by_this_run": len(emitted), "authority_effect": "NONE_READBACK_ONLY"}
           print(json.dumps(out, indent=2, sort_keys=True))
           if emitted and not frames:
+              print(json.dumps({'disposition': 'FAIL_CLOSED', 'failure_code': 'EMISSION_RECORDED_WITHOUT_A_MESH_FRAME', 'failed_predicate': 'EVERY_RECORDED_EMISSION_HAS_A_FRAME_ON_THE_PUBLISHED_MESH', 'required_evidence_or_repair': 'a frame on the published mesh ref for each ORGANIZATION_EGRESS_EMITTED receipt of this run', 'retry_entrypoint': '.github/workflows/organization-ledger-transition.yml', 'owning_existing_goal': 'StegVerse-org/.github#162 P0-runtime-and-custody', 'next_attempt': 'commit a successor transition request declaring mesh_root; it is received again and its frame placed on the mesh ref', 'authority_effect': 'NONE_READBACK_ONLY'}, sort_keys=True), file=sys.stderr)
               raise SystemExit("an emission was recorded but the published mesh holds no frame")
           PY
 
       - name: Retain the run's evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: organization-ledger-transition
           path: ${{ runner.temp }}/results
