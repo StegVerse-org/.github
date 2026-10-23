@@ -1,0 +1,92 @@
+name: Validate Drift Receipt Appender
+
+# PR-facing checks for DRIFT_RECEIPT_APPENDER (resident-runtime/drift_receipt_appender.py, declared by
+# resident-runtime/drift-receipt-appender.transition.json), StegVerse-org/.github#166. E0: no LLM, no clock,
+# nothing published. The dry run takes StegVerse-Labs/.github#3317's retained drift receipt for Labs main
+# 86382e60, receipts it through the pinned B1 writer, appends into a scratch copy only and verifies it from a
+# fresh fetch of that copy. Admission stays FAIL_CLOSED pending genesis; the organization ledger is never written.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/drift-receipt-appender-validation.yml'
+      - 'resident-runtime/drift_receipt_appender.py'
+      - 'resident-runtime/drift-receipt-appender.transition.json'
+      - 'resident-runtime/main_change_receipt.py'
+      - 'tests/test_drift_receipt_appender.py'
+      - 'tests/fixtures/drift-receipt-appender/**'
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Appender unit tests
+        run: |
+          set -euo pipefail
+          git config --global user.name ci
+          git config --global user.email ci@stegverse.invalid
+          python3 -m unittest discover -s tests -p 'test_drift_receipt_appender.py' -v
+
+  dry-run:
+    runs-on: ubuntu-latest
+    env:
+      LABS_HEAD: 86382e60da984fa02892fecfac2b9bdec0e64a5f
+      PAYLOAD: tests/fixtures/drift-receipt-appender/labs-86382e60-detect.json
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: "Appender on a scratch copy: Labs drift receipt through the B1 writer, replay idempotent, fresh-fetch readback"
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/results"
+          test "$(sha256sum resident-runtime/main_change_receipt.py | cut -d' ' -f1)" = 884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf
+          labs="$RUNNER_TEMP/labs.git"
+          git init -q --bare "$labs"
+          git --git-dir="$labs" fetch -q --depth=2 https://github.com/StegVerse-Labs/.github "$LABS_HEAD"
+          git --git-dir="$labs" fetch -q https://github.com/StegVerse-Labs/.github \
+            '+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger' || echo "organization ledger ref not fetched"
+          scratch="$RUNNER_TEMP/scratch.git"
+          fresh="$RUNNER_TEMP/fresh.git"
+          git init -q --bare "$scratch"
+          git init -q --bare "$fresh"
+          python3 resident-runtime/drift_receipt_appender.py dry-run --root "$labs" --payload "$PAYLOAD" \
+            --writer-ref "$HEAD_SHA" --scratch "$scratch" --fresh "$fresh" --out "$RUNNER_TEMP/results/dry-run.json" > /dev/null
+          python3 - "$RUNNER_TEMP/results/dry-run.json" "$LABS_HEAD" <<'PY'
+          import json, sys
+          six = ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint", "owning_existing_goal", "next_attempt")
+          d, head = json.load(open(sys.argv[1])), sys.argv[2]
+          assert not d["refusals"] and d["verify"]["disposition"] == "ALLOW" and d["replay"]["appended"] == [], d
+          (r,) = d["receipts"]
+          assert r["commit"] == head and r["main_change_receipt"]["commit"] == head, r
+          assert r["disposition"] == "FAIL_CLOSED" and all(r["admission"].get(k) for k in six), r
+          assert r["admission"]["failure_code"] == "DRIFT_RECEIPT_APPENDER_ADMISSION_PENDING_GENESIS", r
+          assert r["organization_ledger_effect"] == "NONE"
+          print("drift transition receipt", r["receipt_sha256"])
+          print("main-change receipt", r["main_change_receipt_sha256"], r["main_change_receipt"]["merge_kind"], [i["failure_code"] for i in r["items"]])
+          print("payload", r["payload"]["receipt_sha256"], "hb_epoch", r["hb_epoch"])
+          print("scratch tip", d["append"]["tip"])
+          PY
+          { echo '### drift receipt appender (scratch dry run)'; echo '```json'; cat "$RUNNER_TEMP/results/dry-run.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # nothing was published
+          for repo in StegVerse-Labs/.github StegVerse-org/.github; do
+            test -z "$(git ls-remote "https://github.com/$repo" refs/stegverse/test-suite-baseline-drift)"
+          done
+
+      - name: Retain the dry run's evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: drift-receipt-appender-dry-run
+          path: ${{ runner.temp }}/results

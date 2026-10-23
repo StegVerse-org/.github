@@ -1,0 +1,57 @@
+{
+  "schema": "stegverse.transition-declaration/v1",
+  "declaration_status": "DRAFT_PULL_REQUEST",
+  "operation": "TEST_SUITE_BASELINE_DRIFT",
+  "profile_id": "drift-receipt-appender",
+  "transition": "DRIFT_RECEIPT_APPENDER",
+  "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+  "ledger_goal": "StegVerse-org/.github#162",
+  "form_note": "keys mirror the operation blocks of data/intr-protocol/v1/protocol.json (main_merge_transfer, mesh_path_transfer); carried as its own file so the Lane B protocol registry, the transition-requests directory and the registry generation are not edited. Folding it into the protocol registry is Lane B's (#162) step after genesis.",
+  "input": {
+    "producer": "StegVerse-Labs/.github#3317 scripts/test_suite_baseline_drift.py (detect | pr)",
+    "schemas": [
+      "stegverse.test-suite-baseline-drift/v1",
+      "stegverse.test-suite-pr-disposition/v1"
+    ],
+    "seal": "receipt_sha256 = sha256 over canonical JSON without the field (B1 writer seal)"
+  },
+  "writer": {
+    "repository": "StegVerse-org/.github",
+    "path": "resident-runtime/main_change_receipt.py",
+    "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf",
+    "reused": [
+      "seal",
+      "seal_verifies",
+      "observe",
+      "append",
+      "receipt_path"
+    ],
+    "pull_request": "StegVerse-org/.github#222"
+  },
+  "output": {
+    "schema": "stegverse.drift-transition-receipt/v1",
+    "ref": "refs/stegverse/test-suite-baseline-drift",
+    "key": "receipts/<head commit>.json",
+    "write": "B1 writer append (fast-forward update-ref), dry run on a scratch repository only"
+  },
+  "retry_entrypoint": "resident-runtime/drift_receipt_appender.py receipt (per the transition declaration resident-runtime/drift-receipt-appender.transition.json)",
+  "verifier": {
+    "path": "resident-runtime/drift_receipt_appender.py",
+    "command": "python3 resident-runtime/drift_receipt_appender.py receipt --root <REPO> --payload <DRIFT_PAYLOAD> --writer-ref <PIN> --out <OUT>",
+    "sha256": "sha256:6e26eb7055d15c915bb5b53642baf29f51b168ccb68d361de03e7b26d8fc1265",
+    "landed": false
+  },
+  "admission": {
+    "disposition": "FAIL_CLOSED",
+    "failure_code": "DRIFT_RECEIPT_APPENDER_ADMISSION_PENDING_GENESIS",
+    "failed_predicate": "APPENDER_TRANSITION_IS_ADMITTED_FROM_ORGANIZATION_LEDGER_GENESIS",
+    "required_evidence_or_repair": "the organization ledger declares its genesis (ORG_LEDGER_GENESIS_NOT_DECLARED in aggregate_repo_transition) and admits operation TEST_SUITE_BASELINE_DRIFT from it; until then the receipt is produced and retained, never appended to the organization ledger",
+    "retry_entrypoint": "resident-runtime/drift_receipt_appender.py receipt (per the transition declaration resident-runtime/drift-receipt-appender.transition.json)",
+    "owning_existing_goal": "StegVerse-org/.github#162 (organization ledger) / StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+    "next_attempt": "the first drift payload after genesis admits TEST_SUITE_BASELINE_DRIFT"
+  },
+  "organization_ledger_effect": "NONE",
+  "registry_generation_effect": "NONE",
+  "authority_effect": "NONE",
+  "lowest_supported_mode": "E0"
+}
