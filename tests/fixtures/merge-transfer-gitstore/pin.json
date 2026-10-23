@@ -1,15 +1,15 @@
 {
   "ledger_ref": "refs/stegverse/organization-ledger",
-  "ledger_tip": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
-  "ledger_tree": "2848e793fb19058a0a691408e89313d370a39f1e",
+  "ledger_tip": "216487782daa161b886e608e64256877c14ca86f",
+  "ledger_tree": "302e36e50d0803fd2b7e0cbe638c335cd90f2874",
   "real_commit": {
-    "merge_commit": "5acbacc1bd8a74acf3a8c4d4abdfb0352a72fd81",
+    "merge_commit": "23279ae6cdad3b54746b6ef7fe58fbcf6db3a2f3",
     "parents": [
-      "41035e9e4bca6d4114f2f6a181b03dda2de85481",
-      "e0171e716d58c28fc8e88919640ab57e5f062d85"
+      "27d941b83187648a2614c52718379c2ffca55c8d",
+      "f3a8a547c034c567f272ba4d62ea1a8d6d4e23a6"
     ],
-    "subject": "Merge pull request #205 from StegVerse-org/laneb/intr-merge-transfer-sv011-repin",
-    "tree": "a81de3e1a23dde924f4554c166f8ddbe0b2f96ae"
+    "subject": "Merge pull request #216 from StegVerse-org/claude/v-p10a-206-dry-run-gate",
+    "tree": "8ce1727743becfad6ca37f4101d8bc7d1bc08dd6"
   },
   "real_state_at_ledger_tip": {
     "disposition": "ALLOW",
