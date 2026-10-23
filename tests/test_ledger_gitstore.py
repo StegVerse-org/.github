@@ -14,7 +14,6 @@ import subprocess
 import tempfile
 import sys
 import unittest
-from unittest import mock
 from pathlib import Path
 
 try:
@@ -241,28 +240,6 @@ class Atomic(unittest.TestCase):
                         self.assertEqual(caught.exception.refusal["failed_predicate"],
                                          "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF")
                     self.assertUntouched(ledger, before)
-
-    def test_a_stray_ref_the_organization_writer_refuses_itself_is_named_as_the_stray_ref(self):
-        # StegVerse-Labs' organization writer checks the locus and refuses the stray ref before it resolves;
-        # the preflight names the stray ref, not ORGANIZATION_LEDGER_LOCATION_RESOLVES
-        def locus_refusal(_surface):
-            raise SystemExit("organization_ledger_locus_mismatch: STEGVERSE_ORG_LEDGER_GIT_REF")
-
-        for stray in (True, False):
-            with self.subTest(stray=stray), TempLedger() as ledger:
-                ledger._git("update-ref", WRONG_REF, ledger.tip())
-                if stray:
-                    os.environ["STEGVERSE_ORG_LEDGER_GIT_REF"] = WRONG_REF
-                before = self.tips(ledger)
-                with mock.patch.object(lg, "_organization_store", locus_refusal):
-                    with self.assertRaises(ValueError) as caught:
-                        self.path_append(7)
-                self.assertEqual(caught.exception.refusal["failed_predicate"],
-                                 "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF" if stray
-                                 else "ORGANIZATION_LEDGER_LOCATION_RESOLVES")
-                for field in lg.SIX_FIELDS:
-                    self.assertTrue(caught.exception.refusal[field], field)
-                self.assertUntouched(ledger, before)
 
     def test_an_organization_half_in_another_git_dir_refuses_before_either_half_is_written(self):
         with TempLedger() as ledger, tempfile.TemporaryDirectory() as other:

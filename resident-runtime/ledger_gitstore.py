@@ -232,30 +232,17 @@ def preflight(root: Path | str = ROOT, *, surface: Any = None) -> tuple[_Locatio
         refuse("THE_CHECKOUT_CARRIES_A_TWO_LEVEL_APPEND", "carry this organization's two-level writer",
                detail=str(exc))
     located = []
-    supplied_ref = os.environ.get("STEGVERSE_ORG_LEDGER_GIT_REF")
     for level, resolve in (("repository", _repository_store), ("organization", _organization_store)):
         try:
             located.append(_Location(level, resolve(surface)))
         except (Exception, SystemExit) as exc:  # the writer's own location refusal, raised before it writes
-            declared = None
-            if level == "organization" and supplied_ref:
-                try:
-                    declared = gitstore.org_contract(root).get("organization_ledger_ref")
-                except (OSError, ValueError):
-                    declared = None
-            if supplied_ref and declared and supplied_ref != declared:
-                # the writer refused the stray materializer ref itself (a locus check); name that ref, as a
-                # writer that reads the ref unchecked is named below
-                refuse("STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF",
-                       "STEGVERSE_ORG_LEDGER_GIT_REF names " + supplied_ref + "; the organization contract declares "
-                       + declared, level="organization", supplied_ref=supplied_ref,
-                       detail=type(exc).__name__ + ": " + str(exc)[:200])
             refuse(level.upper() + "_LEDGER_LOCATION_RESOLVES",
                    "the " + level + " ledger location this writer binds is refused: " + str(exc)[:300],
                    level=level, detail=type(exc).__name__)
     repository_location, organization_location = located
     # A materializer variable naming the organization ledger is non-authoritative: present, it must agree
     # with what the organization half resolves to, whether or not this checkout's writer reads it.
+    supplied_ref = os.environ.get("STEGVERSE_ORG_LEDGER_GIT_REF")
     if supplied_ref and organization_location.key[0] == "git" and supplied_ref != organization_location.ref:
         refuse("STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF",
                "STEGVERSE_ORG_LEDGER_GIT_REF names " + supplied_ref + "; the organization half resolves to "
