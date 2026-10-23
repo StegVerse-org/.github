@@ -1265,6 +1265,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_select_tests_for_change.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_select_tests_for_change.py"
+   ],
+   "tests": [
+    "tests.test_select_tests_for_change"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_session_continuity.py",
    "inputs": [],
    "surfaces": [
@@ -1370,6 +1382,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_test_suite_skip_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_test_suite_skip_receipt.py"
+   ],
+   "tests": [
+    "tests.test_test_suite_skip_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_transition_console.py",
    "inputs": [],
    "surfaces": [
@@ -1377,6 +1401,18 @@
    ],
    "tests": [
     "tests.test_transition_console"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_unittest_junit.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_unittest_junit.py"
+   ],
+   "tests": [
+    "tests.test_unittest_junit"
    ]
   },
   {
@@ -1694,6 +1730,9 @@
    "org-kernel/kernel.py",
    "org-kernel/node_store.py",
    "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "scripts/select_tests_for_change.py": [
+   "data/test-selection-map.json"
   ],
   "tests/fixtures/d6_far_side_registry.py": [
    "tests/fixtures/d6-far-side-non-allow.json"
@@ -2286,6 +2325,11 @@
   "tests/test_sdk_self_characterization_egress.py": [
    "resident-runtime/sdk_self_characterization_egress.py"
   ],
+  "tests/test_select_tests_for_change.py": [
+   "README.md",
+   "data/test-selection-map.json",
+   "scripts/select_tests_for_change.py"
+  ],
   "tests/test_session_continuity.py": [
    "org-boundary/runtime/node_standing.py",
    "resident-runtime/session_continuity.py"
@@ -2332,10 +2376,16 @@
    "resident-runtime/pinned_labs.py",
    "resident-runtime/test_suite_baseline_refresh.py"
   ],
+  "tests/test_test_suite_skip_receipt.py": [
+   "scripts/test_suite_skip_receipt.py"
+  ],
   "tests/test_transition_console.py": [
    "orchestration/task-registry.json",
    "org-kernel/node_store.py",
    "resident-runtime/transition_console.py"
+  ],
+  "tests/test_unittest_junit.py": [
+   "scripts/unittest_junit.py"
   ],
   "tests/test_workflow_action_pins.py": [
    ".github/workflows/**"
