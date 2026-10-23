@@ -166,7 +166,7 @@ class Plan(Base):
         self.assertIn("Q-ORG-REGISTRY-GENERATION", out["next_attempt"])
 
     def test_without_lane_b_producer_on_the_base_it_is_not_pinned(self):
-        G.contract = self._orig  # the real pins (Lane B #231 @8b7b93d4); this repository's main does not carry the producer
+        G.contract = self._orig  # the real pins (Lane B #231 @b2f9fad2); this repository's main does not carry the producer
         out = self.go(root=ROOT)
         self.refused(out, "TEST_SUITE_RECEIPT_PRODUCER_NOT_PINNED")
         self.assertIn("scripts/test_suite_skip_receipt.py", out["observed"])

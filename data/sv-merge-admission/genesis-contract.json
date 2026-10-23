@@ -21,7 +21,7 @@
     "schema": "stegverse.test-suite-skip-receipt/v1",
     "producer_repository": "StegVerse-org/.github",
     "producer_pull_request": 231,
-    "pinned_at_head": "8b7b93d43914bc71b24a004b543a9421402df9db",
+    "pinned_at_head": "b2f9fad29e7f7d39201f1bc9af8ce7fe0da97da3",
     "status": "Lane B draft, not on main: until it lands this op is FAIL_CLOSED TEST_SUITE_RECEIPT_PRODUCER_NOT_PINNED; re-pin to the landed bytes",
     "files": {
       "scripts/test_suite_skip_receipt.py": {
@@ -33,8 +33,8 @@
         "sha256": "5ba97d673add4d92073e4d682332e4b613f8306ebf53b5d7d586b2ede82e4513"
       },
       ".github/workflows/test-suite-selected.yml": {
-        "git_blob_sha": "24cc4fdec269080bec3c016dc97011e6b7cda740",
-        "sha256": "d4c6992c66291b4631263937f0f0e5aee7af1f71f29f25fccead22ce13ce64e9"
+        "git_blob_sha": "2c5ef6d053e6ffbb891c1d6d1eeb26725a7bb223",
+        "sha256": "10d81aa4220a82165049a4e5f56a913d1e51fd1529519a3d233544681cca56db"
       },
       "data/test-selection-map.json": {
         "git_blob_sha": "8699805882a5f6286dc041b39fa2981aafd79279",
