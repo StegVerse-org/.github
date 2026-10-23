@@ -40,7 +40,9 @@ authority      NONE_BINDING_ONLY
 ```
 
 `address_grants_admission_authority` and `selects_processing_at_this_address`
-are false on the registry row and on the binding. An address cannot grant
+are false on the registry row, and the binding's counterparts
+`grants_admission_authority` and `selects_processing_at_the_capability_address`
+are false in `org-runtime/interlock-intr.json`. An address cannot grant
 itself the capability: `capability_ingress.receive` refuses a row the overlay
 does not name, and it refuses a module whose `OPERATION_ID` is not the one the
 binding publishes.

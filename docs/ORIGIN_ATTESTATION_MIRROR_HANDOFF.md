@@ -123,7 +123,7 @@ An attested origin is an **identified sender, not an authorized one**.
 
 ## The unattested disposition is declared, not implicit
 
-All fourteen peers are unattested today. `unattested_crossing_disposition` is
+All fourteen peers were unattested when this landed. `org-boundary/registry/federation.json` now lists 15 besides this organization: those fourteen plus `SV-011` (`peer_class: PREPARED_EXTERNAL_DEPENDENCY`). `unattested_crossing_disposition` is
 `ADMITTED_AND_RECORDED_AS_UNATTESTED`, and
 `requiring_attestation_is_an_owner_policy_decision_not_made_here: true`.
 Refusing unattested crossings would stop inter-organization transport for every
@@ -170,7 +170,7 @@ any class above zero        none
 ```
 tests.test_origin_attestation                      24 OK
 tests.test_origin_attestation_tvc_conformance       8 OK  (against real TVC)
-org-runtime/runtime_boundary.py validate           valid, 16/16
+org-runtime/runtime_boundary.py validate           valid, 16/16  (17 checks on main 40a5d23)
 actionlint                                         clean
 ```
 

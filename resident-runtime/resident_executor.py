@@ -15,7 +15,6 @@ invoked as its own action.
 """
 from __future__ import annotations
 import argparse, json, os, subprocess, sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -43,9 +42,12 @@ def run_json(cmd, timeout):
             pass
     return p,payload
 
-def cycle(mesh_root, node_state_root):
+def cycle(mesh_root, node_state_root, hb_epoch=None):
     script=ROOT/"resident-runtime"/"federation_cycle.py"
-    p,result=run_json([sys.executable,str(script),"--mesh-root",str(mesh_root),"--node-state-root",str(node_state_root)],120)
+    command=[sys.executable,str(script),"--mesh-root",str(mesh_root),"--node-state-root",str(node_state_root)]
+    if hb_epoch is not None:
+        command+=["--hb-epoch",str(hb_epoch)]
+    p,result=run_json(command,120)
     if p.returncode!=0:
         raise RuntimeError("federation cycle failed: "+p.stderr[-1024:])
     return result
@@ -75,13 +77,15 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--mesh-root",type=Path,required=True)
     ap.add_argument("--node-state-root",type=Path,required=True)
+    # Passed through to the cycle as given; the executor reads no clock.
+    ap.add_argument("--hb-epoch",type=str,default=None)
     a=ap.parse_args()
     bad=[k for k in HOSTED if truthy(os.getenv(k))]
     if bad:
         raise SystemExit("hosted runtime prohibited: "+",".join(bad))
     error=None
     try:
-        fed=cycle(a.mesh_root,a.node_state_root)
+        fed=cycle(a.mesh_root,a.node_state_root,a.hb_epoch)
     except Exception as exc:
         fed=None
         error=str(exc)
@@ -90,7 +94,7 @@ def main():
     state={
         "schema":"stegverse.organization-resident-executor/v2",
         "organization":"StegVerse-org",
-        "observed_at":datetime.now(timezone.utc).isoformat(),
+        "heartbeat_reference":(fed or {}).get("heartbeat_reference"),
         "materialization":"ONE_CYCLE_PER_INVOCATION",
         "disposition":"ALLOW" if allowed else "FAIL_CLOSED",
         "failed_predicate":(None if allowed else
