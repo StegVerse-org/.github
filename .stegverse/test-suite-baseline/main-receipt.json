@@ -1,0 +1,3985 @@
+{
+  "authority_effect": "NONE",
+  "baseline": {
+    "bisect_start": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+    "blob": "5cf96d0828f71abd338e0e166a69085195c232d5",
+    "path": ".stegverse/test-suite-baseline/baseline.json",
+    "pre_existing_until": "organization ledger genesis (StegVerse-org/.github#162): every failure that fails at a pull request's exact base is receipted PRE_EXISTING_BASELINE_FAILURE (non-blocking) until then; skips and collection errors are never pre-existing and stay REQUIRED_VERIFICATION_SKIPPED; introduced failures block",
+    "read_from": "CHECKOUT",
+    "written_at_commit": null
+  },
+  "derived_from_clock": false,
+  "disposition": "FAIL_CLOSED",
+  "drift": [
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_a_chain_that_does_not_verify_refuses_the_projection"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_a_submission_declaring_nothing_records_nulls_not_omission"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_an_admitted_submission_demonstrates_the_capability"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_every_demonstration_cites_a_receipt"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_declared_and_the_ledger_roots_are_not_the_same_root"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_projection_declares_and_stores_nothing"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_projection_grants_nothing_and_cites_st_022"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_projection_states_that_absence_is_not_refutation"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+      "introducing_commit": "61513574c3b3806ad04558ceb5afbcf5788730f1",
+      "last_passing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "committer_time_recorded": "1791060149 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "61513574c3b3806ad04558ceb5afbcf5788730f1"
+          ],
+          "pull_request": 49,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0562f72f024daea7c8f2c595a9365198ac317340",
+            "before": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:e3c87757f1a0a38aac5db3babeb3825fc11c66258ebfab3cce7a99807d5f1882",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #49 from StegVerse-org/feat/capability-demonstration-projection-20261003",
+          "tree": "c6e1f6c77db0d784ec44279386a26249c9a909c4",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0562f72f024daea7c8f2c595a9365198ac317340.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6486b3a3f7994ad229995874c4099978f6b79e37",
+          "status": "FAIL"
+        },
+        {
+          "commit": "21bc59c801cb93fac738b760e1879eed1920a5c4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "ccd4c72bbc4cf398fe19e31433aab0c0a7a3ffa1",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0562f72f024daea7c8f2c595a9365198ac317340",
+          "status": "FAIL"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_refusal_record_carries_what_the_map_needs"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "f0320d3b175deccac8751f650fcba92f81e6e049",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "introducing_commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+      "last_passing_commit": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "committer_time_recorded": "1791060111 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "209a6b55a5fa98e99302226b5969ce309e4b256e",
+            "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13"
+          ],
+          "pull_request": 48,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "before": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:4089f85c89c68e02e4d65556fdb48f45123708182e96616abbcf53cdd1acfc98",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #48 from StegVerse-org/feat/capability-ingress-address-20261003",
+          "tree": "d446c80fc738e6535c799e8fbb4d65ed9a134dac",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "FAIL"
+        },
+        {
+          "commit": "d597716a338612384492331bfd616d4857203d84",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "02f4e2685ccc8790504ec9ef1bc06e19ed9d1391",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f0320d3b175deccac8751f650fcba92f81e6e049",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_ingress_address.py::PeerSubmissionReachesTheOperationTests::test_a_peer_published_manifest_reaches_the_bound_operation"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "f0320d3b175deccac8751f650fcba92f81e6e049",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "introducing_commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+      "last_passing_commit": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "committer_time_recorded": "1791060111 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "209a6b55a5fa98e99302226b5969ce309e4b256e",
+            "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13"
+          ],
+          "pull_request": 48,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "before": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:4089f85c89c68e02e4d65556fdb48f45123708182e96616abbcf53cdd1acfc98",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #48 from StegVerse-org/feat/capability-ingress-address-20261003",
+          "tree": "d446c80fc738e6535c799e8fbb4d65ed9a134dac",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "FAIL"
+        },
+        {
+          "commit": "d597716a338612384492331bfd616d4857203d84",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "02f4e2685ccc8790504ec9ef1bc06e19ed9d1391",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f0320d3b175deccac8751f650fcba92f81e6e049",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_ingress_address.py::PeerSubmissionReachesTheOperationTests::test_both_ledger_levels_record_the_submission"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "f0320d3b175deccac8751f650fcba92f81e6e049",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+      "introducing_commit": "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13",
+      "last_passing_commit": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "committer_time_recorded": "1791060111 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "209a6b55a5fa98e99302226b5969ce309e4b256e",
+            "669aea2901dc2f2c17fe1fd1039a6ae0bef3dd13"
+          ],
+          "pull_request": 48,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+            "before": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:4089f85c89c68e02e4d65556fdb48f45123708182e96616abbcf53cdd1acfc98",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #48 from StegVerse-org/feat/capability-ingress-address-20261003",
+          "tree": "d446c80fc738e6535c799e8fbb4d65ed9a134dac",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "FAIL"
+        },
+        {
+          "commit": "f750ba5469294a5d98639426ddb5612d4b301b69",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c6a966be413abf31fca42c3eb4797425497cc9ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a0f3202c7dd3999cf9d1ef6e35ca3a1aebf28953",
+          "status": "FAIL"
+        },
+        {
+          "commit": "d597716a338612384492331bfd616d4857203d84",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "02f4e2685ccc8790504ec9ef1bc06e19ed9d1391",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f0320d3b175deccac8751f650fcba92f81e6e049",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "209a6b55a5fa98e99302226b5969ce309e4b256e",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_capability_ingress_address.py::PeerSubmissionReachesTheOperationTests::test_the_address_selects_no_processing_and_says_where_it_was_processed"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "FAIL"
+        },
+        {
+          "commit": "d6c3323a94418778ef5345c9744f0d9f3a871e5c",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c965b9845ebd41d8e8a80263553a747f418e7fc0",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::CapabilityIngressEpochTests::test_dispatch_passes_the_frame_epoch_through_to_the_receiving_operation"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+          "status": "FAIL"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::CliRawEpochTests::test_the_ingress_cli_accepts_a_leading_zero_epoch"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+          "status": "FAIL"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::CliRawEpochTests::test_the_ingress_cli_refuses_coerced_epochs"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "FAIL"
+        },
+        {
+          "commit": "e35f508a499327e015d88e4951f48f9998dca354",
+          "status": "FAIL"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "e35f508a499327e015d88e4951f48f9998dca354",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerComponentLayoutTests::test_a_path_in_neither_layout_is_refused"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "FAIL"
+        },
+        {
+          "commit": "e35f508a499327e015d88e4951f48f9998dca354",
+          "status": "FAIL"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "e35f508a499327e015d88e4951f48f9998dca354",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerComponentLayoutTests::test_the_flat_layout_is_accepted"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "FAIL"
+        },
+        {
+          "commit": "e35f508a499327e015d88e4951f48f9998dca354",
+          "status": "FAIL"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "e35f508a499327e015d88e4951f48f9998dca354",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerComponentLayoutTests::test_the_nested_layout_is_accepted"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "FAIL"
+        },
+        {
+          "commit": "d6c3323a94418778ef5345c9744f0d9f3a871e5c",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c965b9845ebd41d8e8a80263553a747f418e7fc0",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerPathTests::test_a_given_component_and_consumer_root_are_where_the_writers_load_and_resolve"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "FAIL"
+        },
+        {
+          "commit": "d6c3323a94418778ef5345c9744f0d9f3a871e5c",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c965b9845ebd41d8e8a80263553a747f418e7fc0",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerPathTests::test_absent_paths_keep_this_checkout"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "FAIL"
+        },
+        {
+          "commit": "d6c3323a94418778ef5345c9744f0d9f3a871e5c",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c965b9845ebd41d8e8a80263553a747f418e7fc0",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerPathTests::test_an_invalid_path_fails_closed_and_leaves_the_bound_writers"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "FAIL"
+        },
+        {
+          "commit": "d6c3323a94418778ef5345c9744f0d9f3a871e5c",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c965b9845ebd41d8e8a80263553a747f418e7fc0",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerPathTests::test_the_ingress_cli_refuses_an_invalid_path_and_receives_with_valid_ones"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+          "status": "FAIL"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerWriterRefusalTests::test_the_ingress_cli_builds_six_fields_for_an_old_layout_writer"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+          "status": "FAIL"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerWriterRefusalTests::test_the_ingress_cli_prints_the_writers_refusal_as_given"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+          "status": "FAIL"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerWriterRefusalTests::test_the_refusal_is_read_from_the_systemexit_only"
+    },
+    {
+      "bisect_range": {
+        "bad": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "first_parent_commits": 249,
+        "good_candidate": "174b0cf245ddc58d86030a08dd17af8f412a34f9"
+      },
+      "branch_probes": [
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "e0e132d7420afc276fe92f20aa76c63c63072efd",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0e48deeae6ad5df8a08a4ce34025f8b96580bc15",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "0d5b3fd53c0914b7c1e8d7940ee4ed3a2d21b25c",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "bb3a9221a6c8151cdd378a159404bd84a15de0e6",
+          "status": "ABSENT"
+        }
+      ],
+      "classification": "INTRODUCED_ON_MAIN_AFTER_BASELINE",
+      "first_failing_commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+      "introducing_commit": "78ae1f8e625f1c577feaaeb858915c94c8866d78",
+      "last_passing_commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+      "main_change_receipt": {
+        "receipt": {
+          "admission_record_ref": null,
+          "authority_effect": "NONE",
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "committer_time_recorded": "1792254178 -0500",
+          "disposition": "FAIL_CLOSED",
+          "first_item": {
+            "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+            "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+            "next_attempt": "the next main-change receipt",
+            "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+            "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+            "retry_entrypoint": "TVC broker admission"
+          },
+          "hb_epoch": "446655631",
+          "hb_epoch_source": {
+            "head_receipt_sha256": "sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+            "ref": "refs/stegverse/organization-ledger"
+          },
+          "items": [
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "MAIN_CHANGE_HAS_ADMISSION_RECORD_AT_MERGED_HEAD",
+              "failure_code": "ADMISSION_CHECKPOINT_NOT_INSTALLED",
+              "next_attempt": "the next main-change receipt",
+              "owning_existing_goal": "TVC-GITHUB-REPOSITORY-OPERATION-BROKER-001",
+              "required_evidence_or_repair": "the B2 admission checkpoint binds admission_record_ref (a successor PR reverts or re-admits the change through the broker; a retroactive ALLOW is never issued)",
+              "retry_entrypoint": "TVC broker admission"
+            },
+            {
+              "disposition": "FAIL_CLOSED",
+              "failed_predicate": "REPO_MAIN_PUSH_EMITS_ORGANIZATION_MAIN_MERGE_TRANSFER",
+              "failure_code": "ORGANIZATION_LEDGER_APPEND_NOT_AVAILABLE",
+              "next_attempt": "the census receipt flips to ALLOW",
+              "owning_existing_goal": "STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)",
+              "required_evidence_or_repair": "the receipt is on this repository's refs/stegverse/main-change-receipts; the organization ledger append needs a per-transition credential issued by the organization (not held in E0)",
+              "retry_entrypoint": ".github/workflows/main-change-receipt.yml (the repository's next push to main)"
+            }
+          ],
+          "lowest_supported_mode": "E0",
+          "merge_kind": "MERGE_COMMIT",
+          "parents": [
+            "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "78ae1f8e625f1c577feaaeb858915c94c8866d78"
+          ],
+          "pull_request": 185,
+          "pull_request_source": "MERGE_COMMIT_SUBJECT",
+          "push": {
+            "after": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+            "before": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+            "commits": 1,
+            "history_rewritten": false
+          },
+          "receipt_sha256": "sha256:77493a5b0b61e8db3546f1b0fd723dcf034eb416d01b2986ff7a50ee9bc15a24",
+          "ref": "refs/heads/main",
+          "repository": "StegVerse-org/.github",
+          "schema": "stegverse.main-change-receipt/v1",
+          "subject": "Merge pull request #185 from StegVerse-org/intr/d6-six-field-refusals",
+          "tree": "4b5c0ba874d0a62f2b6dd0c9acbee774eb9df812",
+          "writer": {
+            "ref": "pinned",
+            "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+          }
+        },
+        "ref": "refs/stegverse/main-change-receipts:receipts/0f9481af324fc0cf8e46c2446ad69de07f9a8a9d.json",
+        "source": "OBSERVED_NOT_LEDGERED"
+      },
+      "probes": [
+        {
+          "commit": "174b0cf245ddc58d86030a08dd17af8f412a34f9",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "6dd93475698fa842985c8e9cc3f6ff53571e71d4",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f876ca9317855d54ec7cce724d71ba7427f12f83",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "f70e85e2fb349f72453ca813172ffec8b40055c2",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "a370291ea064e3ca2542b0dabb560cdd9755df91",
+          "status": "FAIL"
+        },
+        {
+          "commit": "0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+          "status": "FAIL"
+        },
+        {
+          "commit": "9abcf6eb6563ef1303c4f0f37b1e828d67f2d290",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "c483d441c452c228cb0d2f22d9a90a2aab66f7ca",
+          "status": "ABSENT"
+        },
+        {
+          "commit": "10d141041fd0fa3b8bd696f6c6236bef199845b8",
+          "status": "ABSENT"
+        }
+      ],
+      "status_before": "ABSENT",
+      "test": "tests/test_p1_supplied_epoch_and_ledger_paths.py::ReadbackContractTests::test_an_empty_ledger_is_organization_ledger_head_absent"
+    }
+  ],
+  "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+  "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+  "hb_epoch": "446655631",
+  "hb_epoch_source": "ORGANIZATION_LEDGER_HEAD sha256:921a0a4fff67f5ce3c784946b305017e17ade9d87efb0ef94c41dfb92eb9ac56",
+  "head": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+  "items": [],
+  "ledger_append": {
+    "addressed_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+    "appended": false,
+    "candidates": [
+      ".github/workflows/organization-ledger-merge-transfer.yml (live; ORGANIZATION_MAIN_MERGE_TRANSFER only)",
+      ".github/workflows/organization-ledger-transition-reusable.yml (DRAFT; committed .stegverse/transition-requests/, no push caller)",
+      "StegVerse-Labs/.github#3255 organization-ledger-transition-writer.yml (open draft; workflow_dispatch writer)"
+    ],
+    "dispatched": false,
+    "disposition": "FAIL_CLOSED",
+    "failed_predicate": "MANIFEST_DIRECTED_APPENDER_ACCEPTS_THE_DRIFT_RECEIPT",
+    "failure_code": "DRIFT_RECEIPT_APPENDER_NOT_AVAILABLE",
+    "issue_class": "B",
+    "next_attempt": "the first run after a manifest-directed appender for this operation is on main",
+    "operation": "TEST_SUITE_BASELINE_DRIFT",
+    "owning_existing_goal": "StegVerse-org/.github#162 (organization ledger) / StegVerse-org/.github#166",
+    "required_evidence_or_repair": "a manifest-directed organization-ledger appender that accepts this payload (operation TEST_SUITE_BASELINE_DRIFT); until one exists the payload is retained as the run artifact and nothing is appended or dispatched",
+    "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite"
+  },
+  "lowest_supported_mode": "E0",
+  "next_attempt": "the next run of this job at the exact head",
+  "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+  "ratchet": {
+    "baseline_failing_count": 0,
+    "excluded": [],
+    "newly_failing": [
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_a_chain_that_does_not_verify_refuses_the_projection",
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_a_submission_declaring_nothing_records_nulls_not_omission",
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_an_admitted_submission_demonstrates_the_capability",
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_every_demonstration_cites_a_receipt",
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_declared_and_the_ledger_roots_are_not_the_same_root",
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_projection_declares_and_stores_nothing",
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_projection_grants_nothing_and_cites_st_022",
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_projection_states_that_absence_is_not_refutation",
+      "tests/test_capability_demonstration_projection.py::CapabilityMapTests::test_the_refusal_record_carries_what_the_map_needs",
+      "tests/test_capability_ingress_address.py::PeerSubmissionReachesTheOperationTests::test_a_peer_published_manifest_reaches_the_bound_operation",
+      "tests/test_capability_ingress_address.py::PeerSubmissionReachesTheOperationTests::test_both_ledger_levels_record_the_submission",
+      "tests/test_capability_ingress_address.py::PeerSubmissionReachesTheOperationTests::test_the_address_selects_no_processing_and_says_where_it_was_processed",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::CapabilityIngressEpochTests::test_dispatch_passes_the_frame_epoch_through_to_the_receiving_operation",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::CliRawEpochTests::test_the_ingress_cli_accepts_a_leading_zero_epoch",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::CliRawEpochTests::test_the_ingress_cli_refuses_coerced_epochs",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerComponentLayoutTests::test_a_path_in_neither_layout_is_refused",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerComponentLayoutTests::test_the_flat_layout_is_accepted",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerComponentLayoutTests::test_the_nested_layout_is_accepted",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerPathTests::test_a_given_component_and_consumer_root_are_where_the_writers_load_and_resolve",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerPathTests::test_absent_paths_keep_this_checkout",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerPathTests::test_an_invalid_path_fails_closed_and_leaves_the_bound_writers",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerPathTests::test_the_ingress_cli_refuses_an_invalid_path_and_receives_with_valid_ones",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerWriterRefusalTests::test_the_ingress_cli_builds_six_fields_for_an_old_layout_writer",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerWriterRefusalTests::test_the_ingress_cli_prints_the_writers_refusal_as_given",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::LedgerWriterRefusalTests::test_the_refusal_is_read_from_the_systemexit_only",
+      "tests/test_p1_supplied_epoch_and_ledger_paths.py::ReadbackContractTests::test_an_empty_ledger_is_organization_ledger_head_absent"
+    ],
+    "newly_passing": [],
+    "observed_failing_count": 26
+  },
+  "receipt_sha256": "sha256:0e5a07cf9eb5961dbb999fd2374a0d6409ad2cb16f95554f99bd362e3c7dc116",
+  "repair_task_id": "TEST-SUITE-BASELINE-DRIFT-REPAIR-B0A92F0CB703",
+  "repository": "StegVerse-org/.github",
+  "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'P1-FC-12 step (b), the readback and writers re-raising the locator refusal in six fields, is deferred until StegVerse-org/.github#189 lands (StegVerse-org/.github#162)''. A skipped run is unproven, not passed",
+  "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+  "review_sha256": "sha256:43e3e86552c3365fd92e60c694a04cbc15257f40259a6490acbc0275a424c09c",
+  "runner": "unittest",
+  "schema": "stegverse.test-suite-baseline-drift/v1",
+  "verification": {
+    "counts": {
+      "errors": 39,
+      "failures": 1,
+      "skipped": 9
+    },
+    "delegated": [],
+    "modules": 87,
+    "ran": 1136,
+    "required_verification_skipped": 38,
+    "results": 1137,
+    "rows": [
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'P1-FC-12 step (b), the readback and writers re-raising the locator refusal in six fields, is deferred until StegVerse-org/.github#189 lands (StegVerse-org/.github#162)''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_readback_cli_refuses_and_writes_nothing"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'P1-FC-12 step (b), the readback and writers re-raising the locator refusal in six fields, is deferred until StegVerse-org/.github#189 lands (StegVerse-org/.github#162)''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_writers_refuse_a_remote_ledger_root_in_six_fields"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'TV/TVC is not checked out; set STEGVERSE_TVC_ROOT to run the conformance exchange. A skipped run is unproven, not passed.''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests.test_the_authority_exposes_no_key_material_in_its_receipts"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'TV/TVC is not checked out; set STEGVERSE_TVC_ROOT to run the conformance exchange. A skipped run is unproven, not passed.''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests.test_the_authority_fails_closed_on_an_empty_key_or_payload"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'TV/TVC is not checked out; set STEGVERSE_TVC_ROOT to run the conformance exchange. A skipped run is unproven, not passed.''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests.test_the_authority_refuses_a_statement_it_did_not_sign"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'TV/TVC is not checked out; set STEGVERSE_TVC_ROOT to run the conformance exchange. A skipped run is unproven, not passed.''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests.test_the_authority_signs_and_verifies_this_boundarys_statement"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'TV/TVC is not checked out; set STEGVERSE_TVC_ROOT to run the conformance exchange. A skipped run is unproven, not passed.''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests.test_this_boundarys_signature_serialization_is_the_authoritys"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'TV/TVC is not checked out; set STEGVERSE_TVC_ROOT to run the conformance exchange. A skipped run is unproven, not passed.''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests.test_without_the_key_the_signature_does_not_verify"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "SKIPPED",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "run this test at the exact head; unittest reported 'skipped 'repo-standards is not reachable here; attach it to check the copy for drift''. A skipped run is unproven, not passed",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_task_registry_schema_conformance.OwnerDriftTests.setUpClass"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_governance_inter_org_route); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_governance_inter_org_route"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_governance_mesh_locator_readback); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_governance_mesh_locator_readback"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_governance_return_peer_mesh); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_governance_return_peer_mesh"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_ingress_refusal_precedence); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_ingress_refusal_precedence"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation.py::test_task_is_registered_without_replacing_existing_active_goal"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation.py::test_participating_entities_never_gain_governance_authority"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation.py::test_provider_execution_is_reused_not_duplicated"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation.py::test_inference_window_is_disposition_complete_and_not_history"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation.py::test_cosv_projection_matches_registered_foundation"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation.py::test_external_ingress_delegates_to_existing_sdk_and_org_ledger"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation.py::test_admitted_internal_sandbox_does_not_reenter_external_llm_adapter"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation_validation.py::test_context_rejects_missing_and_duplicate_references"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation_validation.py::test_context_accepts_bounded_refs_without_authorizing"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation_validation.py::test_sandbox_accepts_evidence_not_execution"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation_validation.py::test_sandbox_rejects_candidate_authority_and_fake_admission"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation_validation.py::test_sandbox_rejects_unbounded_evidence"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "a module-level test function: unittest never runs it; run it under pytest in a required job at this head",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests/test_llm_org_foundation_validation.py::test_inference_window_disposition_complete_and_nonhistorical"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_manifest_ingress_d7_fail_closed); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_manifest_ingress_d7_fail_closed"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_manifest_ingress_idempotent); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_manifest_ingress_idempotent"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_organization_ingress_capability_binding); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_organization_ingress_capability_binding"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_organization_manifest_ingress); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_organization_manifest_ingress"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_pr1b_direct_entrypoint_epoch); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_pr1b_direct_entrypoint_epoch"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_remediation_lane); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_remediation_lane"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_sdk_manifest_crossing_fidelity); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_sdk_manifest_crossing_fidelity"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the listed module's test did not run in this job",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_task_registry_schema_conformance.OwnerDriftTests.test_the_copy_is_byte_identical_to_the_owners_schema"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the listed module's test did not run in this job",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_task_registry_schema_conformance.OwnerDriftTests.test_the_recorded_commit_is_on_the_owners_default_branch"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the listed module's test did not run in this job",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_task_registry_schema_conformance.OwnerDriftTests.test_the_recorded_commit_really_carries_the_recorded_digest"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "EVERY_REQUIRED_TEST_RUNS_AT_THE_EXACT_HEAD",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "TEST_NOT_RUN",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the listed module's test did not run in this job",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_task_registry_schema_conformance.OwnerDriftTests.test_the_recorded_digest_is_the_owners_current_digest"
+      },
+      {
+        "blocking": true,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "REQUIRED_MODULE_IS_COLLECTED_AND_RUN",
+        "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+        "kind": "COLLECTION_ERROR",
+        "next_attempt": "the next run of this job at the exact head",
+        "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "required_evidence_or_repair": "the module does not import (unittest.loader._FailedTest.test_workspace_internal_endpoint_binding); none of its tests ran",
+        "retry_entrypoint": "StegVerse-org/.github .github/workflows/required-verification.yml full-suite",
+        "test": "tests.test_workspace_internal_endpoint_binding"
+      }
+    ],
+    "runner": "unittest"
+  },
+  "writer": {
+    "at_pin": true,
+    "expected_sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf",
+    "path": "/workspace/bd/org222/resident-runtime/main_change_receipt.py",
+    "present": true,
+    "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+  }
+}

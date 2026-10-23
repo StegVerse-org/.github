@@ -22,9 +22,9 @@
       "PROPER": 177,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
-      "HISTORICAL_EVIDENCE": 33,
-      "NAMING_ONLY": 26,
-      "total": 236
+      "HISTORICAL_EVIDENCE": 35,
+      "NAMING_ONLY": 34,
+      "total": 246
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1713,6 +1713,76 @@
       "text": "\"re-measure data/master-records-role-audit.json. \"",
       "classification": "NAMING_ONLY",
       "reason": "Test diagnostic names the Master Records audit artifact; no assignment of transition authority."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 1573,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2004,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2105,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 1631,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\": [",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 1796,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2043,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2237,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2058,
+      "text": "\"data/master-records-role-audit.json\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. The audit file's own path; no role statement."
+    },
+    {
+      "file": "tests/fixtures/drift-receipt-appender/labs-3317-fc65fb82-pr.json",
+      "line": 17,
+      "text": "\"tests/test_canonical_master_records_local_adapter_repair.py::CanonicalMasterRecordsLocalAdapterRepairTests::test_calls_existing_state_transition_authority_without_schema_relabel\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Retained drift-receipt fixture (StegVerse-org/.github#166): quotes a StegVerse-Labs test id as it appeared in a receipted run; evidence, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/drift-receipt-appender/labs-86382e60-detect.json",
+      "line": 679,
+      "text": "\"tests/test_canonical_master_records_local_adapter_repair.py::CanonicalMasterRecordsLocalAdapterRepairTests::test_calls_existing_state_transition_authority_without_schema_relabel\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Retained drift-receipt fixture (StegVerse-org/.github#166): quotes a StegVerse-Labs test id as it appeared in a receipted run; evidence, not a role statement."
     }
   ]
 }
