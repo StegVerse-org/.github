@@ -58,6 +58,8 @@ jobs:
         run: |
           set -euo pipefail
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_GIT_REF="$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_GIT_DIR="$GITHUB_WORKSPACE/.git"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           python3 resident-runtime/intr_path_transfer.py append --transfer-commit "$TRANSFER_COMMIT" \
             --out "$RUNNER_TEMP/results/append.json"
@@ -81,6 +83,8 @@ jobs:
           fi
           git --git-dir="$fresh" -c "http.https://github.com/.extraheader=$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
           export STEGVERSE_ORG_LEDGER_ROOT="git+$fresh#$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_GIT_REF="$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_GIT_DIR="$fresh"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$fresh#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
           python3 resident-runtime/intr_path_transfer.py verify --expect-source ALLOW --out "$RUNNER_TEMP/results/verify.json" > /dev/null
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); print(json.dumps(r["counts"]))' "$RUNNER_TEMP/results/verify.json"

@@ -59,9 +59,26 @@ def _module(name: str, relative: str):
     return module
 
 
-mt = _module("merge_transfer_for_path_transfer", "resident-runtime/merge_transfer.py")
 intr = _module("intr_protocol_for_path_transfer", "org-runtime/intr_protocol.py")
-ingress = mt.ingress
+path_ledger = _module("intr_path_ledger", "resident-runtime/intr_path_ledger.py")
+Refused = path_ledger.Refused
+
+
+def bind(binding: Any = None) -> Any:
+    """Select this organization's ledger binding (protocol.json per-organization pin), or install ``binding``.
+
+    merge_transfer.py organizations bind merge_transfer.py exactly as before;
+    StegVerse-Labs and GCAT-BCAT-Engine bind merge_transfer_gitstore.py at its pinned digest."""
+    global ledger, ingress
+    if binding is None:
+        binding = path_ledger.bound(ROOT)
+    ledger, ingress = binding, binding.ingress
+    return binding
+
+
+ledger: Any = None
+ingress: Any = None
+bind()
 
 OPERATION = "INTR_MESH_PATH_TRANSFER"
 TRANSITION_CLASS = OPERATION
@@ -76,7 +93,7 @@ ENTRYPOINT = (".github/workflows/intr-path-transfer.yml (after Organization Ledg
               "Transfer completes on a push to main)")
 SNAPSHOT = ROOT / "tests" / "fixtures" / "intr-protocol" / "destinations" / "manifest.json"
 DECLARATION = ROOT / ".stegverse" / "intr-path-transfer" / "transfers.json"
-SIX_FIELDS = mt.SIX_FIELDS
+SIX_FIELDS = path_ledger.SIX_FIELDS
 ALLOW, DENY, FAIL_CLOSED = "ALLOW", "DENY", "FAIL_CLOSED"
 
 NOT_LEDGERED = "INTR_PATH_RECEIPT_NOT_LEDGERED"
@@ -88,12 +105,16 @@ TRANSFER_NOT_LEDGERED = "INTR_PATH_TRANSFER_COMMIT_NOT_LEDGERED"
 PATH_UNDECLARED = "INTR_PATH_UNDECLARED"
 MESSAGE_REFUSED = "INTR_PATH_MESSAGE_NONCONFORMANT"
 
-sha = ingress.sha
-sealed = mt.sealed
+def sha(value: Any) -> str:
+    return ledger.sha(value)
+
+
+def sealed(receipt: Any) -> bool:
+    return ledger.sealed(receipt)
 
 
 def repository() -> str:
-    return mt.repository()
+    return ledger.repository()
 
 
 def organization() -> str:
@@ -158,14 +179,19 @@ def _payload_ok(evidence: Mapping[str, Any]) -> bool:
 # -- source half --------------------------------------------------------------
 
 def _chain(store: Any) -> list[tuple[str, Any]]:
-    return list(mt.org_chain(store))
+    return list(ledger.chain(store))
 
 
 def verify_source(path: Mapping[str, Any], communication_id: str, organization_store: Any = None,
                   repository_store: Any = None) -> dict[str, Any]:
-    organization_store = organization_store if organization_store is not None else mt.org_store()
-    repository_store = repository_store if repository_store is not None else mt.repo_store()
     base = {"path_id": path["path_id"], "communication_id": communication_id, "half": "source"}
+    if organization_store is None or repository_store is None:
+        try:
+            bound = ledger.readers()
+        except Refused as exc:
+            return {**exc.result, "schema": RESULT_SCHEMA, **base}
+        organization_store = organization_store if organization_store is not None else bound[0]
+        repository_store = repository_store if repository_store is not None else bound[1]
 
     def not_ledgered(detail: str) -> dict[str, Any]:
         return refusal(FAIL_CLOSED, NOT_LEDGERED, "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
@@ -181,12 +207,12 @@ def verify_source(path: Mapping[str, Any], communication_id: str, organization_s
     for digest, receipt in chain:
         if not sealed(receipt) or receipt["receipt_sha256"] != digest:
             return not_ledgered("organization receipt " + digest + " on the chain is absent or unsealed")
-        boundary = mt._boundary(receipt)
+        boundary = ledger.boundary(receipt)
         if boundary.get("operation") != OPERATION or boundary.get("path_id") != path["path_id"] \
                 or boundary.get("communication_id") != communication_id:
             continue
         linked = receipt.get("repo_receipt_sha256")
-        repo_receipt = mt._receipt(repository_store, linked)
+        repo_receipt = ledger.receipt(repository_store, linked)
         if not sealed(repo_receipt):
             return not_ledgered("repository receipt " + str(linked) + " is absent or unsealed")
         evidence = repo_receipt.get("evidence") if isinstance(repo_receipt.get("evidence"), Mapping) else {}
@@ -208,8 +234,8 @@ def verify_source(path: Mapping[str, Any], communication_id: str, organization_s
         elif intr.conform_message(msg, path["destination"])["disposition"] != ALLOW:
             problems.append("message does not conform to the InTr protocol")
         transfer = by_digest.get(evidence.get("merge_transfer_organization_receipt_sha256"))
-        tb = mt._boundary(transfer) if isinstance(transfer, Mapping) else {}
-        if not sealed(transfer) or tb.get("operation") != mt.OPERATION \
+        tb = ledger.boundary(transfer) if isinstance(transfer, Mapping) else {}
+        if not sealed(transfer) or tb.get("operation") != path_ledger.MERGE_OPERATION \
                 or tb.get("merge_commit") != evidence.get("transfer_commit") or tb.get("repository") != repository():
             problems.append("merge-transfer link " + str(evidence.get("merge_transfer_organization_receipt_sha256"))
                             + " is not a sealed main-merge transfer receipt for " + str(evidence.get("transfer_commit")))
@@ -292,14 +318,20 @@ def append_transfers(transfer_commit: str, declaration: Path | str = DECLARATION
                      manifest: Path | str = SNAPSHOT) -> list[dict[str, Any]]:
     paths = {p["path_id"]: p for p in declared_paths(manifest)}
     repo = repository()
-    verified = mt.verify_merge_transfer(repo, transfer_commit)
+    try:
+        verified = ledger.verify_transfer(transfer_commit)
+    except Refused as exc:
+        return [{**exc.result, "schema": RESULT_SCHEMA, "transfer_commit": transfer_commit}]
     if verified["disposition"] != ALLOW:
         return [refusal(FAIL_CLOSED, TRANSFER_NOT_LEDGERED, "PATH_TRANSFER_RIDES_A_LEDGERED_MAIN_MERGE",
                         "the transfer commit " + transfer_commit + " must have a VERIFIED main-merge transfer receipt "
                         "before a path receipt links it (" + str(verified.get("failure_code")) + ")",
                         "re-run after the push's main-merge transfer is ledgered; nothing was written",
                         transfer_commit=transfer_commit)]
-    epoch, failed = mt.head_epoch(mt.org_store())
+    try:
+        epoch, failed = ledger.head_epoch()
+    except Refused as exc:
+        epoch, failed = None, exc.result
     if failed is not None:
         return [{**failed, "schema": RESULT_SCHEMA, "transfer_commit": transfer_commit}]
     results = []
@@ -327,13 +359,16 @@ def append_transfers(transfer_commit: str, declaration: Path | str = DECLARATION
                                    path_id=pid, communication_id=cid))
             continue
         try:
-            appended, replayed = ingress._append(TRANSITION_CLASS, pid + "@" + cid, evidence, epoch,
-                                                 operation=OPERATION, profile_id=PROFILE_ID,
+            appended, replayed = ledger.append(TRANSITION_CLASS, pid + "@" + cid, evidence, epoch,
+                                               operation=OPERATION, profile_id=PROFILE_ID,
                                                  boundary_extra={"path_id": pid, "repository": repo,
                                                                  "destination_organization": path["destination"],
                                                                  "transfer_commit": transfer_commit})
+        except Refused as exc:
+            results.append({**exc.result, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
+            continue
         except (ValueError, SystemExit) as exc:
-            results.append(refusal(FAIL_CLOSED, mt.WRITER_REFUSED, "LEDGER_WRITER_ADMITS_THE_APPEND",
+            results.append(refusal(FAIL_CLOSED, path_ledger.WRITER_REFUSED, "LEDGER_WRITER_ADMITS_THE_APPEND",
                                    "repair what the ledger writer refused: " + str(exc),
                                    "re-run once repaired; nothing was written for this row", path_id=pid,
                                    communication_id=cid))
