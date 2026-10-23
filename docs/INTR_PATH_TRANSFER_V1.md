@@ -72,3 +72,52 @@ transition lands on main. After that, the 7 paths from StegVerse-org verify thei
 stays FAIL_CLOSED at the destination half (`INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`, class A, retry at TVC) until its TVC read receipt is landed. Receipts in
 the tests and the PR dry-run are written to temporary directories or a scratch ref. They are not ledgered and
 not authentic.
+
+## Typed bodies (INTR-PATH-TRANSFER-TYPED-BODY-001, #162)
+
+A declaration row that carries `typed_body` is a **typed transfer**. Instead of the fixed
+`{schema, path_id, transfer_commit}` body, its message body is the typed body. The row is checked in this order,
+and every refusal carries six fields. Nothing is written for a refused row.
+
+1. `endpoint_kind` must be one of `EPHEMERAL, PERMANENT, GATEWAY, KV, SKAP_VAULT, ORG` (StegVerse-org/LLM-adapter#432
+   `schemas/endpoint-kind.v1.json`). Otherwise the row fails closed with `INTR_PATH_ENDPOINT_KIND_UNDECLARED`.
+2. An `endpoint_kind: GATEWAY` row must not carry an external ledger ref. That means no `ledger_root`,
+   `external_ledger_ref`, `external_ledger`, `external_chain`, `imported_chain` or `source_ledger_root` key anywhere
+   in the row, and a `destination_location` inside `refs/stegverse/organization-ledger` (no `#`, no URL, no `..`).
+   Otherwise the row is denied with `INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF`.
+3. The row must have exactly `path_id, communication_id, destination_location, endpoint_kind, typed_body,
+   typed_body_sha256`.
+4. `typed_body.schema` must be on the allowlist `TYPED_BODY_SCHEMAS`. The allowlist currently holds only
+   `stegverse.repository-ledger-genesis-observed/v1` (`REPOSITORY_LEDGER_GENESIS_OBSERVED`). Any other schema fails
+   closed with `INTR_PATH_TYPED_BODY_SCHEMA_NOT_ALLOWLISTED`.
+5. The body is sealed: `typed_body_sha256` must equal the body's digest. Otherwise the row is denied with
+   `INTR_PATH_TYPED_BODY_UNSEALED`.
+6. The body must be exactly the record StegVerse-org/LLM-adapter#431's pre-pin receiver
+   (`scripts/llm_adapter_genesis_pin_ingress.py` @1541d465) accepts:
+   `{schema, signal_class, repository, ledger_location, genesis_receipt_sha256, transition_class:
+   REPOSITORY_LEDGER_GENESIS_PIN, node_ref: StegVerse-org/.github}`. In addition:
+   - `repository` is another repository of this organization;
+   - `ledger_location` and `destination_location` are that repository's `repository-ledger/` location;
+   - `endpoint_kind` is `ORG`;
+   - `path_id` is `StegVerse-org/.github->StegVerse-org:intr-destination`.
+
+   A row that breaks any of these fails closed with `INTR_PATH_TYPED_BODY_NONCONFORMANT`.
+7. The envelope keeps every protocol predicate. Only the body-schema predicate is replaced by the allowlist.
+
+The typed evidence is `stegverse.intr-path-transfer-evidence/v1` in the source shape of `intr_transport_carrier`
+(LLM-adapter#431/#432/#433):
+- `destination_location`, `endpoint_kind`, `typed_body_schema` and `typed_body_sha256` are added to the core;
+- `payload_sha256` is computed over the core and excludes `boundary_evidence`;
+- `boundary_evidence.operation` is `INTR_MESH_PATH_TRANSFER`.
+
+`typed-row --repository <repo> --genesis-receipt <sha256>` prints the row, which lands on main as its own transition
+once the genesis is receipted. No typed row is declared by this change.
+
+**Backward compatible.** Rows without the typed keys take the untyped code, which is unchanged. Its output for the
+existing fixtures is byte-identical to main @907f4305 (`tests/fixtures/intr-path-transfer/untyped-golden.json`), and
+`real_state` gains `typed_transfers` only when a typed row is declared.
+
+**Cross-repo fixture.** `tests/fixtures/intr-path-transfer/typed-genesis-observed.json` (sha256 `05babd7b...`) is the
+writer's output on a temporary copy of the pinned tip, for one typed row naming a synthetic genesis. It is not
+ledgered and not authentic. It is copied byte-identically to LLM-adapter#431, where `receive()` accepts it as
+`ACCEPTED_FOR_GENESIS_PIN`.

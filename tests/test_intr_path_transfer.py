@@ -269,5 +269,292 @@ class DestinationHalf(unittest.TestCase):
             self.assertTrue(absent[field], field)
 
 
+
+# -- INTR-PATH-TRANSFER-TYPED-BODY-001 (StegVerse-org/.github#162, Lane B) --------------------------------
+
+MAIN = "907f4305"   # current main when the typed body was built; the golden is that commit's output
+GOLDEN = FIXTURES / "untyped-golden.json"
+TYPED = FIXTURES / "typed-genesis-observed.json"
+TYPED_SHA256 = "05babd7b5c38fba61050220c41b987043f1fd2c9e7c5ded072a6f9625dc13890"   # = LLM-adapter#431's copy
+LLM_ADAPTER = "StegVerse-org/LLM-adapter"
+LLM_NS = "repository-ledger/StegVerse-org/LLM-adapter"
+MT = "sha256:" + "7" * 64
+SIX = ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
+       "owning_existing_goal", "next_attempt")
+
+
+def dumps(value):
+    return json.dumps(value, indent=2, sort_keys=True) + "\n"
+
+
+def untyped_output():
+    """Every observable output of the untyped path for the existing fixtures (the golden's generator)."""
+    import hashlib
+    out = {"schema": "stegverse.intr-path-transfer-untyped-golden/v1",
+           "note": "Output of current main for the existing fixtures (declaration, pinned snapshot, pinned ledger "
+                   "tip). Typed bodies must leave every value here byte-identical. Temp-ledger receipts are NOT "
+                   "LEDGERED.",
+           "paths": pt.declared_paths(), "declaration": pt.load_declaration()}
+    out["messages"] = [pt.message(p, cid(p), TRANSFER) for p in mine()]
+    out["path_evidence"] = [pt.path_evidence(p, cid(p), TRANSFER, MT) for p in mine()]
+    ledger = Ledger()
+    try:
+        before = ledger.files()
+        out["real_state_before"] = pt.real_state()
+        out["append"] = pt.append_transfers(TRANSFER)
+        after = ledger.files()
+
+        def digest(k, v):   # HEAD.json names the temp directory in receipt_path; bind its receipt digest instead
+            return json.loads(v)["receipt_sha256"] if k.endswith("HEAD.json") else hashlib.sha256(v).hexdigest()
+        out["ledger_files_written_sha256"] = {k: digest(k, v) for k, v in sorted(after.items()) if before.get(k) != v}
+        out["verify_source"] = [pt.verify_source(p, cid(p)) for p in mine()]
+        out["real_state_after"] = pt.real_state()
+        out["replay"] = pt.append_transfers(TRANSFER)
+        out["unledgered"] = pt.append_transfers(UNLEDGERED)
+    finally:
+        ledger.close()
+    return out
+
+
+def synthetic_genesis():
+    body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": LLM_ADAPTER,
+            "transition_class": "REPOSITORY_LEDGER_INITIALIZATION",
+            "transition_id": "REPOSITORY_LEDGER_INITIALIZATION:" + LLM_ADAPTER,
+            "predecessor_state_sha256": "sha256:" + "0" * 64, "successor_state_sha256": "sha256:" + "1" * 64,
+            "previous_receipt_sha256": None, "evidence": {"namespace": LLM_NS}, "authority_effect": "NONE",
+            "synthetic": "FIXTURE_NOT_LEDGERED_NOT_AUTHENTIC"}
+    return {**body, "receipt_sha256": pt.sha(body)}
+
+
+def declaration_with(*rows):
+    document = json.loads(pt.DECLARATION.read_text())
+    document["transfers"] = document["transfers"] + list(rows)
+    d = tempfile.TemporaryDirectory()
+    path = Path(d.name) / "transfers.json"
+    path.write_text(json.dumps(document))
+    return d, path
+
+
+class UntypedTransfersAreByteIdentical(unittest.TestCase):
+    def test_golden_is_main_output_and_untyped_output_is_byte_identical(self):
+        golden = GOLDEN.read_text()
+        recorded = json.loads(golden)["generated_from"]
+        blob = subprocess.run(["git", "-C", str(ROOT), "show", MAIN + ":resident-runtime/intr_path_transfer.py"],
+                              check=True, capture_output=True).stdout
+        import hashlib
+        self.assertEqual(recorded, {"commit": MAIN, "file": "resident-runtime/intr_path_transfer.py",
+                                    "sha256": hashlib.sha256(blob).hexdigest()})
+        out = untyped_output()
+        out["generated_from"] = recorded
+        self.assertEqual(dumps(out), golden)
+
+    def test_a_typed_row_alongside_leaves_untyped_rows_byte_identical(self):
+        golden = json.loads(GOLDEN.read_text())
+        row = pt.genesis_observed_row(LLM_ADAPTER, synthetic_genesis()["receipt_sha256"])
+        holder, decl = declaration_with(row)
+        ledger = Ledger()
+        try:
+            state = pt.real_state(declaration=decl)
+            results = pt.append_transfers(TRANSFER, declaration=decl)
+        finally:
+            ledger.close()
+            holder.cleanup()
+        self.assertEqual(dumps(results[:-1]), dumps(golden["append"]))
+        self.assertEqual(dumps(state["paths"]), dumps(golden["real_state_before"]["paths"]))
+        self.assertEqual(state["counts"], golden["real_state_before"]["counts"])
+        self.assertEqual(results[-1]["disposition"], "ALLOW")
+        self.assertTrue(results[-1]["typed"])
+        self.assertNotIn("typed_transfers", golden["real_state_before"])
+        self.assertEqual([t["disposition"] for t in state["typed_transfers"]], ["FAIL_CLOSED"])
+
+
+class TypedBody(unittest.TestCase):
+    def setUp(self):
+        self.genesis = synthetic_genesis()
+        self.row = pt.genesis_observed_row(LLM_ADAPTER, self.genesis["receipt_sha256"])
+
+    def assert_six(self, result, disposition, code):
+        self.assertEqual((result["disposition"], result["failure_code"]), (disposition, code), result)
+        for field in SIX:
+            self.assertIsInstance(result[field], str, field)
+            self.assertTrue(result[field], field)
+        self.assertEqual(result["owning_existing_goal"], "StegVerse-org/.github#162")
+        for word in ("grant", "approved", "authorized", "merge-ready"):
+            self.assertNotIn(word, json.dumps(result).lower())
+
+    def refused_append(self, row):
+        """Append a declaration whose only addition is ``row``; the row's result, and that nothing was written for it."""
+        holder, decl = declaration_with(row)
+        ledger = Ledger()
+        try:
+            baseline = pt.append_transfers(TRANSFER)
+            before = ledger.files()
+            results = pt.append_transfers(TRANSFER, declaration=decl)
+            self.assertEqual(ledger.files(), before)
+            self.assertTrue(all(r.get("replayed") for r in results[:-1]), baseline)
+        finally:
+            ledger.close()
+            holder.cleanup()
+        return results[-1]
+
+    def test_the_genesis_observed_row_is_allowlisted_sealed_and_typed(self):
+        self.assertEqual(sorted(pt.TYPED_BODY_SCHEMAS), ["stegverse.repository-ledger-genesis-observed/v1"])
+        self.assertIsNone(pt.typed_refusal(self.row))
+        self.assertEqual(self.row["typed_body_sha256"], pt.sha(self.row["typed_body"]))
+        ev = pt.typed_path_evidence(self.row, TRANSFER, MT)
+        self.assertEqual(ev["destination_location"],
+                         "refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/LLM-adapter")
+        self.assertEqual(ev["endpoint_kind"], "ORG")
+        self.assertIn(ev["endpoint_kind"], pt.ENDPOINT_KINDS)
+        self.assertEqual(ev["typed_body_sha256"], pt.sha(ev["message"]["body"]))
+        self.assertEqual(ev["message_sha256"], pt.sha(ev["message"]))
+        core = {k: v for k, v in ev.items()
+                if k not in ("payload_sha256", "disposition", "communication_id", "boundary_evidence")}
+        self.assertEqual(ev["payload_sha256"], pt.sha(core))
+        # the untyped evidence gains nothing
+        p = mine()[0]
+        self.assertNotIn("destination_location", pt.path_evidence(p, cid(p), TRANSFER, MT))
+        self.assertNotIn("endpoint_kind", pt.path_evidence(p, cid(p), TRANSFER, MT))
+
+    def test_endpoint_kinds_are_432s_endpoint_kind_v1_enum(self):
+        # StegVerse-org/LLM-adapter#432 schemas/endpoint-kind.v1.json $defs.endpoint_kind.enum
+        self.assertEqual(pt.ENDPOINT_KINDS, ("EPHEMERAL", "PERMANENT", "GATEWAY", "KV", "SKAP_VAULT", "ORG"))
+
+    def test_typed_append_emits_the_cross_repo_fixture_byte_identically(self):
+        import hashlib
+        text = TYPED.read_text()
+        self.assertEqual(hashlib.sha256(text.encode()).hexdigest(), TYPED_SHA256)
+        fixture = json.loads(text)
+        self.assertEqual(fixture["genesis_receipt"], self.genesis)
+        self.assertEqual(fixture["declaration_row"], self.row)
+        holder, decl = declaration_with(self.row)
+        ledger = Ledger()
+        try:
+            results = pt.append_transfers(TRANSFER, declaration=decl)
+            typed = results[-1]
+            source = pt.mt._receipt(pt.mt.repo_store(), typed["repository_receipt_sha256"])
+            verified = pt.verify_typed_source(self.row)
+            after = ledger.files()
+            replay = pt.append_transfers(TRANSFER, declaration=decl)
+            self.assertEqual(ledger.files(), after)
+            state = pt.real_state(declaration=decl)
+        finally:
+            ledger.close()
+            holder.cleanup()
+        self.assertEqual(dumps(typed), dumps(fixture["append_result"]))
+        self.assertEqual(dumps(source), dumps(fixture["source_receipt"]))
+        self.assertEqual(verified["disposition"], "ALLOW", verified)
+        self.assertEqual(verified["repository_receipt_sha256"], source["receipt_sha256"])
+        self.assertTrue(replay[-1]["replayed"])
+        self.assertEqual(state["typed_transfers"][0]["disposition"], "ALLOW")
+
+    def test_the_emitted_source_half_has_the_receivers_carrier_shape(self):
+        """intr_transport_carrier.verify's source-half predicates (LLM-adapter#431/#432/#433, sha256 9f460c07...)."""
+        fixture = json.loads(TYPED.read_text())
+        source, signal = fixture["source_receipt"], fixture["declaration_row"]["typed_body"]
+        body = {k: v for k, v in source.items() if k != "receipt_sha256"}
+        self.assertEqual(source["receipt_sha256"], pt.sha(body))
+        self.assertEqual((source["schema"], source["transition_class"]),
+                         ("stegverse.repo-transition-receipt/v1", "INTR_MESH_PATH_TRANSFER"))
+        ev = source["evidence"]
+        self.assertEqual(ev["schema"], "stegverse.intr-path-transfer-evidence/v1")
+        core = {k: v for k, v in ev.items()
+                if k not in ("payload_sha256", "disposition", "communication_id", "boundary_evidence")}
+        self.assertEqual(ev["payload_sha256"], pt.sha(core))
+        self.assertEqual(ev["destination_location"],
+                         "refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/LLM-adapter")
+        self.assertEqual(ev["destination_organization"], "StegVerse-org")
+        self.assertEqual(ev["boundary_evidence"]["operation"], "INTR_MESH_PATH_TRANSFER")
+        self.assertEqual(ev["message"]["message_class"], "ecosystem.communication")
+        self.assertEqual(ev["message_sha256"], pt.sha(ev["message"]))
+        self.assertEqual(pt.sha(ev["message"]["body"]), pt.sha(signal))
+        self.assertEqual(ev["path_id"], signal["node_ref"] + "->StegVerse-org:intr-destination")
+        # the body is exactly #431's genesis_signal(genesis, contract)
+        self.assertEqual(signal, {"schema": "stegverse.repository-ledger-genesis-observed/v1",
+                                  "signal_class": "REPOSITORY_LEDGER_GENESIS_OBSERVED", "repository": LLM_ADAPTER,
+                                  "ledger_location": "StegVerse-org/.github#refs/stegverse/organization-ledger:"
+                                                     + LLM_NS,
+                                  "genesis_receipt_sha256": fixture["genesis_receipt"]["receipt_sha256"],
+                                  "transition_class": "REPOSITORY_LEDGER_GENESIS_PIN",
+                                  "node_ref": "StegVerse-org/.github"})
+
+    def test_any_other_typed_schema_is_refused_with_six_fields(self):
+        other = {**self.row["typed_body"], "schema": "stegverse.node-ingress-signal/v1"}
+        row = {**self.row, "typed_body": other, "typed_body_sha256": pt.sha(other)}
+        self.assert_six(pt.typed_refusal(row), "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_SCHEMA_NOT_ALLOWLISTED")
+        self.assert_six(self.refused_append(row), "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_SCHEMA_NOT_ALLOWLISTED")
+        for body in ({"schema": None}, "not an object", {}):
+            r = {**self.row, "typed_body": body, "typed_body_sha256": pt.sha(body)}
+            self.assert_six(pt.typed_refusal(r), "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_SCHEMA_NOT_ALLOWLISTED")
+
+    def test_unsealed_or_nonconformant_typed_rows_are_refused(self):
+        unsealed = {**self.row, "typed_body_sha256": "sha256:" + "b" * 64}
+        self.assert_six(self.refused_append(unsealed), "DENY", "INTR_PATH_TYPED_BODY_UNSEALED")
+        body = self.row["typed_body"]
+        cases = {
+            "extra body key": {**body, "extra": 1},
+            "other signal class": {**body, "signal_class": "NODE_INGRESS_SIGNAL"},
+            "foreign repository": {**body, "repository": "StegVerse-Labs/LLM-adapter"},
+            "self": {**body, "repository": "StegVerse-org/.github"},
+            "other node_ref": {**body, "node_ref": "n-1"},
+            "bad genesis": {**body, "genesis_receipt_sha256": "abc"},
+            "other ledger location": {**body, "ledger_location": "StegVerse-org/.github#refs/heads/main:x"},
+        }
+        for name, b in cases.items():
+            with self.subTest(name=name):
+                self.assert_six(pt.typed_refusal({**self.row, "typed_body": b, "typed_body_sha256": pt.sha(b)}),
+                                "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_NONCONFORMANT")
+        for name, row in {"path": {**self.row, "path_id": "StegVerse-org->SV-011:intr-destination"},
+                          "location": {**self.row, "destination_location":
+                                       "refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/Other"},
+                          "kind": {**self.row, "endpoint_kind": "PERMANENT"},
+                          "extra row key": {**self.row, "note": "x"},
+                          "missing row key": {k: v for k, v in self.row.items() if k != "typed_body_sha256"}}.items():
+            with self.subTest(name=name):
+                self.assert_six(pt.typed_refusal(row), "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_NONCONFORMANT")
+        for kind in ("NODE_INGRESS_SIGNAL", None, "org"):
+            self.assert_six(pt.typed_refusal({**self.row, "endpoint_kind": kind}), "FAIL_CLOSED",
+                            "INTR_PATH_ENDPOINT_KIND_UNDECLARED")
+        bad_cid = {**self.row, "communication_id": "has space"}
+        self.assert_six(pt.typed_refusal(bad_cid), "FAIL_CLOSED", "INTR_PATH_MESSAGE_NONCONFORMANT")
+
+    def test_a_gateway_endpoint_never_carries_an_external_ledger_ref(self):
+        gw = {**self.row, "endpoint_kind": "GATEWAY"}
+        body = self.row["typed_body"]
+        cases = {
+            "row ledger_root": {**gw, "ledger_root": "/srv/node-ledger"},
+            "row external_ledger_ref": {**gw, "external_ledger_ref": "StegVerse-Labs/x#refs/stegverse/ledger"},
+            "body ledger_root": {**gw, "typed_body": {**body, "ledger_root": "/x"},
+                                 "typed_body_sha256": pt.sha({**body, "ledger_root": "/x"})},
+            "foreign location": {**gw, "destination_location": "StegVerse-Labs/.github#refs/stegverse/organization-ledger:x"},
+            "url location": {**gw, "destination_location": "https://example.invalid/ledger"},
+            "other ref": {**gw, "destination_location": "refs/heads/ledger:node-ledger/StegVerse-org/n-1"},
+            "escaping location": {**gw, "destination_location": "refs/stegverse/organization-ledger:../../x"},
+        }
+        for name, row in cases.items():
+            with self.subTest(name=name):
+                self.assert_six(pt.typed_refusal(row), "DENY", "INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF")
+        self.assert_six(self.refused_append(cases["row ledger_root"]), "DENY",
+                        "INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF")
+        # a GATEWAY row with no external ref is still not the genesis-observed source kind
+        self.assert_six(pt.typed_refusal(gw), "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_NONCONFORMANT")
+
+    def test_no_new_workflow_and_the_path_workflows_are_unchanged(self):
+        for name in ("intr-path-transfer.yml", "intr-path-ingress.yml", "intr-path-transfer-validation.yml"):
+            path = ".github/workflows/" + name
+            blob = subprocess.run(["git", "-C", str(ROOT), "show", MAIN + ":" + path], check=True,
+                                  capture_output=True).stdout
+            self.assertEqual((ROOT / path).read_bytes(), blob, path)
+        source = (ROOT / "resident-runtime/intr_path_transfer.py").read_text()
+        import ast
+        names = set()
+        for n in ast.walk(ast.parse(source)):
+            if isinstance(n, ast.Import):
+                names |= {a.name.split(".")[0] for a in n.names}
+            elif isinstance(n, ast.ImportFrom):
+                names.add((n.module or "").split(".")[0])
+        self.assertEqual(names, {"__future__", "argparse", "importlib", "json", "sys", "pathlib", "typing"})
+
+
 if __name__ == "__main__":
     unittest.main()
