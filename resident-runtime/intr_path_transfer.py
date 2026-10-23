@@ -53,7 +53,7 @@ schemas/endpoint-kind.v1.json). An endpoint_kind GATEWAY row never carries an
 external ledger ref, and no endpoint row (any kind but ORG) lands a record on this
 organization's ledger: no endpoint is an Organization member or a source of
 org-ledger records (#160 comment 6372871021; six-field FAIL_CLOSED
-INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE). Rows without ``typed_body`` and the other typed keys take
+ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE). Rows without ``typed_body`` and the other typed keys take
 the untyped code path, which is unchanged: its output is byte-identical
 (tests/fixtures/intr-path-transfer/untyped-golden.json, from main @907f4305).
 The optional ``endpoint_head_sha256`` rides in boundary_evidence, reused, and
@@ -367,8 +367,14 @@ ENDPOINT_HEAD_MISSING = "INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING"
 #: lands its record at destination_location inside this organization's ledger ref, so only endpoint_kind ORG may
 #: name it; endpoint data crosses only through InTr and is recorded at both ends, the Org side as this
 #: organization's own digest-only crossing receipt.
-ENDPOINT_NOT_ORG_SOURCE = "INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE"
-ENDPOINT_NOT_ORG_SOURCE_PREDICATE = "NO_ENDPOINT_IS_AN_ORG_MEMBER_OR_A_SOURCE_OF_ORG_LEDGER_RECORDS"
+#: The code is shared with StegVerse-org/LLM-adapter#431 (endpoint_ledger_designation) and names an endpoint that
+#: would emit an org-ledger record; the path context is in the predicate. It is distinct from
+#: ENDPOINT_ORG_MEMBERSHIP_REFUSED (an endpoint bound as an Org member or at an org-ledger-ref location; Lane D
+#: continuity-vault-kit#263, Lane C TVC#540/#542). Renamed from INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE while
+#: this was a draft: that code was never published, so there is no alias. An endpoint's own side of a crossing,
+#: recorded in its own chain, with the Org's own digest-only side here, is not a ledger source and fires neither.
+ENDPOINT_NOT_ORG_SOURCE = "ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE"
+ENDPOINT_NOT_ORG_SOURCE_PREDICATE = "INTR_PATH_TYPED_ROW_LANDS_ONLY_THE_ORGS_OWN_RECORD_NO_ENDPOINT_IS_A_SOURCE_OF_ORG_LEDGER_RECORDS"
 ORG_LEDGER_KINDS = ("ORG",)
 ENDPOINT_HEAD_NOT_A_DIGEST = "INTR_PATH_ENDPOINT_HEAD_NOT_A_DIGEST"
 

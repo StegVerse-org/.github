@@ -572,7 +572,7 @@ class TypedBody(unittest.TestCase):
         self.assert_six(self.refused_append(cases["row ledger_root"]), "DENY",
                         "INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF")
         # a GATEWAY row with no external ref is still an endpoint, never a source of org-ledger records
-        self.assert_six(pt.typed_refusal(gw), "FAIL_CLOSED", "INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
+        self.assert_six(pt.typed_refusal(gw), "FAIL_CLOSED", "ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
 
     def test_no_endpoint_is_a_source_of_org_ledger_records(self):
         """Rigel (#160 comment 6372871021): no endpoint, externally or ecosystem maintained, is an Organization
@@ -582,11 +582,11 @@ class TypedBody(unittest.TestCase):
             with self.subTest(kind=kind):
                 row = {**self.row, "endpoint_kind": kind, "endpoint_head_sha256": head}
                 refused = pt.typed_refusal(row)
-                self.assert_six(refused, "FAIL_CLOSED", "INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
+                self.assert_six(refused, "FAIL_CLOSED", "ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
                 self.assertEqual(refused["failed_predicate"],
-                                 "NO_ENDPOINT_IS_AN_ORG_MEMBER_OR_A_SOURCE_OF_ORG_LEDGER_RECORDS")
+                                 "INTR_PATH_TYPED_ROW_LANDS_ONLY_THE_ORGS_OWN_RECORD_NO_ENDPOINT_IS_A_SOURCE_OF_ORG_LEDGER_RECORDS")
         self.assert_six(self.refused_append({**self.row, "endpoint_kind": "PERMANENT"}), "FAIL_CLOSED",
-                        "INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
+                        "ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
         self.assertIsNone(pt.typed_refusal(self.row))
 
     def test_kv_and_skap_rows_must_record_the_endpoint_head_digest(self):
@@ -649,6 +649,30 @@ class TypedBody(unittest.TestCase):
         unsealed = {**dest, "transition_class": "INTR_MESH_PATH_INGRESS", "authority_effect": "X"}
         self.assert_six(pt.typed_crossing_failure(source, unsealed), "FAIL_CLOSED",
                         "INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES")
+
+    def test_a_valid_both_sides_crossing_fires_neither_endpoint_code(self):
+        """Coordination (#167, provisional): an endpoint's own side of a crossing is in its own chain and the Org
+        records only its own digest-only side; that is not a ledger source, so neither ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE
+        nor ENDPOINT_ORG_MEMBERSHIP_REFUSED fires on a valid both-sides crossing."""
+        holder, decl = declaration_with(self.row)
+        ledger = Ledger()
+        try:
+            self.assertIsNone(pt.typed_refusal(self.row))
+            results = pt.append_transfers(TRANSFER, declaration=decl)
+            source = pt.mt._receipt(pt.mt.repo_store(), results[-1]["repository_receipt_sha256"])
+            dest = destination_record(source)
+            self.assertIsNone(pt.typed_crossing_failure(source, dest))
+            both = pt.verify_typed_crossing(self.row, dest)
+            self.assertEqual((both["disposition"], both["recorded_by_both_sides"]), ("ALLOW", True), both)
+            seen = json.dumps([results, source, dest, both])
+            for code in ("ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE", "ENDPOINT_ORG_MEMBERSHIP_REFUSED"):
+                self.assertNotIn(code, seen)
+        finally:
+            ledger.close()
+            holder.cleanup()
+        self.assertEqual(pt.ENDPOINT_NOT_ORG_SOURCE, "ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
+        self.assertNotIn("INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE", Path(pt.__file__).read_text().replace(
+            "Renamed from INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE", ""))
 
     def test_a_crossing_record_without_a_supplied_epoch_is_refused(self):
         source = json.loads(TYPED.read_text())["source_receipt"]
