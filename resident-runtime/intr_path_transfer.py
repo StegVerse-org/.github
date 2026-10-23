@@ -36,6 +36,37 @@ Verification, per path, has two halves:
     readback is supplied.
 ALLOW only when both halves verify. Absent or unsealed evidence is FAIL_CLOSED;
 present, sealed evidence that contradicts the path is DENY. Six fields each.
+
+Typed bodies (INTR-PATH-TRANSFER-TYPED-BODY-001, StegVerse-org/.github#162). A
+declaration row that carries ``typed_body`` is a typed transfer: its message
+body is that typed body instead of the fixed {schema, path_id, transfer_commit}
+body. The body is sealed (the row's ``typed_body_sha256`` must equal its digest,
+and the evidence binds both), and its schema must be on TYPED_BODY_SCHEMAS.
+Only stegverse.repository-ledger-genesis-pointer/v1 (REPOSITORY_LEDGER_GENESIS_OBSERVED,
+the trigger StegVerse-org/LLM-adapter#431's pre-pin receiver accepts) is listed:
+a pointer {schema, ledger_location, genesis_receipt_sha256, node_ref}, never a copied
+record (#167 comment 6372442705). Any other typed schema is refused with six
+fields. A typed transfer's evidence
+also carries ``destination_location`` (a location inside this organization's
+ledger ref) and ``endpoint_kind`` (StegVerse-org/LLM-adapter#432
+schemas/endpoint-kind.v1.json). An endpoint_kind GATEWAY row never carries an
+external ledger ref, and no endpoint row (any kind but ORG) lands a record on this
+organization's ledger: no endpoint is an Organization member or a source of
+org-ledger records (#160 comment 6372871021; six-field FAIL_CLOSED
+ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE). Rows without ``typed_body`` and the other typed keys take
+the untyped code path, which is unchanged: its output is byte-identical
+(tests/fixtures/intr-path-transfer/untyped-golden.json, from main @907f4305).
+The optional ``endpoint_head_sha256`` rides in boundary_evidence, reused, and
+only when present, so a typed row without it is unchanged by it.
+
+Both sides record each crossing (Rigel, StegVerse-org/.github#162 comment
+6372641743): this repository's INTR_MESH_PATH_TRANSFER egress record and the
+destination's INTR_MESH_PATH_INGRESS ingress record, each pointing at the other
+by digest, each with a supplied heartbeat epoch. ``verify_typed_crossing``
+refuses a one-sided crossing with six fields
+(INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES). The intra_org_paths and
+endpoint_paths rows change the code-defined declared-paths definition; that is
+a class C entry on StegVerse-org/.github#167.
 """
 from __future__ import annotations
 
@@ -286,6 +317,509 @@ def verify_path(path: Mapping[str, Any], communication_id: str | None, organizat
     return {**first, "path": "UNVERIFIED", "halves": halves, "path_id": path["path_id"]}
 
 
+# -- typed bodies (INTR-PATH-TRANSFER-TYPED-BODY-001) ------------------------------
+
+LEDGER_REF = "refs/stegverse/organization-ledger"
+#: StegVerse-org/LLM-adapter schemas/endpoint-kind.v1.json $defs.endpoint_kind (#432), copied, not imported
+ENDPOINT_KINDS = ("EPHEMERAL", "PERMANENT", "GATEWAY", "KV", "SKAP_VAULT", "ORG")
+GATEWAY = "GATEWAY"
+#: The typed body is a pointer, never a description (StegVerse-org/.github#167 comment 6372442705; CAPTURE lines
+#: 72-76): the recorded receipt chain's location and the genesis digest on it. Exactly #431's genesis_signal.
+GENESIS_POINTER_SCHEMA = "stegverse.repository-ledger-genesis-pointer/v1"
+#: The typed-body allowlist. A schema is added only by its own admitted change.
+TYPED_BODY_SCHEMAS: dict[str, dict[str, Any]] = {
+    GENESIS_POINTER_SCHEMA: {
+        "signal_class": "REPOSITORY_LEDGER_GENESIS_OBSERVED",
+        "transition_class": "REPOSITORY_LEDGER_GENESIS_PIN",
+        "keys": ("genesis_receipt_sha256", "ledger_location", "node_ref", "schema"),
+        "endpoint_kinds": ("ORG",),
+        "receiver": "StegVerse-org/LLM-adapter scripts/llm_adapter_genesis_pin_ingress.py (#431)",
+    },
+}
+TYPED_ROW_KEYS = ("communication_id", "destination_location", "endpoint_kind", "path_id", "typed_body",
+                  "typed_body_sha256")
+TYPED_MARKERS = ("typed_body", "typed_body_sha256", "destination_location", "endpoint_kind")
+#: Keys that name a ledger outside this organization's ledger ref.
+EXTERNAL_LEDGER_KEYS = ("ledger_root", "external_ledger_ref", "external_ledger", "external_chain", "imported_chain",
+                        "source_ledger_root")
+TYPED_ENTRYPOINT = (ENTRYPOINT + "; typed rows: a typed_body row of " + ".stegverse/intr-path-transfer/transfers.json "
+                    "(built by resident-runtime/intr_path_transfer.py typed-row)")
+
+TYPED_SCHEMA_NOT_ALLOWLISTED = "INTR_PATH_TYPED_BODY_SCHEMA_NOT_ALLOWLISTED"
+TYPED_BODY_UNSEALED = "INTR_PATH_TYPED_BODY_UNSEALED"
+TYPED_BODY_NONCONFORMANT = "INTR_PATH_TYPED_BODY_NONCONFORMANT"
+ENDPOINT_KIND_UNDECLARED = "INTR_PATH_ENDPOINT_KIND_UNDECLARED"
+GATEWAY_EXTERNAL_LEDGER = "INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF"
+#: KV-HEAD-ROLLBACK (Lane D condition 2; Rigel, StegVerse-org/.github#160 comment 6372216673): each InTr exchange with
+#: an independent endpoint records that endpoint's ledger head digest, sealed, in the Org-side linked receipt. It is a
+#: digest only, never a ledger ref; KV refuses any head older than the newest one recorded here
+#: (KV_LEDGER_HEAD_ROLLBACK_DETECTED, StegVerse-org/LLM-adapter llm_adapter/endpoint_ledger_designation.py).
+#: For KV and SKAP_VAULT it is the KV_RECORDED_RECEIPT_CHAIN_HEAD digest only (StegVerse-Labs/TVC#542 @4c2504da;
+#: StegVerse-Labs/continuity-vault-kit#263 @706877b6: chains at STEGVERSE_KV _StegVerse/Receipts and
+#: _Vault/SKAP/Receipts, on no org ref; path_id StegVerse-org->STEGVERSE_KV:<location>:intr-destination).
+#: It rides in boundary_evidence (reused, never a new envelope), only when the row carries it, so a row without it
+#: is byte-identical (StegVerse-org/.github#167 comment 6372442705, ruling 2).
+ENDPOINT_HEAD_KEY = "endpoint_head_sha256"
+ENDPOINT_HEAD_REQUIRED_KINDS = ("KV", "SKAP_VAULT")
+ENDPOINT_HEAD_MISSING = "INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING"
+#: No endpoint (KV, SKAP Vault, node or gateway, externally or ecosystem maintained) is a GitHub Organization member
+#: or a source of org-ledger records (Rigel, relayed on StegVerse-org/.github#160 comment 6372871021). A typed row
+#: lands its record at destination_location inside this organization's ledger ref, so only endpoint_kind ORG may
+#: name it; endpoint data crosses only through InTr and is recorded at both ends, the Org side as this
+#: organization's own digest-only crossing receipt.
+#: The code is shared with StegVerse-org/LLM-adapter#431 (endpoint_ledger_designation) and names an endpoint that
+#: would emit an org-ledger record; the path context is in the predicate. It is distinct from
+#: ENDPOINT_ORG_MEMBERSHIP_REFUSED (an endpoint bound as an Org member or at an org-ledger-ref location; Lane D
+#: continuity-vault-kit#263, Lane C TVC#540/#542). Renamed from INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE while
+#: this was a draft: that code was never published, so there is no alias. An endpoint's own side of a crossing,
+#: recorded in its own chain, with the Org's own digest-only side here, is not a ledger source and fires neither.
+ENDPOINT_NOT_ORG_SOURCE = "ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE"
+ENDPOINT_NOT_ORG_SOURCE_PREDICATE = "INTR_PATH_TYPED_ROW_LANDS_ONLY_THE_ORGS_OWN_RECORD_NO_ENDPOINT_IS_A_SOURCE_OF_ORG_LEDGER_RECORDS"
+ORG_LEDGER_KINDS = ("ORG",)
+ENDPOINT_HEAD_NOT_A_DIGEST = "INTR_PATH_ENDPOINT_HEAD_NOT_A_DIGEST"
+
+
+PATH_NOT_INTRA_ORG = "INTR_PATH_INTRA_ORG_PATH_UNDECLARED"
+GENESIS_NOT_READ_BACK = "INTR_PATH_GENESIS_NOT_READ_BACK"
+GENESIS_CLASS = "REPOSITORY_LEDGER_INITIALIZATION"
+
+
+def intra_org_paths() -> list[dict[str, Any]]:
+    """The declared intra-organization repository-destination paths: data rows of the existing path schema,
+    data/intr-protocol/v1/protocol.json mesh_path_transfer.intra_org_paths (path_id, source, destination,
+    capability, plus the endpoint kinds, typed-body schemas and destination-location prefix the path admits)."""
+    return [dict(r) for r in intr.load_contract()["mesh_path_transfer"].get("intra_org_paths", [])]
+
+
+def intra_org_path(path_id: Any) -> dict[str, Any] | None:
+    return next((p for p in intra_org_paths() if p.get("path_id") == path_id and p.get("source") == repository()
+                 and p.get("destination") == organization() and p.get("capability") == CAPABILITY), None)
+
+
+def endpoint_paths() -> list[dict[str, Any]]:
+    """Declared paths to an independent endpoint (KV, SKAP Vault) that runs its own ledger behind its own InTr
+    ingress/egress and is never stored on this organization's ledger ref: data rows of the same path schema,
+    mesh_path_transfer.endpoint_paths. None is declared yet; a row is added by its own admitted change."""
+    return [dict(r) for r in intr.load_contract()["mesh_path_transfer"].get("endpoint_paths", [])]
+
+
+def endpoint_path(path_id: Any) -> dict[str, Any] | None:
+    return next((p for p in endpoint_paths() if p.get("path_id") == path_id and p.get("source") == repository()
+                 and p.get("capability") == CAPABILITY), None)
+
+
+def _is_digest(value: Any) -> bool:
+    return isinstance(value, str) and len(value) == 71 and value.startswith("sha256:") \
+        and all(c in "0123456789abcdef" for c in value[7:])
+
+
+def endpoint_head_refusal(row: Mapping[str, Any], base: Mapping[str, Any], fix: str) -> dict[str, Any] | None:
+    """Six-field refusal unless the row's optional sealed endpoint_head_sha256 is well formed, and present for KV and
+    SKAP_VAULT. Pure."""
+    kind, head = row.get("endpoint_kind"), row.get(ENDPOINT_HEAD_KEY)
+    if ENDPOINT_HEAD_KEY not in row:
+        if kind in ENDPOINT_HEAD_REQUIRED_KINDS:
+            return refusal(FAIL_CLOSED, ENDPOINT_HEAD_MISSING, "INDEPENDENT_ENDPOINT_HEAD_DIGEST_RECORDED",
+                           "a typed row with endpoint_kind " + kind + " must carry " + ENDPOINT_HEAD_KEY + ", the "
+                           "sha256 digest of that endpoint's current ledger head, so the Org-side linked receipt "
+                           "records it (the rollback watermark)", fix, entrypoint=TYPED_ENTRYPOINT, **base)
+        return None
+    if not _is_digest(head):
+        return refusal(DENY, ENDPOINT_HEAD_NOT_A_DIGEST, "ENDPOINT_HEAD_IS_A_DIGEST_NEVER_A_LEDGER_REF",
+                       ENDPOINT_HEAD_KEY + " must be a sha256:<64 hex> digest and never names an external ledger; "
+                       "got " + repr(head), fix, entrypoint=TYPED_ENTRYPOINT, **base)
+    return None
+
+
+def is_typed(row: Mapping[str, Any]) -> bool:
+    return isinstance(row, Mapping) and any(k in row for k in TYPED_MARKERS)
+
+
+def typed_path_id() -> str:
+    """The node-ref path the receiver derives: ``<this repository>-><this organization>:intr-destination``."""
+    return repository() + "->" + organization() + ":" + CAPABILITY
+
+
+def org_location(namespace: str) -> str:
+    return LEDGER_REF + ":" + namespace
+
+
+def genesis_observed_body(target_repository: str, genesis_receipt_sha256: str) -> dict[str, Any]:
+    """The genesis pointer body, exactly as #431's genesis_signal builds it: where the recorded receipt chain is and
+    the genesis digest on it. A pointer, not a copied record."""
+    return {"schema": GENESIS_POINTER_SCHEMA,
+            "ledger_location": repository() + "#" + org_location("repository-ledger/" + target_repository),
+            "genesis_receipt_sha256": genesis_receipt_sha256,
+            # the org's own path that originates the record (never an endpoint; #160 comment 6372871021); the
+            # shared carrier derives the path_id from it
+            "node_ref": repository()}
+
+
+def pointer_target(body: Any) -> str | None:
+    """The repository a genesis pointer names, from its ledger_location; None if it names none."""
+    prefix = repository() + "#" + org_location("repository-ledger/")
+    location = body.get("ledger_location") if isinstance(body, Mapping) else None
+    return location[len(prefix):] if isinstance(location, str) and location.startswith(prefix) else None
+
+
+def genesis_observed_row(target_repository: str, genesis_receipt_sha256: str) -> dict[str, Any]:
+    """A typed declaration row carrying the receipted genesis-observed record for ``target_repository``."""
+    body = genesis_observed_body(target_repository, genesis_receipt_sha256)
+    return {"path_id": typed_path_id(),
+            "communication_id": "intr-path-v1:" + repository() + "->" + target_repository + ":genesis-observed",
+            "destination_location": org_location("repository-ledger/" + target_repository),
+            "endpoint_kind": "ORG", "typed_body": body, "typed_body_sha256": sha(body)}
+
+
+def genesis_observed_row_from_readback(readback: Any) -> dict[str, Any]:
+    """The genesis-append trigger, minimal: the typed row for a repository genesis, derived only from the
+    organization ledger read-back that organization-ledger-transition.yml writes (organization_ledger_readback.py
+    --repository-namespace repository-ledger/<repo> --out readback.json). Landing the row in transfers.json on
+    main is the existing path-transfer transition. Pure: reads nothing but the document given."""
+    block = readback.get("repository_ledger") if isinstance(readback, Mapping) else None
+    chain = block.get("chain") if isinstance(block, Mapping) else None
+    namespace = block.get("namespace") if isinstance(block, Mapping) else None
+    target = namespace[len("repository-ledger/"):] if isinstance(namespace, str) \
+        and namespace.startswith("repository-ledger/") else None
+    problems = []
+    if not isinstance(readback, Mapping) or readback.get("disposition", ALLOW) != ALLOW:
+        problems.append("the read-back is not an ALLOW organization-ledger read-back")
+    if not isinstance(chain, list) or not chain or not isinstance(chain[0], Mapping):
+        problems.append("no repository_ledger.chain in the read-back")
+    elif chain[0].get("transition_class") != GENESIS_CLASS or chain[0].get("previous_receipt_sha256") is not None \
+            or chain[0].get("receipt_sha256") != block.get("genesis_receipt_sha256"):
+        problems.append("the chain's first receipt is not a " + GENESIS_CLASS + " genesis equal to "
+                        "repository_ledger.genesis_receipt_sha256")
+    if isinstance(block, Mapping) and (block.get("every_receipt_verifies_against_its_body") is not True
+                                       or block.get("every_receipt_retained_in_organization_ledger") is not True):
+        problems.append("the read-back does not verify and retain every repository receipt")
+    if target is None:
+        problems.append("repository_ledger.namespace " + repr(namespace) + " is not repository-ledger/<repository>")
+    if problems:
+        return refusal(FAIL_CLOSED, GENESIS_NOT_READ_BACK, "GENESIS_OBSERVED_ON_THE_PUBLISHED_LEDGER_READ_BACK",
+                       "; ".join(problems) + ". The row is derived only from organization-ledger-transition.yml's "
+                       "read-back of the published " + LEDGER_REF, "re-run typed-row --from-readback on the "
+                       "read-back of the genesis-append transition; nothing was emitted",
+                       entrypoint=TYPED_ENTRYPOINT, half="source", typed=True)
+    return genesis_observed_row(target, block["genesis_receipt_sha256"])
+
+
+def _external_ledger_refs(row: Mapping[str, Any]) -> list[str]:
+    found: list[str] = []
+
+    def walk(value: Any, where: str) -> None:
+        if isinstance(value, Mapping):
+            for k, v in value.items():
+                if k in EXTERNAL_LEDGER_KEYS:
+                    found.append(where + k)
+                walk(v, where + str(k) + ".")
+        elif isinstance(value, list):
+            for i, v in enumerate(value):
+                walk(v, where + str(i) + ".")
+    walk(row, "")
+    location = row.get("destination_location")
+    if not isinstance(location, str) or not location.startswith(LEDGER_REF + ":") or "#" in location \
+            or "://" in location or ".." in location.split(":", 1)[-1].split("/"):
+        found.append("destination_location " + repr(location) + " is not a location inside " + LEDGER_REF)
+    return found
+
+
+def typed_refusal(row: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Six-field refusal for a typed row, or None when it is an allowlisted, sealed, conformant typed transfer."""
+    pid, cid = row.get("path_id"), row.get("communication_id")
+    base = {"path_id": pid, "communication_id": cid, "half": "source", "typed": True}
+    fix = "correct the typed row in " + str(DECLARATION.relative_to(ROOT)) + "; nothing was written for this row"
+    kind = row.get("endpoint_kind")
+    if kind not in ENDPOINT_KINDS:
+        return refusal(FAIL_CLOSED, ENDPOINT_KIND_UNDECLARED, "TYPED_TRANSFER_DECLARES_AN_ENDPOINT_KIND",
+                       "endpoint_kind must be one of " + ", ".join(ENDPOINT_KINDS) + " (StegVerse-org/LLM-adapter "
+                       "schemas/endpoint-kind.v1.json); got " + repr(kind), fix, entrypoint=TYPED_ENTRYPOINT, **base)
+    if kind == GATEWAY:
+        external = _external_ledger_refs(row)
+        if external:
+            return refusal(DENY, GATEWAY_EXTERNAL_LEDGER, "GATEWAY_ENDPOINT_CARRIES_NO_EXTERNAL_LEDGER_REF",
+                           "a GATEWAY endpoint is carried inside " + LEDGER_REF + " and never imports or names an "
+                           "external chain; remove " + "; ".join(external), fix, entrypoint=TYPED_ENTRYPOINT,
+                           detail="; ".join(external), **base)
+    refused = endpoint_head_refusal(row, base, fix)
+    if refused is not None:
+        return refused
+    if kind not in ORG_LEDGER_KINDS:
+        return refusal(FAIL_CLOSED, ENDPOINT_NOT_ORG_SOURCE, ENDPOINT_NOT_ORG_SOURCE_PREDICATE,
+                       "endpoint_kind " + kind + " is an endpoint, and no endpoint is a source of records on "
+                       + LEDGER_REF + " (StegVerse-org/.github#160 comment 6372871021). Its data crosses only through "
+                       "InTr to its own recorded receipt chain, recorded at both ends; the Org side is this "
+                       "organization's own digest-only crossing receipt. An endpoint destination needs its own "
+                       "admitted path-definition change (class C, StegVerse-org/.github#167)", fix,
+                       entrypoint=TYPED_ENTRYPOINT, **base)
+    extra = sorted(set(row) - set(TYPED_ROW_KEYS) - {ENDPOINT_HEAD_KEY})
+    missing = sorted(set(TYPED_ROW_KEYS) - set(row))
+    if extra or missing:
+        return refusal(FAIL_CLOSED, TYPED_BODY_NONCONFORMANT, "TYPED_ROW_HAS_EXACTLY_THE_TYPED_KEYS",
+                       "a typed row has exactly " + ", ".join(TYPED_ROW_KEYS) + "; extra " + repr(extra)
+                       + ", missing " + repr(missing), fix, entrypoint=TYPED_ENTRYPOINT, **base)
+    body = row["typed_body"]
+    schema = body.get("schema") if isinstance(body, Mapping) else None
+    spec = TYPED_BODY_SCHEMAS.get(schema) if isinstance(schema, str) else None
+    if spec is None:
+        return refusal(FAIL_CLOSED, TYPED_SCHEMA_NOT_ALLOWLISTED, "TYPED_BODY_SCHEMA_IS_ALLOWLISTED",
+                       "typed_body.schema must be one of " + ", ".join(sorted(TYPED_BODY_SCHEMAS)) + "; got "
+                       + repr(schema) + ". Another typed schema needs its own admitted change to TYPED_BODY_SCHEMAS",
+                       "re-run after the schema is admitted to the allowlist, or carry an untyped transfer; nothing "
+                       "was written for this row", entrypoint=TYPED_ENTRYPOINT, **base)
+    if row["typed_body_sha256"] != sha(body):
+        return refusal(DENY, TYPED_BODY_UNSEALED, "TYPED_BODY_MATCHES_ITS_DIGEST",
+                       "typed_body_sha256 must be the digest of typed_body (" + sha(body) + "); the row names "
+                       + repr(row["typed_body_sha256"]), fix, entrypoint=TYPED_ENTRYPOINT, **base)
+    problems = []
+    if tuple(sorted(body)) != spec["keys"]:
+        problems.append("typed_body keys " + repr(sorted(body)) + " are not " + repr(list(spec["keys"])))
+    target = pointer_target(body)
+    if not isinstance(target, str) or target.count("/") != 1 or not target.startswith(organization() + "/") \
+            or target == repository():
+        problems.append("typed_body.ledger_location " + repr(body.get("ledger_location")) + " does not point at "
+                        "another repository of " + organization() + " on " + LEDGER_REF)
+    elif body != genesis_observed_body(target, body.get("genesis_receipt_sha256")):
+        problems.append("typed_body differs from the " + spec["signal_class"] + " record for " + target)
+    else:
+        if row["destination_location"] != org_location("repository-ledger/" + target):
+            problems.append("destination_location " + repr(row["destination_location"]) + " is not "
+                            + org_location("repository-ledger/" + target))
+    g = body.get("genesis_receipt_sha256")
+    if not (isinstance(g, str) and g.startswith("sha256:") and len(g) == 71
+            and all(c in "0123456789abcdef" for c in g[7:])):
+        problems.append("genesis_receipt_sha256 " + repr(g) + " is not a sha256: digest")
+    if kind not in spec["endpoint_kinds"]:
+        problems.append("endpoint_kind " + kind + " is not one of " + repr(list(spec["endpoint_kinds"]))
+                        + " for " + schema)
+    if pid != typed_path_id():
+        problems.append("path_id " + repr(pid) + " is not " + typed_path_id())
+    if problems:
+        return refusal(FAIL_CLOSED, TYPED_BODY_NONCONFORMANT, "TYPED_BODY_CONFORMS_TO_ITS_SCHEMA",
+                       "; ".join(problems), fix, entrypoint=TYPED_ENTRYPOINT, detail="; ".join(problems), **base)
+    declared = intra_org_path(pid) or endpoint_path(pid)
+    if declared is None or kind not in declared.get("endpoint_kinds", ()) \
+            or schema not in declared.get("typed_body_schemas", ()) \
+            or not row["destination_location"].startswith(declared.get("destination_location_prefix") or "\0"):
+        problems.append("path " + repr(pid) + " with endpoint_kind " + kind + ", schema " + schema + " and "
+                        "destination_location " + row["destination_location"] + " is not a declared intra-org path "
+                        "(data/intr-protocol/v1/protocol.json mesh_path_transfer.intra_org_paths)")
+        return refusal(FAIL_CLOSED, PATH_NOT_INTRA_ORG, "TYPED_TRANSFER_NAMES_A_DECLARED_INTRA_ORG_PATH",
+                       "; ".join(problems), "declare the path as a row of mesh_path_transfer.intra_org_paths by its "
+                       "own admitted change, or correct the typed row; nothing was written for this row",
+                       entrypoint=TYPED_ENTRYPOINT, detail="; ".join(problems), **base)
+    if problems:
+        return refusal(FAIL_CLOSED, TYPED_BODY_NONCONFORMANT, "TYPED_BODY_CONFORMS_TO_ITS_SCHEMA",
+                       "; ".join(problems), fix, entrypoint=TYPED_ENTRYPOINT, detail="; ".join(problems), **base)
+    # the envelope keeps every protocol predicate; only the body-schema predicate is replaced by the allowlist
+    payload_schema = next(p["equals"] for p in intr.load_contract()["destination_capability"]["binding_predicates"]
+                          if p["id"] == "BINDING_PAYLOAD_SCHEMA")
+    envelope = {**typed_message(row), "body": {"schema": payload_schema}}
+    conform = intr.conform_message(envelope, organization())
+    if conform["disposition"] != ALLOW:
+        return refusal(FAIL_CLOSED, MESSAGE_REFUSED, "PATH_MESSAGE_CONFORMS_TO_THE_PROTOCOL",
+                       conform["required_evidence_or_repair"], fix, entrypoint=TYPED_ENTRYPOINT, **base)
+    return None
+
+
+def typed_message(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {"message_class": "ecosystem.communication", "communication_id": row["communication_id"],
+            "body": dict(row["typed_body"])}
+
+
+def typed_path_evidence(row: Mapping[str, Any], transfer_commit: str, merge_transfer_receipt: str) -> dict[str, Any]:
+    """The typed source half's evidence: the intr_transport_carrier source shape (#431/#432/#433), on the org writer.
+
+    ``payload_sha256`` covers everything but payload_sha256, disposition, communication_id and boundary_evidence."""
+    msg = typed_message(row)
+    pid, cid = row["path_id"], row["communication_id"]
+    core = {"schema": EVIDENCE_SCHEMA, "repository": repository(), "path_id": pid,
+            "source_organization": organization(), "destination_organization": organization(),
+            "capability": CAPABILITY, "destination_location": row["destination_location"],
+            "endpoint_kind": row["endpoint_kind"], "typed_body_schema": msg["body"]["schema"],
+            "typed_body_sha256": row["typed_body_sha256"], "message": msg, "message_sha256": sha(msg),
+            "transfer_commit": transfer_commit, "merge_transfer_organization_receipt_sha256": merge_transfer_receipt}
+    boundary = {"operation": OPERATION, "path_id": pid, "communication_id": cid}
+    if ENDPOINT_HEAD_KEY in row:     # optional; reuses boundary_evidence; absent rows are byte-identical to before
+        boundary[ENDPOINT_HEAD_KEY] = row[ENDPOINT_HEAD_KEY]
+    return {**core, "payload_sha256": sha(core), "disposition": ALLOW, "communication_id": cid,
+            "boundary_evidence": boundary}
+
+
+def verify_typed_source(row: Mapping[str, Any], organization_store: Any = None,
+                        repository_store: Any = None) -> dict[str, Any]:
+    """The typed source half on this ledger: the sealed pair whose evidence is exactly typed_path_evidence."""
+    refused = typed_refusal(row)
+    if refused is not None:
+        return refused
+    organization_store = organization_store if organization_store is not None else mt.org_store()
+    repository_store = repository_store if repository_store is not None else mt.repo_store()
+    pid, cid = row["path_id"], row["communication_id"]
+    base = {"path_id": pid, "communication_id": cid, "half": "source", "typed": True}
+    chain = _chain(organization_store)
+    by_digest = {d: r for d, r in chain}
+    for digest, receipt in chain:
+        if not sealed(receipt) or receipt["receipt_sha256"] != digest:
+            break
+        boundary = mt._boundary(receipt)
+        if boundary.get("operation") != OPERATION or boundary.get("path_id") != pid \
+                or boundary.get("communication_id") != cid:
+            continue
+        linked = receipt.get("repo_receipt_sha256")
+        repo_receipt = mt._receipt(repository_store, linked)
+        evidence = repo_receipt.get("evidence") if sealed(repo_receipt) and isinstance(
+            repo_receipt.get("evidence"), Mapping) else {}
+        want = typed_path_evidence(row, evidence.get("transfer_commit"),
+                                   evidence.get("merge_transfer_organization_receipt_sha256"))
+        transfer = by_digest.get(evidence.get("merge_transfer_organization_receipt_sha256"))
+        tb = mt._boundary(transfer) if isinstance(transfer, Mapping) else {}
+        if not sealed(repo_receipt) or repo_receipt["receipt_sha256"] != linked or evidence != want \
+                or not sealed(transfer) or tb.get("operation") != mt.OPERATION \
+                or tb.get("merge_commit") != evidence.get("transfer_commit") or tb.get("repository") != repository():
+            return refusal(DENY, LINK_UNVERIFIED, "PATH_RECEIPT_LINKS_TO_THE_TRANSFER",
+                           "the typed path receipt's repository receipt must carry exactly this typed row's evidence "
+                           "and link the sealed main-merge transfer receipt of its transfer commit; the ledger "
+                           "contradicts it", "inspect organization receipt " + digest + "; nothing was verified",
+                           entrypoint=TYPED_ENTRYPOINT, organization_receipt_sha256=digest, **base)
+        return {"schema": RESULT_SCHEMA, "disposition": ALLOW, "half": "source", "typed": True, "path_id": pid,
+                "communication_id": cid, "typed_body_schema": row["typed_body"]["schema"],
+                "organization_receipt_sha256": digest, "repository_receipt_sha256": linked,
+                "transfer_commit": evidence["transfer_commit"],
+                "merge_transfer_organization_receipt_sha256": evidence["merge_transfer_organization_receipt_sha256"]}
+    return refusal(FAIL_CLOSED, NOT_LEDGERED, "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+                   "a sealed organization receipt with boundary_evidence.operation " + OPERATION + ", path_id " + str(pid)
+                   + " and communication_id " + str(cid) + ", linked to a sealed repository receipt carrying the typed "
+                   "evidence", "receipts appear only after the typed row lands on main and " + ENTRYPOINT
+                   + " appends it", entrypoint=TYPED_ENTRYPOINT, **base)
+
+
+CROSSING_NOT_RECORDED = "INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES"
+CROSSING_PREDICATE = "EACH_CROSSING_RECORDED_BY_BOTH_ENDPOINTS"
+EPOCH_PREDICATE = "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+DESTINATION_EVIDENCE_SCHEMA = "stegverse.intr-path-ingress-evidence/v1"
+_LOADED: dict[str, Any] = {}
+
+
+def _epoch_rule():
+    """The shared supplied-epoch rule, organization_egress_boundary.supplied_epoch_failure (byte-identical with
+    StegVerse-org/LLM-adapter llm_adapter/supplied_epoch.py), loaded only when a crossing is checked."""
+    if "egress" not in _LOADED:
+        _LOADED["egress"] = _module("organization_egress_boundary_for_path_transfer",
+                                    "resident-runtime/organization_egress_boundary.py")
+    return _LOADED["egress"].supplied_epoch_failure
+
+
+def record_epoch_failure(record: Any) -> tuple[str, str] | None:
+    """A crossing record's own supplied epoch: hb_reference.epoch under the shared rule, derived_from_clock exactly
+    false, and observed_at, when present, SUPPLIED_HB_EPOCH:<epoch> (StegVerse-Labs/.github#3263/#3290). Pure."""
+    hb = record.get("hb_reference") if isinstance(record, Mapping) else None
+    if not isinstance(hb, Mapping):
+        return "HB_EPOCH_NOT_SUPPLIED", "the record carries no hb_reference"
+    failed = _epoch_rule()(hb.get("epoch"), dict(hb))
+    if failed:
+        return failed
+    if "derived_from_clock" not in hb:
+        return "HB_EPOCH_INVALID", "the record's hb_reference does not say derived_from_clock false"
+    if "observed_at" in record and record["observed_at"] != "SUPPLIED_HB_EPOCH:" + str(hb["epoch"]):
+        return "HB_EPOCH_INVALID", "observed_at " + repr(record["observed_at"]) + " is not the supplied epoch"
+    return None
+
+
+def typed_crossing_failure(source: Any, destination: Any) -> dict[str, Any] | None:
+    """Six-field refusal unless both endpoints recorded the crossing (Rigel, StegVerse-org/.github#162 comment
+    6372641743): the source's egress record (this repository's INTR_MESH_PATH_TRANSFER receipt) and the destination's
+    ingress record (INTR_MESH_PATH_INGRESS on the destination's recorded receipt chain), each pointing at the other by
+    digest or location (never a copied body), each with a supplied epoch. Pure."""
+    sev = source.get("evidence") if isinstance(source, Mapping) and isinstance(source.get("evidence"), Mapping) else {}
+    dev = destination.get("evidence") if isinstance(destination, Mapping) \
+        and isinstance(destination.get("evidence"), Mapping) else {}
+    base = {"path_id": sev.get("path_id") or dev.get("path_id"),
+            "communication_id": sev.get("communication_id") or dev.get("communication_id"), "typed": True,
+            "half": "crossing"}
+    fix = "nothing was written; each side appends its own record of the crossing"
+
+    def one_sided(side: str, detail: str) -> dict[str, Any]:
+        return refusal(FAIL_CLOSED, CROSSING_NOT_RECORDED, CROSSING_PREDICATE,
+                       detail + ". A crossing is two events, one recorded at each endpoint: the egress record on the "
+                       "source side and the ingress record on the destination side, each pointing at the other by "
+                       "digest (StegVerse-org/.github#162 comment 6372641743)", fix + " (event-triggered: on the "
+                       "read-back of the missing side's record)", entrypoint=TYPED_ENTRYPOINT, one_sided=side, **base)
+    if not sealed(source) or source.get("transition_class") != TRANSITION_CLASS:
+        if sealed(destination):
+            return one_sided("DESTINATION_ONLY", "no sealed " + TRANSITION_CLASS + " egress record on the source side")
+        return one_sided("NEITHER", "neither side's record of the crossing is present")
+    if not sealed(destination) or destination.get("transition_class") != "INTR_MESH_PATH_INGRESS":
+        return one_sided("SOURCE_ONLY", "no sealed INTR_MESH_PATH_INGRESS ingress record on the destination side")
+    if dev.get("schema") != DESTINATION_EVIDENCE_SCHEMA \
+            or dev.get("source_repository_receipt_sha256") != source["receipt_sha256"] \
+            or dev.get("addressed_location") != sev.get("destination_location") \
+            or dev.get("communication_id") != sev.get("communication_id") or dev.get("path_id") != sev.get("path_id"):
+        return refusal(DENY, CROSSING_NOT_RECORDED, CROSSING_PREDICATE,
+                       "the ingress record must name the egress record's receipt_sha256, its destination_location "
+                       "(addressed_location), path_id and communication_id; the two records do not point at each "
+                       "other", fix, entrypoint=TYPED_ENTRYPOINT, **base)
+    for name, record in (("egress", source), ("ingress", destination)):
+        failed = record_epoch_failure(record)
+        if failed:
+            return refusal(FAIL_CLOSED, failed[0], EPOCH_PREDICATE, "the " + name + " record: " + failed[1]
+                           + "; every crossing record carries a supplied heartbeat epoch, never a clock", fix,
+                           entrypoint=TYPED_ENTRYPOINT, **base)
+    return None
+
+
+def verify_typed_crossing(row: Mapping[str, Any], destination_receipt: Any, organization_store: Any = None,
+                          repository_store: Any = None) -> dict[str, Any]:
+    """The typed source half on this ledger (verify_typed_source), then the destination's ingress record of the same
+    crossing, read back by the caller from the destination's recorded receipt chain. Both sides, or six fields."""
+    source = verify_typed_source(row, organization_store, repository_store)
+    if source["disposition"] != ALLOW:
+        if source.get("failure_code") == NOT_LEDGERED and destination_receipt:
+            return typed_crossing_failure(None, destination_receipt)
+        return source
+    repository_store = repository_store if repository_store is not None else mt.repo_store()
+    egress = mt._receipt(repository_store, source["repository_receipt_sha256"])
+    refused = typed_crossing_failure(egress, destination_receipt)
+    if refused is not None:
+        return refused
+    return {**source, "half": "crossing", "destination_receipt_sha256": destination_receipt["receipt_sha256"],
+            "recorded_by_both_sides": True}
+
+
+def _append_typed(row: Mapping[str, Any], transfer_commit: str, merge_transfer_receipt: str,
+                  epoch: Any) -> dict[str, Any]:
+    refused = typed_refusal(row)
+    if refused is not None:
+        return refused
+    existing = verify_typed_source(row)
+    if existing["disposition"] == ALLOW:
+        return {**existing, "replayed": True}
+    if existing["disposition"] == DENY:
+        return existing
+    pid, cid = row["path_id"], row["communication_id"]
+    evidence = typed_path_evidence(row, transfer_commit, merge_transfer_receipt)
+    try:
+        appended, replayed = ingress._append(TRANSITION_CLASS, pid + "@" + cid, evidence, epoch,
+                                             operation=OPERATION, profile_id=PROFILE_ID,
+                                             boundary_extra={"path_id": pid, "repository": repository(),
+                                                             "destination_organization": organization(),
+                                                             "transfer_commit": transfer_commit,
+                                                             "destination_location": row["destination_location"],
+                                                             "endpoint_kind": row["endpoint_kind"],
+                                                             "typed_body_schema": row["typed_body"]["schema"],
+                                                             **({ENDPOINT_HEAD_KEY: row[ENDPOINT_HEAD_KEY]}
+                                                                if ENDPOINT_HEAD_KEY in row else {})})
+    except (ValueError, SystemExit) as exc:
+        return refusal(FAIL_CLOSED, mt.WRITER_REFUSED, "LEDGER_WRITER_ADMITS_THE_APPEND",
+                       "repair what the ledger writer refused: " + str(exc),
+                       "re-run once repaired; nothing was written for this row", entrypoint=TYPED_ENTRYPOINT,
+                       path_id=pid, communication_id=cid, typed=True)
+    return {"schema": RESULT_SCHEMA, "disposition": ALLOW, "half": "source", "typed": True, "path_id": pid,
+            "communication_id": cid, "typed_body_schema": row["typed_body"]["schema"],
+            "transfer_commit": transfer_commit, "hb_epoch": epoch, "replayed": replayed,
+            "organization_receipt_sha256": appended["organization_receipt"]["receipt_sha256"],
+            "repository_receipt_sha256": appended["repository_receipt"]["receipt_sha256"]}
+
+
 # -- append -------------------------------------------------------------------
 
 def append_transfers(transfer_commit: str, declaration: Path | str = DECLARATION,
@@ -304,6 +838,9 @@ def append_transfers(transfer_commit: str, declaration: Path | str = DECLARATION
         return [{**failed, "schema": RESULT_SCHEMA, "transfer_commit": transfer_commit}]
     results = []
     for row in load_declaration(declaration):
+        if is_typed(row):
+            results.append(_append_typed(row, transfer_commit, verified["organization_receipt_sha256"], epoch))
+            continue
         pid, cid = row.get("path_id"), row.get("communication_id")
         path = paths.get(pid)
         if path is None or path["source"] != organization():
@@ -350,7 +887,8 @@ def append_transfers(transfer_commit: str, declaration: Path | str = DECLARATION
 
 def real_state(declaration: Path | str = DECLARATION, manifest: Path | str = SNAPSHOT,
                organization_store: Any = None, repository_store: Any = None) -> dict[str, Any]:
-    transfers = {row["path_id"]: row["communication_id"] for row in load_declaration(declaration)}
+    declared = load_declaration(declaration)
+    transfers = {row["path_id"]: row["communication_id"] for row in declared if not is_typed(row)}
     rows = []
     for path in declared_paths(manifest):
         result = verify_path(path, transfers.get(path["path_id"]), organization_store, repository_store)
@@ -359,8 +897,16 @@ def real_state(declaration: Path | str = DECLARATION, manifest: Path | str = SNA
                      "failed_predicate": result.get("failed_predicate"), "halves": result["halves"],
                      "classification": result.get("classification")})
     counts = {d: sum(r["disposition"] == d for r in rows) for d in (ALLOW, DENY, FAIL_CLOSED)}
-    return {"schema": "stegverse.intr-path-transfer-real-state/v1", "repository": repository(),
-            "counts": counts, "paths": rows}
+    state = {"schema": "stegverse.intr-path-transfer-real-state/v1", "repository": repository(),
+             "counts": counts, "paths": rows}
+    typed_rows = [row for row in declared if is_typed(row)]
+    if typed_rows:   # absent when no typed row is declared, so the untyped real state is unchanged
+        state["typed_transfers"] = []
+        for row in typed_rows:
+            r = verify_typed_source(row, organization_store, repository_store)
+            state["typed_transfers"].append({k: r.get(k) for k in ("path_id", "communication_id", "disposition",
+                                                                   "failure_code", "failed_predicate")})
+    return state
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -373,10 +919,24 @@ def main(argv: list[str] | None = None) -> int:
     v = sub.add_parser("verify")
     v.add_argument("--out")
     v.add_argument("--expect-source", choices=(ALLOW, FAIL_CLOSED))
+    t = sub.add_parser("typed-row", help="print a typed REPOSITORY_LEDGER_GENESIS_OBSERVED declaration row")
+    t.add_argument("--repository")
+    t.add_argument("--genesis-receipt")
+    t.add_argument("--from-readback", help="an organization_ledger_readback.py --repository-namespace output")
     args = parser.parse_args(argv)
     if args.command == "paths":
         print(json.dumps(declared_paths(), indent=2))
         return 0
+    if args.command == "typed-row":
+        if args.from_readback:
+            row = genesis_observed_row_from_readback(json.loads(Path(args.from_readback).read_text()))
+        elif args.repository and args.genesis_receipt:
+            row = genesis_observed_row(args.repository, args.genesis_receipt)
+        else:
+            parser.error("typed-row needs --from-readback, or --repository and --genesis-receipt")
+        refused = row if row.get("disposition") in (FAIL_CLOSED, DENY) else typed_refusal(row)
+        print(json.dumps(refused or row, indent=2, sort_keys=True))
+        return 0 if refused is None else 1
     if args.command == "append":
         result: Any = append_transfers(args.transfer_commit)
     else:

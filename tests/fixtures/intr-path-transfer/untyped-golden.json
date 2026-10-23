@@ -1,0 +1,2325 @@
+{
+  "append": [
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->Admissible-Existence",
+      "disposition": "ALLOW",
+      "half": "source",
+      "hb_epoch": 446655631,
+      "organization_receipt_sha256": "sha256:288d70ad819743c1ef66af62d86796169f4190289bd90274bbaa7bee0d838b7c",
+      "path_id": "StegVerse-org->Admissible-Existence:intr-destination",
+      "replayed": false,
+      "repository_receipt_sha256": "sha256:d142c62636c2bcad3ed27ffcaf55c89c2c66822109347ce019b4399d466f6fd9",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+      "disposition": "ALLOW",
+      "half": "source",
+      "hb_epoch": 446655631,
+      "organization_receipt_sha256": "sha256:28ce77868c4d4fdc1710836f37d711dcbb174549d6075ad55222ee8c9a99b132",
+      "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
+      "replayed": false,
+      "repository_receipt_sha256": "sha256:f8239b07a4870f82d8e724975656fb3fa864897e986a18ee37843b13607b7320",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->SV-011",
+      "disposition": "ALLOW",
+      "half": "source",
+      "hb_epoch": 446655631,
+      "organization_receipt_sha256": "sha256:e38f61f4ba6c0f881b0ffd261438c5f8f3be1d9b07af2283569c82bdf36ff38a",
+      "path_id": "StegVerse-org->SV-011:intr-destination",
+      "replayed": false,
+      "repository_receipt_sha256": "sha256:a302b2311206441b6d8d67125a891eeb7a33f974d2588d182d26f15ec120fb81",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->SV-LLM",
+      "disposition": "ALLOW",
+      "half": "source",
+      "hb_epoch": 446655631,
+      "organization_receipt_sha256": "sha256:52d37e6386aae77565c9c8e4a2b5301586037a50c27ff03e6b954847014b5f2a",
+      "path_id": "StegVerse-org->SV-LLM:intr-destination",
+      "replayed": false,
+      "repository_receipt_sha256": "sha256:efa381edce0f613135bc8d788294e46b7021621b262493ae8e9d0f105fa7347f",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegGhost",
+      "disposition": "ALLOW",
+      "half": "source",
+      "hb_epoch": 446655631,
+      "organization_receipt_sha256": "sha256:593a4eff58183bfe0064424836f51c528e280bf3c9fbafa3e3926fafa52aa136",
+      "path_id": "StegVerse-org->StegGhost:intr-destination",
+      "replayed": false,
+      "repository_receipt_sha256": "sha256:220bee3977ef2cb0f4b5afe8a4ab56c9a015772c51493f1c7d3bec7a68b5b3ab",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-002",
+      "disposition": "ALLOW",
+      "half": "source",
+      "hb_epoch": 446655631,
+      "organization_receipt_sha256": "sha256:fa94915b240bddf8a88a4e0ebeb4d5fd85c2749f8451109a64edae38a373380c",
+      "path_id": "StegVerse-org->StegVerse-002:intr-destination",
+      "replayed": false,
+      "repository_receipt_sha256": "sha256:a7eb8ec2765833774b0dccae7589ee31f9063c61053bde8158df1efe55084888",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
+      "disposition": "ALLOW",
+      "half": "source",
+      "hb_epoch": 446655631,
+      "organization_receipt_sha256": "sha256:74d9a10e54dc39334446e8132b19033510a361561b64b62c45ea3765419b99f7",
+      "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
+      "replayed": false,
+      "repository_receipt_sha256": "sha256:6f0d3f87aadf6c164b1191878df48e9aa593db91a3df2de5ed4031a9bd36199d",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    }
+  ],
+  "declaration": [
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->Admissible-Existence",
+      "path_id": "StegVerse-org->Admissible-Existence:intr-destination"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+      "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->SV-011",
+      "path_id": "StegVerse-org->SV-011:intr-destination"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->SV-LLM",
+      "path_id": "StegVerse-org->SV-LLM:intr-destination"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegGhost",
+      "path_id": "StegVerse-org->StegGhost:intr-destination"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-002",
+      "path_id": "StegVerse-org->StegVerse-002:intr-destination"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
+      "path_id": "StegVerse-org->StegVerse-Labs:intr-destination"
+    }
+  ],
+  "generated_from": {
+    "commit": "907f4305",
+    "file": "resident-runtime/intr_path_transfer.py",
+    "sha256": "2909ec9480467ad8622726686b1808b87e3f794bc477566806cd86376db7592d"
+  },
+  "ledger_files_written_sha256": {
+    ".append.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "HEAD.json": "sha256:74d9a10e54dc39334446e8132b19033510a361561b64b62c45ea3765419b99f7",
+    "receipts/288d70ad819743c1ef66af62d86796169f4190289bd90274bbaa7bee0d838b7c.json": "2d69ee161c47cffaec7cec10a68ffc20720a280f09c5ffc5809913e314052bac",
+    "receipts/28ce77868c4d4fdc1710836f37d711dcbb174549d6075ad55222ee8c9a99b132.json": "267aa3bc522177663921e1970c8ac0b19ae1fe522cbd033b82908d52309348a8",
+    "receipts/52d37e6386aae77565c9c8e4a2b5301586037a50c27ff03e6b954847014b5f2a.json": "c1b590f21ddad640e045206f562e5ccf8a9b0bc6431f2ab03217c22820bc13d5",
+    "receipts/593a4eff58183bfe0064424836f51c528e280bf3c9fbafa3e3926fafa52aa136.json": "1d2757041598257534511b0f98a268c4667880a2eadc39fa4435ead2971e1198",
+    "receipts/74d9a10e54dc39334446e8132b19033510a361561b64b62c45ea3765419b99f7.json": "c2331c8aa21fc0861c45b7a1e626c1c81623705301798d11591b5e047ce02e86",
+    "receipts/e38f61f4ba6c0f881b0ffd261438c5f8f3be1d9b07af2283569c82bdf36ff38a.json": "b311a31373b476328a79a5c8bc0d826fda40f01ba577b6f67d53052d17c7dc86",
+    "receipts/fa94915b240bddf8a88a4e0ebeb4d5fd85c2749f8451109a64edae38a373380c.json": "ae9c934140c885bf5d7fc15cbb609d1f1f8e8ef805ee05d88ae84a2170c8c634",
+    "repository-ledger/StegVerse-org/.github/.append.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "repository-ledger/StegVerse-org/.github/HEAD.json": "sha256:6f0d3f87aadf6c164b1191878df48e9aa593db91a3df2de5ed4031a9bd36199d",
+    "repository-ledger/StegVerse-org/.github/receipts/220bee3977ef2cb0f4b5afe8a4ab56c9a015772c51493f1c7d3bec7a68b5b3ab.json": "df8312f62f387c4aef2f3e1fca6e0ef75c767e139996d10b25e3ff5a1f423292",
+    "repository-ledger/StegVerse-org/.github/receipts/6f0d3f87aadf6c164b1191878df48e9aa593db91a3df2de5ed4031a9bd36199d.json": "720ea63238c3c57dc7a6c1254cea80fe9e2c1d4ef519548b890d678266b2e185",
+    "repository-ledger/StegVerse-org/.github/receipts/a302b2311206441b6d8d67125a891eeb7a33f974d2588d182d26f15ec120fb81.json": "a3e294622fdd1f3dfb66e2ff5bbde08e04dc7883ac33ce1a8e21957cbaa87537",
+    "repository-ledger/StegVerse-org/.github/receipts/a7eb8ec2765833774b0dccae7589ee31f9063c61053bde8158df1efe55084888.json": "7d2459e41baa15e61323c8fa325e6771769b9dd136d118bcf2bc5a2fbc00586c",
+    "repository-ledger/StegVerse-org/.github/receipts/d142c62636c2bcad3ed27ffcaf55c89c2c66822109347ce019b4399d466f6fd9.json": "69bc3bb895db498adb94c9bec9e387aaf5b61c96156158d99c78f457c7620794",
+    "repository-ledger/StegVerse-org/.github/receipts/efa381edce0f613135bc8d788294e46b7021621b262493ae8e9d0f105fa7347f.json": "3ac91a99b9530005fd4ead67a0ec709ad072aae7df8ccd39c0b8010402649ba2",
+    "repository-ledger/StegVerse-org/.github/receipts/f8239b07a4870f82d8e724975656fb3fa864897e986a18ee37843b13607b7320.json": "c6dc4b67abb1eb3bbaade600ad23969493d0c78ffe77d0d38f9152d5a3cde5a0",
+    "source-receipts/220bee3977ef2cb0f4b5afe8a4ab56c9a015772c51493f1c7d3bec7a68b5b3ab.json": "df8312f62f387c4aef2f3e1fca6e0ef75c767e139996d10b25e3ff5a1f423292",
+    "source-receipts/6f0d3f87aadf6c164b1191878df48e9aa593db91a3df2de5ed4031a9bd36199d.json": "720ea63238c3c57dc7a6c1254cea80fe9e2c1d4ef519548b890d678266b2e185",
+    "source-receipts/a302b2311206441b6d8d67125a891eeb7a33f974d2588d182d26f15ec120fb81.json": "a3e294622fdd1f3dfb66e2ff5bbde08e04dc7883ac33ce1a8e21957cbaa87537",
+    "source-receipts/a7eb8ec2765833774b0dccae7589ee31f9063c61053bde8158df1efe55084888.json": "7d2459e41baa15e61323c8fa325e6771769b9dd136d118bcf2bc5a2fbc00586c",
+    "source-receipts/d142c62636c2bcad3ed27ffcaf55c89c2c66822109347ce019b4399d466f6fd9.json": "69bc3bb895db498adb94c9bec9e387aaf5b61c96156158d99c78f457c7620794",
+    "source-receipts/efa381edce0f613135bc8d788294e46b7021621b262493ae8e9d0f105fa7347f.json": "3ac91a99b9530005fd4ead67a0ec709ad072aae7df8ccd39c0b8010402649ba2",
+    "source-receipts/f8239b07a4870f82d8e724975656fb3fa864897e986a18ee37843b13607b7320.json": "c6dc4b67abb1eb3bbaade600ad23969493d0c78ffe77d0d38f9152d5a3cde5a0"
+  },
+  "messages": [
+    {
+      "body": {
+        "path_id": "StegVerse-org->Admissible-Existence:intr-destination",
+        "schema": "stegverse.org-intr-destination-diagnostic/v1",
+        "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+      },
+      "communication_id": "intr-path-v1:StegVerse-org->Admissible-Existence",
+      "message_class": "ecosystem.communication"
+    },
+    {
+      "body": {
+        "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
+        "schema": "stegverse.org-intr-destination-diagnostic/v1",
+        "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+      },
+      "communication_id": "intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+      "message_class": "ecosystem.communication"
+    },
+    {
+      "body": {
+        "path_id": "StegVerse-org->SV-011:intr-destination",
+        "schema": "stegverse.org-intr-destination-diagnostic/v1",
+        "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+      },
+      "communication_id": "intr-path-v1:StegVerse-org->SV-011",
+      "message_class": "ecosystem.communication"
+    },
+    {
+      "body": {
+        "path_id": "StegVerse-org->SV-LLM:intr-destination",
+        "schema": "stegverse.org-intr-destination-diagnostic/v1",
+        "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+      },
+      "communication_id": "intr-path-v1:StegVerse-org->SV-LLM",
+      "message_class": "ecosystem.communication"
+    },
+    {
+      "body": {
+        "path_id": "StegVerse-org->StegGhost:intr-destination",
+        "schema": "stegverse.org-intr-destination-diagnostic/v1",
+        "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+      },
+      "communication_id": "intr-path-v1:StegVerse-org->StegGhost",
+      "message_class": "ecosystem.communication"
+    },
+    {
+      "body": {
+        "path_id": "StegVerse-org->StegVerse-002:intr-destination",
+        "schema": "stegverse.org-intr-destination-diagnostic/v1",
+        "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+      },
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-002",
+      "message_class": "ecosystem.communication"
+    },
+    {
+      "body": {
+        "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
+        "schema": "stegverse.org-intr-destination-diagnostic/v1",
+        "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+      },
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
+      "message_class": "ecosystem.communication"
+    }
+  ],
+  "note": "Output of current main for the existing fixtures (declaration, pinned snapshot, pinned ledger tip). Typed bodies must leave every value here byte-identical. Temp-ledger receipts are NOT LEDGERED.",
+  "path_evidence": [
+    {
+      "capability": "intr-destination",
+      "communication_id": "intr-path-v1:StegVerse-org->Admissible-Existence",
+      "destination_address": "admissible-existence.intr-destination",
+      "destination_organization": "Admissible-Existence",
+      "disposition": "ALLOW",
+      "merge_transfer_organization_receipt_sha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "message": {
+        "body": {
+          "path_id": "StegVerse-org->Admissible-Existence:intr-destination",
+          "schema": "stegverse.org-intr-destination-diagnostic/v1",
+          "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+        },
+        "communication_id": "intr-path-v1:StegVerse-org->Admissible-Existence",
+        "message_class": "ecosystem.communication"
+      },
+      "message_sha256": "sha256:edf50fd800883b2f17bc2e6e349591184fa2c98c963a7dd5bd95d34796a92d4a",
+      "path_id": "StegVerse-org->Admissible-Existence:intr-destination",
+      "payload_sha256": "sha256:a2361a2728ab8febccaee7815f41474664177308dcfb2ad1766d0d2a3b9acddb",
+      "repository": "StegVerse-org/.github",
+      "schema": "stegverse.intr-path-transfer-evidence/v1",
+      "source_organization": "StegVerse-org",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "capability": "intr-destination",
+      "communication_id": "intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+      "destination_address": "gcat-bcat-engine.intr-destination",
+      "destination_organization": "GCAT-BCAT-Engine",
+      "disposition": "ALLOW",
+      "merge_transfer_organization_receipt_sha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "message": {
+        "body": {
+          "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
+          "schema": "stegverse.org-intr-destination-diagnostic/v1",
+          "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+        },
+        "communication_id": "intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+        "message_class": "ecosystem.communication"
+      },
+      "message_sha256": "sha256:a1b12eac5cd0824fd32b621133c6e36b64e31f99969ed8d691628ec6418298c8",
+      "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
+      "payload_sha256": "sha256:db0c32dbebfeafc3488a134981dbaa79cde4deb7a579659ab1e4bddb6aca1a11",
+      "repository": "StegVerse-org/.github",
+      "schema": "stegverse.intr-path-transfer-evidence/v1",
+      "source_organization": "StegVerse-org",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "capability": "intr-destination",
+      "communication_id": "intr-path-v1:StegVerse-org->SV-011",
+      "destination_address": "sv-011.intr-destination",
+      "destination_organization": "SV-011",
+      "disposition": "ALLOW",
+      "merge_transfer_organization_receipt_sha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "message": {
+        "body": {
+          "path_id": "StegVerse-org->SV-011:intr-destination",
+          "schema": "stegverse.org-intr-destination-diagnostic/v1",
+          "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+        },
+        "communication_id": "intr-path-v1:StegVerse-org->SV-011",
+        "message_class": "ecosystem.communication"
+      },
+      "message_sha256": "sha256:ec762dbe0d5faf4b8ed63890f116292ff6e402cda99592228910741629059433",
+      "path_id": "StegVerse-org->SV-011:intr-destination",
+      "payload_sha256": "sha256:e45f243f9a09e9f30050f9801a8f7d52bad0c1e830ba14a46fd8f9527ea9e352",
+      "repository": "StegVerse-org/.github",
+      "schema": "stegverse.intr-path-transfer-evidence/v1",
+      "source_organization": "StegVerse-org",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "capability": "intr-destination",
+      "communication_id": "intr-path-v1:StegVerse-org->SV-LLM",
+      "destination_address": "sv-llm.intr-destination",
+      "destination_organization": "SV-LLM",
+      "disposition": "ALLOW",
+      "merge_transfer_organization_receipt_sha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "message": {
+        "body": {
+          "path_id": "StegVerse-org->SV-LLM:intr-destination",
+          "schema": "stegverse.org-intr-destination-diagnostic/v1",
+          "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+        },
+        "communication_id": "intr-path-v1:StegVerse-org->SV-LLM",
+        "message_class": "ecosystem.communication"
+      },
+      "message_sha256": "sha256:0c7a3a5d23ee5aa8603b1b04350f70b9db945cc4308d2c72c4740b63eb2a8318",
+      "path_id": "StegVerse-org->SV-LLM:intr-destination",
+      "payload_sha256": "sha256:eea70598ca5ffa5ebed1a3009e381b0827d91fe401f3db74e35f8d4851e5398e",
+      "repository": "StegVerse-org/.github",
+      "schema": "stegverse.intr-path-transfer-evidence/v1",
+      "source_organization": "StegVerse-org",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "capability": "intr-destination",
+      "communication_id": "intr-path-v1:StegVerse-org->StegGhost",
+      "destination_address": "stegghost.intr-destination",
+      "destination_organization": "StegGhost",
+      "disposition": "ALLOW",
+      "merge_transfer_organization_receipt_sha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "message": {
+        "body": {
+          "path_id": "StegVerse-org->StegGhost:intr-destination",
+          "schema": "stegverse.org-intr-destination-diagnostic/v1",
+          "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+        },
+        "communication_id": "intr-path-v1:StegVerse-org->StegGhost",
+        "message_class": "ecosystem.communication"
+      },
+      "message_sha256": "sha256:189387f514d612447318fc2bc4c0abcb33aeaf77902a65de5e4685c8bcdd1a61",
+      "path_id": "StegVerse-org->StegGhost:intr-destination",
+      "payload_sha256": "sha256:b54f19e8b021a9ce246dd9ea911b85e14c5de89fc7f2e656839d38c9fcb1d6d7",
+      "repository": "StegVerse-org/.github",
+      "schema": "stegverse.intr-path-transfer-evidence/v1",
+      "source_organization": "StegVerse-org",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "capability": "intr-destination",
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-002",
+      "destination_address": "stegverse-002.intr-destination",
+      "destination_organization": "StegVerse-002",
+      "disposition": "ALLOW",
+      "merge_transfer_organization_receipt_sha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "message": {
+        "body": {
+          "path_id": "StegVerse-org->StegVerse-002:intr-destination",
+          "schema": "stegverse.org-intr-destination-diagnostic/v1",
+          "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+        },
+        "communication_id": "intr-path-v1:StegVerse-org->StegVerse-002",
+        "message_class": "ecosystem.communication"
+      },
+      "message_sha256": "sha256:0b69ccd133fb7503cc85e8e645c790e4d12079bbcfb371f8cc5eee8be21f8209",
+      "path_id": "StegVerse-org->StegVerse-002:intr-destination",
+      "payload_sha256": "sha256:9bd22586d44a5929a74f8570fcef43b4be541bd51657bb1dabbe1325dc90e0e0",
+      "repository": "StegVerse-org/.github",
+      "schema": "stegverse.intr-path-transfer-evidence/v1",
+      "source_organization": "StegVerse-org",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "capability": "intr-destination",
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
+      "destination_address": "stegverse-labs.intr-destination",
+      "destination_organization": "StegVerse-Labs",
+      "disposition": "ALLOW",
+      "merge_transfer_organization_receipt_sha256": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "message": {
+        "body": {
+          "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
+          "schema": "stegverse.org-intr-destination-diagnostic/v1",
+          "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+        },
+        "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
+        "message_class": "ecosystem.communication"
+      },
+      "message_sha256": "sha256:4973c7db2ba4d6e478646e1664156e46614ab9f0bafdf3ebef36a9f01c4727ed",
+      "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
+      "payload_sha256": "sha256:d1dfb9f54dc4f31b2eee154098611a83cf6e7df7ae2405ad0d8f3be068d18ad9",
+      "repository": "StegVerse-org/.github",
+      "schema": "stegverse.intr-path-transfer-evidence/v1",
+      "source_organization": "StegVerse-org",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    }
+  ],
+  "paths": [
+    {
+      "capability": "intr-destination",
+      "destination": "GCAT-BCAT-Engine",
+      "destination_address": "gcat-bcat-engine.intr-destination",
+      "path_id": "Admissible-Existence->GCAT-BCAT-Engine:intr-destination",
+      "source": "Admissible-Existence"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-011",
+      "destination_address": "sv-011.intr-destination",
+      "path_id": "Admissible-Existence->SV-011:intr-destination",
+      "source": "Admissible-Existence"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-LLM",
+      "destination_address": "sv-llm.intr-destination",
+      "path_id": "Admissible-Existence->SV-LLM:intr-destination",
+      "source": "Admissible-Existence"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegGhost",
+      "destination_address": "stegghost.intr-destination",
+      "path_id": "Admissible-Existence->StegGhost:intr-destination",
+      "source": "Admissible-Existence"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-002",
+      "destination_address": "stegverse-002.intr-destination",
+      "path_id": "Admissible-Existence->StegVerse-002:intr-destination",
+      "source": "Admissible-Existence"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-Labs",
+      "destination_address": "stegverse-labs.intr-destination",
+      "path_id": "Admissible-Existence->StegVerse-Labs:intr-destination",
+      "source": "Admissible-Existence"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-org",
+      "destination_address": "stegverse-org.intr-destination",
+      "path_id": "Admissible-Existence->StegVerse-org:intr-destination",
+      "source": "Admissible-Existence"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "Admissible-Existence",
+      "destination_address": "admissible-existence.intr-destination",
+      "path_id": "GCAT-BCAT-Engine->Admissible-Existence:intr-destination",
+      "source": "GCAT-BCAT-Engine"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-011",
+      "destination_address": "sv-011.intr-destination",
+      "path_id": "GCAT-BCAT-Engine->SV-011:intr-destination",
+      "source": "GCAT-BCAT-Engine"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-LLM",
+      "destination_address": "sv-llm.intr-destination",
+      "path_id": "GCAT-BCAT-Engine->SV-LLM:intr-destination",
+      "source": "GCAT-BCAT-Engine"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegGhost",
+      "destination_address": "stegghost.intr-destination",
+      "path_id": "GCAT-BCAT-Engine->StegGhost:intr-destination",
+      "source": "GCAT-BCAT-Engine"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-002",
+      "destination_address": "stegverse-002.intr-destination",
+      "path_id": "GCAT-BCAT-Engine->StegVerse-002:intr-destination",
+      "source": "GCAT-BCAT-Engine"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-Labs",
+      "destination_address": "stegverse-labs.intr-destination",
+      "path_id": "GCAT-BCAT-Engine->StegVerse-Labs:intr-destination",
+      "source": "GCAT-BCAT-Engine"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-org",
+      "destination_address": "stegverse-org.intr-destination",
+      "path_id": "GCAT-BCAT-Engine->StegVerse-org:intr-destination",
+      "source": "GCAT-BCAT-Engine"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "Admissible-Existence",
+      "destination_address": "admissible-existence.intr-destination",
+      "path_id": "SV-011->Admissible-Existence:intr-destination",
+      "source": "SV-011"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "GCAT-BCAT-Engine",
+      "destination_address": "gcat-bcat-engine.intr-destination",
+      "path_id": "SV-011->GCAT-BCAT-Engine:intr-destination",
+      "source": "SV-011"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-LLM",
+      "destination_address": "sv-llm.intr-destination",
+      "path_id": "SV-011->SV-LLM:intr-destination",
+      "source": "SV-011"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegGhost",
+      "destination_address": "stegghost.intr-destination",
+      "path_id": "SV-011->StegGhost:intr-destination",
+      "source": "SV-011"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-002",
+      "destination_address": "stegverse-002.intr-destination",
+      "path_id": "SV-011->StegVerse-002:intr-destination",
+      "source": "SV-011"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-Labs",
+      "destination_address": "stegverse-labs.intr-destination",
+      "path_id": "SV-011->StegVerse-Labs:intr-destination",
+      "source": "SV-011"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-org",
+      "destination_address": "stegverse-org.intr-destination",
+      "path_id": "SV-011->StegVerse-org:intr-destination",
+      "source": "SV-011"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "Admissible-Existence",
+      "destination_address": "admissible-existence.intr-destination",
+      "path_id": "SV-LLM->Admissible-Existence:intr-destination",
+      "source": "SV-LLM"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "GCAT-BCAT-Engine",
+      "destination_address": "gcat-bcat-engine.intr-destination",
+      "path_id": "SV-LLM->GCAT-BCAT-Engine:intr-destination",
+      "source": "SV-LLM"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-011",
+      "destination_address": "sv-011.intr-destination",
+      "path_id": "SV-LLM->SV-011:intr-destination",
+      "source": "SV-LLM"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegGhost",
+      "destination_address": "stegghost.intr-destination",
+      "path_id": "SV-LLM->StegGhost:intr-destination",
+      "source": "SV-LLM"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-002",
+      "destination_address": "stegverse-002.intr-destination",
+      "path_id": "SV-LLM->StegVerse-002:intr-destination",
+      "source": "SV-LLM"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-Labs",
+      "destination_address": "stegverse-labs.intr-destination",
+      "path_id": "SV-LLM->StegVerse-Labs:intr-destination",
+      "source": "SV-LLM"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-org",
+      "destination_address": "stegverse-org.intr-destination",
+      "path_id": "SV-LLM->StegVerse-org:intr-destination",
+      "source": "SV-LLM"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "Admissible-Existence",
+      "destination_address": "admissible-existence.intr-destination",
+      "path_id": "StegGhost->Admissible-Existence:intr-destination",
+      "source": "StegGhost"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "GCAT-BCAT-Engine",
+      "destination_address": "gcat-bcat-engine.intr-destination",
+      "path_id": "StegGhost->GCAT-BCAT-Engine:intr-destination",
+      "source": "StegGhost"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-011",
+      "destination_address": "sv-011.intr-destination",
+      "path_id": "StegGhost->SV-011:intr-destination",
+      "source": "StegGhost"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-LLM",
+      "destination_address": "sv-llm.intr-destination",
+      "path_id": "StegGhost->SV-LLM:intr-destination",
+      "source": "StegGhost"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-002",
+      "destination_address": "stegverse-002.intr-destination",
+      "path_id": "StegGhost->StegVerse-002:intr-destination",
+      "source": "StegGhost"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-Labs",
+      "destination_address": "stegverse-labs.intr-destination",
+      "path_id": "StegGhost->StegVerse-Labs:intr-destination",
+      "source": "StegGhost"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-org",
+      "destination_address": "stegverse-org.intr-destination",
+      "path_id": "StegGhost->StegVerse-org:intr-destination",
+      "source": "StegGhost"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "Admissible-Existence",
+      "destination_address": "admissible-existence.intr-destination",
+      "path_id": "StegVerse-002->Admissible-Existence:intr-destination",
+      "source": "StegVerse-002"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "GCAT-BCAT-Engine",
+      "destination_address": "gcat-bcat-engine.intr-destination",
+      "path_id": "StegVerse-002->GCAT-BCAT-Engine:intr-destination",
+      "source": "StegVerse-002"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-011",
+      "destination_address": "sv-011.intr-destination",
+      "path_id": "StegVerse-002->SV-011:intr-destination",
+      "source": "StegVerse-002"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-LLM",
+      "destination_address": "sv-llm.intr-destination",
+      "path_id": "StegVerse-002->SV-LLM:intr-destination",
+      "source": "StegVerse-002"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegGhost",
+      "destination_address": "stegghost.intr-destination",
+      "path_id": "StegVerse-002->StegGhost:intr-destination",
+      "source": "StegVerse-002"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-Labs",
+      "destination_address": "stegverse-labs.intr-destination",
+      "path_id": "StegVerse-002->StegVerse-Labs:intr-destination",
+      "source": "StegVerse-002"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-org",
+      "destination_address": "stegverse-org.intr-destination",
+      "path_id": "StegVerse-002->StegVerse-org:intr-destination",
+      "source": "StegVerse-002"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "Admissible-Existence",
+      "destination_address": "admissible-existence.intr-destination",
+      "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+      "source": "StegVerse-Labs"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "GCAT-BCAT-Engine",
+      "destination_address": "gcat-bcat-engine.intr-destination",
+      "path_id": "StegVerse-Labs->GCAT-BCAT-Engine:intr-destination",
+      "source": "StegVerse-Labs"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-011",
+      "destination_address": "sv-011.intr-destination",
+      "path_id": "StegVerse-Labs->SV-011:intr-destination",
+      "source": "StegVerse-Labs"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-LLM",
+      "destination_address": "sv-llm.intr-destination",
+      "path_id": "StegVerse-Labs->SV-LLM:intr-destination",
+      "source": "StegVerse-Labs"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegGhost",
+      "destination_address": "stegghost.intr-destination",
+      "path_id": "StegVerse-Labs->StegGhost:intr-destination",
+      "source": "StegVerse-Labs"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-002",
+      "destination_address": "stegverse-002.intr-destination",
+      "path_id": "StegVerse-Labs->StegVerse-002:intr-destination",
+      "source": "StegVerse-Labs"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-org",
+      "destination_address": "stegverse-org.intr-destination",
+      "path_id": "StegVerse-Labs->StegVerse-org:intr-destination",
+      "source": "StegVerse-Labs"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "Admissible-Existence",
+      "destination_address": "admissible-existence.intr-destination",
+      "path_id": "StegVerse-org->Admissible-Existence:intr-destination",
+      "source": "StegVerse-org"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "GCAT-BCAT-Engine",
+      "destination_address": "gcat-bcat-engine.intr-destination",
+      "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
+      "source": "StegVerse-org"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-011",
+      "destination_address": "sv-011.intr-destination",
+      "path_id": "StegVerse-org->SV-011:intr-destination",
+      "source": "StegVerse-org"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "SV-LLM",
+      "destination_address": "sv-llm.intr-destination",
+      "path_id": "StegVerse-org->SV-LLM:intr-destination",
+      "source": "StegVerse-org"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegGhost",
+      "destination_address": "stegghost.intr-destination",
+      "path_id": "StegVerse-org->StegGhost:intr-destination",
+      "source": "StegVerse-org"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-002",
+      "destination_address": "stegverse-002.intr-destination",
+      "path_id": "StegVerse-org->StegVerse-002:intr-destination",
+      "source": "StegVerse-org"
+    },
+    {
+      "capability": "intr-destination",
+      "destination": "StegVerse-Labs",
+      "destination_address": "stegverse-labs.intr-destination",
+      "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
+      "source": "StegVerse-org"
+    }
+  ],
+  "real_state_after": {
+    "counts": {
+      "ALLOW": 0,
+      "DENY": 0,
+      "FAIL_CLOSED": 56
+    },
+    "paths": [
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "A",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "ALLOW"
+        },
+        "path_id": "StegVerse-org->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "A",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "ALLOW"
+        },
+        "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "A",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "ALLOW"
+        },
+        "path_id": "StegVerse-org->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "A",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "ALLOW"
+        },
+        "path_id": "StegVerse-org->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "A",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "ALLOW"
+        },
+        "path_id": "StegVerse-org->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "A",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "ALLOW"
+        },
+        "path_id": "StegVerse-org->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "A",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "ALLOW"
+        },
+        "path_id": "StegVerse-org->StegVerse-Labs:intr-destination"
+      }
+    ],
+    "repository": "StegVerse-org/.github",
+    "schema": "stegverse.intr-path-transfer-real-state/v1"
+  },
+  "real_state_before": {
+    "counts": {
+      "ALLOW": 0,
+      "DENY": 0,
+      "FAIL_CLOSED": 56
+    },
+    "paths": [
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "Admissible-Existence->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "GCAT-BCAT-Engine->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-011->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "SV-LLM->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegGhost->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->StegVerse-Labs:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-002->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": "B",
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-Labs->StegVerse-org:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": null,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-org->Admissible-Existence:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": null,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": null,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-org->SV-011:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": null,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-org->SV-LLM:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": null,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-org->StegGhost:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": null,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-org->StegVerse-002:intr-destination"
+      },
+      {
+        "capability": "intr-destination",
+        "classification": null,
+        "disposition": "FAIL_CLOSED",
+        "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+        "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+        "halves": {
+          "destination": "FAIL_CLOSED",
+          "source": "FAIL_CLOSED"
+        },
+        "path_id": "StegVerse-org->StegVerse-Labs:intr-destination"
+      }
+    ],
+    "repository": "StegVerse-org/.github",
+    "schema": "stegverse.intr-path-transfer-real-state/v1"
+  },
+  "replay": [
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->Admissible-Existence",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:288d70ad819743c1ef66af62d86796169f4190289bd90274bbaa7bee0d838b7c",
+      "path_id": "StegVerse-org->Admissible-Existence:intr-destination",
+      "replayed": true,
+      "repository_receipt_sha256": "sha256:d142c62636c2bcad3ed27ffcaf55c89c2c66822109347ce019b4399d466f6fd9",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:28ce77868c4d4fdc1710836f37d711dcbb174549d6075ad55222ee8c9a99b132",
+      "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
+      "replayed": true,
+      "repository_receipt_sha256": "sha256:f8239b07a4870f82d8e724975656fb3fa864897e986a18ee37843b13607b7320",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->SV-011",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:e38f61f4ba6c0f881b0ffd261438c5f8f3be1d9b07af2283569c82bdf36ff38a",
+      "path_id": "StegVerse-org->SV-011:intr-destination",
+      "replayed": true,
+      "repository_receipt_sha256": "sha256:a302b2311206441b6d8d67125a891eeb7a33f974d2588d182d26f15ec120fb81",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->SV-LLM",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:52d37e6386aae77565c9c8e4a2b5301586037a50c27ff03e6b954847014b5f2a",
+      "path_id": "StegVerse-org->SV-LLM:intr-destination",
+      "replayed": true,
+      "repository_receipt_sha256": "sha256:efa381edce0f613135bc8d788294e46b7021621b262493ae8e9d0f105fa7347f",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegGhost",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:593a4eff58183bfe0064424836f51c528e280bf3c9fbafa3e3926fafa52aa136",
+      "path_id": "StegVerse-org->StegGhost:intr-destination",
+      "replayed": true,
+      "repository_receipt_sha256": "sha256:220bee3977ef2cb0f4b5afe8a4ab56c9a015772c51493f1c7d3bec7a68b5b3ab",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-002",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:fa94915b240bddf8a88a4e0ebeb4d5fd85c2749f8451109a64edae38a373380c",
+      "path_id": "StegVerse-org->StegVerse-002:intr-destination",
+      "replayed": true,
+      "repository_receipt_sha256": "sha256:a7eb8ec2765833774b0dccae7589ee31f9063c61053bde8158df1efe55084888",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:74d9a10e54dc39334446e8132b19033510a361561b64b62c45ea3765419b99f7",
+      "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
+      "replayed": true,
+      "repository_receipt_sha256": "sha256:6f0d3f87aadf6c164b1191878df48e9aa593db91a3df2de5ed4031a9bd36199d",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    }
+  ],
+  "schema": "stegverse.intr-path-transfer-untyped-golden/v1",
+  "unledgered": [
+    {
+      "disposition": "FAIL_CLOSED",
+      "failed_predicate": "PATH_TRANSFER_RIDES_A_LEDGERED_MAIN_MERGE",
+      "failure_code": "INTR_PATH_TRANSFER_COMMIT_NOT_LEDGERED",
+      "next_attempt": "re-run after the push's main-merge transfer is ledgered; nothing was written",
+      "owning_existing_goal": "StegVerse-org/.github#162",
+      "required_evidence_or_repair": "the transfer commit f40ad7dd47160add7f1f18559b2dda6c73f57f29 must have a VERIFIED main-merge transfer receipt before a path receipt links it (MERGE_TRANSFER_RECEIPT_NOT_LEDGERED)",
+      "retry_entrypoint": ".github/workflows/intr-path-transfer.yml (after Organization Ledger Main Merge Transfer completes on a push to main)",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29"
+    }
+  ],
+  "verify_source": [
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->Admissible-Existence",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:288d70ad819743c1ef66af62d86796169f4190289bd90274bbaa7bee0d838b7c",
+      "path_id": "StegVerse-org->Admissible-Existence:intr-destination",
+      "repository_receipt_sha256": "sha256:d142c62636c2bcad3ed27ffcaf55c89c2c66822109347ce019b4399d466f6fd9",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->GCAT-BCAT-Engine",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:28ce77868c4d4fdc1710836f37d711dcbb174549d6075ad55222ee8c9a99b132",
+      "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
+      "repository_receipt_sha256": "sha256:f8239b07a4870f82d8e724975656fb3fa864897e986a18ee37843b13607b7320",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->SV-011",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:e38f61f4ba6c0f881b0ffd261438c5f8f3be1d9b07af2283569c82bdf36ff38a",
+      "path_id": "StegVerse-org->SV-011:intr-destination",
+      "repository_receipt_sha256": "sha256:a302b2311206441b6d8d67125a891eeb7a33f974d2588d182d26f15ec120fb81",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->SV-LLM",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:52d37e6386aae77565c9c8e4a2b5301586037a50c27ff03e6b954847014b5f2a",
+      "path_id": "StegVerse-org->SV-LLM:intr-destination",
+      "repository_receipt_sha256": "sha256:efa381edce0f613135bc8d788294e46b7021621b262493ae8e9d0f105fa7347f",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegGhost",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:593a4eff58183bfe0064424836f51c528e280bf3c9fbafa3e3926fafa52aa136",
+      "path_id": "StegVerse-org->StegGhost:intr-destination",
+      "repository_receipt_sha256": "sha256:220bee3977ef2cb0f4b5afe8a4ab56c9a015772c51493f1c7d3bec7a68b5b3ab",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-002",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:fa94915b240bddf8a88a4e0ebeb4d5fd85c2749f8451109a64edae38a373380c",
+      "path_id": "StegVerse-org->StegVerse-002:intr-destination",
+      "repository_receipt_sha256": "sha256:a7eb8ec2765833774b0dccae7589ee31f9063c61053bde8158df1efe55084888",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    },
+    {
+      "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
+      "disposition": "ALLOW",
+      "half": "source",
+      "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+      "organization_receipt_sha256": "sha256:74d9a10e54dc39334446e8132b19033510a361561b64b62c45ea3765419b99f7",
+      "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
+      "repository_receipt_sha256": "sha256:6f0d3f87aadf6c164b1191878df48e9aa593db91a3df2de5ed4031a9bd36199d",
+      "schema": "stegverse.intr-path-transfer-result/v1",
+      "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481"
+    }
+  ]
+}
