@@ -47,7 +47,8 @@ jobs:
           python3 resident-runtime/pinned_labs.py fetch --dest "$LABS"
           git -c 'http.https://github.com/.extraheader=' fetch --no-tags --quiet origin \
             '+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger'
-          python -m pip install jsonschema
+          # pinned: the runner's system jsonschema 4.10.3 equates a nested true with 1 in enum/const
+          python -m pip install "jsonschema==4.26.0"
 
       - name: Every test set (a push to main selects all)
         run: |
@@ -62,8 +63,10 @@ jobs:
         run: |
           set -uo pipefail
           mapfile -t selected < "$RESULTS/test-set-args.txt"
-          python -m unittest -v "${selected[@]}" > "$RESULTS/unittest.txt" 2>&1
-          echo $? > "$RESULTS/unittest-status"
+          # the step shell is bash -e: capture the status so the adjudication step reads it (never lose a failure)
+          status=0
+          python -m unittest -v "${selected[@]}" > "$RESULTS/unittest.txt" 2>&1 || status=$?
+          echo "$status" > "$RESULTS/unittest-status"
           tail -n 4 "$RESULTS/unittest.txt"
 
       - name: Receipt the main head (pinned drift tool detect through the B1 writer)

@@ -74,7 +74,8 @@ jobs:
             '+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger'
           # jsonschema: only the agreement oracle (tests/test_stdlib_json_schema_agreement.py). Every schema check
           # validates with the pinned stdlib validator (STEGVERSE_LABS_ROOT, sha256-checked above).
-          python -m pip install jsonschema
+          # pinned: the runner's system jsonschema 4.10.3 equates a nested true with 1 in enum/const
+          python -m pip install "jsonschema==4.26.0"
 
       - name: Select the test sets this change requires
         run: |
@@ -91,8 +92,10 @@ jobs:
           set -uo pipefail
           mapfile -t selected < "$RESULTS/test-set-args.txt"
           if [ "${#selected[@]}" -eq 0 ]; then echo "no runnable selected set" | tee "$RESULTS/unittest.txt"; echo 5 > "$RESULTS/unittest-status"; exit 0; fi
-          python -m unittest -v "${selected[@]}" > "$RESULTS/unittest.txt" 2>&1
-          echo $? > "$RESULTS/unittest-status"
+          # the step shell is bash -e: capture the status so the adjudication step reads it (never lose a failure)
+          status=0
+          python -m unittest -v "${selected[@]}" > "$RESULTS/unittest.txt" 2>&1 || status=$?
+          echo "$status" > "$RESULTS/unittest-status"
           tail -n 4 "$RESULTS/unittest.txt"
 
       - name: Module-level test functions of the selected sets

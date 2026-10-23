@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import importlib.metadata
 import json
 import sys
 import unittest
@@ -27,6 +28,9 @@ import pinned_labs  # noqa: E402
 
 SIX = pinned_labs.SIX
 CORPUS = "tests/fixtures/stdlib-json-schema/agreement-corpus.json"
+
+
+ORACLE_VERSION = "4.26.0"   # the version required-verification.yml installs; 4.10.3 equates nested true with 1
 
 
 def oracle(schema, instance) -> bool:
@@ -46,6 +50,18 @@ class Agreement(unittest.TestCase):
         got = self.sjs.Validator(schema).is_valid(instance)
         self.assertEqual(got, want, label)
         return want
+
+    def test_the_oracle_is_the_qualified_jsonschema(self) -> None:
+        # an oracle that is itself wrong cannot adjudicate agreement: require the pinned version and that it keeps
+        # booleans distinct from numbers at depth (JSON Schema instance equality), as the stdlib validator does
+        self.assertEqual(importlib.metadata.version("jsonschema"), ORACLE_VERSION,
+                         "install the qualified oracle: python -m pip install \"jsonschema==%s\"" % ORACLE_VERSION)
+        for schema, instance in (({"enum": [{"k": [1]}]}, {"k": [True]}), ({"const": [0]}, [False]),
+                                 ({"enum": [1]}, True)):
+            self.assertFalse(oracle(schema, instance), (schema, instance))
+            self.assertFalse(self.sjs.Validator(schema).is_valid(instance), (schema, instance))
+        wf = (ROOT / ".github/workflows/required-verification.yml").read_text(encoding="utf-8")
+        self.assertIn('python -m pip install "jsonschema==%s"' % ORACLE_VERSION, wf)
 
     def test_the_corpus_is_the_pinned_one_and_names_its_validator(self) -> None:
         self.assertEqual(self.corpus["schema"], "stegverse.stdlib-json-schema-agreement-corpus/v1")

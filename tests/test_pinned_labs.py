@@ -72,7 +72,7 @@ class PinnedLabsTests(unittest.TestCase):
             self.assertNotIn("-m pip install", text, name)
             self.assertIn("'resident-runtime/pinned_labs.py'", text, name)   # a change to the loader runs the job
         rv = (wf / "required-verification.yml").read_text()
-        self.assertIn("python -m pip install jsonschema", rv)                # the agreement oracle input
+        self.assertIn('python -m pip install "jsonschema==4.26.0"', rv)                # the agreement oracle input
         self.assertIn("STEGVERSE_LABS_ROOT", rv)
         importer = re.compile(r"(?m)^\s*(import jsonschema|from jsonschema\b)")
         uses = sorted(p.relative_to(ROOT).as_posix() for p in ROOT.rglob("*.py")

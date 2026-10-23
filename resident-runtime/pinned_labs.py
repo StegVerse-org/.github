@@ -80,10 +80,11 @@ def path(rel: str) -> Path:
 
 
 def module(rel: str) -> ModuleType:
-    name = "pinned_labs__" + Path(rel).stem
+    where = path(rel)          # verified against the pin on every call; a cached module never bypasses the check
+    name = "pinned_labs__" + Path(rel).stem + "__" + hashlib.sha256(str(where).encode()).hexdigest()[:12]
     if name in sys.modules:
         return sys.modules[name]
-    spec = importlib.util.spec_from_file_location(name, path(rel))
+    spec = importlib.util.spec_from_file_location(name, where)
     mod = importlib.util.module_from_spec(spec)
     sys.modules[name] = mod
     spec.loader.exec_module(mod)

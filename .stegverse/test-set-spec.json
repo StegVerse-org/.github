@@ -27,7 +27,7 @@
    },
    "finish_point": "the full-suite job imports jsonschema and tests/test_stdlib_json_schema_agreement.py (the stdlib validator's agreement oracle) runs and passes at the exact head",
    "owner": "StegVerse-org/.github#166 (P4 lane: the agreement oracle only; every other schema check uses the pinned stdlib validator)",
-   "repair": "the full-suite job installs jsonschema (python -m pip install jsonschema) for the agreement check only"
+   "repair": "the full-suite job installs jsonschema (python -m pip install \"jsonschema==4.26.0\", the version the agreement oracle is qualified at) for the agreement check only"
   },
   "labs-stdlib-json-schema": {
    "check": {

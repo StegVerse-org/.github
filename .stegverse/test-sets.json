@@ -3,7 +3,7 @@
  "generated_from": {
   "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
   "spec": ".stegverse/test-set-spec.json",
-  "spec_sha256": "e5ef686f3a6ce775a7042762a99d92fed69fa335eb293fdc3dd75fad7a9b554f"
+  "spec_sha256": "abe0ee365a5e0185533b0914ff037dc0e0a63946ecf391f43914e9b0624f6c49"
  },
  "inputs": {
   "jsonschema": {
@@ -13,7 +13,7 @@
    },
    "finish_point": "the full-suite job imports jsonschema and tests/test_stdlib_json_schema_agreement.py (the stdlib validator's agreement oracle) runs and passes at the exact head",
    "owner": "StegVerse-org/.github#166 (P4 lane: the agreement oracle only; every other schema check uses the pinned stdlib validator)",
-   "repair": "the full-suite job installs jsonschema (python -m pip install jsonschema) for the agreement check only"
+   "repair": "the full-suite job installs jsonschema (python -m pip install \"jsonschema==4.26.0\", the version the agreement oracle is qualified at) for the agreement check only"
   },
   "labs-stdlib-json-schema": {
    "check": {
@@ -2299,6 +2299,7 @@
    "tests/peer_organization.py"
   ],
   "tests/test_stdlib_json_schema_agreement.py": [
+   ".github/workflows/required-verification.yml",
    "orchestration/schemas/task-registry.schema.json",
    "orchestration/task-registry.json",
    "resident-runtime/pinned_labs.py"
