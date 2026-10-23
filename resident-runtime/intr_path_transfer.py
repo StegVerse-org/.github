@@ -335,6 +335,23 @@ ENDPOINT_KIND_UNDECLARED = "INTR_PATH_ENDPOINT_KIND_UNDECLARED"
 GATEWAY_EXTERNAL_LEDGER = "INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF"
 
 
+PATH_NOT_INTRA_ORG = "INTR_PATH_INTRA_ORG_PATH_UNDECLARED"
+GENESIS_NOT_READ_BACK = "INTR_PATH_GENESIS_NOT_READ_BACK"
+GENESIS_CLASS = "REPOSITORY_LEDGER_INITIALIZATION"
+
+
+def intra_org_paths() -> list[dict[str, Any]]:
+    """The declared intra-organization repository-destination paths: data rows of the existing path schema,
+    data/intr-protocol/v1/protocol.json mesh_path_transfer.intra_org_paths (path_id, source, destination,
+    capability, plus the endpoint kinds, typed-body schemas and destination-location prefix the path admits)."""
+    return [dict(r) for r in intr.load_contract()["mesh_path_transfer"].get("intra_org_paths", [])]
+
+
+def intra_org_path(path_id: Any) -> dict[str, Any] | None:
+    return next((p for p in intra_org_paths() if p.get("path_id") == path_id and p.get("source") == repository()
+                 and p.get("destination") == organization() and p.get("capability") == CAPABILITY), None)
+
+
 def is_typed(row: Mapping[str, Any]) -> bool:
     return isinstance(row, Mapping) and any(k in row for k in TYPED_MARKERS)
 
@@ -364,6 +381,39 @@ def genesis_observed_row(target_repository: str, genesis_receipt_sha256: str) ->
             "communication_id": "intr-path-v1:" + repository() + "->" + target_repository + ":genesis-observed",
             "destination_location": org_location("repository-ledger/" + target_repository),
             "endpoint_kind": "ORG", "typed_body": body, "typed_body_sha256": sha(body)}
+
+
+def genesis_observed_row_from_readback(readback: Any) -> dict[str, Any]:
+    """The genesis-append trigger, minimal: the typed row for a repository genesis, derived only from the
+    organization ledger read-back that organization-ledger-transition.yml writes (organization_ledger_readback.py
+    --repository-namespace repository-ledger/<repo> --out readback.json). Landing the row in transfers.json on
+    main is the existing path-transfer transition. Pure: reads nothing but the document given."""
+    block = readback.get("repository_ledger") if isinstance(readback, Mapping) else None
+    chain = block.get("chain") if isinstance(block, Mapping) else None
+    namespace = block.get("namespace") if isinstance(block, Mapping) else None
+    target = namespace[len("repository-ledger/"):] if isinstance(namespace, str) \
+        and namespace.startswith("repository-ledger/") else None
+    problems = []
+    if not isinstance(readback, Mapping) or readback.get("disposition", ALLOW) != ALLOW:
+        problems.append("the read-back is not an ALLOW organization-ledger read-back")
+    if not isinstance(chain, list) or not chain or not isinstance(chain[0], Mapping):
+        problems.append("no repository_ledger.chain in the read-back")
+    elif chain[0].get("transition_class") != GENESIS_CLASS or chain[0].get("previous_receipt_sha256") is not None \
+            or chain[0].get("receipt_sha256") != block.get("genesis_receipt_sha256"):
+        problems.append("the chain's first receipt is not a " + GENESIS_CLASS + " genesis equal to "
+                        "repository_ledger.genesis_receipt_sha256")
+    if isinstance(block, Mapping) and (block.get("every_receipt_verifies_against_its_body") is not True
+                                       or block.get("every_receipt_retained_in_organization_ledger") is not True):
+        problems.append("the read-back does not verify and retain every repository receipt")
+    if target is None:
+        problems.append("repository_ledger.namespace " + repr(namespace) + " is not repository-ledger/<repository>")
+    if problems:
+        return refusal(FAIL_CLOSED, GENESIS_NOT_READ_BACK, "GENESIS_OBSERVED_ON_THE_PUBLISHED_LEDGER_READ_BACK",
+                       "; ".join(problems) + ". The row is derived only from organization-ledger-transition.yml's "
+                       "read-back of the published " + LEDGER_REF, "re-run typed-row --from-readback on the "
+                       "read-back of the genesis-append transition; nothing was emitted",
+                       entrypoint=TYPED_ENTRYPOINT, half="source", typed=True)
+    return genesis_observed_row(target, block["genesis_receipt_sha256"])
 
 
 def _external_ledger_refs(row: Mapping[str, Any]) -> list[str]:
@@ -444,6 +494,20 @@ def typed_refusal(row: Mapping[str, Any]) -> dict[str, Any] | None:
                         + " for " + schema)
     if pid != typed_path_id():
         problems.append("path_id " + repr(pid) + " is not " + typed_path_id())
+    if problems:
+        return refusal(FAIL_CLOSED, TYPED_BODY_NONCONFORMANT, "TYPED_BODY_CONFORMS_TO_ITS_SCHEMA",
+                       "; ".join(problems), fix, entrypoint=TYPED_ENTRYPOINT, detail="; ".join(problems), **base)
+    declared = intra_org_path(pid)
+    if declared is None or kind not in declared.get("endpoint_kinds", ()) \
+            or schema not in declared.get("typed_body_schemas", ()) \
+            or not row["destination_location"].startswith(declared.get("destination_location_prefix") or "\0"):
+        problems.append("path " + repr(pid) + " with endpoint_kind " + kind + ", schema " + schema + " and "
+                        "destination_location " + row["destination_location"] + " is not a declared intra-org path "
+                        "(data/intr-protocol/v1/protocol.json mesh_path_transfer.intra_org_paths)")
+        return refusal(FAIL_CLOSED, PATH_NOT_INTRA_ORG, "TYPED_TRANSFER_NAMES_A_DECLARED_INTRA_ORG_PATH",
+                       "; ".join(problems), "declare the path as a row of mesh_path_transfer.intra_org_paths by its "
+                       "own admitted change, or correct the typed row; nothing was written for this row",
+                       entrypoint=TYPED_ENTRYPOINT, detail="; ".join(problems), **base)
     if problems:
         return refusal(FAIL_CLOSED, TYPED_BODY_NONCONFORMANT, "TYPED_BODY_CONFORMS_TO_ITS_SCHEMA",
                        "; ".join(problems), fix, entrypoint=TYPED_ENTRYPOINT, detail="; ".join(problems), **base)
@@ -659,15 +723,21 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--out")
     v.add_argument("--expect-source", choices=(ALLOW, FAIL_CLOSED))
     t = sub.add_parser("typed-row", help="print a typed REPOSITORY_LEDGER_GENESIS_OBSERVED declaration row")
-    t.add_argument("--repository", required=True)
-    t.add_argument("--genesis-receipt", required=True)
+    t.add_argument("--repository")
+    t.add_argument("--genesis-receipt")
+    t.add_argument("--from-readback", help="an organization_ledger_readback.py --repository-namespace output")
     args = parser.parse_args(argv)
     if args.command == "paths":
         print(json.dumps(declared_paths(), indent=2))
         return 0
     if args.command == "typed-row":
-        row = genesis_observed_row(args.repository, args.genesis_receipt)
-        refused = typed_refusal(row)
+        if args.from_readback:
+            row = genesis_observed_row_from_readback(json.loads(Path(args.from_readback).read_text()))
+        elif args.repository and args.genesis_receipt:
+            row = genesis_observed_row(args.repository, args.genesis_receipt)
+        else:
+            parser.error("typed-row needs --from-readback, or --repository and --genesis-receipt")
+        refused = row if row.get("disposition") in (FAIL_CLOSED, DENY) else typed_refusal(row)
         print(json.dumps(refused or row, indent=2, sort_keys=True))
         return 0 if refused is None else 1
     if args.command == "append":

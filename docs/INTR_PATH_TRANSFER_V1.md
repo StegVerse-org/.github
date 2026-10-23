@@ -102,7 +102,14 @@ and every refusal carries six fields. Nothing is written for a refused row.
    - `path_id` is `StegVerse-org/.github->StegVerse-org:intr-destination`.
 
    A row that breaks any of these fails closed with `INTR_PATH_TYPED_BODY_NONCONFORMANT`.
-7. The envelope keeps every protocol predicate. Only the body-schema predicate is replaced by the allowlist.
+7. The path must be a declared intra-org repository-destination path. It is a data row of the existing path
+   schema in `data/intr-protocol/v1/protocol.json` `mesh_path_transfer.intra_org_paths`, with `path_id`, `source`,
+   `destination` and `capability` as in the `declared_paths` rows, plus the `endpoint_kinds`, `typed_body_schemas`
+   and `destination_location_prefix` the path admits. The one row is
+   `StegVerse-org/.github->StegVerse-org:intr-destination` (`ORG`, the genesis-observed schema,
+   `refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/`). Otherwise the row fails closed with
+   `INTR_PATH_INTRA_ORG_PATH_UNDECLARED`. The mesh `declared_paths` are unchanged.
+8. The envelope keeps every protocol predicate. Only the body-schema predicate is replaced by the allowlist.
 
 The typed evidence is `stegverse.intr-path-transfer-evidence/v1` in the source shape of `intr_transport_carrier`
 (LLM-adapter#431/#432/#433):
@@ -112,6 +119,16 @@ The typed evidence is `stegverse.intr-path-transfer-evidence/v1` in the source s
 
 `typed-row --repository <repo> --genesis-receipt <sha256>` prints the row, which lands on main as its own transition
 once the genesis is receipted. No typed row is declared by this change.
+
+**Trigger (reuse first).** A repository's genesis is appended in this repository, by
+`.github/workflows/organization-ledger-transition.yml` (a committed `.stegverse/transition-requests/` request, under
+`ORGANIZATION_LEDGER_LOCK`). That run reads the published ref back with `organization_ledger_readback.py
+--repository-namespace ... --out readback.json`. `typed-row --from-readback readback.json`
+(`genesis_observed_row_from_readback`) derives the typed row from that read-back only. The read-back's first chain
+receipt must be the `REPOSITORY_LEDGER_INITIALIZATION` genesis, and every receipt must verify and be retained.
+Otherwise the result is a six-field `FAIL_CLOSED` `INTR_PATH_GENESIS_NOT_READ_BACK` and nothing is emitted. When the
+row lands in `transfers.json` on main, the existing `intr-path-transfer.yml` fires on it (`workflow_run` after the
+main-merge transfer). No workflow is added or changed.
 
 **Backward compatible.** Rows without the typed keys take the untyped code, which is unchanged. Its output for the
 existing fixtures is byte-identical to main @907f4305 (`tests/fixtures/intr-path-transfer/untyped-golden.json`), and

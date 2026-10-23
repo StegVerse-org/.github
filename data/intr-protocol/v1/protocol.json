@@ -169,6 +169,9 @@
     "destination_readback_schema": "stegverse.intr-path-ledger-readback/v1",
     "operation": "INTR_MESH_PATH_TRANSFER",
     "capability": "intr-destination",
+    "intra_org_paths": [
+      {"path_id": "StegVerse-org/.github->StegVerse-org:intr-destination", "source": "StegVerse-org/.github", "destination": "StegVerse-org", "capability": "intr-destination", "kind": "INTRA_ORG_REPOSITORY_DESTINATION", "destination_location_prefix": "refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/", "endpoint_kinds": ["ORG"], "typed_body_schemas": ["stegverse.repository-ledger-genesis-observed/v1"], "transition": "a typed row of .stegverse/intr-path-transfer/transfers.json naming this path_id (INTR-PATH-TRANSFER-TYPED-BODY-001)"}
+    ],
     "declared_paths": "every ordered pair of distinct organizations whose destination documents conform in tests/fixtures/intr-protocol/destinations/manifest.json; path_id <SOURCE>-><DESTINATION>:intr-destination",
     "transition": "a row of .stegverse/intr-path-transfer/transfers.json landing on main; .github/workflows/intr-path-transfer.yml appends after the push's main-merge transfer is ledgered (workflow_run, no dispatch)",
     "verifier": "resident-runtime/intr_path_transfer.py verify",

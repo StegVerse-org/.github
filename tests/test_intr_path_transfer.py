@@ -539,8 +539,71 @@ class TypedBody(unittest.TestCase):
         # a GATEWAY row with no external ref is still not the genesis-observed source kind
         self.assert_six(pt.typed_refusal(gw), "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_NONCONFORMANT")
 
+    def test_the_intra_org_path_is_a_data_row_of_the_existing_path_schema(self):
+        rows = pt.intra_org_paths()
+        self.assertEqual([r["path_id"] for r in rows], [pt.typed_path_id()])
+        row = rows[0]
+        mesh = pt.declared_paths()[0]
+        for key in ("path_id", "source", "destination", "capability"):   # the declared_paths row keys, reused
+            self.assertIn(key, mesh)
+            self.assertIsInstance(row[key], str)
+        self.assertEqual((row["source"], row["destination"], row["capability"]),
+                         (pt.repository(), pt.organization(), pt.CAPABILITY))
+        self.assertEqual(row["endpoint_kinds"], ["ORG"])
+        self.assertEqual(row["typed_body_schemas"], sorted(pt.TYPED_BODY_SCHEMAS))
+        self.assertTrue(self.row["destination_location"].startswith(row["destination_location_prefix"]))
+        self.assertEqual(pt.intra_org_path(self.row["path_id"]), row)
+        # not a mesh path: the untyped declared paths are unchanged
+        self.assertNotIn(pt.typed_path_id(), [m["path_id"] for m in pt.declared_paths()])
+
+    def test_a_typed_row_on_an_undeclared_intra_org_path_is_refused(self):
+        from unittest import mock
+        with mock.patch.object(pt, "intra_org_paths", return_value=[]):
+            self.assert_six(pt.typed_refusal(self.row), "FAIL_CLOSED", "INTR_PATH_INTRA_ORG_PATH_UNDECLARED")
+        narrowed = [{**pt.intra_org_paths()[0], "endpoint_kinds": ["PERMANENT"]}]
+        with mock.patch.object(pt, "intra_org_paths", return_value=narrowed):
+            self.assert_six(pt.typed_refusal(self.row), "FAIL_CLOSED", "INTR_PATH_INTRA_ORG_PATH_UNDECLARED")
+        self.assertIsNone(pt.typed_refusal(self.row))
+
+    def readback(self, **block):
+        g = self.genesis["receipt_sha256"]
+        base = {"namespace": "repository-ledger/" + LLM_ADAPTER, "genesis_receipt_sha256": g,
+                "head_receipt_sha256": g, "chain_length": 1,
+                "chain": [{"receipt_sha256": g, "previous_receipt_sha256": None,
+                           "transition_id": "REPOSITORY_LEDGER_INITIALIZATION:" + LLM_ADAPTER,
+                           "transition_class": "REPOSITORY_LEDGER_INITIALIZATION"}],
+                "every_receipt_verifies_against_its_body": True,
+                "every_receipt_retained_in_organization_ledger": True, "replay_read_organization_receipts": False}
+        return {"schema": "stegverse.organization-ledger-readback/v1", "repository_ledger": {**base, **block}}
+
+    def test_the_genesis_append_read_back_emits_the_typed_row(self):
+        """Reuse-first trigger: the genesis append's own read-back yields exactly the typed row; landing it in
+        transfers.json is the existing path-transfer transition."""
+        self.assertEqual(pt.genesis_observed_row_from_readback(self.readback()), self.row)
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / "readback.json"
+            f.write_text(json.dumps(self.readback()))
+            out = subprocess.run([sys.executable, str(ROOT / "resident-runtime/intr_path_transfer.py"), "typed-row",
+                                  "--from-readback", str(f)], capture_output=True, text=True)
+            self.assertEqual(out.returncode, 0, out.stderr)
+            self.assertEqual(json.loads(out.stdout), self.row)
+
+    def test_a_read_back_without_a_genesis_emits_nothing(self):
+        g = self.genesis["receipt_sha256"]
+        for bad in (self.readback(chain=[]),
+                    self.readback(chain=[{"receipt_sha256": g, "previous_receipt_sha256": None,
+                                          "transition_class": "INTR_MESH_PATH_TRANSFER"}]),
+                    self.readback(genesis_receipt_sha256="sha256:" + "0" * 64),
+                    self.readback(every_receipt_retained_in_organization_ledger=False),
+                    self.readback(namespace="somewhere-else"),
+                    {**self.readback(), "disposition": "FAIL_CLOSED"}, {}, None):
+            with self.subTest(bad=bad):
+                self.assert_six(pt.genesis_observed_row_from_readback(bad), "FAIL_CLOSED",
+                                "INTR_PATH_GENESIS_NOT_READ_BACK")
+
     def test_no_new_workflow_and_the_path_workflows_are_unchanged(self):
-        for name in ("intr-path-transfer.yml", "intr-path-ingress.yml", "intr-path-transfer-validation.yml"):
+        for name in ("intr-path-transfer.yml", "intr-path-ingress.yml", "intr-path-transfer-validation.yml",
+                     "organization-ledger-transition.yml"):
             path = ".github/workflows/" + name
             blob = subprocess.run(["git", "-C", str(ROOT), "show", MAIN + ":" + path], check=True,
                                   capture_output=True).stdout
