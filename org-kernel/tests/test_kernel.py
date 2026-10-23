@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as td:
  "transition":{"reference":"diagnostic","authority_effect":"NONE"},"payload":{"probe":"ping"},
  "standing":{"mode":"ESTABLISH_GENESIS","node_ref":"kernel-test-node","predecessor":None},
  "evidence":{"ingress_receipt":None,"dispatch_receipt":None,"consumption_receipt":None,"egress_receipt":None,"reconstruction_reference":None}}
- frame=k.carrier_frame(packet,now_ns=k.HB_ANCHOR_UNIX_NS+1_000_000_000)
+ frame=k.carrier_frame(packet,epoch=k.HB_ANCHOR_EPOCH+100)
  recovered=k.recover_packet(frame); assert recovered==packet
  out=k.ingest_frame(root,frame); assert out["status"]=="CONSUMED"; assert out["execution_result"]["reconstruction"]["status"]=="RECONSTRUCTED"
  assert [x["kind"] for x in out["execution_result"]["receipts"]]==["INGRESS_ACCEPTED","DISPATCHED","CONSUMED","RESULT_BOUND","EGRESS_EMITTED"]
