@@ -1,9 +1,9 @@
 name: Admission Predicate Selftest
 
 # Offline selftests for resident-runtime/admission_predicate.py: temporary git
-# repositories only, no network, no ledger, no schedule.
+# repositories only, no network, no ledger, no schedule, no manual dispatch
+# (the pull_request event at the exact head is the only trigger).
 on:
-  workflow_dispatch:
   pull_request:
     paths:
       - "resident-runtime/admission_predicate.py"
