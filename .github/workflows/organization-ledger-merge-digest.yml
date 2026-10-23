@@ -1,0 +1,129 @@
+name: Organization Ledger Main Change Digest
+
+# B3 (StegVerse-org/.github#160 issuecomment-6353130407 section 1.3), owning Goal
+# STEGVERSE-CANONICAL-WORK-COORDINATION-001: every ledgered merge or main push
+# is projected to its Goal, so no main change is off-radar.
+#
+# Trigger: the completion of this repository's main-merge transfer writer
+# (organization-ledger-merge-transfer.yml, `name: Organization Ledger Main Merge
+# Transfer`, itself `on: push: branches: [main]`). workflow_run runs from the
+# default branch only, never for a pull_request. There is no schedule, no
+# workflow_dispatch and no ledger write: this job reads the writer run's
+# retained selection, re-verifies those merges from a fresh read-only fetch of
+# the published ledger ref, and posts one digest per writer run (one
+# ledger-head advance). Lowest supported operating mode: E0 (no LLM).
+#
+# Projections (resident-runtime/merge_digest.py):
+#   1. a comment on the Goal issue named by the receipt's task binding
+#      (default StegVerse-org/.github#160), posted once (marker-idempotent)
+#      when this run's GITHUB_TOKEN reaches it; otherwise a six-field FAIL_CLOSED
+#      in the digest (a TV/TVC per-transition credential is the repair).
+#   2. the KV coordination folder: a six-field FAIL_CLOSED until the KV custody
+#      path settled on #163 (TVC#529, C4) is bound; the file is in the artifact.
+# PR-facing checks: .github/workflows/organization-ledger-merge-digest-validation.yml.
+on:
+  workflow_run:
+    workflows: [Organization Ledger Main Merge Transfer]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LEDGER_REF: refs/stegverse/organization-ledger
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+      RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Checkout the default branch (the digest code; full history for the merged heads)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Retrieve the writer run's retained selection (read-only)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/writer" "$RUNNER_TEMP/digest"
+          case "$HEAD_SHA" in *[!0-9a-f]*|"") echo "head sha is not hex"; exit 1;; esac
+          test "${#HEAD_SHA}" = 40
+          if gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n "main-merge-transfer-$HEAD_SHA" -D "$RUNNER_TEMP/writer"; then
+            echo "writer evidence retrieved"
+          else
+            echo "writer evidence absent; the digest projects the run's head commit with six fields"
+          fi
+          python3 resident-runtime/merge_digest.py commits --results-dir "$RUNNER_TEMP/writer" --head-sha "$HEAD_SHA" \
+            > "$RUNNER_TEMP/digest/commits.txt"
+          cat "$RUNNER_TEMP/digest/commits.txt"
+
+      - name: Re-verify each selected merge from a fresh read-only fetch of the published ledger ref
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/readback.git"
+          git init -q --bare "$fresh"
+          auth_header=$(git config --local --get http.https://github.com/.extraheader || true)
+          git --git-dir="$fresh" -c "http.https://github.com/.extraheader=$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF" || true
+          echo "FRESH=$fresh" >> "$GITHUB_ENV"
+          namespace=$(python3 -c 'import json; print(json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]["namespace"])')
+          # the writer's own verifier (merge_transfer.py, pinned); a non-ALLOW result is data for the digest, not a job failure
+          STEGVERSE_ORG_LEDGER_ROOT="git+$fresh#$LEDGER_REF" STEGVERSE_REPO_LEDGER_ROOT="git+$fresh#$LEDGER_REF:$namespace" \
+            python3 resident-runtime/merge_transfer.py verify --commits-file "$RUNNER_TEMP/digest/commits.txt" \
+            --out "$RUNNER_TEMP/digest/verify.json" > /dev/null || true
+          # parents and observed pull requests of each merged head (pull-requests: read)
+          python3 - "$RUNNER_TEMP/digest/commits.txt" "$RUNNER_TEMP/digest" <<'PY'
+          import json, os, subprocess, sys
+          commits = open(sys.argv[1]).read().split()
+          pulls, parents = {}, {}
+          for c in commits:
+              done = subprocess.run(["gh", "api", f"repos/{os.environ['GITHUB_REPOSITORY']}/commits/{c}/pulls",
+                                     "--jq", "[.[] | select(.merged_at != null) | .number]"], capture_output=True, text=True)
+              if done.returncode == 0:
+                  pulls[c] = json.loads(done.stdout or "[]")
+              line = subprocess.run(["git", "rev-list", "--parents", "-n", "1", c], capture_output=True, text=True).stdout.split()
+              if line:
+                  parents[c] = len(line) - 1
+          json.dump(pulls, open(sys.argv[2] + "/pulls.json", "w"))
+          json.dump(parents, open(sys.argv[2] + "/parents.json", "w"))
+          PY
+
+      - name: Build the digest (one per writer run)
+        run: |
+          set -euo pipefail
+          python3 resident-runtime/merge_digest.py build --repository "$GITHUB_REPOSITORY" --head-sha "$HEAD_SHA" \
+            --run-id "$RUN_ID" --run-url "$RUN_URL" --run-conclusion "$RUN_CONCLUSION" \
+            --results-dir "$RUNNER_TEMP/writer" --verify-json "$RUNNER_TEMP/digest/verify.json" \
+            --pulls-json "$RUNNER_TEMP/digest/pulls.json" --parents-json "$RUNNER_TEMP/digest/parents.json" \
+            --ledger-git-dir "$FRESH" --ledger-ref "$LEDGER_REF" \
+            --out-json "$RUNNER_TEMP/digest/digest.json" --out-dir "$RUNNER_TEMP/digest/out" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Projection 1: post the digest to each Goal issue this token reaches (once per digest)"
+        run: |
+          set -euo pipefail
+          python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); [print(p["target"]) for p in d["projections"] if p["projection"]=="GOAL_ISSUE_COMMENT" and p["disposition"]=="ALLOW"]' \
+            "$RUNNER_TEMP/digest/digest.json" > "$RUNNER_TEMP/digest/targets.txt"
+          marker=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["marker"])' "$RUNNER_TEMP/digest/digest.json")
+          while read -r target; do
+            repo="${target%#*}"; number="${target##*#}"
+            test "$repo" = "$GITHUB_REPOSITORY"
+            body="$RUNNER_TEMP/digest/out/comment-$(echo "$target" | sed 's/[^A-Za-z0-9]\{1,\}/-/g; s/^-//; s/-$//').md"
+            if gh api --paginate "repos/$repo/issues/$number/comments" --jq '.[].body' | grep -qF -- "$marker"; then
+              echo "digest already on $target"
+            else
+              gh api "repos/$repo/issues/$number/comments" -F "body=@$body" --jq .html_url
+            fi
+          done < "$RUNNER_TEMP/digest/targets.txt"
+
+      - name: Retain the digest and the KV file
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: main-change-digest-${{ github.event.workflow_run.id }}
+          path: ${{ runner.temp }}/digest
