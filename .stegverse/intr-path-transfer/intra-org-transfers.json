@@ -1,0 +1,11 @@
+{
+  "schema": "stegverse.intr-intra-org-transfer-declaration/v1",
+  "source_repository": "StegVerse-org/.github",
+  "rule": "Each row declares one InTr crossing from this repository to a repository of this organization named in resident-runtime/intr_intra_org_destination.py INTRA_ORG_DESTINATIONS, whose chain is a subtree of refs/stegverse/organization-ledger. Landing a row on main is the transition: after that push's main-merge transfer is ledgered, .github/workflows/intr-path-transfer.yml appends the destination's registration genesis, this repository's source receipt and the destination repository's ingress receipt, each consumed by an organization receipt. A crossing already ledgered is answered from the ledger. No dispatch.",
+  "transfers": [
+    {
+      "path_id": "StegVerse-org/.github->StegVerse-org/LLM-adapter:intr-destination",
+      "communication_id": "intr-path-v1:StegVerse-org/.github->StegVerse-org/LLM-adapter"
+    }
+  ]
+}
