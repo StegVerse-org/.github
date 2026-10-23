@@ -126,14 +126,19 @@ class PromptClaimTests(unittest.TestCase):
         return (ROOT / name).read_text(encoding="utf-8")
 
     def test_the_task_registry_prompt_names_a_dependency_honestly(self):
-        # One suite is standard library and one imports jsonschema unguarded.
-        # A reviewer told otherwise would read an import error as a finding.
+        # One suite is standard library and one loads the pinned StegVerse-Labs
+        # stdlib schema validator from STEGVERSE_LABS_ROOT, erroring (never
+        # skipping) without it. A reviewer told otherwise would read the error
+        # as a finding.
         text = self.prompt("docs/EXTERNAL_REVIEWER_TASK_REGISTRY_PROMPT.md")
-        self.assertIn("jsonschema", text)
+        for named in ("STEGVERSE_LABS_ROOT", "pinned_labs.py fetch", "labs-tool-pin.json"):
+            self.assertIn(named, text)
         conformance = (ROOT / "tests/test_task_registry_schema_conformance.py").read_text()
-        self.assertIn("import jsonschema", conformance)
+        self.assertIn("pinned_labs.json_schema()", conformance)
+        self.assertNotIn("import jsonschema", conformance)
         registry = (ROOT / "tests/test_task_registry.py").read_text()
         self.assertNotIn("import jsonschema", registry)
+        self.assertNotIn("pinned_labs", registry)
 
     def test_the_entity_neutrality_claim_matches_the_schema(self):
         import json

@@ -22,9 +22,9 @@
       "PROPER": 177,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
-      "HISTORICAL_EVIDENCE": 33,
-      "NAMING_ONLY": 26,
-      "total": 236
+      "HISTORICAL_EVIDENCE": 35,
+      "NAMING_ONLY": 42,
+      "total": 254
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1713,6 +1713,132 @@
       "text": "\"re-measure data/master-records-role-audit.json. \"",
       "classification": "NAMING_ONLY",
       "reason": "Test diagnostic names the Master Records audit artifact; no assignment of transition authority."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 1573,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2004,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2105,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 1631,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\": [",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 1796,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2043,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2237,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 2058,
+      "text": "\"data/master-records-role-audit.json\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. The audit file's own path; no role statement."
+    },
+    {
+      "file": "tests/fixtures/drift-receipt-appender/labs-3317-fc65fb82-pr.json",
+      "line": 17,
+      "text": "\"tests/test_canonical_master_records_local_adapter_repair.py::CanonicalMasterRecordsLocalAdapterRepairTests::test_calls_existing_state_transition_authority_without_schema_relabel\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Retained drift-receipt fixture (StegVerse-org/.github#166): quotes a StegVerse-Labs test id as it appeared in a receipted run; evidence, not a role statement."
+    },
+    {
+      "file": "tests/fixtures/drift-receipt-appender/labs-86382e60-detect.json",
+      "line": 679,
+      "text": "\"tests/test_canonical_master_records_local_adapter_repair.py::CanonicalMasterRecordsLocalAdapterRepairTests::test_calls_existing_state_transition_authority_without_schema_relabel\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Retained drift-receipt fixture (StegVerse-org/.github#166): quotes a StegVerse-Labs test id as it appeared in a receipted run; evidence, not a role statement."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 142,
+      "text": "\"stegverse/master_records_custody.py\": \"ce46bd5069517ccb71310529f96e6cc550817b5086c90c98449fc6c3ae496c78\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 143,
+      "text": "\"stegverse/master_records_http.py\": \"9396d268519d64c92ec322c876a756202c0761eec2d2ad2c679594d33b266e6c\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 414,
+      "text": "\"stegverse/master_records_custody.py\": \"22a3332f70218a8d9352f0af05dd189dcdbe306a2db3971f3c25214ab01f4bd5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 415,
+      "text": "\"stegverse/master_records_http.py\": \"a1f49710396a33c3796ba3e496c87a3835a8e5270c8962643b74c6752b1ab9af\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 416,
+      "text": "\"stegverse/master_records_organization_record.py\": \"5b81f2459b078386f37db0df4ae848b111ce09e7677e1789287907298ab411f5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 675,
+      "text": "\"stegverse/master_records_custody.py\": \"22a3332f70218a8d9352f0af05dd189dcdbe306a2db3971f3c25214ab01f4bd5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 676,
+      "text": "\"stegverse/master_records_http.py\": \"a1f49710396a33c3796ba3e496c87a3835a8e5270c8962643b74c6752b1ab9af\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 677,
+      "text": "\"stegverse/master_records_organization_record.py\": \"5b81f2459b078386f37db0df4ae848b111ce09e7677e1789287907298ab411f5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
     }
   ]
 }

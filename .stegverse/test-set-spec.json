@@ -1,0 +1,268 @@
+{
+ "authority_effect": "NONE",
+ "core": {
+  "inputs": [],
+  "surfaces": [
+   ".stegverse/test-suite-baseline/**",
+   "resident-runtime/required_verification.py"
+  ],
+  "tests": [
+   "tests/test_required_verification.py"
+  ]
+ },
+ "import_roots": [
+  "orchestration",
+  "org-boundary",
+  "org-kernel",
+  "org-runtime",
+  "resident-runtime",
+  "tests",
+  "vendor"
+ ],
+ "inputs": {
+  "jsonschema": {
+   "check": {
+    "kind": "python_module",
+    "module": "jsonschema"
+   },
+   "finish_point": "the full-suite job imports jsonschema and tests/test_stdlib_json_schema_agreement.py (the stdlib validator's agreement oracle) runs and passes at the exact head",
+   "owner": "StegVerse-org/.github#166 (P4 lane: the agreement oracle only; every other schema check uses the pinned stdlib validator)",
+   "repair": "the full-suite job installs jsonschema (python -m pip install \"jsonschema==4.26.0\", the version the agreement oracle is qualified at) for the agreement check only"
+  },
+  "labs-stdlib-json-schema": {
+   "check": {
+    "env": "STEGVERSE_LABS_ROOT",
+    "kind": "env_path"
+   },
+   "finish_point": "STEGVERSE_LABS_ROOT names the pinned StegVerse-Labs checkout (sha256-checked) and the schema-conformance tests run and pass at the exact head",
+   "owner": "StegVerse-org/.github#166 (P4 lane: wired in required-verification.yml full-suite)",
+   "repair": "the job fetches the commit in .stegverse/test-suite-baseline/labs-tool-pin.json (resident-runtime/pinned_labs.py fetch) and sets STEGVERSE_LABS_ROOT"
+  },
+  "ledger-store-step-b": {
+   "check": {
+    "kind": "unavailable",
+    "reason": "P1-FC-12 step (b) (readback and writers re-raising the remote-locator refusal in six fields) is deferred until StegVerse-org/.github#189 lands; the tests are @unittest.skip until then"
+   },
+   "finish_point": "#189 is on main and both tests run unskipped and pass at the exact head",
+   "owner": "Lane C/D (ledger store; StegVerse-org/.github#189, #162)",
+   "repair": "land StegVerse-org/.github#189, remove the @unittest.skip decorators and this input from the set"
+  },
+  "organization-ledger-ref": {
+   "check": {
+    "kind": "git_ref",
+    "ref": "refs/stegverse/organization-ledger"
+   },
+   "finish_point": "the checkout holds the ledger ref and the InTr path and merge-transfer tests run and pass at the exact head",
+   "owner": "Lane C/D (organization ledger store; StegVerse-org/.github#162)",
+   "repair": "the full-suite job fetches refs/stegverse/organization-ledger read-only, as intr-path-transfer-validation.yml does"
+  },
+  "repo-standards": {
+   "check": {
+    "env": "REPO_STANDARDS_ROOT",
+    "kind": "env_path"
+   },
+   "finish_point": "REPO_STANDARDS_ROOT names a repo-standards checkout and OwnerDriftTests run and pass at the exact head",
+   "owner": "TVC-PRIVATE-SOURCE-READ-001 (GitHub Product)",
+   "repair": "a read of the private repo-standards repository supplied as REPO_STANDARDS_ROOT through a sanctioned private-source read (no credential is routed around)"
+  },
+  "stegverse-sdk": {
+   "check": {
+    "env": "STEGVERSE_SDK_PIN_74D9B473",
+    "kind": "pinned_source",
+    "manifest": ".stegverse/verification-inputs/stegverse-sdk.json",
+    "module": "stegverse",
+    "pin": "74d9b473"
+   },
+   "finish_point": "required-verification.yml full-suite materializes pin 74d9b473 (scripts/pinned_source_input.py materialize, sha256-checked against .stegverse/verification-inputs/stegverse-sdk.json), sets STEGVERSE_SDK_PIN_74D9B473 to its tree, and the set's tests run in that pin's run group and pass at the exact head with 0 skipped",
+   "owner": "P1 (StegVerse-org/.github#163)",
+   "repair": "materialize pin 74d9b473 with scripts/pinned_source_input.py (one anonymous git fetch of the pinned commit; no package index, no install) and export STEGVERSE_SDK_PIN_74D9B473=<dest>/tree before selection; a sha256 mismatch is FAIL_CLOSED, never loaded"
+  },
+  "stegverse-sdk@0028cab9": {
+   "check": {
+    "env": "STEGVERSE_SDK_PIN_0028CAB9",
+    "kind": "pinned_source",
+    "manifest": ".stegverse/verification-inputs/stegverse-sdk.json",
+    "module": "stegverse",
+    "pin": "0028cab9",
+    "shims": [
+     "requests"
+    ]
+   },
+   "finish_point": "required-verification.yml full-suite materializes pin 0028cab9 (scripts/pinned_source_input.py, sha256-checked against .stegverse/verification-inputs/stegverse-sdk.json; the pin sdk-manifest-crossing-validation.yml already checks out) together with its sha256-pinned urllib stand-in for requests (shims.requests, declared here), sets STEGVERSE_SDK_PIN_0028CAB9, and tests/test_sdk_manifest_crossing_fidelity.py runs in that pin's run group - requests unimportable from the interpreter is fine, it is never installed or required - and passes at the exact head with 0 skipped",
+   "owner": "P1 (StegVerse-org/.github#163)",
+   "repair": "materialize pin 0028cab9 with scripts/pinned_source_input.py (one anonymous git fetch of the pinned commit; no package index, no install; its shim is copied from .stegverse/verification-inputs/shims after a sha256 check) and export STEGVERSE_SDK_PIN_0028CAB9=<dest>/tree before selection. A shim that does not hash to the manifest is FAIL_CLOSED PINNED_INPUT_SHIM_SHA256_MISMATCH; a shim this check does not list is PINNED_INPUT_SHIM_NOT_DECLARED_BY_THE_SET; an installed requests that shadows the shim is PINNED_INPUT_SHIM_NOT_LOADED. No requests-free SDK commit replays these fixtures (the drift begins 0e2d1c4, before requests left the SDK at 85c7e67), so re-pinning is not the repair",
+   "why_this_pin": "tests/test_sdk_manifest_crossing_fidelity.py replays fixtures sealed against 0028cab9 (sdk-manifest-crossing-validation.yml); on 74d9b473 8 fail and 5 error (fixture drift: the SDK reads no destination)"
+  },
+  "tvc": {
+   "check": {
+    "env": "STEGVERSE_TVC_ROOT",
+    "kind": "env_path"
+   },
+   "finish_point": "STEGVERSE_TVC_ROOT names a TVC checkout in the full-suite job and the conformance exchange tests run and pass at the exact head",
+   "owner": "GitHub Product, Lane C (StegVerse-org/.github#164)",
+   "repair": "a TV/TVC checkout supplied as STEGVERSE_TVC_ROOT to the full-suite job"
+  }
+ },
+ "manifest": ".stegverse/test-sets.json",
+ "module_inputs": {
+  "tests/test_governance_inter_org_route.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_governance_mesh_locator_readback.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_governance_return_peer_mesh.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_ingress_refusal_precedence.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_intr_path_ingress.py": [
+   "organization-ledger-ref"
+  ],
+  "tests/test_intr_path_transfer.py": [
+   "organization-ledger-ref"
+  ],
+  "tests/test_intr_path_tvc_read.py": [
+   "organization-ledger-ref"
+  ],
+  "tests/test_manifest_ingress_d7_fail_closed.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_manifest_ingress_idempotent.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_merge_transfer.py": [
+   "organization-ledger-ref"
+  ],
+  "tests/test_merge_transfer_range.py": [
+   "organization-ledger-ref"
+  ],
+  "tests/test_organization_ingress_capability_binding.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_organization_manifest_ingress.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_pr1b_direct_entrypoint_epoch.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_remediation_lane.py": [
+   "stegverse-sdk"
+  ],
+  "tests/test_reviewer_prompt_conformance.py": [
+   "labs-stdlib-json-schema"
+  ],
+  "tests/test_sdk_manifest_crossing_fidelity.py": [
+   "stegverse-sdk@0028cab9"
+  ],
+  "tests/test_stdlib_json_schema_agreement.py": [
+   "jsonschema",
+   "labs-stdlib-json-schema"
+  ],
+  "tests/test_task_registry_schema_conformance.py": [
+   "labs-stdlib-json-schema"
+  ],
+  "tests/test_workspace_internal_endpoint_binding.py": [
+   "stegverse-sdk"
+  ]
+ },
+ "repository": "StegVerse-org/.github",
+ "runner": "unittest",
+ "schema": "stegverse.test-set-spec/v1",
+ "selects_all": [
+  ".github/workflows/required-verification.yml",
+  ".stegverse/test-suite-baseline/labs-tool-pin.json",
+  "*conftest.py",
+  "tests/*__init__.py"
+ ],
+ "splits": [
+  {
+   "file": "tests/test_p1_supplied_epoch_and_ledger_paths.py",
+   "id": "tests/test_p1_supplied_epoch_and_ledger_paths.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "tests": [
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_dispatch_passes_the_frame_epoch_through_to_the_receiving_operation",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_ingress_cli_accepts_a_leading_zero_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_ingress_cli_refuses_coerced_epochs",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_a_path_in_neither_layout_is_refused",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_the_flat_layout_is_accepted",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_the_nested_layout_is_accepted",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_a_given_component_and_consumer_root_are_where_the_writers_load_and_resolve",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_absent_paths_keep_this_checkout",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_an_invalid_path_fails_closed_and_leaves_the_bound_writers",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_the_ingress_cli_refuses_an_invalid_path_and_receives_with_valid_ones",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_ingress_cli_builds_six_fields_for_an_old_layout_writer",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_ingress_cli_prints_the_writers_refusal_as_given",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_refusal_is_read_from_the_systemexit_only",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_an_empty_ledger_is_organization_ledger_head_absent"
+   ]
+  },
+  {
+   "file": "tests/test_capability_demonstration_projection.py",
+   "id": "tests/test_capability_demonstration_projection.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "tests": [
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_chain_that_does_not_verify_refuses_the_projection",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_submission_declaring_nothing_records_nulls_not_omission",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_an_admitted_submission_demonstrates_the_capability",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_every_demonstration_cites_a_receipt",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_declared_and_the_ledger_roots_are_not_the_same_root",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_declares_and_stores_nothing",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_grants_nothing_and_cites_st_022",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_states_that_absence_is_not_refutation",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_refusal_record_carries_what_the_map_needs"
+   ]
+  },
+  {
+   "file": "tests/test_capability_ingress_address.py",
+   "id": "tests/test_capability_ingress_address.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "tests": [
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_a_peer_published_manifest_reaches_the_bound_operation",
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_both_ledger_levels_record_the_submission",
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_the_address_selects_no_processing_and_says_where_it_was_processed"
+   ]
+  },
+  {
+   "file": "tests/test_origin_attestation_tvc_conformance.py",
+   "id": "tests/test_origin_attestation_tvc_conformance.py[tvc]",
+   "inputs": [
+    "tvc"
+   ],
+   "tests": [
+    "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests"
+   ]
+  },
+  {
+   "file": "tests/test_task_registry_schema_conformance.py",
+   "id": "tests/test_task_registry_schema_conformance.py[repo-standards]",
+   "inputs": [
+    "repo-standards"
+   ],
+   "tests": [
+    "tests.test_task_registry_schema_conformance.OwnerDriftTests"
+   ]
+  },
+  {
+   "file": "tests/test_ledger_store_remote_locator_refused.py",
+   "id": "tests/test_ledger_store_remote_locator_refused.py[ledger-store-step-b]",
+   "inputs": [
+    "ledger-store-step-b"
+   ],
+   "tests": [
+    "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_readback_cli_refuses_and_writes_nothing",
+    "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_writers_refuse_a_remote_ledger_root_in_six_fields"
+   ]
+  }
+ ],
+ "test_globs": [
+  "tests/**"
+ ]
+}

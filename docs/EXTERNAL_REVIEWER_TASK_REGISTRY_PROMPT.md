@@ -36,9 +36,10 @@ than the registry being an internally tidy document nothing refers to.
 ## What the reviewer needs
 
 Nothing from us. `StegVerse-org/.github` is public. The twenty-case registry
-suite is standard-library only. One further suite needs `jsonschema`, and the
-prompt says so where it matters rather than letting an import error read as a
-finding.
+suite is standard-library only. One further suite validates against the schema
+with the pinned StegVerse-Labs stdlib validator (no `jsonschema` needed), which
+it loads from a checkout named by `STEGVERSE_LABS_ROOT`, and the prompt says so
+where it matters rather than letting a missing checkout read as a finding.
 
 ## The prompt
 
@@ -71,9 +72,11 @@ is no host, no account, no key, and nothing to request from me.
     python3 -m unittest tests.test_task_registry -v
 
 That suite is standard library only. A second suite validates the registry
-against the schema its owning repository publishes and needs `jsonschema`
-installed; run it if you have it, and treat its absence as an absence rather
-than a finding:
+against the schema its owning repository publishes, with the stdlib validator
+pinned by sha256 in `.stegverse/test-suite-baseline/labs-tool-pin.json`. Fetch
+it anonymously with `python3 resident-runtime/pinned_labs.py fetch --dest ../labs-tool`
+and set `STEGVERSE_LABS_ROOT=../labs-tool`; without it the suite errors (it never
+skips), so treat that as an absence rather than a finding:
 
     python3 -m unittest tests.test_task_registry_schema_conformance -v
 
@@ -90,15 +93,16 @@ violate the claim and see whether anything notices.
    `additionalProperties: false` and no `assignee`, `agent`, `model`, `owner`,
    `session` or `worker_claim`. Then try to add one — give a task an
    `assignee` and re-run **both** suites, because the refusal has two layers
-   and the weaker one is the only one that needs a dependency:
+   and the weaker one is the only one that needs the pinned validator:
 
     python3 -m unittest tests.test_task_registry -v
     python3 -m unittest tests.test_task_registry_schema_conformance -v
 
    The schema suite refuses it as `not in the schema: ['assignee']`, which is
    `additionalProperties` doing real work. The standard-library suite refuses it
-   independently, so entity neutrality survives `jsonschema` not being
-   installed. An earlier revision of this prompt named only the schema suite,
+   independently, so entity neutrality survives the schema validator not being
+   available. (Earlier revisions used `jsonschema`; the pinned stdlib validator
+   replaced it and agrees with it on a committed corpus, checked in CI.) An earlier revision of this prompt named only the schema suite,
    which understated the property; the first external reviewer found the second
    layer anyway and said so. Decide for yourself whether the refusal is
    structural or incidental.
