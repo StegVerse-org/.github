@@ -242,9 +242,9 @@ class Atomic(unittest.TestCase):
                     self.assertUntouched(ledger, before)
 
     def test_a_stray_organization_ref_is_named_as_the_bound_ref_predicate_with_both_tips_unchanged(self):
-        # A stray STEGVERSE_ORG_LEDGER_GIT_REF surfaces as STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF whether
-        # this organization's writer refuses the ref itself (its locus check) or reads it unchecked; it still
-        # fails closed before either half is written, so the bound ref's tip and the stray ref's tip are unchanged.
+        # A stray STEGVERSE_ORG_LEDGER_GIT_REF surfaces as STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF, checked
+        # against the declared organization ref before either location is resolved, whether or not the root names
+        # the stray ref too; it fails closed before either half is written, so both tips are unchanged.
         for variable_set in ("root_and_git_ref", "git_ref_only"):
             for writer in ("ledger_gitstore", "ingress"):
                 with self.subTest(variables=variable_set, writer=writer), TempLedger() as ledger:
@@ -259,14 +259,9 @@ class Atomic(unittest.TestCase):
                     self.assertEqual(type(caught.exception).__name__, "TwoLevelAppendRefused")
                     refusal = caught.exception.refusal
                     self.assertEqual(refusal["failure_code"], lg.PREFLIGHT_REFUSED)
-                    if variable_set == "git_ref_only":
-                        self.assertEqual(refusal["failed_predicate"], "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF")
-                    else:
-                        # the root names the stray ref too: a writer that resolves it refuses it as an undeclared
-                        # organization ref (GCAT-BCAT-Engine); a writer whose locus check refuses it first names
-                        # the bound-ref predicate (StegVerse-Labs)
-                        self.assertIn(refusal["failed_predicate"], ("STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF",
-                                                                    "ORGANIZATION_LEDGER_REF_IS_THE_DECLARED_REF"))
+                    # one pinned predicate for every stray-ref case (protocol.json ledger_module.preflight_predicate)
+                    self.assertEqual(refusal["failed_predicate"], "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF")
+                    self.assertEqual(refusal["failed_predicate"], lg.BOUND_REF_PREDICATE)
                     for field in lg.SIX_FIELDS:
                         self.assertTrue(refusal[field], field)
                     self.assertEqual(self.tips(ledger), before)   # bound ref tip and stray ref tip both unchanged
