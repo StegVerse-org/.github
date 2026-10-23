@@ -1,0 +1,43 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "read the source ledger back, then re-run seal",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for SV-LLM->StegVerse-Labs:intr-destination on SV-LLM/.github's ledger (read anonymously at e9ee01335e757b5d179b71e889c99d9016bfce73: none)",
+   "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-transfer.yml (a transfers.json row landing on main)"
+  },
+  {
+   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "seal, then replay after the row lands",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an inbound row for SV-LLM->StegVerse-Labs:intr-destination on StegVerse-Labs/.github main carrying the source receipt pair",
+   "retry_entrypoint": "StegVerse-Labs/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+  }
+ ],
+ "cls": "SOURCE_RECEIPT_NOT_LEDGERED",
+ "communication_id": "intr-path-v1:SV-LLM->StegVerse-Labs",
+ "destination": "StegVerse-Labs",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "SV-LLM->StegVerse-Labs:intr-destination",
+ "payload": null,
+ "record_sha256": "sha256:12da07382e4378ff2c15396b3fbde8134995b186bf1a4aafa9db73d4822fd18a",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "SV-LLM",
+ "source_receipts": null,
+ "status": {
+  "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "read the source ledger back, then re-run seal",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for SV-LLM->StegVerse-Labs:intr-destination on SV-LLM/.github's ledger (read anonymously at e9ee01335e757b5d179b71e889c99d9016bfce73: none)",
+  "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-transfer.yml (a transfers.json row landing on main)"
+ }
+}

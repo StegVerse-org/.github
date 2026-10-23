@@ -1,0 +1,44 @@
+{
+ "schema": "stegverse.intr-post-genesis-inputs/v1",
+ "owning_existing_goal": "StegVerse-org/.github#162",
+ "observed": "2026-10-23 by Lane B (91117956); committed facts, not read by any verifier from a clock or the network",
+ "genesis": {
+  "StegVerse-Labs": {"pr": "StegVerse-Labs/.github#3312", "head": "94ba7ebbe2f6970062ba18a11c672d5063842c44", "inbound_row": "StegVerse-org->StegVerse-Labs:intr-destination"},
+  "StegVerse-org": {"pr": "StegVerse-org/.github#224", "head": "529267189d888742bd3081a15f86e0dec378894e", "inbound_row": "StegVerse-Labs->StegVerse-org:intr-destination"}
+ },
+ "destination_ingress_on_main": {
+  "Admissible-Existence": false,
+  "GCAT-BCAT-Engine": "PRESENT_WITHOUT_PUBLIC_ROUTE",
+  "SV-011": "PRESENT_WITHOUT_PUBLIC_ROUTE",
+  "SV-LLM": false,
+  "StegGhost": false,
+  "StegVerse-002": false,
+  "StegVerse-Labs": true,
+  "StegVerse-org": true
+ },
+ "destination_ingress_evidence": {
+  "StegVerse-Labs": "main 86382e60: resident-runtime/intr_path_ingress.py blob 426eb456, .github/workflows/intr-path-ingress.yml blob a783a44e",
+  "StegVerse-org": "main 907f4305: resident-runtime/intr_path_ingress.py blob 8b0d1650, .github/workflows/intr-path-ingress.yml blob 23b65aec",
+  "Admissible-Existence": "main 0476eeac: both absent",
+  "SV-LLM": "main a00a72ec: both absent",
+  "StegGhost": "absent (56-path table, StegVerse-org/.github#162 comment 6354680103)",
+  "StegVerse-002": "absent (56-path table, StegVerse-org/.github#162 comment 6354680103)",
+  "SV-011": "ingress present, public-ledger route not ported (56-path table D1)",
+  "GCAT-BCAT-Engine": "ingress present, public-ledger route not ported (56-path table D1)"
+ },
+ "anonymous_ledger_read": {
+  "Admissible-Existence": "2b117af78f27e94830b0ff20e2fb3aa49872d80d",
+  "GCAT-BCAT-Engine": "NOT_ANONYMOUSLY_READABLE",
+  "SV-011": "NOT_ANONYMOUSLY_READABLE",
+  "SV-LLM": "e9ee01335e757b5d179b71e889c99d9016bfce73",
+  "StegGhost": "NOT_ANONYMOUSLY_READABLE",
+  "StegVerse-002": "NOT_ANONYMOUSLY_READABLE",
+  "StegVerse-Labs": "9a407561062757a30f90818ec6c8105b04331a39",
+  "StegVerse-org": "216487782daa161b886e608e64256877c14ca86f"
+ },
+ "tvc": {
+  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host",
+  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162"
+ },
+ "authority_effect": "NONE"
+}
