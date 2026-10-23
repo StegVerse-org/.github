@@ -221,21 +221,6 @@ def _git_tip(git_dir: Path) -> str | None:
     return tip if done.returncode == 0 and len(tip) == 40 else None
 
 
-def _readback_from(org: Any, rep: Any, repository_name: str, path_id: str, communication_id: str, operation: str,
-                   ledger_tip: str | None) -> dict[str, Any]:
-    chain = [r for _, r in mt.org_chain(org) if isinstance(r, Mapping)]
-    found = next((r for r in chain if mt._boundary(r).get("operation") == operation
-                  and mt._boundary(r).get("path_id") == path_id
-                  and mt._boundary(r).get("communication_id") == communication_id), None)
-    head = chain[0]["receipt_sha256"] if chain else None
-    if found is not None:
-        chain = chain[:chain.index(found) + 1]
-    return {"schema": READBACK_SCHEMA, "repository": repository_name, "ledger_tip": ledger_tip,
-            "head_receipt_sha256": head, "chain": chain if found is not None else [],
-            "organization_receipt": found,
-            "repository_receipt": mt._receipt(rep, found.get("repo_receipt_sha256")) if found else None}
-
-
 def _git_json(git_dir: Path, tip: str, path: str) -> Any:
     """One JSON document at ``tip:path`` of the local copy, or None (no network: the copy is already local)."""
     done = subprocess.run(["git", "--git-dir=" + str(git_dir), "cat-file", "blob", tip + ":" + path],
@@ -519,8 +504,19 @@ def verify_end_to_end(path_id: str, communication_id: str, source_readback: Any,
 
 def readback(path_id: str, communication_id: str, operation: str, ledger_tip: str | None = None) -> dict[str, Any]:
     """Read this repository's own ledger (the bound stores) into a stegverse.intr-path-ledger-readback/v1 object."""
-    return _readback_from(mt.org_store(), mt.repo_store(), repository(), path_id, communication_id, operation,
-                          ledger_tip)
+    org, rep = mt.org_store(), mt.repo_store()
+    chain = [r for _, r in mt.org_chain(org) if isinstance(r, Mapping)]
+    found = next((r for r in chain if mt._boundary(r).get("operation") == operation
+                  and mt._boundary(r).get("path_id") == path_id
+                  and mt._boundary(r).get("communication_id") == communication_id), None)
+    head = chain[0]["receipt_sha256"] if chain else None
+    if found is not None:
+        cut = [r for r in chain]
+        chain = cut[:cut.index(found) + 1]
+    return {"schema": READBACK_SCHEMA, "repository": repository(), "ledger_tip": ledger_tip,
+            "head_receipt_sha256": head, "chain": chain if found is not None else [],
+            "organization_receipt": found,
+            "repository_receipt": mt._receipt(rep, found.get("repo_receipt_sha256")) if found else None}
 
 
 def end_to_end_via_tvc(path_id: str, communication_id: str, directory: Path | str | None = None,
