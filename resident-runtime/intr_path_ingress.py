@@ -236,22 +236,59 @@ def _readback_from(org: Any, rep: Any, repository_name: str, path_id: str, commu
             "repository_receipt": mt._receipt(rep, found.get("repo_receipt_sha256")) if found else None}
 
 
+def _git_json(git_dir: Path, tip: str, path: str) -> Any:
+    """One JSON document at ``tip:path`` of the local copy, or None (no network: the copy is already local)."""
+    done = subprocess.run(["git", "--git-dir=" + str(git_dir), "cat-file", "blob", tip + ":" + path],
+                          capture_output=True, check=False)
+    if done.returncode != 0:
+        return None
+    try:
+        return json.loads(done.stdout.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return None
+
+
+def _key(digest: Any) -> str | None:
+    if not isinstance(digest, str) or not digest.startswith("sha256:") or len(digest) != 71:
+        return None
+    hexpart = digest.split(":", 1)[1]
+    return hexpart + ".json" if all(c in "0123456789abcdef" for c in hexpart) else None
+
+
 def public_readback(path_id: str, communication_id: str, other_repository: str,
                     public_ledgers: Path | str | None = None) -> dict[str, Any] | None:
     """The other organization's ledger readback from its anonymous (no-credential) copy, or None if absent.
 
-    Reads only the local copy: no network, no clock, no credential."""
+    Reads only the local copy (HEAD.json, receipts/<hex>.json, repository-ledger/<repo>/receipts/<hex>.json at the
+    fetched tip): no network, no clock, no credential. Seals are checked by the verifiers that consume it."""
     git_dir = public_ledger_dir(other_repository, public_ledgers)
     tip = _git_tip(git_dir) if git_dir is not None else None
     if tip is None:
         return None
     purpose = _purpose(path_id, other_repository)
     operation = SOURCE_OPERATION if purpose == "source_inclusion" else OPERATION
-    store = mt.store_module()
-    org = store.open_store("git+" + str(git_dir) + "#" + LEDGER_REF)
-    rep = store.open_store("git+" + str(git_dir) + "#" + LEDGER_REF + ":repository-ledger/" + str(other_repository))
-    rb = _readback_from(org, rep, str(other_repository), path_id, communication_id, operation, tip)
-    return {**rb, "read_route": "ANONYMOUS_PUBLIC_LEDGER_READ"}
+    head = _git_json(git_dir, tip, "HEAD.json")
+    digest = head.get("receipt_sha256") if isinstance(head, Mapping) else None
+    chain, seen, found = [], set(), None
+    while _key(digest) and digest not in seen:
+        seen.add(digest)
+        receipt = _git_json(git_dir, tip, "receipts/" + _key(digest))
+        if not isinstance(receipt, Mapping):
+            break
+        chain.append(receipt)
+        b = receipt.get("boundary_evidence") if isinstance(receipt.get("boundary_evidence"), Mapping) else {}
+        if b.get("operation") == operation and b.get("path_id") == path_id \
+                and b.get("communication_id") == communication_id:
+            found = receipt
+            break
+        digest = receipt.get("previous_receipt_sha256")
+    repo_key = _key(found.get("repo_receipt_sha256")) if found else None
+    repo_receipt = (_git_json(git_dir, tip, "repository-ledger/" + str(other_repository) + "/receipts/" + repo_key)
+                    if repo_key else None)
+    return {"schema": READBACK_SCHEMA, "repository": str(other_repository), "ledger_tip": tip,
+            "head_receipt_sha256": chain[0].get("receipt_sha256") if chain else None,
+            "chain": chain if found is not None else [], "organization_receipt": found,
+            "repository_receipt": repo_receipt, "read_route": "ANONYMOUS_PUBLIC_LEDGER_READ"}
 
 
 def other_readback(path_id: str, communication_id: str, other_repository: str, directory: Path | str | None = None,
