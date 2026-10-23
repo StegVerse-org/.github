@@ -22,6 +22,8 @@ on:
       - 'tests/test_node_standing_ingress.py'
       - 'tests/test_boundary_processing_selection.py'
       - 'tests/test_reviewer_prompt_conformance.py'
+      - 'resident-runtime/pinned_labs.py'
+      - '.stegverse/test-suite-baseline/labs-tool-pin.json'
       - '.github/workflows/reviewer-prompt-conformance.yml'
   push:
     branches: [main]
@@ -37,6 +39,8 @@ on:
       - 'tests/test_node_standing_ingress.py'
       - 'tests/test_boundary_processing_selection.py'
       - 'tests/test_reviewer_prompt_conformance.py'
+      - 'resident-runtime/pinned_labs.py'
+      - '.stegverse/test-suite-baseline/labs-tool-pin.json'
       - '.github/workflows/reviewer-prompt-conformance.yml'
   workflow_dispatch:
 
@@ -52,11 +56,14 @@ jobs:
         with:
           persist-credentials: false
 
-      # One prompt documents a suite that needs jsonschema, and the prompt says
-      # so. Installing it here means the documented command is checked as
-      # written rather than skipped, which is the point of the job.
-      - name: Install the one dependency a documented command needs
-        run: python -m pip install --quiet jsonschema
+      # One prompt documents a suite that needs the pinned StegVerse-Labs stdlib
+      # schema validator, and the prompt says how to fetch it. Fetching it here
+      # (anonymous, sha256-checked; no pip install) means the documented command
+      # is checked as written rather than skipped, which is the point of the job.
+      - name: Fetch the pinned stdlib schema validator a documented command needs
+        run: |
+          python3 resident-runtime/pinned_labs.py fetch --dest "$RUNNER_TEMP/labs-tool"
+          echo "STEGVERSE_LABS_ROOT=$RUNNER_TEMP/labs-tool" >> "$GITHUB_ENV"
 
       - name: Every documented command still runs
         env:

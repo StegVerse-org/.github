@@ -1,0 +1,2400 @@
+{
+ "authority_effect": "NONE",
+ "generated_from": {
+  "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
+  "spec": ".stegverse/test-set-spec.json",
+  "spec_sha256": "abe0ee365a5e0185533b0914ff037dc0e0a63946ecf391f43914e9b0624f6c49"
+ },
+ "inputs": {
+  "jsonschema": {
+   "check": {
+    "kind": "python_module",
+    "module": "jsonschema"
+   },
+   "finish_point": "the full-suite job imports jsonschema and tests/test_stdlib_json_schema_agreement.py (the stdlib validator's agreement oracle) runs and passes at the exact head",
+   "owner": "StegVerse-org/.github#166 (P4 lane: the agreement oracle only; every other schema check uses the pinned stdlib validator)",
+   "repair": "the full-suite job installs jsonschema (python -m pip install \"jsonschema==4.26.0\", the version the agreement oracle is qualified at) for the agreement check only"
+  },
+  "labs-stdlib-json-schema": {
+   "check": {
+    "env": "STEGVERSE_LABS_ROOT",
+    "kind": "env_path"
+   },
+   "finish_point": "STEGVERSE_LABS_ROOT names the pinned StegVerse-Labs checkout (sha256-checked) and the schema-conformance tests run and pass at the exact head",
+   "owner": "StegVerse-org/.github#166 (P4 lane: wired in required-verification.yml full-suite)",
+   "repair": "the job fetches the commit in .stegverse/test-suite-baseline/labs-tool-pin.json (resident-runtime/pinned_labs.py fetch) and sets STEGVERSE_LABS_ROOT"
+  },
+  "ledger-store-step-b": {
+   "check": {
+    "kind": "unavailable",
+    "reason": "P1-FC-12 step (b) (readback and writers re-raising the remote-locator refusal in six fields) is deferred until StegVerse-org/.github#189 lands; the tests are @unittest.skip until then"
+   },
+   "finish_point": "#189 is on main and both tests run unskipped and pass at the exact head",
+   "owner": "Lane C/D (ledger store; StegVerse-org/.github#189, #162)",
+   "repair": "land StegVerse-org/.github#189, remove the @unittest.skip decorators and this input from the set"
+  },
+  "organization-ledger-ref": {
+   "check": {
+    "kind": "git_ref",
+    "ref": "refs/stegverse/organization-ledger"
+   },
+   "finish_point": "the checkout holds the ledger ref and the InTr path and merge-transfer tests run and pass at the exact head",
+   "owner": "Lane C/D (organization ledger store; StegVerse-org/.github#162)",
+   "repair": "the full-suite job fetches refs/stegverse/organization-ledger read-only, as intr-path-transfer-validation.yml does"
+  },
+  "repo-standards": {
+   "check": {
+    "env": "REPO_STANDARDS_ROOT",
+    "kind": "env_path"
+   },
+   "finish_point": "REPO_STANDARDS_ROOT names a repo-standards checkout and OwnerDriftTests run and pass at the exact head",
+   "owner": "TVC-PRIVATE-SOURCE-READ-001 (GitHub Product)",
+   "repair": "a read of the private repo-standards repository supplied as REPO_STANDARDS_ROOT through a sanctioned private-source read (no credential is routed around)"
+  },
+  "stegverse-sdk": {
+   "check": {
+    "kind": "python_module",
+    "module": "stegverse"
+   },
+   "finish_point": "required-verification.yml full-suite imports the pinned stegverse SDK and the set's tests run and pass at the exact head",
+   "owner": "P1 (StegVerse-org/.github#163)",
+   "repair": "the pinned StegVerse SDK installed in required-verification.yml full-suite (8 workflows here already check out StegVerse-SDK and pip install -e it; P1 decides whether the full-suite job does the same)"
+  },
+  "tvc": {
+   "check": {
+    "env": "STEGVERSE_TVC_ROOT",
+    "kind": "env_path"
+   },
+   "finish_point": "STEGVERSE_TVC_ROOT names a TVC checkout in the full-suite job and the conformance exchange tests run and pass at the exact head",
+   "owner": "GitHub Product, Lane C (StegVerse-org/.github#164)",
+   "repair": "a TV/TVC checkout supplied as STEGVERSE_TVC_ROOT to the full-suite job"
+  }
+ },
+ "repository": "StegVerse-org/.github",
+ "runner": "unittest",
+ "schema": "stegverse.test-sets/v1",
+ "selects_all": [
+  "*conftest.py",
+  ".github/workflows/required-verification.yml",
+  ".stegverse/test-set-spec.json",
+  ".stegverse/test-sets.json",
+  ".stegverse/test-suite-baseline/labs-tool-pin.json",
+  "tests/*__init__.py"
+ ],
+ "sets": [
+  {
+   "always": true,
+   "exclude": [],
+   "id": "core",
+   "inputs": [],
+   "surfaces": [
+    ".stegverse/test-suite-baseline/**",
+    "resident-runtime/required_verification.py",
+    "tests/test_required_verification.py"
+   ],
+   "tests": [
+    "tests.test_required_verification"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_admission_predicate.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_admission_predicate.py"
+   ],
+   "tests": [
+    "tests.test_admission_predicate"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_boundary_processing_selection.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_boundary_processing_selection.py"
+   ],
+   "tests": [
+    "tests.test_boundary_processing_selection"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_capability_demonstration_projection.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_capability_demonstration_projection.py"
+   ],
+   "tests": [
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_declared_capability_nothing_exercised_is_named_as_such",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_declared_side_comes_from_the_overlay",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_refusal_is_exercise_and_not_capability",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_closed_capability_crossing_demonstrates_the_peer_address",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_no_declared_column_is_invented_for_a_peer",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_peer_entry_is_an_address_not_an_identified_organization",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_control_crossing_invents_no_capability_for_the_control_service",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_closure_with_no_emission_is_not_a_demonstration",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_chain_that_did_not_recompute_is_an_unserved_attempt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_capability_demonstration_projection.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_capability_demonstration_projection.py"
+   ],
+   "tests": [
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_chain_that_does_not_verify_refuses_the_projection",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_submission_declaring_nothing_records_nulls_not_omission",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_an_admitted_submission_demonstrates_the_capability",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_every_demonstration_cites_a_receipt",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_declared_and_the_ledger_roots_are_not_the_same_root",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_declares_and_stores_nothing",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_grants_nothing_and_cites_st_022",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_states_that_absence_is_not_refutation",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_refusal_record_carries_what_the_map_needs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_capability_ingress_address.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_capability_ingress_address.py"
+   ],
+   "tests": [
+    "tests.test_capability_ingress_address.AddressIsDeclaredTests",
+    "tests.test_capability_ingress_address.OverlayIsTheAuthorityTests",
+    "tests.test_capability_ingress_address.PeerCapabilityAddressTests",
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_a_submission_carrying_no_manifest_refuses_the_dispatch",
+    "tests.test_capability_ingress_address.ResolverIsRequiredOnlyForItsOwnRoleTests",
+    "tests.test_capability_ingress_address.SubmissionShapeTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_capability_ingress_address.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_capability_ingress_address.py"
+   ],
+   "tests": [
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_a_peer_published_manifest_reaches_the_bound_operation",
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_both_ledger_levels_record_the_submission",
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_the_address_selects_no_processing_and_says_where_it_was_processed"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_drift_receipt_appender.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_drift_receipt_appender.py"
+   ],
+   "tests": [
+    "tests.test_drift_receipt_appender"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ecosystem_ai_reuse.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ecosystem_ai_reuse.py"
+   ],
+   "tests": [
+    "tests.test_ecosystem_ai_reuse"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_federation_cycle_frame_consumption_disposition.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_federation_cycle_frame_consumption_disposition.py"
+   ],
+   "tests": [
+    "tests.test_federation_cycle_frame_consumption_disposition"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_federation_cycle_propagation_location.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_federation_cycle_propagation_location.py"
+   ],
+   "tests": [
+    "tests.test_federation_cycle_propagation_location"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_federation_cycle_supplied_epoch.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_federation_cycle_supplied_epoch.py"
+   ],
+   "tests": [
+    "tests.test_federation_cycle_supplied_epoch"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_federation_projection.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_federation_projection.py"
+   ],
+   "tests": [
+    "tests.test_federation_projection"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_git_ledger_store.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_git_ledger_store.py"
+   ],
+   "tests": [
+    "tests.test_git_ledger_store"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_git_mesh_store.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_git_mesh_store.py"
+   ],
+   "tests": [
+    "tests.test_git_mesh_store"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governance_inter_org_route.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_governance_inter_org_route.py"
+   ],
+   "tests": [
+    "tests.test_governance_inter_org_route"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governance_mesh_locator_readback.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_governance_mesh_locator_readback.py"
+   ],
+   "tests": [
+    "tests.test_governance_mesh_locator_readback"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governance_request_vocabulary.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_governance_request_vocabulary.py"
+   ],
+   "tests": [
+    "tests.test_governance_request_vocabulary"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governance_return_peer_mesh.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_governance_return_peer_mesh.py"
+   ],
+   "tests": [
+    "tests.test_governance_return_peer_mesh"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governed_ingress_census.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_governed_ingress_census.py"
+   ],
+   "tests": [
+    "tests.test_governed_ingress_census"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_hb_reference_oscillator.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_hb_reference_oscillator.py"
+   ],
+   "tests": [
+    "tests.test_hb_reference_oscillator"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ingress_refusal_precedence.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_ingress_refusal_precedence.py"
+   ],
+   "tests": [
+    "tests.test_ingress_refusal_precedence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_internal_endpoint_dispatch.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_internal_endpoint_dispatch.py"
+   ],
+   "tests": [
+    "tests.test_internal_endpoint_dispatch"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_destination_capability.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_destination_capability.py"
+   ],
+   "tests": [
+    "tests.test_intr_destination_capability"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_hop.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_hop.py"
+   ],
+   "tests": [
+    "tests.test_intr_hop"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_org_crossing.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_org_crossing.py"
+   ],
+   "tests": [
+    "tests.test_intr_org_crossing"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_path_ingress.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_intr_path_ingress.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_ingress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_path_transfer.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_intr_path_transfer.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_transfer"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_path_tvc_read.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_intr_path_tvc_read.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_tvc_read"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_protocol_conformance.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_protocol_conformance.py"
+   ],
+   "tests": [
+    "tests.test_intr_protocol_conformance"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_protocol_conformance_merge_transfer.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_protocol_conformance_merge_transfer.py"
+   ],
+   "tests": [
+    "tests.test_intr_protocol_conformance_merge_transfer"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py"
+   ],
+   "tests": [
+    "tests.test_intr_protocol_conformance_merge_transfer_gitstore"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_kernel_crossing_organization_receipts.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_kernel_crossing_organization_receipts.py"
+   ],
+   "tests": [
+    "tests.test_kernel_crossing_organization_receipts"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_kernel_node_state_is_addressed.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_kernel_node_state_is_addressed.py"
+   ],
+   "tests": [
+    "tests.test_kernel_node_state_is_addressed"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_kernel_node_state_supplied.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_kernel_node_state_supplied.py"
+   ],
+   "tests": [
+    "tests.test_kernel_node_state_supplied"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_location_supplied.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_location_supplied.py"
+   ],
+   "tests": [
+    "tests.test_ledger_location_supplied"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_store_contract.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_store_contract.py"
+   ],
+   "tests": [
+    "tests.test_ledger_store_contract"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_store_remote_locator_refused.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_store_remote_locator_refused.py"
+   ],
+   "tests": [
+    "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_parse_locator_refuses_every_remote_form",
+    "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_local_locators_are_unchanged"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_store_remote_locator_refused.py[ledger-store-step-b]",
+   "inputs": [
+    "ledger-store-step-b"
+   ],
+   "surfaces": [
+    "tests/test_ledger_store_remote_locator_refused.py"
+   ],
+   "tests": [
+    "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_readback_cli_refuses_and_writes_nothing",
+    "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_writers_refuse_a_remote_ledger_root_in_six_fields"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_substrate_transaction.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_substrate_transaction.py"
+   ],
+   "tests": [
+    "tests.test_ledger_substrate_transaction"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_llm_org_foundation.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_llm_org_foundation.py"
+   ],
+   "tests": [
+    "tests.test_llm_org_foundation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_llm_org_foundation_validation.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_llm_org_foundation_validation.py"
+   ],
+   "tests": [
+    "tests.test_llm_org_foundation_validation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_main_change_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_main_change_receipt.py"
+   ],
+   "tests": [
+    "tests.test_main_change_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_main_change_receipt_census.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_main_change_receipt_census.py"
+   ],
+   "tests": [
+    "tests.test_main_change_receipt_census"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_manifest_ingress_d7_fail_closed.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_manifest_ingress_d7_fail_closed.py"
+   ],
+   "tests": [
+    "tests.test_manifest_ingress_d7_fail_closed"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_manifest_ingress_idempotent.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_manifest_ingress_idempotent.py"
+   ],
+   "tests": [
+    "tests.test_manifest_ingress_idempotent"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_merge_transfer.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_dry_run_check.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_transfer_dry_run_check.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_dry_run_check"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_gitstore.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_transfer_gitstore.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_gitstore"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_gitstore_parity.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_transfer_gitstore_parity.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_gitstore_parity"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_range.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_merge_transfer_range.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_range"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_mesh_locator_binding.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_mesh_locator_binding.py"
+   ],
+   "tests": [
+    "tests.test_mesh_locator_binding"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_no_hosted_gateway_route.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_no_hosted_gateway_route.py"
+   ],
+   "tests": [
+    "tests.test_no_hosted_gateway_route"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_node_standing_ingress.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_node_standing_ingress.py"
+   ],
+   "tests": [
+    "tests.test_node_standing_ingress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_node_store_contract.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_node_store_contract.py"
+   ],
+   "tests": [
+    "tests.test_node_store_contract"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_observation_window.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_observation_window.py"
+   ],
+   "tests": [
+    "tests.test_observation_window"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_org_emp_kv_projection_schema.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_org_emp_kv_projection_schema.py"
+   ],
+   "tests": [
+    "tests.test_org_emp_kv_projection_schema"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_org_ledger_atomic_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_org_ledger_atomic_append.py"
+   ],
+   "tests": [
+    "tests.test_org_ledger_atomic_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_org_ledger_predecessor_resolution.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_org_ledger_predecessor_resolution.py"
+   ],
+   "tests": [
+    "tests.test_org_ledger_predecessor_resolution"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_egress_boundary.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_organization_egress_boundary.py"
+   ],
+   "tests": [
+    "tests.test_organization_egress_boundary"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_ingress_capability_binding.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_organization_ingress_capability_binding.py"
+   ],
+   "tests": [
+    "tests.test_organization_ingress_capability_binding"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_manifest_ingress.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_organization_manifest_ingress.py"
+   ],
+   "tests": [
+    "tests.test_organization_manifest_ingress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_repository_propagation.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_organization_repository_propagation.py"
+   ],
+   "tests": [
+    "tests.test_organization_repository_propagation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_role_runtime_reality_deployment.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_organization_role_runtime_reality_deployment.py"
+   ],
+   "tests": [
+    "tests.test_organization_role_runtime_reality_deployment"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_origin_attestation.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_origin_attestation.py"
+   ],
+   "tests": [
+    "tests.test_origin_attestation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_origin_attestation_tvc_conformance.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_origin_attestation_tvc_conformance.py"
+   ],
+   "tests": [
+    "tests.test_origin_attestation_tvc_conformance.ConformanceIsReportedTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_origin_attestation_tvc_conformance.py[tvc]",
+   "inputs": [
+    "tvc"
+   ],
+   "surfaces": [
+    "tests/test_origin_attestation_tvc_conformance.py"
+   ],
+   "tests": [
+    "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_p1_fc10_cli_epoch_str.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_p1_fc10_cli_epoch_str.py"
+   ],
+   "tests": [
+    "tests.test_p1_fc10_cli_epoch_str"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_p1_supplied_epoch_and_ledger_paths.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_p1_supplied_epoch_and_ledger_paths.py"
+   ],
+   "tests": [
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_the_resolver_refuses_no_epoch_with_six_fields_before_loading_the_operation",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_dispatch_without_the_frame_epoch_fails_closed_and_appends_nothing",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_ingest_frame_hands_dispatch_the_frames_own_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_self_close_cli_refuses_coerced_epochs",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_self_close_cli_accepts_a_leading_zero_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_egress_cli_refuses_coerced_epochs",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_egress_cli_accepts_a_leading_zero_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.EgressSuppliedEpochTests",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_the_intr_destination_cli_refuses_an_invalid_consumer_root",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_self_close_cli_prints_the_writers_refusal_as_given",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_self_close_cli_builds_six_fields_for_an_old_layout_writer",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_an_exit_that_is_not_a_writer_call_is_not_reported_as_a_ledger_refusal",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_a_legacy_segment_ledger_is_read_back_with_the_contract_and_the_namespace",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_fixture_readback_refuses_without_the_contract_or_the_namespace",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_cli_forwards_the_default_contract_and_the_namespace",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_contract_defaults_to_the_consumer_root_or_this_checkout",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.SharedEpochValidatorTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_p1_supplied_epoch_and_ledger_paths.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_p1_supplied_epoch_and_ledger_paths.py"
+   ],
+   "tests": [
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_dispatch_passes_the_frame_epoch_through_to_the_receiving_operation",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_ingress_cli_accepts_a_leading_zero_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_ingress_cli_refuses_coerced_epochs",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_a_path_in_neither_layout_is_refused",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_the_flat_layout_is_accepted",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_the_nested_layout_is_accepted",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_a_given_component_and_consumer_root_are_where_the_writers_load_and_resolve",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_absent_paths_keep_this_checkout",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_an_invalid_path_fails_closed_and_leaves_the_bound_writers",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_the_ingress_cli_refuses_an_invalid_path_and_receives_with_valid_ones",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_ingress_cli_builds_six_fields_for_an_old_layout_writer",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_ingress_cli_prints_the_writers_refusal_as_given",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_refusal_is_read_from_the_systemexit_only",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_an_empty_ledger_is_organization_ledger_head_absent"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_peer_migration_artifacts.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_peer_migration_artifacts.py"
+   ],
+   "tests": [
+    "tests.test_peer_migration_artifacts"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_pinned_labs.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_pinned_labs.py"
+   ],
+   "tests": [
+    "tests.test_pinned_labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_pr1b_direct_entrypoint_epoch.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_pr1b_direct_entrypoint_epoch.py"
+   ],
+   "tests": [
+    "tests.test_pr1b_direct_entrypoint_epoch"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_pr1c_clock_fallbacks.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_pr1c_clock_fallbacks.py"
+   ],
+   "tests": [
+    "tests.test_pr1c_clock_fallbacks"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_push_receipt_session_binder.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_push_receipt_session_binder.py"
+   ],
+   "tests": [
+    "tests.test_push_receipt_session_binder"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_receipt_disorder_measurement.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_receipt_disorder_measurement.py"
+   ],
+   "tests": [
+    "tests.test_receipt_disorder_measurement"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_receipt_lineage_projection.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_receipt_lineage_projection.py"
+   ],
+   "tests": [
+    "tests.test_receipt_lineage_projection"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_receipt_time_base.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_receipt_time_base.py"
+   ],
+   "tests": [
+    "tests.test_receipt_time_base"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_refused_crossings_recorded.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_refused_crossings_recorded.py"
+   ],
+   "tests": [
+    "tests.test_refused_crossings_recorded"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_remediation_lane.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_remediation_lane.py"
+   ],
+   "tests": [
+    "tests.test_remediation_lane"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_repo_ledger_durable_in_sovereign_ref.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_repo_ledger_durable_in_sovereign_ref.py"
+   ],
+   "tests": [
+    "tests.test_repo_ledger_durable_in_sovereign_ref"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_repo_ledger_exact_retry.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_repo_ledger_exact_retry.py"
+   ],
+   "tests": [
+    "tests.test_repo_ledger_exact_retry"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_repo_ledger_serialized_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_repo_ledger_serialized_append.py"
+   ],
+   "tests": [
+    "tests.test_repo_ledger_serialized_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_resident_materialization.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_resident_materialization.py"
+   ],
+   "tests": [
+    "tests.test_resident_materialization"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_resident_runtime_convergence.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_resident_runtime_convergence.py"
+   ],
+   "tests": [
+    "tests.test_resident_runtime_convergence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_reviewer_prompt_conformance.py",
+   "inputs": [
+    "labs-stdlib-json-schema"
+   ],
+   "surfaces": [
+    "tests/test_reviewer_prompt_conformance.py"
+   ],
+   "tests": [
+    "tests.test_reviewer_prompt_conformance"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sdk_manifest_crossing.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sdk_manifest_crossing.py"
+   ],
+   "tests": [
+    "tests.test_sdk_manifest_crossing"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sdk_manifest_crossing_fidelity.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_sdk_manifest_crossing_fidelity.py"
+   ],
+   "tests": [
+    "tests.test_sdk_manifest_crossing_fidelity"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sdk_manifest_crossing_six_fields.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sdk_manifest_crossing_six_fields.py"
+   ],
+   "tests": [
+    "tests.test_sdk_manifest_crossing_six_fields"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sdk_self_characterization_egress.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sdk_self_characterization_egress.py"
+   ],
+   "tests": [
+    "tests.test_sdk_self_characterization_egress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_select_tests_for_change.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_select_tests_for_change.py"
+   ],
+   "tests": [
+    "tests.test_select_tests_for_change"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_session_continuity.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_session_continuity.py"
+   ],
+   "tests": [
+    "tests.test_session_continuity"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_stable_epoch_and_adapter_effects.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_stable_epoch_and_adapter_effects.py"
+   ],
+   "tests": [
+    "tests.test_stable_epoch_and_adapter_effects"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_stdlib_json_schema_agreement.py",
+   "inputs": [
+    "jsonschema",
+    "labs-stdlib-json-schema"
+   ],
+   "surfaces": [
+    "tests/test_stdlib_json_schema_agreement.py"
+   ],
+   "tests": [
+    "tests.test_stdlib_json_schema_agreement"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_task_registry.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_task_registry.py"
+   ],
+   "tests": [
+    "tests.test_task_registry"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_task_registry_disclosure_endpoint.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_task_registry_disclosure_endpoint.py"
+   ],
+   "tests": [
+    "tests.test_task_registry_disclosure_endpoint"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_task_registry_schema_conformance.py",
+   "inputs": [
+    "labs-stdlib-json-schema"
+   ],
+   "surfaces": [
+    "tests/test_task_registry_schema_conformance.py"
+   ],
+   "tests": [
+    "tests.test_task_registry_schema_conformance.ConformanceTests",
+    "tests.test_task_registry_schema_conformance.ProvenanceTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_task_registry_schema_conformance.py[repo-standards]",
+   "inputs": [
+    "labs-stdlib-json-schema",
+    "repo-standards"
+   ],
+   "surfaces": [
+    "tests/test_task_registry_schema_conformance.py"
+   ],
+   "tests": [
+    "tests.test_task_registry_schema_conformance.OwnerDriftTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_test_suite_baseline_refresh.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_test_suite_baseline_refresh.py"
+   ],
+   "tests": [
+    "tests.test_test_suite_baseline_refresh"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_test_suite_skip_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_test_suite_skip_receipt.py"
+   ],
+   "tests": [
+    "tests.test_test_suite_skip_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_transition_console.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_transition_console.py"
+   ],
+   "tests": [
+    "tests.test_transition_console"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_unittest_junit.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_unittest_junit.py"
+   ],
+   "tests": [
+    "tests.test_unittest_junit"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_workflow_action_pins.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_workflow_action_pins.py"
+   ],
+   "tests": [
+    "tests.test_workflow_action_pins"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_workspace_internal_endpoint_binding.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_workspace_internal_endpoint_binding.py"
+   ],
+   "tests": [
+    "tests.test_workspace_internal_endpoint_binding"
+   ]
+  }
+ ],
+ "surface_graph": {
+  ".stegverse/transition-ledger/emit.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py"
+  ],
+  "org-boundary/runtime/capability_ingress.py": [
+   "org-runtime/interlock-intr.json"
+  ],
+  "org-boundary/runtime/federation_projection.py": [
+   "org-boundary/registry/federation.json"
+  ],
+  "org-boundary/runtime/node_standing.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+  ],
+  "org-kernel/kernel.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-boundary/runtime/process_boundary.py",
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "org-kernel/node_store.py": [
+   "resident-runtime/ledger_store.py"
+  ],
+  "org-kernel/tests/test_kernel.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel.py"
+  ],
+  "org-runtime/intr_protocol.py": [
+   "data/intr-protocol/v1/**",
+   "data/intr-protocol/v1/protocol.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json"
+  ],
+  "org-runtime/runtime_boundary.py": [
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-boundary/runtime/origin_attestation.py",
+   "org-kernel/kernel.py",
+   "org-runtime/activation.json",
+   "org-runtime/interlock-intr.json"
+  ],
+  "resident-runtime/admission_predicate.py": [
+   "config/admission-predicate/**",
+   "config/admission-predicate/base-state-readback.pin.json",
+   "config/admission-predicate/lane-a-job-observation.pin.json",
+   "orchestration/task-registry.json"
+  ],
+  "resident-runtime/aggregate_repo_transition.py": [
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/capability_demonstration_projection.py": [
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "resident-runtime/drift_receipt_appender.py": [
+   "resident-runtime/drift-receipt-appender.transition.json",
+   "resident-runtime/main_change_receipt.py"
+  ],
+  "resident-runtime/ecosystem_control.py": [
+   "org-kernel/kernel.py"
+  ],
+  "resident-runtime/federation_cycle.py": [
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/governance_decision_return.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/mesh_locator_binding.py",
+   "resident-runtime/propagate_repository_receipts.py"
+  ],
+  "resident-runtime/governance_decision_return.py": [
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_manifest_ingress.py"
+  ],
+  "resident-runtime/governance_endpoint.py": [
+   "org-runtime/interlock-intr.json"
+  ],
+  "resident-runtime/governance_return_acceptance.py": [
+   ".github/workflows/organization-governance-return.yml",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/peer_mesh_intake.py"
+  ],
+  "resident-runtime/governance_return_cycle.py": [
+   "resident-runtime/federation_cycle.py"
+  ],
+  "resident-runtime/intr_destination_ingress.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_ledger_readback.py"
+  ],
+  "resident-runtime/intr_hop.py": [
+   ".github/workflows/intr-destination-hop.yml",
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py"
+  ],
+  "resident-runtime/intr_path_ingress.py": [
+   ".github/workflows/intr-path-ingress.yml",
+   ".stegverse/intr-path-transfer/**",
+   "org-kernel/kernel.py",
+   "resident-runtime/intr_path_tvc_read.py",
+   "resident-runtime/merge_transfer.py"
+  ],
+  "resident-runtime/intr_path_transfer.py": [
+   ".github/workflows/intr-path-transfer.yml",
+   ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/transfers.json",
+   "org-runtime/intr_protocol.py",
+   "resident-runtime/intr_path_ingress.py",
+   "resident-runtime/merge_transfer.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-protocol/destinations/**",
+   "tests/fixtures/intr-protocol/destinations/manifest.json"
+  ],
+  "resident-runtime/intr_path_tvc_read.py": [
+   ".stegverse/intr-path-transfer/**"
+  ],
+  "resident-runtime/main_change_receipt.py": [
+   ".github/workflows/main-change-receipt.yml"
+  ],
+  "resident-runtime/main_change_receipt_census.py": [
+   ".github/workflows/**",
+   ".github/workflows/main-change-receipt.yml",
+   "resident-runtime/main_change_receipt.py"
+  ],
+  "resident-runtime/manifest_directed_run_inputs.py": [
+   ".github/workflows/organization-governance-return.yml",
+   ".github/workflows/organization-ledger-transition.yml"
+  ],
+  "resident-runtime/merge_transfer.py": [
+   ".github/workflows/organization-ledger-merge-transfer.yml",
+   ".stegverse/merge-transfer/pending.json",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/merge_transfer_dry_run_check.py": [
+   "resident-runtime/merge_transfer.py"
+  ],
+  "resident-runtime/merge_transfer_gitstore.py": [
+   ".github/workflows/organization-ledger-merge-transfer.yml",
+   ".stegverse/merge-transfer/pending.json",
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "resident-runtime/merge_transfer_range.py": [
+   "resident-runtime/merge_transfer.py"
+  ],
+  "resident-runtime/mesh_locator_binding.py": [
+   ".github/workflows/organization-ledger-transition.yml"
+  ],
+  "resident-runtime/observation_window.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "resident-runtime/org_boundary_runtime.py": [
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/intr_transport.py"
+  ],
+  "resident-runtime/organization_egress_boundary.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/registry/federation.json",
+   "org-boundary/runtime/origin_attestation.py",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/organization_ledger_readback.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/organization_manifest_ingress.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/submit_org_transition_to_master_records.py"
+  ],
+  "resident-runtime/peer_mesh_intake.py": [
+   ".github/workflows/organization-governance-return.yml",
+   "org-kernel/kernel.py",
+   "resident-runtime/mesh_locator_binding.py"
+  ],
+  "resident-runtime/pinned_labs.py": [
+   ".stegverse/test-suite-baseline/labs-tool-pin.json"
+  ],
+  "resident-runtime/propagate_repository_receipts.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py"
+  ],
+  "resident-runtime/receipt_disorder_measurement.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "resident-runtime/receipt_lineage_projection.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/required_verification.py": [
+   ".github/workflows/**"
+  ],
+  "resident-runtime/resident_executor.py": [
+   "resident-runtime/federation_cycle.py"
+  ],
+  "resident-runtime/resident_runtime_convergence.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/resident-runtime-convergence-manifest.json"
+  ],
+  "resident-runtime/run_once.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/process_boundary.py",
+   "resident-runtime/org_boundary_runtime.py"
+  ],
+  "resident-runtime/run_sv002_self_characterization_roundtrip.py": [
+   "resident-runtime/sdk_self_characterization_egress.py"
+  ],
+  "resident-runtime/sdk_manifest_crossing.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/intr_transport.py",
+   "org-boundary/runtime/process_boundary.py"
+  ],
+  "resident-runtime/sdk_self_characterization_egress.py": [
+   "org-kernel/kernel.py"
+  ],
+  "resident-runtime/sdk_self_characterization_response.py": [
+   "org-kernel/node_store.py"
+  ],
+  "resident-runtime/session_continuity.py": [
+   "org-kernel/kernel.py"
+  ],
+  "resident-runtime/submit_org_transition_to_master_records.py": [
+   "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "resident-runtime/task_registry_disclosure_endpoint.py": [
+   "orchestration/task-registry.json"
+  ],
+  "resident-runtime/test_suite_baseline_refresh.py": [
+   ".github/workflows/test-suite-baseline-refresh.yml",
+   "resident-runtime/test-suite-baseline-refresh.transition.json"
+  ],
+  "resident-runtime/transition_console.py": [
+   "org-kernel/kernel.py",
+   "org-kernel/node_store.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "scripts/select_tests_for_change.py": [
+   "data/test-selection-map.json"
+  ],
+  "tests/fixtures/d6_far_side_registry.py": [
+   "tests/fixtures/d6-far-side-non-allow.json"
+  ],
+  "tests/peer_organization.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-boundary/runtime/process_boundary.py",
+   "org-kernel/kernel.py",
+   "org-kernel/node_store.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_admission_predicate.py": [
+   "config/admission-predicate/**",
+   "resident-runtime/admission_predicate.py",
+   "vendor/lane_a/**"
+  ],
+  "tests/test_boundary_processing_selection.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_capability_demonstration_projection.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/capability_demonstration_projection.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_capability_ingress_address.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/organization_egress_boundary.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+  ],
+  "tests/test_drift_receipt_appender.py": [
+   ".github/workflows/**",
+   ".github/workflows/drift-receipt-appender-validation.yml",
+   "resident-runtime/drift_receipt_appender.py",
+   "tests/fixtures/**",
+   "tests/fixtures/drift-receipt-appender/**"
+  ],
+  "tests/test_ecosystem_ai_reuse.py": [
+   "orchestration/ecosystem_ai_reuse.py"
+  ],
+  "tests/test_federation_cycle_frame_consumption_disposition.py": [
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/resident_executor.py"
+  ],
+  "tests/test_federation_cycle_propagation_location.py": [
+   "resident-runtime/federation_cycle.py"
+  ],
+  "tests/test_federation_cycle_supplied_epoch.py": [
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/resident_executor.py"
+  ],
+  "tests/test_federation_projection.py": [
+   "org-boundary/registry/federation.json",
+   "org-boundary/runtime/federation_projection.py"
+  ],
+  "tests/test_git_ledger_store.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_git_mesh_store.py": [
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_governance_inter_org_route.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/manifest_selection.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/governance_decision_return.py",
+   "resident-runtime/governance_endpoint.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+  ],
+  "tests/test_governance_mesh_locator_readback.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "org-boundary/registry/services.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+  ],
+  "tests/test_governance_request_vocabulary.py": [
+   ".stegverse/transition-requests/**"
+  ],
+  "tests/test_governance_return_peer_mesh.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-governance-return.yml",
+   ".stegverse/transition-ledger/contract.json",
+   "org-boundary/registry/services.json",
+   "resident-runtime/governance_return_acceptance.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/mesh_locator_binding.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "resident-runtime/peer_mesh_intake.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+  ],
+  "tests/test_governed_ingress_census.py": [
+   ".stegverse/transition-ledger/**",
+   ".stegverse/transition-ledger/emit.py",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-boundary/runtime/process_boundary.py",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/governance_decision_return.py",
+   "resident-runtime/governance_endpoint.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "resident-runtime/peer_mesh_intake.py",
+   "resident-runtime/propagate_repository_receipts.py",
+   "resident-runtime/resident_executor.py",
+   "resident-runtime/run_sv002_self_characterization_roundtrip.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/sdk_self_characterization_egress.py",
+   "resident-runtime/sdk_self_characterization_response.py",
+   "resident-runtime/submit_org_transition_to_master_records.py",
+   "resident-runtime/task_registry_disclosure_endpoint.py",
+   "resident-runtime/workspace_resource_consumer_adapter.py"
+  ],
+  "tests/test_hb_reference_oscillator.py": [
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_ingress_refusal_precedence.py": [
+   "org-boundary/runtime/capability_ingress.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_manifest_ingress.py"
+  ],
+  "tests/test_internal_endpoint_dispatch.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_intr_destination_capability.py": [
+   ".github/workflows/organization-ledger-transition.yml",
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json",
+   "org-runtime/runtime_boundary.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "tests/fixtures/crossing-standing-genesis.json"
+  ],
+  "tests/test_intr_hop.py": [
+   ".github/workflows/intr-destination-hop.yml",
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-boundary/registry/services.json",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/intr_hop.py"
+  ],
+  "tests/test_intr_org_crossing.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/intr_transport.py",
+   "org-boundary/runtime/process_boundary.py",
+   "resident-runtime/run_once.py"
+  ],
+  "tests/test_intr_path_ingress.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
+   "tests/fixtures/intr-path-ingress/pin.json"
+  ],
+  "tests/test_intr_path_transfer.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_transfer.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-path-transfer/**"
+  ],
+  "tests/test_intr_path_tvc_read.py": [
+   "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+   "tests/test_intr_path_ingress.py"
+  ],
+  "tests/test_intr_protocol_conformance.py": [
+   "org-boundary/registry/**",
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-runtime/interlock-intr.json",
+   "org-runtime/intr_protocol.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-protocol/destinations/**",
+   "tests/fixtures/intr-protocol/destinations/manifest.json"
+  ],
+  "tests/test_intr_protocol_conformance_merge_transfer.py": [
+   ".github/workflows/organization-ledger-merge-transfer.yml",
+   "org-runtime/intr_protocol.py",
+   "resident-runtime/merge_transfer.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-protocol/destinations/**",
+   "tests/fixtures/intr-protocol/destinations/manifest.json",
+   "tests/fixtures/intr-protocol/merge-transfer/**"
+  ],
+  "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py": [
+   "org-runtime/intr_protocol.py",
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/merge_transfer_gitstore.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-protocol/merge-transfer-gitstore/**",
+   "tests/fixtures/intr-protocol/merge-transfer/manifest.json"
+  ],
+  "tests/test_kernel_crossing_organization_receipts.py": [
+   "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py"
+  ],
+  "tests/test_kernel_node_state_is_addressed.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_kernel_node_state_supplied.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/control/**",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_ledger_location_supplied.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/propagate_repository_receipts.py"
+  ],
+  "tests/test_ledger_store_contract.py": [
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_ledger_store_remote_locator_refused.py": [
+   ".stegverse/transition-ledger/emit.py"
+  ],
+  "tests/test_ledger_substrate_transaction.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_llm_org_foundation.py": [
+   "control/task-vectors/**",
+   "control/task-vectors/SVORG-LLM-ORG-FOUNDATION-001.json",
+   "data/llm-org-foundation.json",
+   "orchestration/task-registry.json"
+  ],
+  "tests/test_llm_org_foundation_validation.py": [
+   "llm_org_foundation_validation.py",
+   "orchestration/task-registry.json",
+   "tests/test_llm_org_foundation.py"
+  ],
+  "tests/test_main_change_receipt.py": [
+   ".github/workflows/main-change-receipt.yml",
+   "resident-runtime/main_change_receipt.py"
+  ],
+  "tests/test_main_change_receipt_census.py": [
+   "resident-runtime/main_change_receipt_census.py"
+  ],
+  "tests/test_manifest_ingress_d7_fail_closed.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/d6_far_side_registry.py",
+   "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/test_manifest_ingress_idempotent.py": [
+   "tests/test_organization_manifest_ingress.py"
+  ],
+  "tests/test_merge_transfer.py": [
+   ".github/workflows/organization-ledger-merge-transfer-validation.yml",
+   ".github/workflows/organization-ledger-merge-transfer.yml",
+   ".stegverse/merge-transfer/pending.json",
+   "resident-runtime/merge_transfer.py",
+   "tests/fixtures/merge-transfer/**"
+  ],
+  "tests/test_merge_transfer_dry_run_check.py": [
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/merge_transfer_dry_run_check.py"
+  ],
+  "tests/test_merge_transfer_gitstore.py": [
+   ".github/workflows/merge-transfer-gitstore-validation.yml",
+   ".github/workflows/organization-ledger-merge-transfer.yml",
+   ".stegverse/merge-transfer/pending.json",
+   "resident-runtime/merge_transfer_gitstore.py",
+   "tests/fixtures/merge-transfer-gitstore/**"
+  ],
+  "tests/test_merge_transfer_gitstore_parity.py": [
+   "data/intr-protocol/v1/protocol.json",
+   "resident-runtime/merge_transfer.py",
+   "tests/test_merge_transfer_gitstore.py"
+  ],
+  "tests/test_merge_transfer_range.py": [
+   ".github/workflows/**",
+   ".stegverse/merge-transfer/pending.json",
+   "resident-runtime/merge_transfer_range.py",
+   "tests/fixtures/merge-transfer/f160ac7d.json",
+   "tests/fixtures/merge-transfer/f40ad7dd.json",
+   "tests/test_merge_transfer.py"
+  ],
+  "tests/test_mesh_locator_binding.py": [
+   ".github/workflows/organization-governance-return.yml",
+   ".github/workflows/organization-ledger-transition.yml",
+   "org-kernel/kernel.py",
+   "resident-runtime/manifest_directed_run_inputs.py",
+   "resident-runtime/mesh_locator_binding.py"
+  ],
+  "tests/test_no_hosted_gateway_route.py": [
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/ecosystem_control.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/sdk_self_characterization_egress.py",
+   "tests/fixtures/crossing-standing-genesis.json"
+  ],
+  "tests/test_node_standing_ingress.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/node_standing.py",
+   "org-boundary/runtime/process_boundary.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/submit_org_transition_to_master_records.py"
+  ],
+  "tests/test_node_store_contract.py": [
+   "org-kernel/node_store.py"
+  ],
+  "tests/test_observation_window.py": [
+   "resident-runtime/observation_window.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "tests/test_org_emp_kv_projection_schema.py": [
+   "orchestration/schemas/org-emp-kv-projection.v1.schema.json"
+  ],
+  "tests/test_org_ledger_atomic_append.py": [
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "tests/test_org_ledger_predecessor_resolution.py": [
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_organization_egress_boundary.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-runtime/interlock-intr.json",
+   "org-runtime/runtime_boundary.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_organization_ingress_capability_binding.py": [
+   "org-runtime/interlock-intr.json",
+   "org-runtime/runtime_boundary.py"
+  ],
+  "tests/test_organization_manifest_ingress.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/submit_org_transition_to_master_records.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifest-build-spec.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+  ],
+  "tests/test_organization_repository_propagation.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/control/sv002-sdk-query.request.json",
+   "resident-runtime/propagate_repository_receipts.py"
+  ],
+  "tests/test_organization_role_runtime_reality_deployment.py": [
+   ".stegverse/transition-ledger/**",
+   ".stegverse/transition-ledger/org-contract.json",
+   "README.md",
+   "data/master-records-role-audit.json",
+   "data/organization-role-exemption-register.json",
+   "data/organization-role-runtime-reality-deployment.json",
+   "docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "tests/test_origin_attestation.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/runtime/origin_attestation.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/receipt_disorder_measurement.py",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_origin_attestation_tvc_conformance.py": [
+   "org-boundary/runtime/origin_attestation.py",
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_p1_fc10_cli_epoch_str.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/propagate_repository_receipts.py"
+  ],
+  "tests/test_p1_supplied_epoch_and_ledger_paths.py": [
+   ".stegverse/transition-ledger/**",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+  ],
+  "tests/test_peer_migration_artifacts.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "docs/PEER_KERNEL_GENERATION_ADMISSION_MIGRATION_002.md",
+   "docs/migrations/**",
+   "docs/migrations/admissible-existence.node-standing-gate.patch",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel-manifest.json",
+   "org-kernel/kernel.py",
+   "org-kernel/tests/test_kernel.py",
+   "resident-runtime/submit_org_transition_to_master_records.py"
+  ],
+  "tests/test_pinned_labs.py": [
+   ".github/workflows/**",
+   ".stegverse/test-set-spec.json",
+   "resident-runtime/pinned_labs.py",
+   "tests/test_stdlib_json_schema_agreement.py"
+  ],
+  "tests/test_pr1b_direct_entrypoint_epoch.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+  ],
+  "tests/test_pr1c_clock_fallbacks.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/runtime/capability_ingress.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/observation_window.py"
+  ],
+  "tests/test_push_receipt_session_binder.py": [
+   "resident-runtime/push_receipt_session_binder.py"
+  ],
+  "tests/test_receipt_disorder_measurement.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/receipt_disorder_measurement.py",
+   "resident-runtime/receipt_lineage_projection.py",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_receipt_lineage_projection.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "tests/test_receipt_time_base.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "tests/test_refused_crossings_recorded.py": [
+   "tests/peer_organization.py"
+  ],
+  "tests/test_remediation_lane.py": [
+   "org-boundary/registry/services.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/unadmitted-capability-to-llm-adapter.json"
+  ],
+  "tests/test_repo_ledger_durable_in_sovereign_ref.py": [
+   ".github/workflows/organization-ledger-transition.yml",
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_ledger_readback.py"
+  ],
+  "tests/test_repo_ledger_exact_retry.py": [
+   ".stegverse/transition-ledger/emit.py"
+  ],
+  "tests/test_repo_ledger_serialized_append.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py"
+  ],
+  "tests/test_required_verification.py": [
+   ".github/workflows/**",
+   ".github/workflows/required-verification.yml",
+   ".stegverse/test-set-spec.json",
+   ".stegverse/test-sets.json",
+   ".stegverse/test-suite-baseline/labs-tool-pin.json",
+   "resident-runtime/required_verification.py",
+   "tests/test_main_change_receipt_census.py"
+  ],
+  "tests/test_resident_materialization.py": [
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/resident_executor.py",
+   "resident-runtime/run_sv002_self_characterization_roundtrip.py",
+   "tests/test_sdk_self_characterization_egress.py"
+  ],
+  "tests/test_resident_runtime_convergence.py": [
+   ".github/workflows/resident-runtime-convergence-validation.yml",
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   "org-runtime/interlock-intr.json",
+   "org-runtime/runtime_boundary.py",
+   "resident-runtime/resident_runtime_convergence.py"
+  ],
+  "tests/test_reviewer_prompt_conformance.py": [
+   "control/task-vector-index.json",
+   "control/task-vectors/SVORG-STEGOS-PORTABILITY-001.json",
+   "data/llm-org-foundation.json",
+   "data/organization-role-runtime-reality-deployment.json",
+   "docs/EXTERNAL_REVIEWER_NODE_STANDING_PROMPT.md",
+   "docs/EXTERNAL_REVIEWER_TASK_REGISTRY_PROMPT.md",
+   "orchestration/schemas/task-registry.schema.json",
+   "tests/test_organization_role_runtime_reality_deployment.py",
+   "tests/test_task_registry.py",
+   "tests/test_task_registry_schema_conformance.py"
+  ],
+  "tests/test_sdk_manifest_crossing.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/test_sdk_manifest_crossing_fidelity.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "tests/fixtures/sdk-manifests/**",
+   "tests/fixtures/sdk_manifest_fixture_build.py"
+  ],
+  "tests/test_sdk_manifest_crossing_six_fields.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/d6_far_side_registry.py",
+   "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/test_sdk_self_characterization_egress.py": [
+   "resident-runtime/sdk_self_characterization_egress.py"
+  ],
+  "tests/test_select_tests_for_change.py": [
+   "README.md",
+   "data/test-selection-map.json",
+   "scripts/select_tests_for_change.py"
+  ],
+  "tests/test_session_continuity.py": [
+   "org-boundary/runtime/node_standing.py",
+   "resident-runtime/session_continuity.py"
+  ],
+  "tests/test_stable_epoch_and_adapter_effects.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/services.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/sdk_self_characterization_response.py",
+   "resident-runtime/submit_org_transition_to_master_records.py",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_stdlib_json_schema_agreement.py": [
+   ".github/workflows/required-verification.yml",
+   "orchestration/schemas/task-registry.schema.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/pinned_labs.py"
+  ],
+  "tests/test_task_registry.py": [
+   "control/task-vector-index.json",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/control/sv002-sdk-query.request.json",
+   "tests/fixtures/**"
+  ],
+  "tests/test_task_registry_disclosure_endpoint.py": [
+   "orchestration/task-registry.json",
+   "org-boundary/registry/services.json",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/task_registry_disclosure_endpoint.py",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+  ],
+  "tests/test_task_registry_schema_conformance.py": [
+   "orchestration/schemas/PROVENANCE.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/pinned_labs.py"
+  ],
+  "tests/test_test_suite_baseline_refresh.py": [
+   ".stegverse/test-suite-baseline/labs-tool-pin.json",
+   ".stegverse/test-suite-baseline/main-receipt.json",
+   "resident-runtime/drift_receipt_appender.py",
+   "resident-runtime/main_change_receipt.py",
+   "resident-runtime/pinned_labs.py",
+   "resident-runtime/test_suite_baseline_refresh.py"
+  ],
+  "tests/test_test_suite_skip_receipt.py": [
+   "scripts/test_suite_skip_receipt.py"
+  ],
+  "tests/test_transition_console.py": [
+   "orchestration/task-registry.json",
+   "org-kernel/node_store.py",
+   "resident-runtime/transition_console.py"
+  ],
+  "tests/test_unittest_junit.py": [
+   "scripts/unittest_junit.py"
+  ],
+  "tests/test_workflow_action_pins.py": [
+   ".github/workflows/**"
+  ],
+  "tests/test_workspace_internal_endpoint_binding.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/process_boundary.py",
+   "resident-runtime/workspace_resource_consumer_adapter.py"
+  ]
+ },
+ "surface_rule": "a set verifies its surfaces and everything they reach in surface_graph (a file's direct repository references: string-literal paths, path chains, local imports)"
+}
