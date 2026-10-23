@@ -1,0 +1,118 @@
+{
+ "authoring_session": "grok-lane-c",
+ "authoring_session_source": "sv-push-receipt.v1 pusher_session at head",
+ "base_head_sha": "40a5d235551077185d9f7849a2c866ff5acf2796",
+ "base_ref": "main",
+ "change_digest": "sha256:76de67c6a95afbf69a12d3ea070bdb86aa6be667389982cb5381dc7f1595d32b",
+ "change_digest_rule": "stegverse.merge-admission-change-digest/v1",
+ "check_counts": {
+  "failed": 0,
+  "passed": 4,
+  "pending": 0,
+  "ran": 4,
+  "skipped": 0
+ },
+ "corpus_head": "sha256:d9ad4447044372de521b589d59a272a7d5b4113e207c075b20d549312d2e9e93",
+ "effect": {
+  "ledger_receipt": {
+   "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+   "trigger": "push to main that lands the admitted merge (.github/workflows/organization-ledger-merge-transfer.yml); no dispatch, schedule or cross-repository call",
+   "verifier": {
+    "function": "verify_merge_transfer",
+    "git_blob_sha": "1b4dbb91040001226d8d176cf36436b1a1388a74",
+    "path": "resident-runtime/merge_transfer.py",
+    "sha256": "032ed727358d56f33369b35e6cc50d65f6af5dc0035f0b69fe7cddb3f4f4e20e"
+   }
+  },
+  "merge_method": "merge",
+  "operation": "MERGE_ADMITTED_PULL_REQUEST",
+  "warrant_fields": {
+   "base_ref": "main",
+   "expected_base_sha": "40a5d235551077185d9f7849a2c866ff5acf2796",
+   "expected_head_sha": "8129a93602ddb722020431e445450bc91433354b",
+   "merge_method": "merge",
+   "minimum_check_count": 4,
+   "pull_number": 200,
+   "repository": "StegVerse-org/.github",
+   "required_checks": [
+    "dry-run",
+    "unit",
+    "validate"
+   ]
+  }
+ },
+ "genesis_receipt_sha256": "sha256:cc56e4084d9eaee016c3d0979097a7e4bd49576c03bba0154a2e2d8ae17985e6",
+ "hb_epoch": "446655631",
+ "head_sha": "8129a93602ddb722020431e445450bc91433354b",
+ "ledger_head": {
+  "hb_epoch": "446655631",
+  "ledger_head": "2acec0e1cfd158a6a3313ad422737caf41badda3",
+  "ledger_ref": "refs/stegverse/organization-ledger",
+  "receipt": "receipts/51a48225fb0229c54f1e6f2a703c215c9f86b467c0b9b0815a401bb6835c5a64.json"
+ },
+ "ledger_operation": "MERGE_ADMISSION_RECORD",
+ "manifest_sha256": "sha256:7370db4088ea0fa5621f64ddd4f8c77778ce28358a1841254b3b6e28c58bf4e3",
+ "predicates": [
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "SV_CHANGE_ADMISSION_GENESIS_DECLARED"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "PULL_REQUEST_OPEN_AND_NOT_SUPERSEDED"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "BRANCH_WRITER_IS_BRANCH_OWNER"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "ALL_JOBS_RAN_AND_PASSED"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "HEAD_CURRENT_WITH_BASE"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "ADMISSION_ORDER_SATISFIED"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "MERGE_TRANSFER_TRANSITION_LIVE_AT_PINNED_DIGEST"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "SCENARIO_COVERAGE_FOR_SURFACE"
+  }
+ ],
+ "pull_number": 200,
+ "push_receipt_head_sha256": "sha256:fe7f7acc51de374f86670f0f468da0065453e4a3325b4bd8444d6c6c71672bfc",
+ "record_sha256": "sha256:5ae530a89d83005cd56fb9173a7c6bfc582116ace74eb7544efd4217fb3aedd9",
+ "repository": "StegVerse-org/.github",
+ "required_checks": [
+  "dry-run",
+  "unit",
+  "validate"
+ ],
+ "schema": "stegverse.merge-admission-record/v2",
+ "surface_kinds": [
+  "doc",
+  "transition",
+  "workflow"
+ ],
+ "transition": "MERGE_ADMISSION"
+}
