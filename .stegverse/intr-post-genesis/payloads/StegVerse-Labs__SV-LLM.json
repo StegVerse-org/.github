@@ -3,27 +3,21 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "DESTINATION_HAS_INTR_PATH_INGRESS",
-   "failure_code": "INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN",
-   "next_attempt": "re-run seal and replay after the port is admitted",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on SV-LLM/.github main",
-   "retry_entrypoint": "a Lane B port draft to SV-LLM/.github (laneb/ branch)"
-  },
-  {
    "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
    "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
+   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for StegVerse-Labs->SV-LLM:intr-destination on SV-LLM/.github main carrying the source receipt pair",
-   "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+   "required_evidence_or_repair": "the inbound row in SV-LLM/.github#50 (head 7c64558a) admitted to SV-LLM/.github main and consumed by intr-path-ingress.yml",
+   "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the admission push)"
   }
  ],
- "cls": "DESTINATION_INGRESS_NOT_ON_MAIN",
+ "cls": "GENESIS_READY",
  "communication_id": "intr-path-v1:StegVerse-Labs->SV-LLM",
  "destination": "SV-LLM",
  "e0_terminal": true,
- "expected_at_genesis": "FAIL_CLOSED",
+ "expected_at_genesis": "ALLOW",
+ "genesis_head": "7c64558a8d07eec1c61760aeac32c6495d853735",
+ "genesis_pr": "SV-LLM/.github#50",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "StegVerse-Labs->SV-LLM:intr-destination",
@@ -81,7 +75,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:34c49615b61a835a35fd58f057c6a3c90cb3a052b8957d80dd23752bd1a3bb75",
+ "record_sha256": "sha256:75852e0f2cc82e2f5c63446fa4cc43d4d9ff297c2f5ee4f24b19ea5d8a6cba32",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegVerse-Labs",
  "source_receipts": {
@@ -174,11 +168,11 @@
   "source_ledger_tip_observed": "9a407561062757a30f90818ec6c8105b04331a39"
  },
  "status": {
-  "failed_predicate": "DESTINATION_HAS_INTR_PATH_INGRESS",
-  "failure_code": "INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN",
-  "next_attempt": "re-run seal and replay after the port is admitted",
+  "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on SV-LLM/.github main",
-  "retry_entrypoint": "a Lane B port draft to SV-LLM/.github (laneb/ branch)"
+  "required_evidence_or_repair": "the inbound row in SV-LLM/.github#50 (head 7c64558a) admitted to SV-LLM/.github main and consumed by intr-path-ingress.yml",
+  "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the admission push)"
  }
 }

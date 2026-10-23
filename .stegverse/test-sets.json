@@ -2395,6 +2395,7 @@
   "scripts/intr_post_genesis_replay.py": [
    ".github/workflows/intr-path-ingress.yml",
    ".github/workflows/intr-path-transfer.yml",
+   ".github/workflows/organization-ledger-transition.yml",
    ".stegverse/intr-post-genesis/**",
    ".stegverse/transition-ledger/**",
    ".stegverse/transition-ledger/contract.json",

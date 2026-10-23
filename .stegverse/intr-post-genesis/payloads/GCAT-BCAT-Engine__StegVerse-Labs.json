@@ -9,14 +9,6 @@
    "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
    "required_evidence_or_repair": "GCAT-BCAT-Engine/.github's ledger is not anonymously readable, so the source_inclusion read for GCAT-BCAT-Engine->StegVerse-Labs:intr-destination needs a TV/TVC read receipt (scope GCAT-BCAT-Engine->StegVerse-Labs:intr-destination#source_inclusion) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
    "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
-  },
-  {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for GCAT-BCAT-Engine->StegVerse-Labs:intr-destination on StegVerse-Labs/.github main carrying the source receipt pair",
-   "retry_entrypoint": "StegVerse-Labs/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
   }
  ],
  "cls": "TVC_PRIVATE_SOURCE_READ",
@@ -28,7 +20,7 @@
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "GCAT-BCAT-Engine->StegVerse-Labs:intr-destination",
  "payload": null,
- "record_sha256": "sha256:c2bf94d02933f450bc53744de5435817722b1e2e28fa9482b7749e825e435942",
+ "record_sha256": "sha256:fa65cff5fc8179b3c412f44618c549ad66fa13a7bdd3229429867a193f71e260",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "GCAT-BCAT-Engine",
  "source_receipts": null,

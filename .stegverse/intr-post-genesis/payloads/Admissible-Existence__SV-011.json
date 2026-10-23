@@ -3,20 +3,20 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "read the source ledger back, then re-run seal",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for Admissible-Existence->SV-011:intr-destination on Admissible-Existence/.github's ledger (read anonymously at 2b117af78f27e94830b0ff20e2fb3aa49872d80d: none)",
-   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/intr-path-transfer.yml (a transfers.json row landing on main)"
-  },
-  {
    "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
    "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
    "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
    "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
    "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the destination_readback read for Admissible-Existence->SV-011:intr-destination needs a TV/TVC read receipt (scope Admissible-Existence->SV-011:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
    "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+  },
+  {
+   "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
+   "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
+   "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
+   "owning_existing_goal": "Admissible-Existence/.github#97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE); InTr mesh StegVerse-org/.github#162",
+   "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#97 (B-P31: writers require a supplied epoch, no clock fallback) admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false)",
+   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows"
   },
   {
    "failed_predicate": "DESTINATION_INGRESS_HAS_THE_PUBLIC_LEDGER_ROUTE",
@@ -27,33 +27,43 @@
    "retry_entrypoint": "a Lane B public-route port draft to SV-011/.github (laneb/ branch)"
   },
   {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
+   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination SV-011",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for Admissible-Existence->SV-011:intr-destination on SV-011/.github main carrying the source receipt pair",
-   "retry_entrypoint": "SV-011/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for Admissible-Existence->SV-011:intr-destination on Admissible-Existence/.github's ledger (read anonymously at 2b117af78f27e94830b0ff20e2fb3aa49872d80d: none); the writer and the transfers.json row are in Admissible-Existence/.github#99 (head 8396d24e)",
+   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
   }
  ],
- "cls": "SOURCE_RECEIPT_NOT_LEDGERED",
+ "cls": "TVC_PRIVATE_DESTINATION_READ",
  "communication_id": "intr-path-v1:Admissible-Existence->SV-011",
  "destination": "SV-011",
  "e0_terminal": true,
  "expected_at_genesis": "FAIL_CLOSED",
+ "ledger_head_epoch": {
+  "Admissible-Existence": {
+   "epoch": 469411996,
+   "head_receipt_sha256": "sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327",
+   "organization": "Admissible-Existence",
+   "supplied": false
+  }
+ },
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "Admissible-Existence->SV-011:intr-destination",
  "payload": null,
- "record_sha256": "sha256:4861b1fdd4586d710c5afbc14527019068660bcaf4ddd8b6fa9b30d2f695982b",
+ "record_sha256": "sha256:f3f4c9d5ef63a0cc7504964e1cf010d6a9331e064bffb40983ba1a83ef4e6c89",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Admissible-Existence",
  "source_receipts": null,
+ "source_writer_head": "8396d24e93add6f61324eb4b3ff4797894e2fe0f",
+ "source_writer_pr": "Admissible-Existence/.github#99",
  "status": {
-  "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
-  "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-  "next_attempt": "read the source ledger back, then re-run seal",
-  "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for Admissible-Existence->SV-011:intr-destination on Admissible-Existence/.github's ledger (read anonymously at 2b117af78f27e94830b0ff20e2fb3aa49872d80d: none)",
-  "retry_entrypoint": "Admissible-Existence/.github .github/workflows/intr-path-transfer.yml (a transfers.json row landing on main)"
+  "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
+  "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+  "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
+  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
+  "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the destination_readback read for Admissible-Existence->SV-011:intr-destination needs a TV/TVC read receipt (scope Admissible-Existence->SV-011:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
+  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
  }
 }

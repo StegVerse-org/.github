@@ -49,11 +49,45 @@ class IntrPostGenesisKitTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256((KIT_DIR / name).read_bytes()).hexdigest(), want, name)
         self.assertEqual(set(sums), set(MANIFEST["files_sha256"]) | {"manifest.json"})
 
-    def test_genesis_allow_set_is_exactly_the_two_public_rows(self):
-        self.assertEqual(MANIFEST["genesis_allow"], ["StegVerse-Labs->StegVerse-org:intr-destination",
+    def test_genesis_allow_set_is_exactly_the_four_sealable_public_rows(self):
+        self.assertEqual(MANIFEST["genesis_allow"], ["StegVerse-Labs->SV-LLM:intr-destination",
+                                                     "StegVerse-Labs->StegVerse-org:intr-destination",
+                                                     "StegVerse-org->SV-LLM:intr-destination",
                                                      "StegVerse-org->StegVerse-Labs:intr-destination"])
         self.assertEqual(sum(MANIFEST["class_counts"].values()), 56)
-        self.assertEqual(MANIFEST["class_counts"].get(kit.GENESIS_READY), 2)
+        self.assertEqual(MANIFEST["class_counts"].get(kit.GENESIS_READY), 4)
+
+    def test_carry_set_and_the_allow_ready_count(self):
+        self.assertEqual(MANIFEST["carry_allow"], ["SV-LLM->StegVerse-Labs:intr-destination",
+                                                   "SV-LLM->StegVerse-org:intr-destination"])
+        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 6)
+        for pid in MANIFEST["carry_allow"]:
+            record = kit.load_record(pid)
+            self.assertEqual((record["expected_at_genesis"], record["expected_after_carry"]), ("FAIL_CLOSED", "ALLOW"))
+            self.assertEqual(record["source_writer_pr"], "SV-LLM/.github#50")
+
+    def test_every_public_path_is_allow_ready_or_epoch_blocked_and_private_ends_stay_tvc(self):
+        public = {"StegVerse-org", "StegVerse-Labs", "Admissible-Existence", "SV-LLM"}
+        for p in kit.paths():
+            record = kit.load_record(p["path_id"])
+            if p["source"] in public and p["destination"] in public:
+                self.assertIn(record["cls"], kit.ALLOW_READY + (kit.EPOCH_UNOBSERVED,), p["path_id"])
+                if record["cls"] == kit.EPOCH_UNOBSERVED:
+                    self.assertIn("Admissible-Existence", (p["source"], p["destination"]))
+                    self.assertIn("Admissible-Existence/.github#97", record["status"]["owning_existing_goal"])
+            else:
+                self.assertIn(record["cls"], (kit.TVC_SOURCE, kit.TVC_DESTINATION), p["path_id"])
+                self.assertIn("TVC#535", record["status"]["retry_entrypoint"])
+        self.assertEqual(MANIFEST["class_counts"].get(kit.EPOCH_UNOBSERVED), 6)
+
+    def test_carry_document_reproduces_this_repositorys_inbound_rows_and_refuses_with_six_fields(self):
+        here = kit.ingress.organization()
+        document = json.loads(INBOUND.read_text(encoding="utf-8"))
+        self.assertEqual(kit.carry_document(here, document["transfers"]), INBOUND.read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as empty:
+            rows, refused = kit.carry_rows(here, empty)
+        self.assertEqual(rows, [])
+        self.assertTrue(refused and all(kit.has_six(r) for r in refused))
 
     def test_replay_without_ledger_copies_is_terminal_at_e0_and_deterministic(self):
         with tempfile.TemporaryDirectory() as empty:
@@ -73,6 +107,12 @@ class IntrPostGenesisKitTests(unittest.TestCase):
         self.assertIn("payload invariant does not recompute", kit.check_record(resealed))
         promoted = kit.seal({**kit.load_record("SV-011->StegVerse-org:intr-destination"), "expected_at_genesis": "ALLOW"})
         self.assertIn("only genesis-ready paths expect ALLOW", kit.check_record(promoted))
+        carry = kit.load_record("SV-LLM->StegVerse-org:intr-destination")
+        moved = copy.deepcopy(carry)
+        moved["payload"]["evidence_known_before_source"]["addressed_service"] = "sv-011.intr-destination"
+        self.assertIn("carry payload does not recompute", kit.check_record(kit.seal(moved)))
+        dropped = kit.seal({**carry, "expected_after_carry": None})
+        self.assertIn("exactly the carry paths expect ALLOW after carry", kit.check_record(dropped))
 
     def test_the_sealed_payload_is_what_this_repositorys_writer_appends(self):
         here = kit.ingress.organization()

@@ -58,7 +58,11 @@ TVC_DESTINATION = "TVC_PRIVATE_DESTINATION_READ"   # destination ledger not anon
 SOURCE_NOT_LEDGERED = "SOURCE_RECEIPT_NOT_LEDGERED"
 INGRESS_NOT_ON_MAIN = "DESTINATION_INGRESS_NOT_ON_MAIN"
 INBOUND_ROW_ABSENT = "DESTINATION_INBOUND_ROW_ABSENT"
-CLASSES = (GENESIS_READY, TVC_SOURCE, TVC_DESTINATION, SOURCE_NOT_LEDGERED, INGRESS_NOT_ON_MAIN, INBOUND_ROW_ABSENT)
+CARRY_AFTER_GENESIS = "CARRY_AFTER_GENESIS"        # source writer lands at genesis; ALLOW once the carried row lands
+EPOCH_UNOBSERVED = "LEDGER_HEAD_EPOCH_UNOBSERVED"  # an end's ledger head has no supplied epoch: writers refuse
+CLASSES = (GENESIS_READY, CARRY_AFTER_GENESIS, EPOCH_UNOBSERVED, TVC_SOURCE, TVC_DESTINATION, SOURCE_NOT_LEDGERED,
+           INGRESS_NOT_ON_MAIN, INBOUND_ROW_ABSENT)
+ALLOW_READY = (GENESIS_READY, CARRY_AFTER_GENESIS)
 
 
 def _module(name: str, relative: str):
@@ -172,6 +176,44 @@ def readable(public_ledgers: Path | str | None, organization: str) -> bool:
     return ingress.public_ledger_dir(organization + "/.github", public_ledgers) is not None
 
 
+def head_epoch_state(public_ledgers: Path | str | None, organization: str) -> dict | None:
+    """The supplied-epoch state of ``organization``'s ledger head in its anonymous copy (None: no copy). Mirrors
+    merge_transfer.head_epoch: the head receipt must carry hb_reference.epoch, an int >= 32, with derived_from_clock
+    exactly false. Read from local git objects only."""
+    copy = ingress.public_ledger_dir(organization + "/.github", public_ledgers)
+    if copy is None:
+        return None
+
+    def show(path: str) -> Any:
+        done = subprocess.run(["git", "--git-dir=" + str(copy), "show", ingress.LEDGER_REF + ":" + path],
+                              capture_output=True, text=True, check=False)
+        try:
+            return json.loads(done.stdout) if done.returncode == 0 else None
+        except ValueError:
+            return None
+
+    head = show("HEAD.json")
+    digest_ = head.get("receipt_sha256") if isinstance(head, Mapping) else None
+    receipt = show("receipts/" + digest_.split(":", 1)[1] + ".json") if isinstance(digest_, str) and ":" in digest_ else None
+    ref = receipt.get("hb_reference") if isinstance(receipt, Mapping) else None
+    epoch = ref.get("epoch") if isinstance(ref, Mapping) else None
+    supplied = type(epoch) is int and epoch >= 32 and ref.get("derived_from_clock") is False
+    return {"organization": organization, "head_receipt_sha256": digest_, "epoch": epoch, "supplied": supplied}
+
+
+def epoch_six(inputs: Mapping[str, Any], organization: str, state: Mapping[str, Any]) -> dict:
+    owner = inputs.get("ledger_head_epoch_owner", {}).get(organization, {})
+    return six("HB_EPOCH_SOURCE_UNOBSERVED", "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
+               organization + "/.github's organization ledger head receipt " + str(state.get("head_receipt_sha256"))
+               + " carries epoch " + str(state.get("epoch")) + " without derived_from_clock: false, so its merge-transfer,"
+               " path-transfer and ingress writers refuse before writing; " + owner.get("repair", "its writer must take a "
+               "supplied epoch and its ledger head must be re-appended with one"),
+               owner.get("retry_entrypoint", organization + "/.github .github/workflows/organization-ledger-transition.yml"
+                         " (a supplied hb_epoch)"),
+               owner.get("owning_existing_goal", GOAL),
+               "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push")
+
+
 def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers: Path | str | None) -> dict:
     """One path's sealed record. Order = the order the end-to-end verifier evaluates its predicates."""
     pid, cid, src, dst = path["path_id"], path["communication_id"], path["source"], path["destination"]
@@ -180,6 +222,7 @@ def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers:
                            "authentic": False, "authority_effect": "NONE", "e0_terminal": True,
                            "source_receipts": None, "payload": None, "blockers": []}
     genesis = inputs["genesis"].get(dst)
+    writer = inputs.get("source_writers", {}).get(src)
     ingress_on_main = inputs["destination_ingress_on_main"].get(dst)
     later: list[dict] = []
     if not readable(public_ledgers, dst):
@@ -190,16 +233,17 @@ def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers:
                          " and StegVerse-Labs/.github#3312) on " + dst + "/.github main",
                          "a Lane B public-route port draft to " + dst + "/.github (laneb/ branch)", GOAL,
                          "re-run seal and replay after the port is admitted"))
-    elif ingress_on_main is not True:
+    elif ingress_on_main is not True and not (ingress_on_main == "IN_GENESIS_DRAFT" and genesis):
         later.append(six("INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN", "DESTINATION_HAS_INTR_PATH_INGRESS",
                          "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on "
                          + dst + "/.github main", "a Lane B port draft to " + dst + "/.github (laneb/ branch)", GOAL,
                          "re-run seal and replay after the port is admitted"))
-    if not (genesis and genesis.get("inbound_row") == pid):
-        later.append(six(ingress.NOT_LEDGERED, "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-                         "an inbound row for " + pid + " on " + dst + "/.github main carrying the source receipt pair",
-                         dst + "/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge "
-                         "transfer of the push that lands the row)", GOAL, "seal, then replay after the row lands"))
+    epochs = []
+    for org in (src, dst):
+        state = head_epoch_state(public_ledgers, org)
+        if state is not None and not state["supplied"]:
+            epochs.append(epoch_six(inputs, org, state))
+            rec.setdefault("ledger_head_epoch", {})[org] = state
     if not readable(public_ledgers, src):
         rec.update(cls=TVC_SOURCE, expected_at_genesis=FAIL_CLOSED, status=tvc_six(inputs, path, "source_inclusion"))
         rec["blockers"] = [rec["status"]] + later
@@ -207,13 +251,43 @@ def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers:
     rb = ingress.public_readback(pid, cid, src + "/.github", public_ledgers)
     org_r = rb.get("organization_receipt") if rb else None
     if not isinstance(org_r, Mapping):
-        rec.update(cls=SOURCE_NOT_LEDGERED, expected_at_genesis=FAIL_CLOSED, status=six(
+        source_six = six(
             ingress.SOURCE_NOT_LEDGERED, "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
             "an INTR_MESH_PATH_TRANSFER receipt for " + pid + " on " + src + "/.github's ledger (read anonymously at "
-            + str(rb.get("ledger_tip") if rb else None) + ": none)",
-            src + "/.github .github/workflows/intr-path-transfer.yml (a transfers.json row landing on main)", GOAL,
-            "read the source ledger back, then re-run seal"))
-        rec["blockers"] = [rec["status"]] + later
+            + str(rb.get("ledger_tip") if rb else None) + ": none)"
+            + ("; the writer and the transfers.json row are in " + writer["pr"] + " (head " + writer["head"][:8] + ")"
+               if writer else ""),
+            src + "/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the "
+            "push that lands transfers.json)", GOAL,
+            "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination " + dst)
+        if writer and not later and not epochs:
+            carry_six = six(ingress.NOT_LEDGERED, "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+                            "after " + writer["pr"] + " is admitted and its writer appends the source receipt: an inbound "
+                            "row for " + pid + " generated by `scripts/intr_post_genesis_replay.py carry --destination "
+                            + dst + "` from the anonymous read-back, landed on " + dst + "/.github main",
+                            dst + "/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge "
+                            "transfer of the push that lands the carried row)", GOAL,
+                            "fetch anonymously, carry, land the row as a laneb/ G-8 draft, then replay "
+                            "--require-carry-allow")
+            rec.update(cls=CARRY_AFTER_GENESIS, expected_at_genesis=FAIL_CLOSED, expected_after_carry=ALLOW,
+                       status=source_six, source_writer_pr=writer["pr"], source_writer_head=writer["head"],
+                       destination_genesis_pr=(genesis or {}).get("pr"))
+            core = {"schema": ingress.EVIDENCE_SCHEMA, "repository": dst + "/.github", "path_id": pid,
+                    "source_repository": src + "/.github", "addressed_service": destination_address(dst)}
+            rec["payload"] = {"evidence_known_before_source": core, "evidence_known_before_source_sha256": digest(core),
+                              "rule": "the source receipt is written at admission (its observed_at and transfer commit "
+                                      "are not knowable now); the replay recomputes the full evidence from the read-back "
+                                      "source pair and requires the ledgered evidence to equal it"}
+            rec["blockers"] = [source_six, carry_six]
+            return seal(rec)
+        cls = (TVC_DESTINATION if writer and not readable(public_ledgers, dst) else
+               EPOCH_UNOBSERVED if writer and epochs else
+               INGRESS_NOT_ON_MAIN if writer and later else SOURCE_NOT_LEDGERED)
+        status = epochs[0] if cls == EPOCH_UNOBSERVED else later[0] if cls == TVC_DESTINATION else source_six
+        rec.update(cls=cls, expected_at_genesis=FAIL_CLOSED, status=status)
+        if writer:
+            rec.update(source_writer_pr=writer["pr"], source_writer_head=writer["head"])
+        rec["blockers"] = [status] + [b for b in epochs + later + [source_six] if b is not status]
         return seal(rec)
     checked = ingress.check_source_pair(org_r, rb.get("repository_receipt"), pid, cid, dst)
     if checked["disposition"] != ALLOW or not ingress._included(rb, org_r):
@@ -232,11 +306,21 @@ def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers:
                                                 "source_ledger_tip": "the source ledger tip read at consume time; "
                                                 "its chain must include source_organization_receipt_sha256"},
                       "evidence_at_observed_source_tip": evidence_at_tip(core, cid, rb["ledger_tip"])}
+    if not (genesis and pid in genesis.get("inbound_rows", [])):
+        later.append(six(ingress.NOT_LEDGERED, "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+                         "an inbound row for " + pid + " on " + dst + "/.github main carrying the source receipt pair",
+                         dst + "/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge "
+                         "transfer of the push that lands the row)", GOAL, "seal, then replay after the row lands"))
     if later:
         rec.update(cls=(TVC_DESTINATION if not readable(public_ledgers, dst) else
-                        INGRESS_NOT_ON_MAIN if ingress_on_main is not True else INBOUND_ROW_ABSENT),
+                        INGRESS_NOT_ON_MAIN if later[0]["failure_code"].endswith("NOT_ON_MAIN") else INBOUND_ROW_ABSENT),
                    expected_at_genesis=FAIL_CLOSED, status=later[0])
-        rec["blockers"] = later
+        rec["blockers"] = later + epochs
+        return seal(rec)
+    if epochs:
+        rec.update(cls=EPOCH_UNOBSERVED, expected_at_genesis=FAIL_CLOSED, status=epochs[0],
+                   genesis_pr=genesis["pr"], genesis_head=genesis["head"])
+        rec["blockers"] = epochs
         return seal(rec)
     status = six(ingress.NOT_LEDGERED, "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
                  "the inbound row in " + genesis["pr"] + " (head " + genesis["head"][:8] + ") admitted to " + dst
@@ -264,6 +348,8 @@ def seal_all(inputs: Mapping[str, Any], public_ledgers: Path | str) -> tuple[lis
         counts[r["cls"]] = counts.get(r["cls"], 0) + 1
     manifest = seal({"schema": MANIFEST_SCHEMA, "paths_total": len(records), "class_counts": dict(sorted(counts.items())),
                      "genesis_allow": sorted(r["path_id"] for r in records if r["cls"] == GENESIS_READY),
+                     "carry_allow": sorted(r["path_id"] for r in records if r["cls"] == CARRY_AFTER_GENESIS),
+                     "allow_ready_after_genesis": sum(1 for r in records if r["cls"] in ALLOW_READY),
                      "files_sha256": dict(sorted(entries.items())), "ledgered": False, "authentic": False,
                      "authority_effect": "NONE", "owning_existing_goal": GOAL})
     return records, {"texts": texts, "manifest": manifest, "entries": entries}
@@ -313,8 +399,20 @@ def check_record(record: Mapping[str, Any], manifest: Mapping[str, Any] | None =
         problems.append("genesis-ready path must expect ALLOW")
     if record.get("cls") != GENESIS_READY and record.get("expected_at_genesis") == ALLOW:
         problems.append("only genesis-ready paths expect ALLOW")
+    if (record.get("cls") == CARRY_AFTER_GENESIS) != (record.get("expected_after_carry") == ALLOW):
+        problems.append("exactly the carry paths expect ALLOW after carry")
+    if record.get("cls") == EPOCH_UNOBSERVED and record["status"].get("failure_code") != "HB_EPOCH_SOURCE_UNOBSERVED":
+        problems.append("an epoch-blocked path is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED")
     src = record.get("source_receipts")
-    if record.get("payload") is not None:
+    if record.get("cls") == CARRY_AFTER_GENESIS:
+        p = record.get("payload") or {}
+        core = {"schema": ingress.EVIDENCE_SCHEMA, "repository": record["destination"] + "/.github",
+                "path_id": record["path_id"], "source_repository": record["source"] + "/.github",
+                "addressed_service": destination_address(record["destination"])}
+        if src is not None or p.get("evidence_known_before_source") != core \
+                or p.get("evidence_known_before_source_sha256") != digest(core):
+            problems.append("carry payload does not recompute")
+    elif record.get("payload") is not None:
         if not isinstance(src, Mapping):
             return problems + ["payload without its source receipts"]
         checked = ingress.check_source_pair(src.get("organization_receipt"), src.get("repository_receipt"),
@@ -329,7 +427,8 @@ def check_record(record: Mapping[str, Any], manifest: Mapping[str, Any] | None =
         if p.get("evidence_at_observed_source_tip") != evidence_at_tip(core, record["communication_id"],
                                                                        src.get("source_ledger_tip_observed")):
             problems.append("payload at the observed source tip does not recompute")
-    elif record.get("cls") in (GENESIS_READY, INGRESS_NOT_ON_MAIN, INBOUND_ROW_ABSENT, TVC_DESTINATION):
+    elif record.get("cls") in (GENESIS_READY, INGRESS_NOT_ON_MAIN, INBOUND_ROW_ABSENT, TVC_DESTINATION) \
+            and not record.get("source_writer_pr"):
         problems.append("class " + record["cls"] + " needs a payload")
     return problems
 
@@ -346,7 +445,54 @@ def check_all(kit_dir: Path = KIT_DIR) -> dict:
         if got:
             problems[p["path_id"]] = got
     return {"verified": not problems, "problems": problems, "paths": len(names),
-            "genesis_allow": manifest.get("genesis_allow"), "class_counts": manifest.get("class_counts")}
+            "genesis_allow": manifest.get("genesis_allow"), "carry_allow": manifest.get("carry_allow"),
+            "allow_ready_after_genesis": manifest.get("allow_ready_after_genesis"),
+            "class_counts": manifest.get("class_counts")}
+
+
+# -- carry (after a source writer has run) ---------------------------------------------------------------------
+
+INBOUND_SCHEMA = "stegverse.intr-path-inbound/v1"
+INBOUND_RULE = ("Each row carries byte-for-value copies of a source organization's sealed INTR_MESH_PATH_TRANSFER receipts "
+                "for a path into this organization. Landing a row on main is the destination transition; "
+                "intr-path-ingress.yml consumes it. Source inclusion is read from the source's ledger: anonymously when "
+                "that ledger is public (E0, no credential), else through TV/TVC.")
+
+
+def carry_rows(destination: str, public_ledgers: Path | str, sources: list[str] | None = None) -> tuple[list[dict], list[dict]]:
+    """Inbound rows for ``destination`` from the anonymous ledger copies: one per declared path into it whose source
+    ledger copy holds a sealed, included INTR_MESH_PATH_TRANSFER pair naming it. Deterministic in the copies (no
+    clock, no network). Returns (rows, six-field refusals for paths that cannot be carried yet)."""
+    rows, refused = [], []
+    for p in paths():
+        if p["destination"] != destination or (sources is not None and p["source"] not in sources):
+            continue
+        pid, cid, src = p["path_id"], p["communication_id"], p["source"]
+        if not readable(public_ledgers, src):
+            refused.append({"path_id": pid, "disposition": FAIL_CLOSED, **tvc_six(load_inputs(), p, "source_inclusion")})
+            continue
+        rb = ingress.public_readback(pid, cid, src + "/.github", public_ledgers)
+        org_r = rb.get("organization_receipt") if rb else None
+        checked = (ingress.check_source_pair(org_r, rb.get("repository_receipt"), pid, cid, destination)
+                   if isinstance(org_r, Mapping) else None)
+        if checked is None or checked["disposition"] != ALLOW or not ingress._included(rb, org_r):
+            refused.append({"path_id": pid, "disposition": FAIL_CLOSED, **six(
+                ingress.SOURCE_NOT_LEDGERED, "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+                "a sealed INTR_MESH_PATH_TRANSFER pair for " + pid + " included in " + src + "/.github's ledger (read "
+                "anonymously at " + str(rb.get("ledger_tip") if rb else None) + ")",
+                src + "/.github .github/workflows/intr-path-transfer.yml (the transfers.json row landing on main)", GOAL,
+                "fetch the source ledger anonymously again, then re-run carry")})
+            continue
+        rows.append({"carried": {"source_organization_receipt": org_r,
+                                 "source_repository_receipt": rb["repository_receipt"]},
+                     "communication_id": cid, "path_id": pid, "source_ledger_tip_observed": rb["ledger_tip"]})
+    return rows, refused
+
+
+def carry_document(destination: str, rows: list[dict]) -> str:
+    """The inbound.json text, formatted as StegVerse-org/.github#224 and StegVerse-Labs/.github#3312 commit theirs."""
+    return json.dumps({"destination_repository": destination + "/.github", "rule": INBOUND_RULE,
+                       "schema": INBOUND_SCHEMA, "transfers": rows}, indent=2, ensure_ascii=False) + "\n"
 
 
 # -- replay (after genesis) -------------------------------------------------------------------------------------
@@ -420,7 +566,18 @@ def replay_path(record: Mapping[str, Any], inputs: Mapping[str, Any], public_led
         return {**out, **verifier, "kit_blockers": record.get("blockers", [])}
     d_repo = dst.get("repository_receipt") if isinstance(dst.get("repository_receipt"), Mapping) else {}
     evidence = d_repo.get("evidence") if isinstance(d_repo.get("evidence"), Mapping) else {}
-    expected = record["payload"]["evidence_invariant"]
+    if record.get("cls") == CARRY_AFTER_GENESIS:
+        # no sealed source half existed: recompute from the read-back source pair, then hold it to the sealed core
+        s_org = src.get("organization_receipt") if src else None
+        checked = ingress.check_source_pair(s_org, src.get("repository_receipt") if src else None, path["path_id"],
+                                            path["communication_id"], path["destination"])
+        expected = ({k: evidence_core(checked, path["destination"])[k] for k in INVARIANT_FIELDS}
+                    if checked["disposition"] == ALLOW else {})
+        known = record["payload"]["evidence_known_before_source"]
+        if any(expected.get(k) != v for k, v in known.items()):
+            expected = {**expected, **{k: None for k in known if expected.get(k) != known[k]}}
+    else:
+        expected = record["payload"]["evidence_invariant"]
     differs = sorted(k for k in INVARIANT_FIELDS if evidence.get(k) != expected.get(k))
     inc = evidence.get("source_inclusion") if isinstance(evidence.get("source_inclusion"), Mapping) else {}
     if inc.get("state") != ingress.PUBLIC_STATE or inc.get("tvc_read_receipt") is not None:
@@ -461,6 +618,9 @@ def replay_all(public_ledgers: Path | str, kit_dir: Path = KIT_DIR, inputs_path:
                  "counts": counts, "e0_terminal": terminal,
                  "genesis_ready_not_allow": sorted(r["path_id"] for r in results
                                                    if r["cls"] == GENESIS_READY and r["disposition"] != ALLOW),
+                 "carry_ready_not_allow": sorted(r["path_id"] for r in results
+                                                 if r["cls"] == CARRY_AFTER_GENESIS and r["disposition"] != ALLOW),
+                 "allow": sorted(r["path_id"] for r in results if r["disposition"] == ALLOW),
                  "results": results, "authority_effect": "NONE"})
 
 
@@ -476,12 +636,34 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--out")
     r.add_argument("--require-genesis-allow", action="store_true",
                    help="exit 1 unless every GENESIS_READY path is ALLOW (use after both genesis PRs are admitted)")
+    r.add_argument("--require-carry-allow", action="store_true",
+                   help="exit 1 unless every CARRY_AFTER_GENESIS path is ALLOW (use after the carried rows land)")
+    c = sub.add_parser("carry", help="write the inbound.json rows a destination must land (after the source wrote)")
+    c.add_argument("--public-ledgers", required=True)
+    c.add_argument("--destination", required=True)
+    c.add_argument("--source", action="append", help="only these source organizations (repeatable)")
+    c.add_argument("--merge-into", help="an existing inbound.json whose rows are kept (rows are keyed by path_id)")
+    c.add_argument("--out", required=True)
     a = parser.parse_args(argv)
+    if a.command == "carry":
+        rows, refused = carry_rows(a.destination, a.public_ledgers, a.source)
+        if a.merge_into and Path(a.merge_into).is_file():
+            kept = json.loads(Path(a.merge_into).read_text(encoding="utf-8"))
+            if kept.get("schema") != INBOUND_SCHEMA or kept.get("destination_repository") != a.destination + "/.github":
+                raise SystemExit("FAIL_CLOSED: INTR_PATH_INBOUND_INVALID " + a.merge_into)
+            new = {r["path_id"] for r in rows}
+            rows = [r for r in kept["transfers"] if r["path_id"] not in new] + rows
+        Path(a.out).write_text(carry_document(a.destination, rows), encoding="utf-8")
+        print(json.dumps({"destination": a.destination, "carried": [r["path_id"] for r in rows],
+                          "not_carried": refused}, indent=1, sort_keys=True))
+        return 0 if all(has_six(r) for r in refused) else 1
     if a.command == "seal":
         records, out = seal_all(load_inputs(a.inputs), a.public_ledgers)
         digest_hex = write_sealed(out)
         print(json.dumps({"manifest_sha256": digest_hex, "class_counts": out["manifest"]["class_counts"],
-                          "genesis_allow": out["manifest"]["genesis_allow"]}, indent=1, sort_keys=True))
+                          "genesis_allow": out["manifest"]["genesis_allow"], "carry_allow": out["manifest"]["carry_allow"],
+                          "allow_ready_after_genesis": out["manifest"]["allow_ready_after_genesis"]},
+                         indent=1, sort_keys=True))
         return 0
     if a.command == "check":
         result = check_all()
@@ -497,6 +679,8 @@ def main(argv: list[str] | None = None) -> int:
     if not result["e0_terminal"]:
         return 1
     if a.require_genesis_allow and result["genesis_ready_not_allow"]:
+        return 1
+    if a.require_carry_allow and result["carry_ready_not_allow"]:
         return 1
     return 0
 

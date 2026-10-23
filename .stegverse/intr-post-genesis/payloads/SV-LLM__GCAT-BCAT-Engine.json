@@ -3,14 +3,6 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "read the source ledger back, then re-run seal",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for SV-LLM->GCAT-BCAT-Engine:intr-destination on SV-LLM/.github's ledger (read anonymously at e9ee01335e757b5d179b71e889c99d9016bfce73: none)",
-   "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-transfer.yml (a transfers.json row landing on main)"
-  },
-  {
    "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
    "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
    "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
@@ -27,15 +19,15 @@
    "retry_entrypoint": "a Lane B public-route port draft to GCAT-BCAT-Engine/.github (laneb/ branch)"
   },
   {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
+   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination GCAT-BCAT-Engine",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for SV-LLM->GCAT-BCAT-Engine:intr-destination on GCAT-BCAT-Engine/.github main carrying the source receipt pair",
-   "retry_entrypoint": "GCAT-BCAT-Engine/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for SV-LLM->GCAT-BCAT-Engine:intr-destination on SV-LLM/.github's ledger (read anonymously at e9ee01335e757b5d179b71e889c99d9016bfce73: none); the writer and the transfers.json row are in SV-LLM/.github#50 (head 7c64558a)",
+   "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
   }
  ],
- "cls": "SOURCE_RECEIPT_NOT_LEDGERED",
+ "cls": "TVC_PRIVATE_DESTINATION_READ",
  "communication_id": "intr-path-v1:SV-LLM->GCAT-BCAT-Engine",
  "destination": "GCAT-BCAT-Engine",
  "e0_terminal": true,
@@ -44,16 +36,18 @@
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "SV-LLM->GCAT-BCAT-Engine:intr-destination",
  "payload": null,
- "record_sha256": "sha256:5fa912a7acb603a489b7cb999c2b1b6529a05f6295ef54768710e1994492c466",
+ "record_sha256": "sha256:f68090cd4e7e3c7f46f799348ebceeac8ca36723cf4029076ba08b64768f6b1d",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "SV-LLM",
  "source_receipts": null,
+ "source_writer_head": "7c64558a8d07eec1c61760aeac32c6495d853735",
+ "source_writer_pr": "SV-LLM/.github#50",
  "status": {
-  "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
-  "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-  "next_attempt": "read the source ledger back, then re-run seal",
-  "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for SV-LLM->GCAT-BCAT-Engine:intr-destination on SV-LLM/.github's ledger (read anonymously at e9ee01335e757b5d179b71e889c99d9016bfce73: none)",
-  "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-transfer.yml (a transfers.json row landing on main)"
+  "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
+  "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+  "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
+  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
+  "required_evidence_or_repair": "GCAT-BCAT-Engine/.github's ledger is not anonymously readable, so the destination_readback read for SV-LLM->GCAT-BCAT-Engine:intr-destination needs a TV/TVC read receipt (scope SV-LLM->GCAT-BCAT-Engine:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
+  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
  }
 }

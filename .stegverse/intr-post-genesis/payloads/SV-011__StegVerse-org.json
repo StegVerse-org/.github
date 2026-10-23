@@ -9,14 +9,6 @@
    "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
    "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the source_inclusion read for SV-011->StegVerse-org:intr-destination needs a TV/TVC read receipt (scope SV-011->StegVerse-org:intr-destination#source_inclusion) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
    "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
-  },
-  {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for SV-011->StegVerse-org:intr-destination on StegVerse-org/.github main carrying the source receipt pair",
-   "retry_entrypoint": "StegVerse-org/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
   }
  ],
  "cls": "TVC_PRIVATE_SOURCE_READ",
@@ -28,7 +20,7 @@
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "SV-011->StegVerse-org:intr-destination",
  "payload": null,
- "record_sha256": "sha256:173df0c96b0b00465ef005638325fe4ab1e8e8d3600a84b38587079fdd4afc52",
+ "record_sha256": "sha256:8558a25669ac50add51e6cb8dc7624f53c24771665a28fc9c3a36417aa71a328",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "SV-011",
  "source_receipts": null,

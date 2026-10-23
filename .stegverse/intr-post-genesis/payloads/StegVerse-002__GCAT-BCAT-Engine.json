@@ -25,14 +25,6 @@
    "owning_existing_goal": "StegVerse-org/.github#162",
    "required_evidence_or_repair": "the public-ledger route of resident-runtime/intr_path_ingress.py (as in StegVerse-org/.github#224 and StegVerse-Labs/.github#3312) on GCAT-BCAT-Engine/.github main",
    "retry_entrypoint": "a Lane B public-route port draft to GCAT-BCAT-Engine/.github (laneb/ branch)"
-  },
-  {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for StegVerse-002->GCAT-BCAT-Engine:intr-destination on GCAT-BCAT-Engine/.github main carrying the source receipt pair",
-   "retry_entrypoint": "GCAT-BCAT-Engine/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
   }
  ],
  "cls": "TVC_PRIVATE_SOURCE_READ",
@@ -44,7 +36,7 @@
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "StegVerse-002->GCAT-BCAT-Engine:intr-destination",
  "payload": null,
- "record_sha256": "sha256:4eeac707ee18f4067793053aa7847712872a8d22e4c5008dfddb029ce3943038",
+ "record_sha256": "sha256:8423115d2062dd06b9f0e191e66c8a3d53c61ba5725bf183168ec81bf33bd184",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegVerse-002",
  "source_receipts": null,
