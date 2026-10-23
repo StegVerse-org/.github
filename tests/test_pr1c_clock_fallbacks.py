@@ -172,12 +172,12 @@ class SourceEpochTests(SixFields, unittest.TestCase):
             env = {"STEGVERSE_REPO_LEDGER_ROOT": str(Path(work) / "repo"),
                    "STEGVERSE_ORG_LEDGER_ROOT": str(Path(work) / "org")}
             with patch.dict(os.environ, env):
-                repository_receipt = emit.append("PR1C-TWO-LEVEL", "DEMO", STATE_BEFORE, STATE_AFTER, {}, "NONE")
-                self.assertIs(repository_receipt["hb_reference"]["derived_from_clock"], True)
-                with self.assertRaises(org.OrgLedgerEpochRefused) as refused:
-                    org.append(repository_receipt, "REPO_STATE_PROPAGATION", org.GENESIS, STATE_AFTER,
-                               {}, "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"])
-            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_INVALID")
+                # B1 (#193): the repository level no longer derives an epoch from a
+                # clock, so with no epoch neither level appends anything.
+                with self.assertRaises(emit.RepoLedgerEpochRefused) as refused:
+                    emit.append("PR1C-TWO-LEVEL", "DEMO", STATE_BEFORE, STATE_AFTER, {}, "NONE")
+            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_NOT_SUPPLIED")
+            self.assertFalse((Path(work) / "org").exists() and any((Path(work) / "org").rglob("*.json")))
             self.assertFalse((Path(work) / "org").exists())
 
 

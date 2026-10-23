@@ -6,7 +6,9 @@ No GitHub, hosted scheduler, provider, or carrier grants authority.
 """
 from __future__ import annotations
 import base64, hashlib, importlib.util, json, os, subprocess, tempfile
-from datetime import datetime, timezone
+# datetime is no longer called anywhere in the kernel (hb_reference has no clock
+# fallback); the name is kept only so org#188's test can wrap it and assert it is never called.
+from datetime import datetime, timezone  # noqa: F401
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +55,19 @@ def validate_hb_reference(ref:dict[str,Any])->dict[str,Any]:
         raise ValueError("heartbeat_progression_not_oscillator")
     return ref
 
+class HbEpochNotSupplied(ValueError):
+    """hb_reference was given neither a supplied epoch nor a sample; `.refusal` carries the six fields. No clock is read."""
+    def __init__(self):
+        self.refusal={"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_NOT_SUPPLIED",
+          "failed_predicate":"SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+          "detail":"no hb_epoch was supplied and no clock is read",
+          "required_evidence_or_repair":"pass epoch= as the carrier supplied it: ASCII digits with value >= 32; it is never derived from a clock",
+          "retry_entrypoint":"org-kernel/kernel.py::hb_reference",
+          "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
+          "next_attempt":"call again with the supplied epoch; nothing was stamped",
+          "derived_from_clock":False,"consequence_committed":False}
+        super().__init__("HB_EPOCH_NOT_SUPPLIED:no hb_epoch was supplied and no clock is read")
+
 def hb_reference(now_ns:int|None=None, *, epoch:int|None=None)->dict[str,Any]:
     """Build the heartbeat reference for a crossing.
 
@@ -74,7 +89,10 @@ def hb_reference(now_ns:int|None=None, *, epoch:int|None=None)->dict[str,Any]:
                 "phase_offset_ns":0,"frequency_hz":HB_HZ,"progression_dependency":"OSCILLATOR_ONLY",
                 "derived_from_clock":False,"authority_effect":"NONE"})
     if now_ns is None:
-        now_ns=int(datetime.now(timezone.utc).timestamp()*1_000_000_000)
+        # No clock fallback: an epoch is supplied by the carrier or nothing is
+        # stamped (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH). A caller with
+        # neither fails closed here instead of reading this host's clock.
+        raise HbEpochNotSupplied()
     if now_ns<HB_ANCHOR_UNIX_NS:
         raise ValueError("sample_precedes_hb32_anchor")
     q,phase=divmod(now_ns-HB_ANCHOR_UNIX_NS,HB_PERIOD_NS)
@@ -507,14 +525,15 @@ def publish_ecosystem_message(*, origin_org:str, origin_service:str, organizatio
                               message_class:str, subject:str, body:dict[str,Any],
                               requested_action:str|None=None, transition_reference:str="ecosystem.communication.v1",
                               authority_effect:str="NONE", communication_id:str|None=None,
-                              root:Path|None=None, now_ns:int|None=None)->dict[str,Any]:
+                              root:Path|None=None, now_ns:int|None=None,
+                              epoch:int|None=None)->dict[str,Any]:
     built=build_ecosystem_packets(
       origin_org=origin_org,origin_service=origin_service,organizations=organizations,standing=standing,
       message_class=message_class,subject=subject,body=body,requested_action=requested_action,
       transition_reference=transition_reference,authority_effect=authority_effect,
       communication_id=communication_id
     )
-    publications=[publish_packet(packet,root=root,now_ns=now_ns) for packet in built["packets"]]
+    publications=[publish_packet(packet,root=root,now_ns=now_ns,epoch=epoch) for packet in built["packets"]]
     return {"communication_id":built["communication_id"],"organization_count":built["organization_count"],
             "published_count":len(publications),"publications":publications}
 
@@ -566,9 +585,23 @@ def resident_status(root:Path, registry:dict[str,Any]|None=None, *, epoch:int|No
       "registered_service_count":len(reg.get("services") or []),
       "registered_services":[s.get("service_id") for s in reg.get("services") or []],
       "org_control_service":organization_slug(reg["organization"])+".org-control",
-      "heartbeat_reference":hb_reference(epoch=epoch) if epoch is not None else hb_reference(),
-      "runtime_observation_claimed":False
+      "heartbeat_reference":hb_reference(epoch=epoch) if epoch is not None else None,
+      "runtime_observation_claimed":False,
+      # No epoch supplied: the status carries no reference and says why, as the
+      # federation cycle record does (heartbeat_reference_refusal). No clock is read.
+      **({} if epoch is not None else {"heartbeat_reference_refusal":resident_status_epoch_refusal()})
     }
+
+def resident_status_epoch_refusal()->dict[str,Any]:
+    """Six-field FAIL_CLOSED record for a status read given no epoch (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH)."""
+    return {"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_NOT_SUPPLIED",
+            "failed_predicate":"SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+            "detail":"no epoch was supplied and no clock is read",
+            "required_evidence_or_repair":"supply epoch= (ecosystem_control.py status --hb-epoch) from the carrier: ASCII digits, value >= 32; it is never derived from a clock",
+            "retry_entrypoint":"org-kernel/kernel.py::resident_status",
+            "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
+            "next_attempt":"read the status again with the supplied epoch; the status fields above are unaffected",
+            "derived_from_clock":False,"consequence_committed":False}
 
 def persist_work_request(root:Path, packet:dict[str,Any], *, store:Any|None=None)->dict[str,Any]:
     payload=packet.get("payload") or {}
@@ -922,7 +955,7 @@ def collect_ecosystem_responses(origin_org:str, communication_id:str, *, mesh_ro
 def publish_ecosystem_from_directory(repo_root:Path, *, message_class:str, subject:str, body:dict[str,Any],
                                      requested_action:str|None=None, authority_effect:str="NONE",
                                      communication_id:str|None=None, mesh_root:Path|None=None,
-                                     now_ns:int|None=None)->dict[str,Any]:
+                                     now_ns:int|None=None, epoch:int|None=None)->dict[str,Any]:
     registry=load_registry(repo_root)
     directory=load_federation_directory(repo_root)
     organizations=[row["organization"] for row in directory["organizations"]]
@@ -938,7 +971,7 @@ def publish_ecosystem_from_directory(repo_root:Path, *, message_class:str, subje
       authority_effect=authority_effect,
       communication_id=communication_id,
       root=mesh_root,
-      now_ns=now_ns
+      now_ns=now_ns,epoch=epoch
     )
 
 

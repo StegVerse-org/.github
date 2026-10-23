@@ -49,6 +49,8 @@ def _module(name, relative):
 
 
 kernel = _module("kernel", "org-kernel/kernel.py")
+# The carrier epoch these fixtures supply: the kernel reads no clock (hb_reference L76-77).
+SUPPLIED_EPOCH = kernel.HB_ANCHOR_EPOCH + 4168
 capability = _module("capability_ingress", "org-boundary/runtime/capability_ingress.py")
 egress = _module("organization_egress_boundary",
                  "resident-runtime/organization_egress_boundary.py")
@@ -202,7 +204,7 @@ class PeerSubmissionReachesTheOperationTests(unittest.TestCase):
             payload=payload, standing=standing(),
             transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=SUPPLIED_EPOCH)
         return packet
 
     def consume(self):

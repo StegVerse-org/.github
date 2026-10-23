@@ -47,6 +47,8 @@ def _load(name, relative):
 ingress = _load("organization_manifest_ingress", "resident-runtime/organization_manifest_ingress.py")
 returning = _load("governance_decision_return", "resident-runtime/governance_decision_return.py")
 kernel = returning.egress.kernel
+# The carrier epoch these fixtures supply: the kernel reads no clock (hb_reference L76-77).
+SUPPLIED_EPOCH = kernel.HB_ANCHOR_EPOCH + 4168
 
 
 def manifest() -> dict:
@@ -106,7 +108,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         response = kernel.build_control_response(
             packet, {"application_result": decision,
                      "reconstruction": {"terminal_receipt_id": terminal or chain[-1]}})
-        kernel.publish_packet(response, root=self.mesh)
+        kernel.publish_packet(response, root=self.mesh, epoch=SUPPLIED_EPOCH)
         return packet
 
     def return_decision(self, emitted, **overrides):
@@ -146,7 +148,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
                      "manifest": body, "manifest_sha256": kernel.sha(body)},
             standing=GENESIS, transition_reference="intr:transition:capability-address-mesh",
             authority_effect="NONE", packet_id="capability-address-mesh")
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=SUPPLIED_EPOCH)
         results = kernel.consume_addressed_frames(
             ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
             org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])

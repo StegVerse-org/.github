@@ -62,6 +62,8 @@ def _module(name, relative):
 
 
 kernel = _module("kernel", "org-kernel/kernel.py")
+# The carrier epoch these fixtures supply: the kernel reads no clock (hb_reference L76-77).
+SUPPLIED_EPOCH = kernel.HB_ANCHOR_EPOCH + 4168
 capability = _module("capability_ingress", "org-boundary/runtime/capability_ingress.py")
 egress = _module("organization_egress_boundary",
                  "resident-runtime/organization_egress_boundary.py")
@@ -331,7 +333,7 @@ class AddressedAndClosedTests(RedirectedLedgers):
             payload=payload, standing=standing(),
             transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=SUPPLIED_EPOCH)
         return packet
 
     def consume(self):
@@ -418,7 +420,7 @@ class AddressedAndClosedTests(RedirectedLedgers):
                 "schema": ingress.RESULT_SCHEMA, "disposition": "ALLOW",
                 "authority_effect": "NONE_DIAGNOSTIC_ACK_ONLY"},
                 "reconstruction": {"terminal_receipt_id": chain[-1]}})
-        kernel.publish_packet(response, root=self.mesh)
+        kernel.publish_packet(response, root=self.mesh, epoch=SUPPLIED_EPOCH)
         return chain[-1]
 
     def test_a_diagnostic_crossing_closes_only_when_the_far_side_answers(self):
