@@ -42,5 +42,5 @@ The StegVerse-Labs side — `stegverse-labs.governance`, the kernel's admitted-a
 
 ## Validation
 
-- `tests/test_governance_inter_org_route.py` (`.github/workflows/governance-inter-org-route-validation.yml`, SDK pinned at `657576e`) drives emit, `PENDING`, return, SDK admission, and the refusal paths. The far side is played by the kernel's own `receipt` and `build_control_response`.
+- `tests/test_governance_inter_org_route.py` (`.github/workflows/governance-inter-org-route-validation.yml`, SDK pinned at `74d9b473`) drives emit, `PENDING`, return, SDK admission, and the refusal paths. The far side is played by the kernel's own `receipt` and `build_control_response`.
 - Local round trip across both organizations: the committed fixture `governance-to-llm-adapter.json` entered this ingress, crossed the mesh, was decided by StegVerse-Labs with StegCore `ef38410` (`DENY`, `signal.inputs_incomplete`), and was admitted by the SDK at `657576e` as `ORGANIZATION_RECORDS_ONLY`.

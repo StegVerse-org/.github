@@ -52,7 +52,9 @@ class CliEpochTextTests(unittest.TestCase):
                     self.assertEqual(out["disposition"], "FAIL_CLOSED")
                     self.assertEqual(out["failure_code"], "HB_EPOCH_INVALID")
                     self.assertEqual(out["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
-                    self.assertEqual(out["retry_entrypoint"], relative + "::main")
+                    # emit.py's CLI is main's P1-FC-10 check (efc908a), which supersedes H39's for that file.
+                    self.assertEqual(out["retry_entrypoint"], ".stegverse/transition-ledger/emit.py (--hb-epoch)"
+                                     if relative.endswith("emit.py") else relative + "::main")
                     for field in SIX:
                         self.assertTrue(isinstance(out.get(field), str) and out[field].strip(), field)
                     self.assertEqual(written, [])

@@ -203,6 +203,27 @@ def direct_epoch_refusal(hb_epoch: Any, entrypoint: str) -> dict[str, Any] | Non
     }
 
 
+#: Refusal precedence for every capability-ingress entrypoint (Q-N-2): input
+#: refusals precede state refusals, and within inputs the supplied epoch is
+#: checked first. A call missing both an epoch and some other input is refused
+#: HB_EPOCH_NOT_SUPPLIED, and no refusal on this list appends anything. The
+#: egress `close` declares the same order as CLOSE_REFUSAL_PRECEDENCE.
+INGRESS_REFUSAL_PRECEDENCE = (
+    (HB_EPOCH_PREDICATE, "INPUT"),
+    ("ENTRYPOINT_INPUTS_ARE_WELL_FORMED", "INPUT"),
+    ("RECEIVING_OPERATION_STATE_ADMITS_THE_SUBMISSION", "STATE"),
+)
+
+#: The entrypoints held to INGRESS_REFUSAL_PRECEDENCE; each checks its epoch
+#: before any other input or state.
+INGRESS_ENTRYPOINTS = (
+    "org-boundary/runtime/capability_ingress.py::receive",
+    "resident-runtime/organization_manifest_ingress.py::receive",
+    "resident-runtime/intr_destination_ingress.py::receive",
+    "resident-runtime/intr_destination_ingress.py::closure",
+)
+
+
 def supplied_epoch(hb_epoch: Any) -> int:
     """The admitted epoch as an int (call only after `direct_epoch_refusal` returned None)."""
     return int(str(hb_epoch))

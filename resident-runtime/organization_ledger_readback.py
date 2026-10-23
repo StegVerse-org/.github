@@ -42,6 +42,20 @@ def sha(value):
     return "sha256:" + hashlib.sha256(canon(value)).hexdigest()
 
 
+def submitted_manifest_sha(manifest):
+    """The digest ingress records for a refused manifest, in ingress's own encoding.
+
+    `organization_manifest_ingress.refusal_record` hashes the submitted manifest
+    with `json.dumps(sort_keys=True, separators=(",", ":"))` and the default
+    `ensure_ascii=True`, then UTF-8. Receipts themselves are hashed by their
+    writers with `ensure_ascii=False`, which `canon` keeps; only the refusal
+    binding must match ingress, or a manifest carrying non-ASCII text cannot
+    be bound.
+    """
+    encoded = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
+
+
 class ReadbackRefused(Exception):
     def __init__(self, failed_predicate, detail):
         super().__init__(failed_predicate + ": " + detail)
@@ -102,7 +116,7 @@ def readback(location, ingress_result=None, manifest=None):
         if receipt is None:
             raise ReadbackRefused("INGRESS_RECEIPT_IS_IN_THE_ORGANIZATION_LEDGER", str(digest))
         if refused:
-            manifest_state = sha(manifest) if manifest is not None else None
+            manifest_state = submitted_manifest_sha(manifest) if manifest is not None else None
         else:
             manifest_state = "sha256:" + str(ingress_result.get("canonical_manifest_sha256"))
         if not manifest_state or receipt.get("predecessor_org_state_sha256") != manifest_state:

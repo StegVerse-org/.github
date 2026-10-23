@@ -15,6 +15,9 @@ LS=importlib.util.module_from_spec(LSSPEC); LSSPEC.loader.exec_module(LS)
 # intra-organization: no boundary is crossed and no InTr is involved.
 PRSPEC=importlib.util.spec_from_file_location("propagate_repository_receipts",ROOT/"resident-runtime"/"propagate_repository_receipts.py")
 PR=importlib.util.module_from_spec(PRSPEC); PRSPEC.loader.exec_module(PR)
+# The one supplied-epoch rule, shared rather than restated here.
+CISPEC=importlib.util.spec_from_file_location("capability_ingress",ROOT/"org-boundary"/"runtime"/"capability_ingress.py")
+CI=importlib.util.module_from_spec(CISPEC); CISPEC.loader.exec_module(CI)
 
 def returns_for_consumed(results, *, mesh_root):
     """Materialize the governance return for each decision consumed in this cycle.
@@ -72,6 +75,28 @@ def mesh_location_refusal(*, retry_entrypoint):
             "next_attempt":PR.organization_ledger.location_next_attempt("the mesh locator"),
             "consequence_committed":False}
 
+def cycle_heartbeat(hb_epoch):
+    """The cycle record's heartbeat reference, from the epoch the materializer supplied.
+
+    No clock is read. Without a valid supplied epoch the record carries no
+    reference and says why in six fields. The frames are still handled: the
+    reference stamps this record only, and every consumed crossing is stamped
+    with its own frame's epoch by the kernel.
+    """
+    failure=CI.supplied_epoch_failure(hb_epoch)
+    if failure is None:
+        return K.hb_reference(epoch=int(str(hb_epoch))),None
+    code,detail=failure
+    return None,{"disposition":"FAIL_CLOSED",
+                 "failure_code":code,
+                 "failed_predicate":CI.HB_EPOCH_PREDICATE,
+                 "detail":detail,
+                 "required_evidence_or_repair":"supply --hb-epoch from the carrier (ASCII digits, value >= 32); it is never derived from a clock",
+                 "retry_entrypoint":"resident-runtime/federation_cycle.py::main",
+                 "owning_existing_goal":CI.INTR_PROTOCOL_GOAL,
+                 "next_attempt":"the next materialization that is given the carrier's epoch",
+                 "consequence_committed":False}
+
 def supplied_ledger(variable):
     """A ledger location as this organization's materializer supplies it, or None.
 
@@ -95,6 +120,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     # recorded on both ledgers before it is answered or marked. Without both
     # locations nothing is consumed: the frames stay in the mesh, which is the
     # durable queue, and the cycle says why rather than aborting.
+    heartbeat,heartbeat_refusal=cycle_heartbeat(hb_epoch)
     consumption={"disposition":"ALLOW"}
     try:
         results=K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
@@ -125,7 +151,7 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
     receipt={
       "schema_version":"stegverse.org-federation-cycle.v1",
       "organization":K.load_registry(ROOT)["organization"],
-      "heartbeat_reference":K.hb_reference(),
+      "heartbeat_reference":heartbeat,
       "frames_seen":len(results),
       "frames_consumed":consumed,
       "frames_denied":sum(1 for x in results if (x.get("result") or {}).get("status")=="REFUSED"
@@ -136,6 +162,8 @@ def main(*, mesh_root:Path|None=None, node_state_root:Path|None=None,
       "authority_effect":"NONE_CARRIER_ONLY",
       "transport":"INTERLOCK_INTR_SUPPLIED_MESH"
     }
+    if heartbeat_refusal is not None:
+        receipt["heartbeat_reference_refusal"]=heartbeat_refusal
     if governance_returns:
         receipt["governance_returns"]=governance_returns
     # Propagated after the frames are handled, so a cycle that failed to consume

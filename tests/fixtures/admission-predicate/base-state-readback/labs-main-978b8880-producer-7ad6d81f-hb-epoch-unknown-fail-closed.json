@@ -1,0 +1,40 @@
+{
+  "authority_effect": "NONE_READBACK_ONLY",
+  "base_ref": {
+    "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
+    "registry_generation": 319
+  },
+  "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+  "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+  "cross_checked": false,
+  "disposition": "FAIL_CLOSED",
+  "failed_predicate": "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH",
+  "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
+  "hb_epoch": null,
+  "hb_epoch_source": null,
+  "main_ref": "refs/remotes/origin/main",
+  "main_tip": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+  "next_attempt": "rerun with --hb-epoch omitted or equal to the bound ledger head receipt's epoch; nothing is written",
+  "owning_existing_goal": "StegVerse-org/.github#164",
+  "readback_writes": false,
+  "repository": "StegVerse-Labs/.github",
+  "required_evidence_or_repair": "--hb-epoch, when given, carries the epoch (ASCII digits); \"\", \"null\" or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED is unobserved",
+  "result_sha256": "sha256:025e46a2ccab4e0bfae85b0554b0fe348f92e546a7b74203d660bdd90d1a0946",
+  "retry_entrypoint": "resident-runtime/sv_change_base_state_readback.py::evaluate",
+  "schema": "stegverse.sv-change-base-state-readback/v1",
+  "sources": [
+    {
+      "blob_sha": "8d3ff1902412ab85c0fafcdb4c2f11cc0b0afbef",
+      "file": "data/canonical-task-registry.json"
+    },
+    {
+      "blob_sha": "5c1a3631639449b9788d16901b5e4f4b57e377ac",
+      "file": "refs/stegverse/organization-ledger:HEAD.json"
+    },
+    {
+      "blob_sha": "068854be56b9f6159728d9e67681e8de05819692",
+      "file": "refs/stegverse/organization-ledger:receipts/35810b6598e99cef32d9a0f1f97d07394d9f21c540ed7d3a395d9d78b753db3d.json"
+    }
+  ],
+  "supplied_hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED"
+}
