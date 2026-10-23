@@ -1,0 +1,225 @@
+name: Required Verification
+
+# StegVerse-org/.github#166. Rigel's rule (relayed by Coordination, Oct 23, refined the same day): the skip rule
+# must never stop work. The suite is split into callable test sets (.stegverse/test-sets.json, generated from
+# .stegverse/test-set-spec.json); each set declares the paths it verifies and the inputs it needs. Every pull
+# request, with no path filter:
+#   full-suite  selects the sets this change requires plus the always-run core set (an unmapped path, an
+#               unreadable diff, a stale manifest or a change to a selection-shaping path selects every set),
+#               runs only those, once, on the exact head, and adjudicates them with the pinned StegVerse-Labs
+#               tool against the receipted main baseline: a skip, collection error, unrun selected test or
+#               introduced failure is FAIL_CLOSED; a failure that already fails at the exact base is receipted
+#               PRE_EXISTING_BASELINE_FAILURE (non-blocking) until ledger genesis; a selected set whose input is
+#               unavailable is FAIL_CLOSED REQUIRED_VERIFICATION_INPUT_UNAVAILABLE routed to that input's owner.
+#               Sets the change does not select are not run and are not reported as skipped.
+#   path-scope  a path-filtered workflow left unrun on a change to a file it runs, and a pull_request job
+#               present at the base and missing at the head, are FAIL_CLOSED REQUIRED_VERIFICATION_SKIPPED.
+# E0: stdlib only (jsonschema is installed only as the agreement oracle for the pinned stdlib validator), no clock,
+# nothing published, read-only token, anonymous reads of public refs only.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  full-suite:
+    runs-on: ubuntu-latest
+    outputs:
+      selection: ${{ steps.summary.outputs.selection }}
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      WORKFLOW_REF: .github/workflows/required-verification.yml full-suite
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Exact head and the pinned StegVerse-Labs tool (anonymous fetch, sha256-checked)
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^2)" = "$HEAD_SHA"
+          git config --global user.name ci
+          git config --global user.email ci@stegverse.invalid
+          LABS="$RUNNER_TEMP/labs-tool"
+          RESULTS="$RUNNER_TEMP/results"
+          printf 'LABS=%s\nRESULTS=%s\nSTEGVERSE_LABS_ROOT=%s\n' "$LABS" "$RESULTS" "$LABS" >> "$GITHUB_ENV"
+          mkdir -p "$RESULTS"
+          pin=.stegverse/test-suite-baseline/labs-tool-pin.json
+          commit=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["commit"])' "$pin")
+          url=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["url"])' "$pin")
+          git init -q "$LABS"
+          git -C "$LABS" -c 'http.https://github.com/.extraheader=' fetch --no-tags --quiet --depth=1 "$url" "$commit"
+          git -C "$LABS" checkout -q FETCH_HEAD
+          test "$(git -C "$LABS" rev-parse HEAD)" = "$commit"
+          python3 - "$pin" "$LABS" <<'PY'
+          import hashlib, json, sys
+          pin = json.load(open(sys.argv[1]))
+          for path, want in sorted(pin["files"].items()):
+              got = hashlib.sha256(open(f"{sys.argv[2]}/{path}", "rb").read()).hexdigest()
+              print(path, got)
+              if got != want:
+                  raise SystemExit(f"{path}: sha256 {got} is not the pinned {want}")
+          PY
+
+      - name: Declared inputs this repository already supplies (read-only)
+        run: |
+          set -euo pipefail
+          # The organization ledger ref, fetched anonymously as intr-path-transfer-validation.yml does.
+          git -c 'http.https://github.com/.extraheader=' fetch --no-tags --quiet origin \
+            '+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger'
+          # jsonschema: only the agreement oracle (tests/test_stdlib_json_schema_agreement.py). Every schema check
+          # validates with the pinned stdlib validator (STEGVERSE_LABS_ROOT, sha256-checked above).
+          # pinned: the runner's system jsonschema 4.10.3 equates a nested true with 1 in enum/const
+          python -m pip install "jsonschema==4.26.0"
+
+      - name: Select the test sets this change requires
+        run: |
+          set -euo pipefail
+          python "$LABS/scripts/test_set_selection.py" select --root . --manifest .stegverse/test-sets.json \
+            --spec .stegverse/test-set-spec.json --base "$BASE_SHA" --head HEAD --pr-head "$HEAD_SHA" \
+            --retry-entrypoint "$WORKFLOW_REF" --owning-goal "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001" \
+            --out "$RESULTS/test-set-selection.json" --args-out "$RESULTS/test-set-args.txt" || true
+          test -s "$RESULTS/test-set-selection.json"
+          test -f "$RESULTS/test-set-args.txt"
+
+      - name: Run the selected sets once (exact head)
+        run: |
+          set -uo pipefail
+          mapfile -t selected < "$RESULTS/test-set-args.txt"
+          if [ "${#selected[@]}" -eq 0 ]; then echo "no runnable selected set" | tee "$RESULTS/unittest.txt"; echo 5 > "$RESULTS/unittest-status"; exit 0; fi
+          # the step shell is bash -e: capture the status so the adjudication step reads it (never lose a failure)
+          status=0
+          python -m unittest -v "${selected[@]}" > "$RESULTS/unittest.txt" 2>&1 || status=$?
+          echo "$status" > "$RESULTS/unittest-status"
+          tail -n 4 "$RESULTS/unittest.txt"
+
+      - name: Module-level test functions of the selected sets
+        run: |
+          set -euo pipefail
+          python - "$RESULTS/test-set-args.txt" <<'PY'
+          import ast, runpy, sys
+          from pathlib import Path
+          ran = failed = 0
+          mods = sorted({a.split(".")[0] + "." + a.split(".")[1] for a in Path(sys.argv[1]).read_text().split()
+                         if a.startswith("tests.") and a.count(".") >= 1})
+          for mod in mods:
+              path = Path(*mod.split(".")).with_suffix(".py")
+              if not path.is_file():
+                  continue
+              names = [n.name for n in ast.parse(path.read_text()).body
+                       if isinstance(n, ast.FunctionDef) and n.name.startswith("test_")]
+              if not names:
+                  continue
+              ns = runpy.run_path(str(path), run_name="__module_level_tests__")
+              for name in names:
+                  ran += 1
+                  try:
+                      ns[name]()
+                      print(f"PASS {mod}::{name}")
+                  except Exception as exc:  # noqa: BLE001
+                      failed += 1
+                      print(f"FAIL {mod}::{name}: {exc!r}")
+          print(f"module-level test functions: ran={ran} failed={failed}")
+          raise SystemExit(1 if failed else 0)
+          PY
+
+      - name: Adjudicate (receipted pre-existing failures non-blocking; skips, collection errors, unavailable inputs and introduced failures block)
+        if: always()
+        run: |
+          set -euo pipefail
+          test -s "$RESULTS/unittest.txt"
+          mapfile -t selected < "$RESULTS/test-set-args.txt"
+          python "$LABS/scripts/test_suite_baseline_drift.py" pr --root . --base "$BASE_SHA" \
+            --repository StegVerse-org/.github \
+            --owning-goal "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001" \
+            --baseline .stegverse/test-suite-baseline/baseline.json \
+            --baseline-receipt .stegverse/test-suite-baseline/main-receipt.json \
+            --selection "$RESULTS/test-set-selection.json" \
+            --unittest-output "$RESULTS/unittest.txt" --suite-status "$(cat "$RESULTS/unittest-status")" \
+            --unittest-modules "${selected[@]}" \
+            --pytest-proof "$WORKFLOW_REF (step: Module-level test functions of the selected sets)" \
+            --writer resident-runtime/main_change_receipt.py \
+            --writer-sha256 884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf \
+            --retry-entrypoint "$WORKFLOW_REF" \
+            --detect-entrypoint "$WORKFLOW_REF (main-head receipt: .stegverse/test-suite-baseline/main-receipt.json)" \
+            --out-dir "$RESULTS"
+
+      - name: Selection summary for the gate
+        id: summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          sys.path.insert(0, os.path.join(os.environ["LABS"], "scripts"))
+          try:
+              from test_set_selection import seal_verifies
+              sel = json.load(open(os.path.join(os.environ["RESULTS"], "test-set-selection.json")))
+              summary = {"receipt_sha256": sel.get("receipt_sha256"), "seal_verifies": seal_verifies(sel),
+                         "core_selected": any(s["id"] == "core" and s["runnable"] for s in sel.get("selected", [])),
+                         "mode": sel.get("mode"), "sets_total": sel.get("sets_total"),
+                         "head_sha": sel.get("head_sha"), "base_sha": sel.get("base_sha"),
+                         "pr_head_sha": sel.get("pr_head_sha"),
+                         "selected_count": sel.get("selected_count"),
+                         "input_unavailable": [{"set": u["set"], "input": u["input"], "owner": u["owning_existing_goal"]}
+                                               for u in sel.get("input_unavailable", [])]}
+          except Exception as exc:  # noqa: BLE001
+              summary = {"error": repr(exc)}
+          print(json.dumps(summary, sort_keys=True))
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write("selection=" + json.dumps(summary, sort_keys=True) + "\n")
+          PY
+
+      - name: Retain the record
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: required-verification-full-suite
+          path: ${{ runner.temp }}/results
+
+  path-scope:
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: No required job is path-filtered out or missing
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^2)" = "$HEAD_SHA"
+          python3 resident-runtime/required_verification.py path-scope --base "$BASE_SHA" --head "$HEAD_SHA" \
+            --retry-entrypoint ".github/workflows/required-verification.yml path-scope" --out "$RUNNER_TEMP/path-scope.json"
+
+  # Green only when every job above completed and succeeded and the full suite showed a sealed selection that
+  # ran the core set: otherwise FAIL_CLOSED with six fields. Validation only.
+  required-verification:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [full-suite, path-scope]
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Every required job succeeded and the selection is shown
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SELECTION: ${{ needs.full-suite.outputs.selection }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 resident-runtime/required_verification.py gate --needs "$NEEDS" --selection "$SELECTION" \
+            --pr-head "$HEAD_SHA" --base-sha "$BASE_SHA" --require full-suite --require path-scope \
+            --retry-entrypoint ".github/workflows/required-verification.yml (pull_request)" \
+            --out "$RUNNER_TEMP/gate.json"

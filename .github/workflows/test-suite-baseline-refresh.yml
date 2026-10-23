@@ -1,0 +1,110 @@
+name: Test Suite Baseline Refresh
+
+# StegVerse-org/.github#166. On a push to main (and only then: no schedule, no dispatch, no polling) the
+# organization main receipt is refreshed as the manifest transition TEST_SUITE_BASELINE_REFRESH
+# (resident-runtime/test-suite-baseline-refresh.transition.json), reusing, not forking:
+#   - the pinned StegVerse-Labs drift tool (labs-tool-pin.json, anonymous fetch, sha256-checked): every test set
+#     runs once at the pushed head and `detect` receipts it through the B1 main-change receipt writer
+#     (resident-runtime/main_change_receipt.py at its pinned sha256);
+#   - resident-runtime/drift_receipt_appender.py: the drift transition receipt, appended to a scratch repository
+#     only and verified by a fresh-fetch readback;
+#   - resident-runtime/test_suite_baseline_refresh.py binds them into the refresh record (sealed by the writer).
+# Admission is FAIL_CLOSED pending genesis (six fields): the candidate main receipt and the record are retained
+# as artifacts; nothing is committed, pushed, dispatched or written to the organization ledger.
+# E0: stdlib only (jsonschema is installed only as the agreement oracle input), read-only token.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      WORKFLOW_REF: .github/workflows/test-suite-baseline-refresh.yml refresh
+      GOAL: "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001"
+      WRITER_SHA256: 884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: The declaration, the pinned StegVerse-Labs tool and the declared inputs (anonymous, read-only)
+        run: |
+          set -euo pipefail
+          python3 resident-runtime/test_suite_baseline_refresh.py check
+          test "$(sha256sum resident-runtime/main_change_receipt.py | cut -d' ' -f1)" = "$WRITER_SHA256"
+          git config --global user.name ci
+          git config --global user.email ci@stegverse.invalid
+          LABS="$RUNNER_TEMP/labs-tool"
+          RESULTS="$RUNNER_TEMP/results"
+          mkdir -p "$RESULTS"
+          printf 'LABS=%s\nRESULTS=%s\nSTEGVERSE_LABS_ROOT=%s\n' "$LABS" "$RESULTS" "$LABS" >> "$GITHUB_ENV"
+          python3 resident-runtime/pinned_labs.py fetch --dest "$LABS"
+          git -c 'http.https://github.com/.extraheader=' fetch --no-tags --quiet origin \
+            '+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger'
+          # pinned: the runner's system jsonschema 4.10.3 equates a nested true with 1 in enum/const
+          python -m pip install "jsonschema==4.26.0"
+
+      - name: Every test set (a push to main selects all)
+        run: |
+          set -euo pipefail
+          python "$LABS/scripts/test_set_selection.py" select --root . --manifest .stegverse/test-sets.json \
+            --spec .stegverse/test-set-spec.json --head HEAD --retry-entrypoint "$WORKFLOW_REF" --owning-goal "$GOAL" \
+            --out "$RESULTS/test-set-selection.json" --args-out "$RESULTS/test-set-args.txt" || true
+          test -s "$RESULTS/test-set-selection.json"
+          test -f "$RESULTS/test-set-args.txt"
+
+      - name: Run the selected sets once (pushed head)
+        run: |
+          set -uo pipefail
+          mapfile -t selected < "$RESULTS/test-set-args.txt"
+          # the step shell is bash -e: capture the status so the adjudication step reads it (never lose a failure)
+          status=0
+          python -m unittest -v "${selected[@]}" > "$RESULTS/unittest.txt" 2>&1 || status=$?
+          echo "$status" > "$RESULTS/unittest-status"
+          tail -n 4 "$RESULTS/unittest.txt"
+
+      - name: Receipt the main head (pinned drift tool detect through the B1 writer)
+        run: |
+          set -uo pipefail
+          mapfile -t selected < "$RESULTS/test-set-args.txt"
+          python "$LABS/scripts/test_suite_baseline_drift.py" detect --root . --head HEAD \
+            --repository StegVerse-org/.github --owning-goal "$GOAL" \
+            --baseline .stegverse/test-suite-baseline/baseline.json \
+            --selection "$RESULTS/test-set-selection.json" \
+            --unittest-output "$RESULTS/unittest.txt" --unittest-modules "${selected[@]}" \
+            --writer resident-runtime/main_change_receipt.py --writer-sha256 "$WRITER_SHA256" \
+            --detect-entrypoint "$WORKFLOW_REF" --out-dir "$RESULTS/detect"
+          echo $? > "$RESULTS/detect-status"
+          test -s "$RESULTS/detect/receipt.json"
+
+      - name: "Manifest transition: drift transition receipt (scratch only), refresh record, admission FAIL_CLOSED pending genesis"
+        env:
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          scratch="$RUNNER_TEMP/scratch.git"
+          fresh="$RUNNER_TEMP/fresh.git"
+          git init -q --bare "$scratch"
+          git init -q --bare "$fresh"
+          python3 resident-runtime/drift_receipt_appender.py dry-run --root . --payload "$RESULTS/detect/receipt.json" \
+            --writer-ref "$HEAD_SHA" --scratch "$scratch" --fresh "$fresh" --out "$RESULTS/appender.json" > /dev/null
+          python3 resident-runtime/test_suite_baseline_refresh.py transition --head "$HEAD_SHA" \
+            --detect-receipt "$RESULTS/detect/receipt.json" --appender-result "$RESULTS/appender.json" \
+            --previous .stegverse/test-suite-baseline/main-receipt.json \
+            --out "$RESULTS/refresh.json" --candidate-out "$RESULTS/main-receipt.candidate.json"
+          { echo '### test suite baseline refresh (candidate retained; admission FAIL_CLOSED pending genesis)'
+            echo '```json'; cat "$RESULTS/refresh.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain the candidate main receipt and the refresh record
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-suite-baseline-refresh
+          path: ${{ runner.temp }}/results
