@@ -28,8 +28,14 @@ existing two-level append (intr_destination_ingress._append, as merge_transfer.p
   6. MODE_AND_CROSS_LLM_FORM_DECLARED: E0..E3; at E1+ a cross-LLM form (degrades, never stops).
   7. GENESIS_APPEND_COMPLETES_AT_BOTH_LEVELS.
 
-No workflow runs this op yet: which event runs it on the request PR's exact head is the
-undecided authorization form (Q-SV-NATIVE-BOOTSTRAP, class C). Stdlib only; no clock;
+Provisional E1 resolutions (data/sv-merge-admission/provisional-resolutions.json; C-review PENDING,
+superseded by a later Claude or ChatGPT review receipt):
+  - Q-ORG-REGISTRY-GENERATION: when the readback is FAIL_CLOSED REGISTRY_GENERATION_NOT_DECLARED, gate 4
+    takes from_registry_generation from a ledgered ORG_REGISTRY_GENERATION_GENESIS receipt for the readback's
+    exact registry blob (resident-runtime/org_registry_generation_genesis.py); E0 evidence once ledgered.
+  - Q-SV-NATIVE-BOOTSTRAP: ``append`` runs on the existing pull_request event (opened/synchronize/reopened)
+    of the genesis-request PR, in this repository's landed sv-change-admission-genesis-validation.yml;
+    ``append`` checks GENESIS_EVENT_IS_THE_DECLARED_EVENT before writing. No workflow runs it in this draft. Stdlib only; no clock;
 no credential; no environment read beyond the ledger location variables the writers use.
 """
 from __future__ import annotations
@@ -60,6 +66,7 @@ mt = _module("merge_transfer_for_admission_genesis", ROOT / "resident-runtime" /
 ap = _module("admission_predicate_for_admission_genesis", ROOT / "resident-runtime" / "admission_predicate.py")
 ingress = mt.ingress
 sha = ingress.sha
+rg = _module("org_registry_generation_genesis_for_admission_genesis", ROOT / "resident-runtime" / "org_registry_generation_genesis.py")
 
 OPERATION = "SV_CHANGE_ADMISSION_GENESIS"
 TRANSITION_CLASS = "SV_CHANGE_ADMISSION_GENESIS_APPEND"
@@ -69,7 +76,9 @@ RESULT_SCHEMA = "stegverse.org-sv-change-admission-genesis-result/v1"
 CONTRACT_FILE = ROOT / "data" / "sv-merge-admission" / "genesis-contract.json"
 GOAL = "StegVerse-org/.github#164 (Lane C: SV_CHANGE_ADMISSION_GENESIS for TVC MERGE_ADMISSION; P1 #163)"
 ENTRYPOINT = ("resident-runtime/sv_change_admission_genesis.py append over the same-repository genesis-request PR's exact head "
-              "(--request --pull --files --base-state-receipt --test-receipt --mode); its triggering event is undecided (Q-SV-NATIVE-BOOTSTRAP, C)")
+              "(--request --pull --files --base-state-receipt --test-receipt --event --mode), on the genesis-request PR's pull_request event "
+              "(provisional E1 resolution of Q-SV-NATIVE-BOOTSTRAP, C-review PENDING)")
+RESOLUTIONS_FILE = ROOT / "data" / "sv-merge-admission" / "provisional-resolutions.json"
 SHA40 = re.compile(r"[0-9a-f]{40}\Z")
 SHA256_REF = re.compile(r"sha256:[0-9a-f]{64}\Z")
 ALLOW, DENY, FAIL_CLOSED = "ALLOW", "DENY", "FAIL_CLOSED"
@@ -83,6 +92,7 @@ PREDICATES = {p: {"lowest_supported_mode": "E0", "E3": _E0, "E2": _E0, "E1": _E0
     ("REGISTRY_GENERATION_FROM_SEALED_BASE_STATE", "an ALLOW #3266 base-state readback for this repository supplies from_registry_generation; registry_generation = from + 1; its sealed hb_epoch is the ledger head epoch"),
     ("SELECTED_TESTS_RECEIPTED_ZERO_SKIPPED_AT_REQUEST_HEAD", "Lane B's stegverse.test-suite-skip-receipt/v1 at the request head: ALLOW, counts.skipped 0, selection declared, no refusal; producer files byte-pinned on the base"),
     ("MODE_AND_CROSS_LLM_FORM_DECLARED", "mode E0..E3; at E1+ a declared cross_llm_confirmation form (a PENDING later review suffices; degrades, never stops)"),
+    ("GENESIS_EVENT_IS_THE_DECLARED_EVENT", "append only: the triggering event is the declared one (provisional Q-SV-NATIVE-BOOTSTRAP): event_name pull_request, a declared action, this repository, the genesis-request PR number and exact head, the declared workflow path"),
     ("GENESIS_APPEND_COMPLETES_AT_BOTH_LEVELS", "the repository receipt and the organization receipt both exist and are sealed"),
     ("GENESIS_HAS_A_SEALED_ORGANIZATION_LEDGER_RECEIPT", "the organization chain holds a sealed SV_CHANGE_ADMISSION_GENESIS receipt for the digest"))}
 
@@ -177,11 +187,24 @@ def check_prior(request: Mapping[str, Any], organization: Any) -> Mapping[str, A
     return None
 
 
-def check_base_state(receipt: Any, repository: str, epoch: int) -> tuple[int, int, str]:
+def check_base_state(receipt: Any, repository: str, epoch: int, organization: Any = None) -> tuple[int, int, str]:
     p = "REGISTRY_GENERATION_FROM_SEALED_BASE_STATE"
     state, code, why = ap.base_state_from_readback(receipt)
     if state is None:
         inner = receipt.get("failure_code") if isinstance(receipt, Mapping) else None
+        registry_file = ap.BASE_STATE_REGISTRY_PATHS.get(repository)
+        if code == "BASE_STATE_NOT_OBSERVED" and inner == "REGISTRY_GENERATION_NOT_DECLARED" and registry_file:
+            # provisional Q-ORG-REGISTRY-GENERATION: the genesis generation is a ledgered manifest transition
+            observed = rg.undeclared_registry_blob(receipt, repository, registry_file)
+            found = rg.declared_generation(repository, registry_file, observed[0], organization) if observed else None
+            if found is not None:
+                return found[0], found[0] + 1, observed[1]
+            _refuse("GENESIS_REGISTRY_GENERATION_GENESIS_NOT_LEDGERED", p,
+                    "a sealed ORG_REGISTRY_GENERATION_GENESIS organization receipt for " + repository + ":" + registry_file + "@"
+                    + str(observed[0] if observed else "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED") + " (provisional E1 resolution of Q-ORG-REGISTRY-GENERATION, "
+                    "C-review PENDING), or an ALLOW readback with an integer base_ref.registry_generation",
+                    "run resident-runtime/org_registry_generation_genesis.py append on the same event first (Q-ORG-REGISTRY-GENERATION); nothing was written",
+                    readback_failure_code=code, readback_inner_failure_code=inner, registry_blob=observed[0] if observed else None)
         _refuse("GENESIS_REGISTRY_GENERATION_NOT_OBSERVED", p,
                 "an ALLOW #3266 base-state readback for " + repository + " whose base_ref.registry_generation is an integer (" + str(code) + ": " + str(why) + ")",
                 "after the readback binds (for the organization registry: joint item Q-ORG-REGISTRY-GENERATION decides how "
@@ -262,7 +285,7 @@ def plan(request_bytes: bytes, pull: Any, files: Any, base_state: Any, test_rece
         if failed is not None:
             _refuse("HB_EPOCH_SOURCE_UNOBSERVED", "REGISTRY_GENERATION_FROM_SEALED_BASE_STATE", failed["required_evidence_or_repair"],
                     "re-run once the ledger head carries a supplied epoch; nothing was written", detail=failed.get("detail"))
-        frm, gen, readback = check_base_state(base_state, repository, epoch)
+        frm, gen, readback = check_base_state(base_state, repository, epoch, organization)
         try:
             rc = json.loads(test_receipt_bytes) if test_receipt_bytes is not None else None
         except ValueError:
@@ -278,11 +301,36 @@ def plan(request_bytes: bytes, pull: Any, files: Any, base_state: Any, test_rece
     return {"schema": RESULT_SCHEMA, "operation": OPERATION, "disposition": ALLOW, "planned": True, "hb_epoch": epoch, "boundary_evidence": boundary}
 
 
-def append(*args: Any, **kwargs: Any) -> dict[str, Any]:
+def bootstrap_event() -> dict[str, Any]:
+    return json.loads(RESOLUTIONS_FILE.read_text(encoding="utf-8"))["resolutions"]["Q-SV-NATIVE-BOOTSTRAP"]["event"]
+
+
+def check_event(event: Any, genesis_request: Mapping[str, Any]) -> None:
+    """GENESIS_EVENT_IS_THE_DECLARED_EVENT (provisional Q-SV-NATIVE-BOOTSTRAP). ``event`` is the subset of the
+    GitHub event context the run observed: event_name, action, repository, pull_number, head_sha, workflow_ref."""
+    p, d = "GENESIS_EVENT_IS_THE_DECLARED_EVENT", bootstrap_event()
+    want = {"event_name": d["event_name"], "repository": genesis_request["repository"], "pull_number": genesis_request["pull_number"],
+            "head_sha": genesis_request["head_sha"]}
+    got = {k: event.get(k) for k in want} if isinstance(event, Mapping) else None
+    wf = event.get("workflow_ref") if isinstance(event, Mapping) else None
+    if got != want or event.get("action") not in d["actions"] or genesis_request["repository"] != d["repository"] \
+            or not (isinstance(wf, str) and wf.startswith(d["repository"] + "/" + d["workflow_path"] + "@")):
+        _refuse("GENESIS_EVENT_NOT_THE_DECLARED_EVENT", p,
+                "the " + d["event_name"] + " event (" + "/".join(d["actions"]) + ") of the genesis-request PR at its exact head, run by "
+                + d["workflow_path"] + " (provisional E1 resolution of Q-SV-NATIVE-BOOTSTRAP, C-review PENDING); no dispatch, cron or polling",
+                "push the request head again (a fast-forward push re-runs the event; nothing is dispatched); nothing was written",
+                observed_event={k: (event.get(k) if isinstance(event, Mapping) else None) for k in ("event_name", "action", "repository", "pull_number", "head_sha", "workflow_ref")})
+
+
+def append(*args: Any, event: Any = None, **kwargs: Any) -> dict[str, Any]:
     out = plan(*args, **kwargs)
     if out["disposition"] != ALLOW or out.get("replayed"):
         return out
     b = out["boundary_evidence"]
+    try:
+        check_event(event, b["genesis_request"])
+    except Refused as r:
+        return r.out
     pid = sha({"admission_manifest_sha256": b["admission_manifest_sha256"], "genesis_request": b["genesis_request"]}).split(":", 1)[1]
     evidence = {"schema": EVIDENCE_SCHEMA, "payload_sha256": b["genesis_request_sha256"], "disposition": ALLOW,
                 "communication_id": f"{OPERATION}:{b['admission_manifest_sha256']}@{b['genesis_request']['head_sha']}", "genesis": b}
@@ -312,7 +360,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     for name in ("plan", "append"):
         s = sub.add_parser(name)
-        for flag in ("--request", "--pull", "--files", "--base-state-receipt", "--test-receipt"):
+        for flag in ("--request", "--pull", "--files", "--base-state-receipt", "--test-receipt", "--event"):
             s.add_argument(flag)
         s.add_argument("--mode", default="E0")
         s.add_argument("--out")
@@ -330,8 +378,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "verify":
         out = verify(args.admission_manifest_sha256)
     else:
-        fn = plan if args.command == "plan" else append
-        out = fn(read(args.request, True) or b"", read(args.pull), read(args.files), read(args.base_state_receipt), read(args.test_receipt, True), args.mode)
+        a = (read(args.request, True) or b"", read(args.pull), read(args.files), read(args.base_state_receipt), read(args.test_receipt, True), args.mode)
+        out = plan(*a) if args.command == "plan" else append(*a, event=read(args.event))
     text = json.dumps(out, indent=2, sort_keys=True)
     if args.out:
         Path(args.out).write_text(text + "\n", encoding="utf-8")

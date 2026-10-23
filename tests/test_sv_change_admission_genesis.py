@@ -62,6 +62,14 @@ def readback(repo, epoch, **over):
     return ap.seal(r)
 
 
+def event(repo, **over):
+    """The GitHub event context subset the declared pull_request run observes (provisional Q-SV-NATIVE-BOOTSTRAP)."""
+    e = {"event_name": "pull_request", "action": "synchronize", "repository": repo, "pull_number": 300, "head_sha": HEAD,
+         "workflow_ref": repo + "/.github/workflows/sv-change-admission-genesis-validation.yml@refs/pull/300/merge"}
+    e.update(over)
+    return e
+
+
 def receipt(**over):
     r = {"schema": "stegverse.test-suite-skip-receipt/v1", "head_sha": HEAD, "authority_effect": "NONE", "skips_are_never_converted_or_deselected": True,
          "selected_tests": ["tests/test_sv_change_admission_genesis.py"], "not_selected_for_this_change": [],
@@ -95,9 +103,11 @@ class Base(unittest.TestCase):
         G.contract = lambda: copy.deepcopy(self.c)
         self.addCleanup(setattr, G, "contract", self._orig)
 
-    def go(self, fn=None, *, request=REQUEST, p=None, fl=None, rb=None, rc=None, mode="E0", root=None):
-        return (fn or G.plan)(request, p or pull(self.repo), fl if fl is not None else files(), rb if rb is not None else readback(self.repo, self.epoch),
-                              rc if rc is not None else receipt(), mode, root=root or self.root)
+    def go(self, fn=None, *, request=REQUEST, p=None, fl=None, rb=None, rc=None, mode="E0", root=None, ev=None):
+        fn = fn or G.plan
+        kw = {"event": ev if ev is not None else event(self.repo)} if fn is G.append else {}
+        return fn(request, p or pull(self.repo), fl if fl is not None else files(), rb if rb is not None else readback(self.repo, self.epoch),
+                  rc if rc is not None else receipt(), mode, root=root or self.root, **kw)
 
     def refused(self, out, code, disposition="FAIL_CLOSED"):
         self.assertEqual((out["disposition"], out["failure_code"]), (disposition, code), out)
@@ -199,6 +209,15 @@ class Append(Base):
 
     def test_verify_without_a_genesis_is_fail_closed(self):
         self.refused(G.verify(DIGEST), "GENESIS_NOT_LEDGERED")
+
+    def test_append_only_on_the_declared_event(self):
+        before = self.ledger.files()
+        for ev in (event(self.repo, event_name="workflow_dispatch"), event(self.repo, action="closed"), event(self.repo, head_sha="e" * 40),
+                   event(self.repo, pull_number=301), event(self.repo, workflow_ref=self.repo + "/.github/workflows/other.yml@refs/pull/300/merge"),
+                   {"event_name": "pull_request"}):
+            with self.subTest(ev=ev):
+                self.refused(self.go(G.append, ev=ev), "GENESIS_EVENT_NOT_THE_DECLARED_EVENT")
+        self.assertEqual(self.ledger.files(), before)
 
     def test_no_workflow_runs_the_op_yet(self):
         texts = {p.name: p.read_text(encoding="utf-8") for p in (ROOT / ".github" / "workflows").glob("*.yml")}

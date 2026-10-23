@@ -2,20 +2,23 @@ name: Validate SV Change Admission Genesis
 
 # PR-facing checks for the SV_CHANGE_ADMISSION_GENESIS writer operation
 # (resident-runtime/sv_change_admission_genesis.py). Read-only: temp ledgers are
-# copies of the pinned ledger tip. There is no writer workflow for this op: which
-# event runs it on the genesis-request PR's exact head is the undecided
-# authorization form (Q-SV-NATIVE-BOOTSTRAP). This workflow never appends.
+# copies of the pinned ledger tip. This workflow never appends. The provisional E1
+# resolution of Q-SV-NATIVE-BOOTSTRAP (data/sv-merge-admission/provisional-resolutions.json,
+# C-review PENDING) names this workflow's pull_request event on the genesis-request PR as
+# the event that runs append; its writer job lands by its own admitted change, not here.
 on:
   pull_request:
     branches: [main]
     paths:
       - '.github/workflows/sv-change-admission-genesis-validation.yml'
       - 'resident-runtime/sv_change_admission_genesis.py'
+      - 'resident-runtime/org_registry_generation_genesis.py'
       - 'resident-runtime/merge_transfer.py'
       - 'resident-runtime/admission_predicate.py'
       - 'resident-runtime/intr_destination_ingress.py'
       - 'data/sv-merge-admission/**'
       - 'tests/test_sv_change_admission_genesis.py'
+      - 'tests/test_provisional_resolutions.py'
       - 'tests/fixtures/sv-change-admission-genesis/**'
 
 permissions:
@@ -37,4 +40,4 @@ jobs:
         run: git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
 
       - name: E0 gates, append at gen+1, verify, replay (temp ledgers from the pinned tip)
-        run: python3 -m unittest tests.test_sv_change_admission_genesis tests.test_governed_ingress_census tests.test_workflow_action_pins -v
+        run: python3 -m unittest tests.test_sv_change_admission_genesis tests.test_provisional_resolutions tests.test_governed_ingress_census tests.test_workflow_action_pins -v
