@@ -1,13 +1,13 @@
 {
  "authority_effect": "NONE",
- "commit": "9e80888c1eaf6e9fabc3065066dc7232643dd354",
+ "commit": "d90ca6f7d9541da7538a6ae92700c34ea7f2d4ae",
  "files": {
   "scripts/check_test_suite_ratchet.py": "be878783a70fcad1ccb0ad44b52d92595936f7885172123e064a1ff3defcba89",
   "scripts/evaluate_admission_job_observation.py": "0e962613328ef4acd09973062844d2bf5d46230714abd2b35b110342d6660a0d",
   "scripts/evaluate_ecosystem_continuity.py": "58d1c47ed54839d1f3c5af58433e674e8836430e620a6f53904d485f01c2386d",
   "scripts/registry_gate_findings.py": "834a78209dba15b689e0ac2ef393b472596a67779f7232e334ff021049b71155",
-  "scripts/test_set_selection.py": "09911d2fb4e1e587a0948bb01bf6172472910d44c8d7a907ac4f8e658267c75b",
-  "scripts/test_suite_baseline_drift.py": "c9e418e24f477e1bce8f91e2033c662e1fd31250454771c39c2ea087b7ed99ea"
+  "scripts/test_set_selection.py": "b3b0befb5c13767ecd4c6bd09fcbdd12ad264af17635200e7099be779f39675a",
+  "scripts/test_suite_baseline_drift.py": "013914884c1147549988f28c0e7852b0d15a4614c57684a72cbc3e3af5871581"
  },
  "re_pin": "the commit is the head of StegVerse-Labs/.github#3317 (unmerged); pin its merge commit once it lands on main",
  "repository": "StegVerse-Labs/.github",

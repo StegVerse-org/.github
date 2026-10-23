@@ -975,8 +975,7 @@
     "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_fixture_readback_refuses_without_the_contract_or_the_namespace",
     "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_cli_forwards_the_default_contract_and_the_namespace",
     "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_contract_defaults_to_the_consumer_root_or_this_checkout",
-    "tests.test_p1_supplied_epoch_and_ledger_paths.SharedEpochValidatorTests",
-    "tests.test_p1_supplied_epoch_and_ledger_paths.TemporaryLedgers"
+    "tests.test_p1_supplied_epoch_and_ledger_paths.SharedEpochValidatorTests"
    ]
   },
   {

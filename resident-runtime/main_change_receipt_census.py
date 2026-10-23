@@ -43,7 +43,7 @@ def caller_workflow(pin: str, writer_sha256: str) -> str:
     return f"""name: Main Change Receipt
 
 # Every push to main is receipted (StegVerse-org/.github#160 B1). E0: no LLM, no clock, no secret beyond
-# GITHUB_TOKEN. The writer is pinned by commit and by the sha256 of its bytes.
+# the job's read-only token. The writer is pinned by commit and by the sha256 of its bytes.
 on:
   push:
     branches: [main]
