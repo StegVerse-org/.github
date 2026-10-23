@@ -1,0 +1,106 @@
+name: Selected Tests Skip Receipt
+
+# Admission input. Rigel's rule (Oct 23): a pull request is
+# admission-input-ready only when every test it needs ran on its exact head
+# with 0 skipped, and the rule never blocks a pull request on tests it does not
+# need. This job checks out the exact head, selects the tests the change needs
+# from the path-to-test-set map declared in data/test-selection-map.json
+# (scripts/select_tests_for_change.py), runs exactly those with this
+# repository's own runner (python -m unittest, by dotted module name, through
+# scripts/unittest_junit.py), on the head and on the base, and receipts the
+# selected set, each skip with its reason and owner, the count, and the tests
+# not selected for this change (not run for this verdict, never reported as
+# passing). A skip in the selected set fails closed with
+# TEST_SUITE_SKIPPED_ON_HEAD and the six fields; so does a selected test that
+# fails on the head and not on the base. A selected failure the base already
+# had is receipted as pre-existing and does not block. No test is skipped,
+# deselected, converted or marked bypassable here. No schedule, no dispatch.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  selected-tests:
+    runs-on: ubuntu-latest
+    env:
+      HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+    steps:
+      - name: Checkout the exact head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Skips satisfied from an existing StegVerse source, no new third-party
+      # dependency: the public StegVerse-SDK at the pin this repository's
+      # workflows already check out most (74d9b473), which declares no
+      # dependencies (--no-deps keeps it so), outside the workspace so no test
+      # sees it as part of the tree; and jsonschema, which
+      # task-registry-validation.yml and reviewer-prompt-conformance.yml
+      # already install.
+      - name: The pinned StegVerse SDK and this repository's existing jsonschema dependency
+        run: |
+          set -eu
+          SDK_SHA=74d9b473aa415b06a9d550c28b2779a691b4ba32
+          curl -fsSL "https://github.com/StegVerse-org/StegVerse-SDK/archive/${SDK_SHA}.tar.gz" -o "$RUNNER_TEMP/stegverse-sdk.tgz"
+          mkdir "$RUNNER_TEMP/stegverse-sdk"
+          tar -xzf "$RUNNER_TEMP/stegverse-sdk.tgz" -C "$RUNNER_TEMP/stegverse-sdk" --strip-components=1
+          python -m pip install --quiet --no-deps "$RUNNER_TEMP/stegverse-sdk"
+          python -m pip install --quiet jsonschema
+
+      - name: Select the tests this change needs (data/test-selection-map.json)
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          if git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            BASE="$(git merge-base "$BASE_SHA" HEAD)"
+            git diff --name-only "$BASE" HEAD > "$RUNNER_TEMP/changed.txt"
+          else
+            BASE=""
+            echo "<no base commit: ${BASE_SHA}>" > "$RUNNER_TEMP/changed.txt"
+          fi
+          echo "DIFF_BASE=$BASE" >> "$GITHUB_ENV"
+          python scripts/select_tests_for_change.py --changed "$RUNNER_TEMP/changed.txt" \
+            --out "$RUNNER_TEMP/test-selection.json" --print-modules > "$RUNNER_TEMP/selected.txt"
+          wc -l < "$RUNNER_TEMP/selected.txt"
+
+      - name: Run the selected tests on the exact head
+        run: python scripts/unittest_junit.py --tests-from "$RUNNER_TEMP/selected.txt" --out "$RUNNER_TEMP/head-junit.xml"
+
+      # The same selected files that exist on the base, in a worktree outside
+      # the workspace, run by the head's runner, so a selected failure the base
+      # already had is receipted as pre-existing rather than blocking.
+      - name: Run the same selected tests on the base
+        if: env.DIFF_BASE != ''
+        run: |
+          set -eu
+          git worktree add --quiet --detach "$RUNNER_TEMP/base" "$DIFF_BASE"
+          python scripts/unittest_junit.py --root "$RUNNER_TEMP/base" \
+            --tests-from "$RUNNER_TEMP/selected.txt" --out "$RUNNER_TEMP/base-junit.xml"
+
+      - name: Receipt the selected set; a skip in it, or a new failure, fails closed
+        if: ${{ !cancelled() }}
+        run: |
+          set -eu
+          base_args=""
+          if [ -n "${DIFF_BASE:-}" ]; then base_args="--base-junit $RUNNER_TEMP/base-junit.xml --base $DIFF_BASE"; fi
+          python scripts/test_suite_skip_receipt.py \
+            --junit "$RUNNER_TEMP/head-junit.xml" --head "$HEAD_SHA" --tested-commit "$(git rev-parse HEAD)" \
+            --selection "$RUNNER_TEMP/test-selection.json" $base_args \
+            --out "$RUNNER_TEMP/test-suite-skip-receipt.json" --skip-items data/test-suite-skip-items.json \
+            --retry-entrypoint "test-suite-selected.yml on the next pull request head" \
+            --owning-goal "StegVerse-org/.github#162 (selected tests on the exact head, 0 skipped)"
+
+      - name: Upload the receipt
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-suite-skip-receipt
+          path: ${{ runner.temp }}/test-suite-skip-receipt.json
+          if-no-files-found: error
