@@ -4,14 +4,14 @@
     "disposition": "ALLOW",
     "half": "source",
     "hb_epoch": 446655631,
-    "organization_receipt_sha256": "sha256:d2fbb8195485b2b83464a229ca405141dbf46d9f1729f0c74406c7b7231c30b5",
+    "organization_receipt_sha256": "sha256:010ecace9135300342beb0e4df71985eddbcdd0f29cd584de24eb7ded9a4f9e9",
     "path_id": "StegVerse-org/.github->StegVerse-org:intr-destination",
     "replayed": false,
-    "repository_receipt_sha256": "sha256:5e122a450396dee846ff896f73a9204632ffae12975cdae744b7187ff8b0d9a2",
+    "repository_receipt_sha256": "sha256:27a90b31e19a3ae6ff37d8043d75cdbef29f74c028670f32c9ecd1d880d6a893",
     "schema": "stegverse.intr-path-transfer-result/v1",
     "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481",
     "typed": true,
-    "typed_body_schema": "stegverse.repository-ledger-genesis-observed/v1"
+    "typed_body_schema": "stegverse.repository-ledger-genesis-pointer/v1"
   },
   "declaration_row": {
     "communication_id": "intr-path-v1:StegVerse-org/.github->StegVerse-org/LLM-adapter:genesis-observed",
@@ -19,33 +19,41 @@
     "endpoint_kind": "ORG",
     "path_id": "StegVerse-org/.github->StegVerse-org:intr-destination",
     "typed_body": {
-      "genesis_receipt_sha256": "sha256:61a7c91fa5ed75224d1a0261329dbe04983f1af31d3a2fe37548d3acf3c5aa91",
+      "genesis_receipt_sha256": "sha256:dd73374ef1fd3d539fcb668743b297934e1e6f4abd24135cba62694da1d27372",
       "ledger_location": "StegVerse-org/.github#refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/LLM-adapter",
       "node_ref": "StegVerse-org/.github",
-      "repository": "StegVerse-org/LLM-adapter",
-      "schema": "stegverse.repository-ledger-genesis-observed/v1",
-      "signal_class": "REPOSITORY_LEDGER_GENESIS_OBSERVED",
-      "transition_class": "REPOSITORY_LEDGER_GENESIS_PIN"
+      "schema": "stegverse.repository-ledger-genesis-pointer/v1"
     },
-    "typed_body_sha256": "sha256:7c77d5c1fce4634f325ac0abe94b36afafd136ee341b8780488e786a2a8acf37"
+    "typed_body_sha256": "sha256:699bd917cb20bdb4dd8b9eab0e2d2279a519c9b2d7319832c839cac5e85ef81d"
   },
   "genesis_receipt": {
     "authority_effect": "NONE",
     "evidence": {
       "namespace": "repository-ledger/StegVerse-org/LLM-adapter"
     },
+    "hb_reference": {
+      "authority_effect": "NONE",
+      "derived_from_clock": false,
+      "epoch": 446655631,
+      "frequency_hz": 100,
+      "heartbeat_id": "HB:446655631",
+      "period_ms": 10,
+      "progression_dependency": "OSCILLATOR_ONLY"
+    },
+    "observed_at": "SUPPLIED_HB_EPOCH:446655631",
+    "observed_at_is_descriptive_not_ordering": true,
+    "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY",
     "predecessor_state_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "previous_receipt_sha256": null,
-    "receipt_sha256": "sha256:61a7c91fa5ed75224d1a0261329dbe04983f1af31d3a2fe37548d3acf3c5aa91",
+    "receipt_sha256": "sha256:dd73374ef1fd3d539fcb668743b297934e1e6f4abd24135cba62694da1d27372",
     "repository": "StegVerse-org/LLM-adapter",
     "schema": "stegverse.repo-transition-receipt/v1",
     "successor_state_sha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-    "synthetic": "FIXTURE_NOT_LEDGERED_NOT_AUTHENTIC",
     "transition_class": "REPOSITORY_LEDGER_INITIALIZATION",
     "transition_id": "REPOSITORY_LEDGER_INITIALIZATION:StegVerse-org/LLM-adapter"
   },
   "ledger_tip": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
-  "note": "SYNTHETIC, NOT LEDGERED, NOT AUTHENTIC. Emitted by StegVerse-org/.github resident-runtime/intr_path_transfer.py (INTR-PATH-TRANSFER-TYPED-BODY-001) on a temporary copy of the pinned ledger tip for one typed REPOSITORY_LEDGER_GENESIS_OBSERVED row naming the synthetic genesis below. Copied byte-identically to StegVerse-org/LLM-adapter#431, where the pre-pin receiver accepts it.",
+  "note": "SYNTHETIC, NOT LEDGERED, NOT AUTHENTIC. Emitted by StegVerse-org/.github resident-runtime/intr_path_transfer.py (INTR-PATH-TRANSFER-TYPED-BODY-001) on a temporary copy of the pinned ledger tip for one typed REPOSITORY_LEDGER_GENESIS_OBSERVED row (a genesis pointer) naming the synthetic genesis below, which is byte-deterministic at supplied epoch 446655631 (no clock). Copied byte-identically to StegVerse-org/LLM-adapter#431, where the pre-pin receiver accepts it.",
   "schema": "stegverse.intr-path-transfer-typed-fixture/v1",
   "source_receipt": {
     "authority_effect": "NONE",
@@ -64,26 +72,23 @@
       "merge_transfer_organization_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
       "message": {
         "body": {
-          "genesis_receipt_sha256": "sha256:61a7c91fa5ed75224d1a0261329dbe04983f1af31d3a2fe37548d3acf3c5aa91",
+          "genesis_receipt_sha256": "sha256:dd73374ef1fd3d539fcb668743b297934e1e6f4abd24135cba62694da1d27372",
           "ledger_location": "StegVerse-org/.github#refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/LLM-adapter",
           "node_ref": "StegVerse-org/.github",
-          "repository": "StegVerse-org/LLM-adapter",
-          "schema": "stegverse.repository-ledger-genesis-observed/v1",
-          "signal_class": "REPOSITORY_LEDGER_GENESIS_OBSERVED",
-          "transition_class": "REPOSITORY_LEDGER_GENESIS_PIN"
+          "schema": "stegverse.repository-ledger-genesis-pointer/v1"
         },
         "communication_id": "intr-path-v1:StegVerse-org/.github->StegVerse-org/LLM-adapter:genesis-observed",
         "message_class": "ecosystem.communication"
       },
-      "message_sha256": "sha256:41c17c8520cfe55169010bfa012bc65f9c2e8ed6580ee0ab76b8c3595cca865e",
+      "message_sha256": "sha256:1e30cd9f9afc3dcefce688963eaddfa8e401bc66145e809e8bc086ca7031be01",
       "path_id": "StegVerse-org/.github->StegVerse-org:intr-destination",
-      "payload_sha256": "sha256:2e8d7b090719f20fe68c380b9022bc9f91bab596b647b8b2b5b669a5d95be6ee",
+      "payload_sha256": "sha256:b4b2e8884a316fb924e4be2cb599cd6c421f923a8f1fb5a6b776aa07d17484f8",
       "repository": "StegVerse-org/.github",
       "schema": "stegverse.intr-path-transfer-evidence/v1",
       "source_organization": "StegVerse-org",
       "transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481",
-      "typed_body_schema": "stegverse.repository-ledger-genesis-observed/v1",
-      "typed_body_sha256": "sha256:7c77d5c1fce4634f325ac0abe94b36afafd136ee341b8780488e786a2a8acf37"
+      "typed_body_schema": "stegverse.repository-ledger-genesis-pointer/v1",
+      "typed_body_sha256": "sha256:699bd917cb20bdb4dd8b9eab0e2d2279a519c9b2d7319832c839cac5e85ef81d"
     },
     "hb_reference": {
       "authority_effect": "NONE",
@@ -95,12 +100,12 @@
       "phase_offset_ns": 0,
       "progression_dependency": "OSCILLATOR_ONLY"
     },
-    "predecessor_state_sha256": "sha256:2e8d7b090719f20fe68c380b9022bc9f91bab596b647b8b2b5b669a5d95be6ee",
+    "predecessor_state_sha256": "sha256:b4b2e8884a316fb924e4be2cb599cd6c421f923a8f1fb5a6b776aa07d17484f8",
     "previous_receipt_sha256": "sha256:6f0d3f87aadf6c164b1191878df48e9aa593db91a3df2de5ed4031a9bd36199d",
-    "receipt_sha256": "sha256:5e122a450396dee846ff896f73a9204632ffae12975cdae744b7187ff8b0d9a2",
+    "receipt_sha256": "sha256:27a90b31e19a3ae6ff37d8043d75cdbef29f74c028670f32c9ecd1d880d6a893",
     "repository": "StegVerse-org/.github",
     "schema": "stegverse.repo-transition-receipt/v1",
-    "successor_state_sha256": "sha256:786abdb5c32f07a603c8f11b890212b215f09b10be0775c99a19f9d165bfd0c8",
+    "successor_state_sha256": "sha256:df2ffafd2587a991fd10b9bc637ba93538d55f55435f164630131191ae52c397",
     "transition_class": "INTR_MESH_PATH_TRANSFER",
     "transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org/.github->StegVerse-org:intr-destination@intr-path-v1:StegVerse-org/.github->StegVerse-org/LLM-adapter:genesis-observed"
   },

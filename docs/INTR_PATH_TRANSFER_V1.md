@@ -88,15 +88,15 @@ and every refusal carries six fields. Nothing is written for a refused row.
 3. The row must have exactly `path_id, communication_id, destination_location, endpoint_kind, typed_body,
    typed_body_sha256`.
 4. `typed_body.schema` must be on the allowlist `TYPED_BODY_SCHEMAS`. The allowlist currently holds only
-   `stegverse.repository-ledger-genesis-observed/v1` (`REPOSITORY_LEDGER_GENESIS_OBSERVED`). Any other schema fails
+   `stegverse.repository-ledger-genesis-pointer/v1` (`REPOSITORY_LEDGER_GENESIS_OBSERVED`). Any other schema fails
    closed with `INTR_PATH_TYPED_BODY_SCHEMA_NOT_ALLOWLISTED`.
 5. The body is sealed: `typed_body_sha256` must equal the body's digest. Otherwise the row is denied with
    `INTR_PATH_TYPED_BODY_UNSEALED`.
-6. The body must be exactly the record StegVerse-org/LLM-adapter#431's pre-pin receiver
-   (`scripts/llm_adapter_genesis_pin_ingress.py` @1541d465) accepts:
-   `{schema, signal_class, repository, ledger_location, genesis_receipt_sha256, transition_class:
-   REPOSITORY_LEDGER_GENESIS_PIN, node_ref: StegVerse-org/.github}`. In addition:
-   - `repository` is another repository of this organization;
+6. The body must be exactly the pointer StegVerse-org/LLM-adapter#431's pre-pin receiver
+   (`scripts/llm_adapter_genesis_pin_ingress.py`) accepts: `{schema, ledger_location, genesis_receipt_sha256}`. It
+   points at the genesis on the recorded receipt chain and copies no record (StegVerse-org/.github#167 comment
+   6372442705). In addition:
+   - `ledger_location` points at another repository of this organization;
    - `ledger_location` and `destination_location` are that repository's `repository-ledger/` location;
    - `endpoint_kind` is `ORG`;
    - `path_id` is `StegVerse-org/.github->StegVerse-org:intr-destination`.
@@ -106,9 +106,11 @@ and every refusal carries six fields. Nothing is written for a refused row.
    schema in `data/intr-protocol/v1/protocol.json` `mesh_path_transfer.intra_org_paths`, with `path_id`, `source`,
    `destination` and `capability` as in the `declared_paths` rows, plus the `endpoint_kinds`, `typed_body_schemas`
    and `destination_location_prefix` the path admits. The one row is
-   `StegVerse-org/.github->StegVerse-org:intr-destination` (`ORG`, the genesis-observed schema,
+   `StegVerse-org/.github->StegVerse-org:intr-destination` (`ORG`, the genesis-pointer schema,
    `refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/`). Otherwise the row fails closed with
-   `INTR_PATH_INTRA_ORG_PATH_UNDECLARED`. The mesh `declared_paths` are unchanged.
+   `INTR_PATH_INTRA_ORG_PATH_UNDECLARED`. The mesh `declared_paths` are unchanged. Adding `intra_org_paths` and
+   `endpoint_paths` changes the code-defined declared-paths definition, so it is recorded as a class C entry on
+   StegVerse-org/.github#167.
 8. The envelope keeps every protocol predicate. Only the body-schema predicate is replaced by the allowlist.
 
 The typed evidence is `stegverse.intr-path-transfer-evidence/v1` in the source shape of `intr_transport_carrier`
@@ -134,8 +136,10 @@ main-merge transfer). No workflow is added or changed.
 existing fixtures is byte-identical to main @907f4305 (`tests/fixtures/intr-path-transfer/untyped-golden.json`), and
 `real_state` gains `typed_transfers` only when a typed row is declared.
 
-**Cross-repo fixture.** `tests/fixtures/intr-path-transfer/typed-genesis-observed.json` (sha256 `05babd7b...`) is the
-writer's output on a temporary copy of the pinned tip, for one typed row naming a synthetic genesis. It is not
+**Cross-repo fixture.** `tests/fixtures/intr-path-transfer/typed-genesis-observed.json` is the
+writer's output on a temporary copy of the pinned tip, for one typed row naming a synthetic genesis. The synthetic
+genesis is byte-deterministic (emit.py's receipt body at supplied epoch 446655631, `observed_at`
+`SUPPLIED_HB_EPOCH:446655631`, no clock), so the fixture regenerates byte-identically. It is not
 ledgered and not authentic. It is copied byte-identically to LLM-adapter#431, where `receive()` accepts it as
 `ACCEPTED_FOR_GENESIS_PIN`.
 
@@ -144,5 +148,22 @@ ledgered and not authentic. It is copied byte-identically to LLM-adapter#431, wh
 KV and SKAP Vault are independent of the Orgs. Each runs its own ledger behind its own InTr ingress/egress endpoint, and that ledger is never stored on `refs/stegverse/organization-ledger`. Two things change here:
 
 - **Endpoint paths.** `mesh_path_transfer.endpoint_paths` is a list of data rows in the `intra_org_paths` path schema, with `destination_endpoint` in place of `destination`. It is empty for now, and each row lands through its own admitted change. The typed gate looks up `intra_org_paths` first, then `endpoint_paths`.
-- **Endpoint head digest.** A typed row can carry an optional `endpoint_head_sha256`. It is sealed into the typed source evidence (covered by `payload_sha256`), so the Org-side linked receipt records the endpoint's ledger head. It is required when `endpoint_kind` is KV or SKAP_VAULT; a missing digest fails closed with `INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING`, with six fields. The value is a `sha256:` digest and never a ledger ref; anything else is denied with `INTR_PATH_ENDPOINT_HEAD_NOT_A_DIGEST`. Rows without the field produce byte-identical evidence.
+- **Endpoint head digest.** A typed row can carry an optional `endpoint_head_sha256`. For KV and SKAP_VAULT it is the `KV_RECORDED_RECEIPT_CHAIN_HEAD` digest only (StegVerse-Labs/TVC#542 @4c2504da; the chains are STEGVERSE_KV `_StegVerse/Receipts` and `_Vault/SKAP/Receipts`, on no org ref, StegVerse-Labs/continuity-vault-kit#263 @706877b6; path_id `StegVerse-org->STEGVERSE_KV:<location>:intr-destination`). It rides in `boundary_evidence` (reused; no new envelope field), in both the typed evidence and the Org receipt's boundary, so the Org-side linked receipt records the endpoint's ledger head. It is required when `endpoint_kind` is KV or SKAP_VAULT; a missing digest fails closed with `INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING`, with six fields. The value is a `sha256:` digest and never a ledger ref; anything else is denied with `INTR_PATH_ENDPOINT_HEAD_NOT_A_DIGEST`. Rows without the field produce byte-identical evidence.
 - **Rollback watermark.** KV uses the newest recorded digest as its rollback watermark. A presented head older than that watermark is refused with `KV_LEDGER_HEAD_ROLLBACK_DETECTED` (StegVerse-org/LLM-adapter#431, `llm_adapter/endpoint_ledger_designation.py`).
+
+### Both sides record each crossing (StegVerse-org/.github#162 comment 6372641743)
+
+A crossing is two events, one recorded at each endpoint. The source records its egress (`INTR_MESH_PATH_TRANSFER`, the
+typed source half above) and the destination records its ingress (`INTR_MESH_PATH_INGRESS` on its own recorded receipt
+chain, `stegverse.intr-path-ingress-evidence/v1`). Each record points at the other by digest or location: the ingress
+names the egress's `receipt_sha256` (`source_repository_receipt_sha256`), its `destination_location`
+(`addressed_location`), `path_id` and `communication_id`. Neither copies the other's body. Both carry a supplied
+heartbeat epoch (`hb_reference.derived_from_clock` false; `observed_at`, when present, `SUPPLIED_HB_EPOCH:<epoch>`).
+`verify_typed_crossing(row, destination_receipt)` refuses a one-sided crossing with six fields
+(`INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES`, `one_sided` SOURCE_ONLY / DESTINATION_ONLY / NEITHER), records that do not
+point at each other with DENY, and a record without a supplied epoch with `HB_EPOCH_NOT_SUPPLIED` / `HB_EPOCH_INVALID`.
+The Org's own append and read-back of the genesis crossing (ENVELOPE v2 line 55) stands as the Org's record.
+
+## No endpoint is a source of org-ledger records
+
+No endpoint, whether externally or ecosystem maintained (KV, SKAP Vault, node or gateway), is a GitHub Organization member or a source of org-ledger records (Rigel, relayed on StegVerse-org/.github#160 comment 6372871021). A typed row lands its record inside `refs/stegverse/organization-ledger`, so only `endpoint_kind` ORG may name one. Any other kind is six-field FAIL_CLOSED `INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE` (failed_predicate `NO_ENDPOINT_IS_AN_ORG_MEMBER_OR_A_SOURCE_OF_ORG_LEDGER_RECORDS`) and nothing is written. Endpoint data crosses only through InTr to the endpoint's own recorded receipt chain and is recorded at both ends. The Org side is this organization's own digest-only crossing receipt (pointer/digest plus `SUPPLIED_HB_EPOCH`). An endpoint destination (`endpoint_paths`, the endpoint's own `ledger_location`, and the gateway's owning-endpoint designation from LC-KV-20) is a change to the code-defined path definition, so it is class C on StegVerse-org/.github#167 and is not built here.

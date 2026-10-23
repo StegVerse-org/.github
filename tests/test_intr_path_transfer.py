@@ -275,7 +275,7 @@ class DestinationHalf(unittest.TestCase):
 MAIN = "907f4305"   # current main when the typed body was built; the golden is that commit's output
 GOLDEN = FIXTURES / "untyped-golden.json"
 TYPED = FIXTURES / "typed-genesis-observed.json"
-TYPED_SHA256 = "05babd7b5c38fba61050220c41b987043f1fd2c9e7c5ded072a6f9625dc13890"   # = LLM-adapter#431's copy
+TYPED_SHA256 = "a4f3f951e874f9b0ad37a7cf88234d9f067c68b43455da07e975ccf1749e2022"   # = LLM-adapter#431's copy
 LLM_ADAPTER = "StegVerse-org/LLM-adapter"
 LLM_NS = "repository-ledger/StegVerse-org/LLM-adapter"
 MT = "sha256:" + "7" * 64
@@ -316,13 +316,46 @@ def untyped_output():
     return out
 
 
+GENESIS_EPOCH = 446655631
+
+
 def synthetic_genesis():
+    """Byte-deterministic: emit.py's receipt body at a supplied epoch, no clock (StegVerse-Labs/.github#3263/#3290;
+    StegVerse-org/.github#167 comment 6372442705). Equals LLM-adapter#431's precomputed expected genesis for these
+    inputs (scripts/llm_adapter_repository_ledger_genesis_pin.py precompute --hb-epoch 446655631)."""
     body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": LLM_ADAPTER,
-            "transition_class": "REPOSITORY_LEDGER_INITIALIZATION",
             "transition_id": "REPOSITORY_LEDGER_INITIALIZATION:" + LLM_ADAPTER,
+            "transition_class": "REPOSITORY_LEDGER_INITIALIZATION",
             "predecessor_state_sha256": "sha256:" + "0" * 64, "successor_state_sha256": "sha256:" + "1" * 64,
-            "previous_receipt_sha256": None, "evidence": {"namespace": LLM_NS}, "authority_effect": "NONE",
-            "synthetic": "FIXTURE_NOT_LEDGERED_NOT_AUTHENTIC"}
+            "evidence": {"namespace": LLM_NS}, "authority_effect": "NONE",
+            "hb_reference": {"epoch": GENESIS_EPOCH, "heartbeat_id": "HB:%d" % GENESIS_EPOCH, "frequency_hz": 100,
+                             "period_ms": 10, "progression_dependency": "OSCILLATOR_ONLY",
+                             "derived_from_clock": False, "authority_effect": "NONE"},
+            "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY", "observed_at": "SUPPLIED_HB_EPOCH:%d" % GENESIS_EPOCH,
+            "observed_at_is_descriptive_not_ordering": True, "previous_receipt_sha256": None}
+    return {**body, "receipt_sha256": pt.sha(body)}
+
+
+def destination_record(source, epoch=GENESIS_EPOCH + 2, **edit):
+    """The destination's own ingress record of a crossing: the intr_transport_carrier destination_evidence shape
+    (LLM-adapter#431/#432/#433), pointing at the egress record by digest, with a supplied epoch. Synthetic."""
+    ev = source["evidence"]
+    core = {"schema": "stegverse.intr-path-ingress-evidence/v1", "repository": LLM_ADAPTER, "path_id": ev["path_id"],
+            "source_repository": source["repository"], "source_repository_receipt_sha256": source["receipt_sha256"],
+            "message": ev["message"], "message_sha256": ev["message_sha256"],
+            "addressed_location": ev["destination_location"], "endpoint_kind": ev["endpoint_kind"],
+            "source_inclusion": "READ_BACK_FROM_THE_ENDPOINT_LEDGER_AND_RETAINED"}
+    evidence = {**core, "payload_sha256": pt.sha(core), "disposition": "ALLOW", "communication_id": ev["communication_id"],
+                "boundary_evidence": {"operation": "ORGANIZATION_INTR_DESTINATION_INGRESS", "path_id": ev["path_id"],
+                                      "communication_id": ev["communication_id"],
+                                      "source_repository_receipt_sha256": source["receipt_sha256"]}}
+    body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": LLM_ADAPTER,
+            "transition_id": "INTR_MESH_PATH_INGRESS:" + ev["communication_id"],
+            "transition_class": "INTR_MESH_PATH_INGRESS", "predecessor_state_sha256": "sha256:" + "1" * 64,
+            "successor_state_sha256": source["receipt_sha256"], "evidence": evidence, "authority_effect": "NONE",
+            "hb_reference": {**synthetic_genesis()["hb_reference"], "epoch": epoch, "heartbeat_id": "HB:%d" % epoch},
+            "observed_at": "SUPPLIED_HB_EPOCH:%d" % epoch, "previous_receipt_sha256": synthetic_genesis()["receipt_sha256"]}
+    body.update(edit)
     return {**body, "receipt_sha256": pt.sha(body)}
 
 
@@ -398,7 +431,7 @@ class TypedBody(unittest.TestCase):
         return results[-1]
 
     def test_the_genesis_observed_row_is_allowlisted_sealed_and_typed(self):
-        self.assertEqual(sorted(pt.TYPED_BODY_SCHEMAS), ["stegverse.repository-ledger-genesis-observed/v1"])
+        self.assertEqual(sorted(pt.TYPED_BODY_SCHEMAS), ["stegverse.repository-ledger-genesis-pointer/v1"])
         self.assertIsNone(pt.typed_refusal(self.row))
         self.assertEqual(self.row["typed_body_sha256"], pt.sha(self.row["typed_body"]))
         ev = pt.typed_path_evidence(self.row, TRANSFER, MT)
@@ -468,15 +501,18 @@ class TypedBody(unittest.TestCase):
         self.assertEqual(ev["message"]["message_class"], "ecosystem.communication")
         self.assertEqual(ev["message_sha256"], pt.sha(ev["message"]))
         self.assertEqual(pt.sha(ev["message"]["body"]), pt.sha(signal))
-        self.assertEqual(ev["path_id"], signal["node_ref"] + "->StegVerse-org:intr-destination")
-        # the body is exactly #431's genesis_signal(genesis, contract)
-        self.assertEqual(signal, {"schema": "stegverse.repository-ledger-genesis-observed/v1",
-                                  "signal_class": "REPOSITORY_LEDGER_GENESIS_OBSERVED", "repository": LLM_ADAPTER,
+        self.assertEqual(ev["path_id"], "StegVerse-org/.github->StegVerse-org:intr-destination")
+        # the body is exactly #431's genesis_signal(genesis, contract): a pointer, never a copied record
+        self.assertEqual(signal, {"schema": "stegverse.repository-ledger-genesis-pointer/v1",
                                   "ledger_location": "StegVerse-org/.github#refs/stegverse/organization-ledger:"
                                                      + LLM_NS,
                                   "genesis_receipt_sha256": fixture["genesis_receipt"]["receipt_sha256"],
-                                  "transition_class": "REPOSITORY_LEDGER_GENESIS_PIN",
+                                  # originated by the org's own path, never an endpoint (#160 comment 6372871021)
                                   "node_ref": "StegVerse-org/.github"})
+        # the egress record carries a supplied epoch; the synthetic genesis is clock-free
+        self.assertIs(source["hb_reference"]["derived_from_clock"], False)
+        self.assertEqual(fixture["genesis_receipt"]["observed_at"], "SUPPLIED_HB_EPOCH:446655631")
+        self.assertIsNone(pt.record_epoch_failure(fixture["genesis_receipt"]))
 
     def test_any_other_typed_schema_is_refused_with_six_fields(self):
         other = {**self.row["typed_body"], "schema": "stegverse.node-ingress-signal/v1"}
@@ -507,7 +543,6 @@ class TypedBody(unittest.TestCase):
         for name, row in {"path": {**self.row, "path_id": "StegVerse-org->SV-011:intr-destination"},
                           "location": {**self.row, "destination_location":
                                        "refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/Other"},
-                          "kind": {**self.row, "endpoint_kind": "PERMANENT"},
                           "extra row key": {**self.row, "note": "x"},
                           "missing row key": {k: v for k, v in self.row.items() if k != "typed_body_sha256"}}.items():
             with self.subTest(name=name):
@@ -536,8 +571,23 @@ class TypedBody(unittest.TestCase):
                 self.assert_six(pt.typed_refusal(row), "DENY", "INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF")
         self.assert_six(self.refused_append(cases["row ledger_root"]), "DENY",
                         "INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF")
-        # a GATEWAY row with no external ref is still not the genesis-observed source kind
-        self.assert_six(pt.typed_refusal(gw), "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_NONCONFORMANT")
+        # a GATEWAY row with no external ref is still an endpoint, never a source of org-ledger records
+        self.assert_six(pt.typed_refusal(gw), "FAIL_CLOSED", "INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
+
+    def test_no_endpoint_is_a_source_of_org_ledger_records(self):
+        """Rigel (#160 comment 6372871021): no endpoint, externally or ecosystem maintained, is an Organization
+        member or a source of org-ledger records; only ORG rows land on the org ledger, and nothing is written."""
+        head = "sha256:" + "ab" * 32
+        for kind in ("EPHEMERAL", "PERMANENT", "GATEWAY", "KV", "SKAP_VAULT"):
+            with self.subTest(kind=kind):
+                row = {**self.row, "endpoint_kind": kind, "endpoint_head_sha256": head}
+                refused = pt.typed_refusal(row)
+                self.assert_six(refused, "FAIL_CLOSED", "INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
+                self.assertEqual(refused["failed_predicate"],
+                                 "NO_ENDPOINT_IS_AN_ORG_MEMBER_OR_A_SOURCE_OF_ORG_LEDGER_RECORDS")
+        self.assert_six(self.refused_append({**self.row, "endpoint_kind": "PERMANENT"}), "FAIL_CLOSED",
+                        "INTR_PATH_ENDPOINT_NOT_AN_ORG_LEDGER_SOURCE")
+        self.assertIsNone(pt.typed_refusal(self.row))
 
     def test_kv_and_skap_rows_must_record_the_endpoint_head_digest(self):
         # Lane D condition 2 (StegVerse-org/.github#160 comment 6372216673): the Org-side linked receipt records the
@@ -560,21 +610,85 @@ class TypedBody(unittest.TestCase):
         self.assert_six(self.refused_append({**self.row, "endpoint_kind": "KV"}), "FAIL_CLOSED",
                         "INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING")
 
-    def test_the_endpoint_head_digest_is_optional_and_sealed_in_the_typed_evidence(self):
+    def test_the_endpoint_head_digest_is_optional_and_rides_in_boundary_evidence(self):
+        """Reuse boundary_evidence (#167 comment 6372442705, ruling 2): a row without the field is byte-identical."""
         head = "sha256:" + "cd" * 32
-        self.assertNotIn("endpoint_head_sha256", pt.typed_path_evidence(self.row, TRANSFER, MT))
+        plain = pt.typed_path_evidence(self.row, TRANSFER, MT)
+        self.assertNotIn("endpoint_head_sha256", plain)
+        self.assertNotIn("endpoint_head_sha256", plain["boundary_evidence"])
         row = {**self.row, "endpoint_head_sha256": head}
         self.assertIsNone(pt.typed_refusal(row))
         ev = pt.typed_path_evidence(row, TRANSFER, MT)
-        self.assertEqual(ev["endpoint_head_sha256"], head)
-        core = {k: v for k, v in ev.items()
-                if k not in ("payload_sha256", "disposition", "communication_id", "boundary_evidence")}
-        self.assertEqual(ev["payload_sha256"], pt.sha(core))
-        self.assertNotEqual(ev["payload_sha256"], pt.typed_path_evidence(self.row, TRANSFER, MT)["payload_sha256"])
-        tampered = {**ev, "endpoint_head_sha256": "sha256:" + "ef" * 32}
-        tcore = {k: v for k, v in tampered.items()
-                 if k not in ("payload_sha256", "disposition", "communication_id", "boundary_evidence")}
-        self.assertNotEqual(tampered["payload_sha256"], pt.sha(tcore))
+        self.assertNotIn("endpoint_head_sha256", ev)
+        self.assertEqual(ev["boundary_evidence"]["endpoint_head_sha256"], head)
+        self.assertEqual({k: v for k, v in ev.items() if k != "boundary_evidence"},
+                         {k: v for k, v in plain.items() if k != "boundary_evidence"})
+        self.assertEqual({k: v for k, v in ev["boundary_evidence"].items() if k != "endpoint_head_sha256"},
+                         plain["boundary_evidence"])
+        source = Path(pt.__file__).read_text()
+        self.assertIn("**({ENDPOINT_HEAD_KEY: row[ENDPOINT_HEAD_KEY]}", source)   # and on the Org receipt boundary
+
+    def test_a_crossing_is_recorded_by_both_sides(self):
+        """Rigel, StegVerse-org/.github#162 comment 6372641743: egress on the source side, ingress on the destination
+        side, each pointing at the other by digest, each with a supplied epoch. One-sided: six fields."""
+        source = json.loads(TYPED.read_text())["source_receipt"]
+        dest = destination_record(source)
+        self.assertIsNone(pt.typed_crossing_failure(source, dest))
+        self.assertNotIn("receipt_sha256", dest["evidence"])     # a pointer to the egress, not its body
+        for side, (s, d) in {"SOURCE_ONLY": (source, None), "DESTINATION_ONLY": (None, dest),
+                             "NEITHER": (None, None)}.items():
+            with self.subTest(side=side):
+                got = pt.typed_crossing_failure(s, d)
+                self.assert_six(got, "FAIL_CLOSED", "INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES")
+                self.assertEqual((got["one_sided"], got["failed_predicate"]),
+                                 (side, "EACH_CROSSING_RECORDED_BY_BOTH_ENDPOINTS"))
+        other = dict(dest)
+        other["evidence"] = {**dest["evidence"], "source_repository_receipt_sha256": "sha256:" + "e" * 64}
+        other = destination_record(source, evidence=other["evidence"])
+        self.assert_six(pt.typed_crossing_failure(source, other), "DENY", "INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES")
+        unsealed = {**dest, "transition_class": "INTR_MESH_PATH_INGRESS", "authority_effect": "X"}
+        self.assert_six(pt.typed_crossing_failure(source, unsealed), "FAIL_CLOSED",
+                        "INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES")
+
+    def test_a_crossing_record_without_a_supplied_epoch_is_refused(self):
+        source = json.loads(TYPED.read_text())["source_receipt"]
+        hb = synthetic_genesis()["hb_reference"]
+        cases = {"clock-derived ingress": (destination_record(source, hb_reference={**hb, "derived_from_clock": True}),
+                                           "HB_EPOCH_INVALID"),
+                 "no hb_reference": (destination_record(source, hb_reference=None), "HB_EPOCH_NOT_SUPPLIED"),
+                 "epoch below HB32": (destination_record(source, hb_reference={**hb, "epoch": 7}), "HB_EPOCH_INVALID"),
+                 "clock observed_at": (destination_record(source, observed_at="2026-10-23T19:00:00+00:00"),
+                                       "HB_EPOCH_INVALID")}
+        for name, (dest, code) in cases.items():
+            with self.subTest(name=name):
+                got = pt.typed_crossing_failure(source, dest)
+                self.assert_six(got, "FAIL_CLOSED", code)
+                self.assertEqual(got["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
+        clocked = {k: v for k, v in source.items() if k != "receipt_sha256"}
+        clocked["hb_reference"] = {**clocked["hb_reference"], "derived_from_clock": True}
+        clocked = {**clocked, "receipt_sha256": pt.sha(clocked)}
+        self.assert_six(pt.typed_crossing_failure(clocked, destination_record(clocked)), "FAIL_CLOSED",
+                        "HB_EPOCH_INVALID")
+
+    def test_verify_typed_crossing_reads_the_source_half_off_the_ledger(self):
+        holder, decl = declaration_with(self.row)
+        ledger = Ledger()
+        try:
+            self.assert_six(pt.verify_typed_crossing(self.row, None), "FAIL_CLOSED", "INTR_PATH_RECEIPT_NOT_LEDGERED")
+            fixture_source = json.loads(TYPED.read_text())["source_receipt"]
+            got = pt.verify_typed_crossing(self.row, destination_record(fixture_source))
+            self.assert_six(got, "FAIL_CLOSED", "INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES")
+            self.assertEqual(got["one_sided"], "DESTINATION_ONLY")
+            typed = pt.append_transfers(TRANSFER, declaration=decl)[-1]
+            source = pt.mt._receipt(pt.mt.repo_store(), typed["repository_receipt_sha256"])
+            got = pt.verify_typed_crossing(self.row, None)
+            self.assert_six(got, "FAIL_CLOSED", "INTR_CROSSING_NOT_RECORDED_BY_BOTH_SIDES")
+            self.assertEqual(got["one_sided"], "SOURCE_ONLY")
+            both = pt.verify_typed_crossing(self.row, destination_record(source))
+            self.assertEqual((both["disposition"], both["recorded_by_both_sides"]), ("ALLOW", True), both)
+        finally:
+            ledger.close()
+            holder.cleanup()
 
     def test_endpoint_paths_are_a_data_row_list_with_no_row_yet(self):
         mesh = pt.intr.load_contract()["mesh_path_transfer"]
