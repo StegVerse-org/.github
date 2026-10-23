@@ -14,7 +14,7 @@ name: Required Verification
 #               Sets the change does not select are not run and are not reported as skipped.
 #   path-scope  a path-filtered workflow left unrun on a change to a file it runs, and a pull_request job
 #               present at the base and missing at the head, are FAIL_CLOSED REQUIRED_VERIFICATION_SKIPPED.
-# E0: stdlib only (jsonschema is installed only because this repository's own workflows declare it), no clock,
+# E0: stdlib only (jsonschema is installed only as the agreement oracle for the pinned stdlib validator), no clock,
 # nothing published, read-only token, anonymous reads of public refs only.
 on:
   pull_request:
@@ -47,7 +47,7 @@ jobs:
           git config --global user.email ci@stegverse.invalid
           LABS="$RUNNER_TEMP/labs-tool"
           RESULTS="$RUNNER_TEMP/results"
-          printf 'LABS=%s\nRESULTS=%s\n' "$LABS" "$RESULTS" >> "$GITHUB_ENV"
+          printf 'LABS=%s\nRESULTS=%s\nSTEGVERSE_LABS_ROOT=%s\n' "$LABS" "$RESULTS" "$LABS" >> "$GITHUB_ENV"
           mkdir -p "$RESULTS"
           pin=.stegverse/test-suite-baseline/labs-tool-pin.json
           commit=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["commit"])' "$pin")
@@ -72,14 +72,15 @@ jobs:
           # The organization ledger ref, fetched anonymously as intr-path-transfer-validation.yml does.
           git -c 'http.https://github.com/.extraheader=' fetch --no-tags --quiet origin \
             '+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger'
-          # jsonschema, installed exactly as task-registry-validation.yml and reviewer-prompt-conformance.yml declare.
+          # jsonschema: only the agreement oracle (tests/test_stdlib_json_schema_agreement.py). Every schema check
+          # validates with the pinned stdlib validator (STEGVERSE_LABS_ROOT, sha256-checked above).
           python -m pip install jsonschema
 
       - name: Select the test sets this change requires
         run: |
           set -euo pipefail
           python "$LABS/scripts/test_set_selection.py" select --root . --manifest .stegverse/test-sets.json \
-            --spec .stegverse/test-set-spec.json --base "$BASE_SHA" --head HEAD \
+            --spec .stegverse/test-set-spec.json --base "$BASE_SHA" --head HEAD --pr-head "$HEAD_SHA" \
             --retry-entrypoint "$WORKFLOW_REF" --owning-goal "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001" \
             --out "$RESULTS/test-set-selection.json" --args-out "$RESULTS/test-set-args.txt" || true
           test -s "$RESULTS/test-set-selection.json"
@@ -158,6 +159,8 @@ jobs:
               summary = {"receipt_sha256": sel.get("receipt_sha256"), "seal_verifies": seal_verifies(sel),
                          "core_selected": any(s["id"] == "core" and s["runnable"] for s in sel.get("selected", [])),
                          "mode": sel.get("mode"), "sets_total": sel.get("sets_total"),
+                         "head_sha": sel.get("head_sha"), "base_sha": sel.get("base_sha"),
+                         "pr_head_sha": sel.get("pr_head_sha"),
                          "selected_count": sel.get("selected_count"),
                          "input_unavailable": [{"set": u["set"], "input": u["input"], "owner": u["owning_existing_goal"]}
                                                for u in sel.get("input_unavailable", [])]}
@@ -210,8 +213,10 @@ jobs:
         env:
           NEEDS: ${{ toJSON(needs) }}
           SELECTION: ${{ needs.full-suite.outputs.selection }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           python3 resident-runtime/required_verification.py gate --needs "$NEEDS" --selection "$SELECTION" \
-            --require full-suite --require path-scope \
+            --pr-head "$HEAD_SHA" --base-sha "$BASE_SHA" --require full-suite --require path-scope \
             --retry-entrypoint ".github/workflows/required-verification.yml (pull_request)" \
             --out "$RUNNER_TEMP/gate.json"

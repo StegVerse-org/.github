@@ -55,6 +55,7 @@ PREDICATES = {
     "REQUIRED_JOB_MISSING": "EVERY_REQUIRED_JOB_AT_THE_BASE_EXISTS_AT_THE_HEAD",
     "REQUIRED_JOB_NOT_SUCCESSFUL": "EVERY_REQUIRED_JOB_COMPLETED_AND_SUCCEEDED",
     "SELECTION_NOT_SHOWN": "THE_FULL_SUITE_SHOWS_A_SEALED_SELECTION_THAT_RAN_THE_CORE_SET",
+    "SELECTION_NOT_FOR_THIS_HEAD": "THE_SELECTION_IS_BOUND_TO_THIS_PULL_REQUEST_HEAD_AND_BASE",
 }
 FIXTURE_IDS = re.compile(r"^(setUpClass|tearDownClass|setUpModule|tearDownModule) \((.+)\)$")
 
@@ -327,7 +328,8 @@ def path_scope(root: Path, base: str, head: str, retry: str) -> dict[str, Any]:
     return record
 
 
-def gate(needs: dict[str, Any], selection: dict[str, Any] | None, required: list[str], retry: str) -> dict[str, Any]:
+def gate(needs: dict[str, Any], selection: dict[str, Any] | None, required: list[str], retry: str,
+         pr_head: str | None = None, base_sha: str | None = None) -> dict[str, Any]:
     nxt = "the next push to this pull request"
     rows = []
     for job in sorted(set(required) - set(needs)):
@@ -342,6 +344,15 @@ def gate(needs: dict[str, Any], selection: dict[str, Any] | None, required: list
         rows.append(rvs("SELECTION_NOT_SHOWN", "full-suite", "the full-suite job must output a test-set selection "
                         "whose seal verifies and which selected the core set (seal_verifies, core_selected, "
                         f"receipt_sha256); got {json.dumps(sel, sort_keys=True)[:400]}", retry, nxt))
+    # the sealed record names the exact commits it was computed for; the gate holds them to this pull request
+    bound = {"pr_head_sha": pr_head, "base_sha": base_sha}
+    wrong = {k: sel.get(k) for k, want in bound.items() if want is not None and sel.get(k) != want}
+    if pr_head is not None and not re.fullmatch(r"[0-9a-f]{40}", str(sel.get("head_sha") or "")):
+        wrong["head_sha"] = sel.get("head_sha")
+    if wrong:
+        rows.append(rvs("SELECTION_NOT_FOR_THIS_HEAD", "full-suite", "the full-suite selection must name this pull "
+                        f"request's exact commits ({json.dumps({k: v for k, v in bound.items() if v}, sort_keys=True)}"
+                        f"; head_sha a 40-hex merge ref); got {json.dumps(wrong, sort_keys=True)}", retry, nxt))
     record: dict[str, Any] = {"schema": "stegverse.required-verification-gate/v1", "jobs": {k: (v or {}).get("result")
                               for k, v in sorted(needs.items())}, "required_jobs": sorted(required),
                               "selection": sel, "tests": rows, "authority_effect": "NONE",
@@ -372,6 +383,8 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--needs", required=True, help="the gate job's toJSON(needs)")
     g.add_argument("--selection", default="", help="the full-suite job's selection summary (JSON)")
     g.add_argument("--require", action="append", required=True, help="a job the gate needs (repeat)")
+    g.add_argument("--pr-head", help="the pull request head sha the selection must name (pr_head_sha)")
+    g.add_argument("--base-sha", help="the base sha the selection must name (base_sha)")
     g.add_argument("--retry-entrypoint", required=True)
     g.add_argument("--out", required=True)
     a = ap.parse_args(argv)
@@ -380,7 +393,8 @@ def main(argv: list[str] | None = None) -> int:
             selection = json.loads(a.selection) if a.selection.strip() else None
         except json.JSONDecodeError:
             selection = None
-        record = gate(json.loads(a.needs), selection, a.require, a.retry_entrypoint)
+        record = gate(json.loads(a.needs), selection, a.require, a.retry_entrypoint, a.pr_head or None,
+                      a.base_sha or None)
     else:
         root = Path(a.root).resolve()
         record = (run(root, a.start, a.pattern, a.module, a.base, a.retry_entrypoint) if a.cmd == "run"

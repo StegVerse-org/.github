@@ -3,7 +3,7 @@
  "generated_from": {
   "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
   "spec": ".stegverse/test-set-spec.json",
-  "spec_sha256": "60886aa27bccefdcdb5b0a07f49b456274188d4f4b109a9a57d5dffdb7c114c7"
+  "spec_sha256": "e5ef686f3a6ce775a7042762a99d92fed69fa335eb293fdc3dd75fad7a9b554f"
  },
  "inputs": {
   "jsonschema": {
@@ -11,9 +11,18 @@
     "kind": "python_module",
     "module": "jsonschema"
    },
-   "finish_point": "the full-suite job imports jsonschema and the schema-conformance tests run and pass at the exact head",
-   "owner": "StegVerse-org/.github#166 (P4 lane: wired, declared in task-registry-validation.yml and reviewer-prompt-conformance.yml)",
-   "repair": "the full-suite job installs jsonschema exactly as task-registry-validation.yml declares (python -m pip install jsonschema)"
+   "finish_point": "the full-suite job imports jsonschema and tests/test_stdlib_json_schema_agreement.py (the stdlib validator's agreement oracle) runs and passes at the exact head",
+   "owner": "StegVerse-org/.github#166 (P4 lane: the agreement oracle only; every other schema check uses the pinned stdlib validator)",
+   "repair": "the full-suite job installs jsonschema (python -m pip install jsonschema) for the agreement check only"
+  },
+  "labs-stdlib-json-schema": {
+   "check": {
+    "env": "STEGVERSE_LABS_ROOT",
+    "kind": "env_path"
+   },
+   "finish_point": "STEGVERSE_LABS_ROOT names the pinned StegVerse-Labs checkout (sha256-checked) and the schema-conformance tests run and pass at the exact head",
+   "owner": "StegVerse-org/.github#166 (P4 lane: wired in required-verification.yml full-suite)",
+   "repair": "the job fetches the commit in .stegverse/test-suite-baseline/labs-tool-pin.json (resident-runtime/pinned_labs.py fetch) and sets STEGVERSE_LABS_ROOT"
   },
   "ledger-store-step-b": {
    "check": {
@@ -1020,6 +1029,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_pinned_labs.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_pinned_labs.py"
+   ],
+   "tests": [
+    "tests.test_pinned_labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_pr1b_direct_entrypoint_epoch.py",
    "inputs": [
     "stegverse-sdk"
@@ -1182,7 +1203,7 @@
    "exclude": [],
    "id": "tests/test_reviewer_prompt_conformance.py",
    "inputs": [
-    "jsonschema"
+    "labs-stdlib-json-schema"
    ],
    "surfaces": [
     "tests/test_reviewer_prompt_conformance.py"
@@ -1268,6 +1289,21 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_stdlib_json_schema_agreement.py",
+   "inputs": [
+    "jsonschema",
+    "labs-stdlib-json-schema"
+   ],
+   "surfaces": [
+    "tests/test_stdlib_json_schema_agreement.py"
+   ],
+   "tests": [
+    "tests.test_stdlib_json_schema_agreement"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_task_registry.py",
    "inputs": [],
    "surfaces": [
@@ -1294,7 +1330,7 @@
    "exclude": [],
    "id": "tests/test_task_registry_schema_conformance.py",
    "inputs": [
-    "jsonschema"
+    "labs-stdlib-json-schema"
    ],
    "surfaces": [
     "tests/test_task_registry_schema_conformance.py"
@@ -1309,7 +1345,7 @@
    "exclude": [],
    "id": "tests/test_task_registry_schema_conformance.py[repo-standards]",
    "inputs": [
-    "jsonschema",
+    "labs-stdlib-json-schema",
     "repo-standards"
    ],
    "surfaces": [
@@ -1317,6 +1353,18 @@
    ],
    "tests": [
     "tests.test_task_registry_schema_conformance.OwnerDriftTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_test_suite_baseline_refresh.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_test_suite_baseline_refresh.py"
+   ],
+   "tests": [
+    "tests.test_test_suite_baseline_refresh"
    ]
   },
   {
@@ -1577,6 +1625,9 @@
    "org-kernel/kernel.py",
    "resident-runtime/mesh_locator_binding.py"
   ],
+  "resident-runtime/pinned_labs.py": [
+   ".stegverse/test-suite-baseline/labs-tool-pin.json"
+  ],
   "resident-runtime/propagate_repository_receipts.py": [
    "org-boundary/registry/services.json",
    "resident-runtime/aggregate_repo_transition.py",
@@ -1634,6 +1685,10 @@
   ],
   "resident-runtime/task_registry_disclosure_endpoint.py": [
    "orchestration/task-registry.json"
+  ],
+  "resident-runtime/test_suite_baseline_refresh.py": [
+   ".github/workflows/test-suite-baseline-refresh.yml",
+   "resident-runtime/test-suite-baseline-refresh.transition.json"
   ],
   "resident-runtime/transition_console.py": [
    "org-kernel/kernel.py",
@@ -2104,6 +2159,12 @@
    "org-kernel/tests/test_kernel.py",
    "resident-runtime/submit_org_transition_to_master_records.py"
   ],
+  "tests/test_pinned_labs.py": [
+   ".github/workflows/**",
+   ".stegverse/test-set-spec.json",
+   "resident-runtime/pinned_labs.py",
+   "tests/test_stdlib_json_schema_agreement.py"
+  ],
   "tests/test_pr1b_direct_entrypoint_epoch.py": [
    "org-boundary/registry/services.json",
    "org-boundary/runtime/capability_ingress.py",
@@ -2237,6 +2298,11 @@
    "resident-runtime/submit_org_transition_to_master_records.py",
    "tests/peer_organization.py"
   ],
+  "tests/test_stdlib_json_schema_agreement.py": [
+   "orchestration/schemas/task-registry.schema.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/pinned_labs.py"
+  ],
   "tests/test_task_registry.py": [
    "control/task-vector-index.json",
    "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
@@ -2254,7 +2320,16 @@
   ],
   "tests/test_task_registry_schema_conformance.py": [
    "orchestration/schemas/PROVENANCE.json",
-   "orchestration/task-registry.json"
+   "orchestration/task-registry.json",
+   "resident-runtime/pinned_labs.py"
+  ],
+  "tests/test_test_suite_baseline_refresh.py": [
+   ".stegverse/test-suite-baseline/labs-tool-pin.json",
+   ".stegverse/test-suite-baseline/main-receipt.json",
+   "resident-runtime/drift_receipt_appender.py",
+   "resident-runtime/main_change_receipt.py",
+   "resident-runtime/pinned_labs.py",
+   "resident-runtime/test_suite_baseline_refresh.py"
   ],
   "tests/test_transition_console.py": [
    "orchestration/task-registry.json",

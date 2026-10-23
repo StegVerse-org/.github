@@ -1,0 +1,84 @@
+{
+  "schema": "stegverse.transition-declaration/v1",
+  "declaration_status": "DRAFT_PULL_REQUEST",
+  "operation": "TEST_SUITE_BASELINE_MAIN_RECEIPT_REFRESH",
+  "profile_id": "test-suite-baseline-refresh",
+  "transition": "TEST_SUITE_BASELINE_REFRESH",
+  "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+  "ledger_goal": "StegVerse-org/.github#162",
+  "form_note": "same form as resident-runtime/drift-receipt-appender.transition.json; carried as its own file so the Lane B protocol registry, the transition-requests directory and the registry generation are not edited",
+  "trigger": {
+    "event": "push",
+    "branches": [
+      "main"
+    ],
+    "workflow": ".github/workflows/test-suite-baseline-refresh.yml",
+    "forbidden": [
+      "schedule",
+      "cron",
+      "workflow_dispatch",
+      "repository_dispatch",
+      "workflow_run",
+      "polling"
+    ]
+  },
+  "input": {
+    "producer": "the pinned StegVerse-Labs drift tool (.stegverse/test-suite-baseline/labs-tool-pin.json scripts/test_suite_baseline_drift.py detect), every test set run once at the pushed main head",
+    "schema": "stegverse.test-suite-baseline-drift/v1",
+    "seal": "receipt_sha256 = sha256 over canonical JSON without the field (B1 writer seal)"
+  },
+  "reuses": {
+    "writer": {
+      "path": "resident-runtime/main_change_receipt.py",
+      "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf",
+      "reused": [
+        "seal",
+        "seal_verifies",
+        "observe",
+        "append",
+        "ledger_epoch"
+      ]
+    },
+    "appender": {
+      "path": "resident-runtime/drift_receipt_appender.py",
+      "sha256": "748a55af5d6306300d42cddf9488ee067be1e07878dcda71f45259a6f5b1af86",
+      "manifest": "resident-runtime/drift-receipt-appender.transition.json",
+      "reused": [
+        "receipt",
+        "dry-run (scratch only)"
+      ]
+    },
+    "drift_tool": {
+      "pin": ".stegverse/test-suite-baseline/labs-tool-pin.json",
+      "path": "scripts/test_suite_baseline_drift.py",
+      "reused": [
+        "detect"
+      ]
+    }
+  },
+  "output": {
+    "schema": "stegverse.test-suite-baseline-refresh-receipt/v1",
+    "candidate": ".stegverse/test-suite-baseline/main-receipt.json",
+    "publish": "NONE until admission: the candidate and the refresh record are retained as workflow artifacts; nothing is committed, pushed or appended",
+    "scratch_ref": "refs/stegverse/test-suite-baseline-drift (dry run on a scratch repository only)"
+  },
+  "retry_entrypoint": "resident-runtime/test_suite_baseline_refresh.py transition (per resident-runtime/test-suite-baseline-refresh.transition.json; on push to main: .github/workflows/test-suite-baseline-refresh.yml)",
+  "verifier": {
+    "path": "resident-runtime/test_suite_baseline_refresh.py",
+    "command": "python3 resident-runtime/test_suite_baseline_refresh.py transition --detect-receipt <DETECT receipt.json> --appender-result <APPENDER OUT> --previous .stegverse/test-suite-baseline/main-receipt.json --out <OUT>",
+    "landed": false
+  },
+  "admission": {
+    "disposition": "FAIL_CLOSED",
+    "failure_code": "TEST_SUITE_BASELINE_REFRESH_ADMISSION_PENDING_GENESIS",
+    "failed_predicate": "REFRESH_TRANSITION_IS_ADMITTED_FROM_ORGANIZATION_LEDGER_GENESIS",
+    "required_evidence_or_repair": "the organization ledger declares its genesis (ORG_LEDGER_GENESIS_NOT_DECLARED in aggregate_repo_transition) and admits operation TEST_SUITE_BASELINE_MAIN_RECEIPT_REFRESH from it; until then each push to main produces and retains the candidate main receipt and its refresh record, and the committed main-receipt.json is replaced only through a reviewed change",
+    "retry_entrypoint": "resident-runtime/test_suite_baseline_refresh.py transition (per resident-runtime/test-suite-baseline-refresh.transition.json; on push to main: .github/workflows/test-suite-baseline-refresh.yml)",
+    "owning_existing_goal": "StegVerse-org/.github#162 (organization ledger) / StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+    "next_attempt": "the first push to main after genesis admits TEST_SUITE_BASELINE_MAIN_RECEIPT_REFRESH"
+  },
+  "organization_ledger_effect": "NONE",
+  "registry_generation_effect": "NONE",
+  "authority_effect": "NONE",
+  "lowest_supported_mode": "E0"
+}

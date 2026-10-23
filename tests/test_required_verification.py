@@ -198,10 +198,32 @@ class RequiredVerificationTests(unittest.TestCase):
             code, record = self.gate(ok, sel)
             self.assert_rvs(code, record, "SELECTION_NOT_SHOWN")
 
+    def test_gate_holds_the_selection_to_this_pull_requests_exact_head_and_base(self) -> None:
+        ok = {"full-suite": {"result": "success"}, "path-scope": {"result": "success"}}
+        head, base, merge = "a" * 40, "b" * 40, "c" * 40
+        sel = {"receipt_sha256": "sha256:ab", "seal_verifies": True, "core_selected": True, "mode": "DIFF",
+               "head_sha": merge, "base_sha": base, "pr_head_sha": head}
+
+        def run(selection: dict, *extra: str) -> tuple[int, dict]:
+            out = Path(self.tmp.name) / "gate-bound.json"
+            done = subprocess.run([sys.executable, str(TOOL), "gate", "--needs", json.dumps(ok), "--selection",
+                                   json.dumps(selection), "--require", "full-suite", "--require", "path-scope",
+                                   *extra, "--retry-entrypoint", "toy.yml", "--out", str(out)],
+                                  capture_output=True, text=True, env=ENV)
+            return done.returncode, json.loads(out.read_text())
+
+        code, record = run(sel, "--pr-head", head, "--base-sha", base)
+        self.assertEqual((code, record["disposition"]), (0, "ALLOW"), record)
+        for bad in (dict(sel, pr_head_sha="d" * 40), dict(sel, base_sha="d" * 40), dict(sel, head_sha=None),
+                    {k: v for k, v in sel.items() if k != "pr_head_sha"}):
+            code, record = run(bad, "--pr-head", head, "--base-sha", base)
+            self.assertEqual(self.assert_rvs(code, record, "SELECTION_NOT_FOR_THIS_HEAD")["test"], "full-suite")
+
     def test_the_full_suite_runs_only_the_selected_sets_with_the_pinned_labs_tool(self) -> None:
         wf = (ROOT / ".github/workflows/required-verification.yml").read_text()
         for needle in ('test_set_selection.py" select', "--selection", "--baseline-receipt", "labs-tool-pin.json",
-                       "required_verification.py gate", "--require full-suite --require path-scope"):
+                       "required_verification.py gate", "--require full-suite --require path-scope",
+                       '--pr-head "$HEAD_SHA"', '--base-sha "$BASE_SHA"', "STEGVERSE_LABS_ROOT", '"head_sha"'):
             self.assertIn(needle, wf)
         self.assertNotIn("run --pattern", wf)            # no whole-suite run beside the selected sets
         pin = json.loads((ROOT / ".stegverse/test-suite-baseline/labs-tool-pin.json").read_text())
