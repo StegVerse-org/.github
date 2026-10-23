@@ -333,6 +333,14 @@ TYPED_BODY_UNSEALED = "INTR_PATH_TYPED_BODY_UNSEALED"
 TYPED_BODY_NONCONFORMANT = "INTR_PATH_TYPED_BODY_NONCONFORMANT"
 ENDPOINT_KIND_UNDECLARED = "INTR_PATH_ENDPOINT_KIND_UNDECLARED"
 GATEWAY_EXTERNAL_LEDGER = "INTR_PATH_GATEWAY_CARRIES_EXTERNAL_LEDGER_REF"
+#: KV-HEAD-ROLLBACK (Lane D condition 2; Rigel, StegVerse-org/.github#160 comment 6372216673): each InTr exchange with
+#: an independent endpoint records that endpoint's ledger head digest, sealed, in the Org-side linked receipt. It is a
+#: digest only, never a ledger ref; KV refuses any head older than the newest one recorded here
+#: (KV_LEDGER_HEAD_ROLLBACK_DETECTED, StegVerse-org/LLM-adapter llm_adapter/endpoint_ledger_designation.py).
+ENDPOINT_HEAD_KEY = "endpoint_head_sha256"
+ENDPOINT_HEAD_REQUIRED_KINDS = ("KV", "SKAP_VAULT")
+ENDPOINT_HEAD_MISSING = "INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING"
+ENDPOINT_HEAD_NOT_A_DIGEST = "INTR_PATH_ENDPOINT_HEAD_NOT_A_DIGEST"
 
 
 PATH_NOT_INTRA_ORG = "INTR_PATH_INTRA_ORG_PATH_UNDECLARED"
@@ -350,6 +358,41 @@ def intra_org_paths() -> list[dict[str, Any]]:
 def intra_org_path(path_id: Any) -> dict[str, Any] | None:
     return next((p for p in intra_org_paths() if p.get("path_id") == path_id and p.get("source") == repository()
                  and p.get("destination") == organization() and p.get("capability") == CAPABILITY), None)
+
+
+def endpoint_paths() -> list[dict[str, Any]]:
+    """Declared paths to an independent endpoint (KV, SKAP Vault) that runs its own ledger behind its own InTr
+    ingress/egress and is never stored on this organization's ledger ref: data rows of the same path schema,
+    mesh_path_transfer.endpoint_paths. None is declared yet; a row is added by its own admitted change."""
+    return [dict(r) for r in intr.load_contract()["mesh_path_transfer"].get("endpoint_paths", [])]
+
+
+def endpoint_path(path_id: Any) -> dict[str, Any] | None:
+    return next((p for p in endpoint_paths() if p.get("path_id") == path_id and p.get("source") == repository()
+                 and p.get("capability") == CAPABILITY), None)
+
+
+def _is_digest(value: Any) -> bool:
+    return isinstance(value, str) and len(value) == 71 and value.startswith("sha256:") \
+        and all(c in "0123456789abcdef" for c in value[7:])
+
+
+def endpoint_head_refusal(row: Mapping[str, Any], base: Mapping[str, Any], fix: str) -> dict[str, Any] | None:
+    """Six-field refusal unless the row's optional sealed endpoint_head_sha256 is well formed, and present for KV and
+    SKAP_VAULT. Pure."""
+    kind, head = row.get("endpoint_kind"), row.get(ENDPOINT_HEAD_KEY)
+    if ENDPOINT_HEAD_KEY not in row:
+        if kind in ENDPOINT_HEAD_REQUIRED_KINDS:
+            return refusal(FAIL_CLOSED, ENDPOINT_HEAD_MISSING, "INDEPENDENT_ENDPOINT_HEAD_DIGEST_RECORDED",
+                           "a typed row with endpoint_kind " + kind + " must carry " + ENDPOINT_HEAD_KEY + ", the "
+                           "sha256 digest of that endpoint's current ledger head, so the Org-side linked receipt "
+                           "records it (the rollback watermark)", fix, entrypoint=TYPED_ENTRYPOINT, **base)
+        return None
+    if not _is_digest(head):
+        return refusal(DENY, ENDPOINT_HEAD_NOT_A_DIGEST, "ENDPOINT_HEAD_IS_A_DIGEST_NEVER_A_LEDGER_REF",
+                       ENDPOINT_HEAD_KEY + " must be a sha256:<64 hex> digest and never names an external ledger; "
+                       "got " + repr(head), fix, entrypoint=TYPED_ENTRYPOINT, **base)
+    return None
 
 
 def is_typed(row: Mapping[str, Any]) -> bool:
@@ -453,7 +496,10 @@ def typed_refusal(row: Mapping[str, Any]) -> dict[str, Any] | None:
                            "a GATEWAY endpoint is carried inside " + LEDGER_REF + " and never imports or names an "
                            "external chain; remove " + "; ".join(external), fix, entrypoint=TYPED_ENTRYPOINT,
                            detail="; ".join(external), **base)
-    extra = sorted(set(row) - set(TYPED_ROW_KEYS))
+    refused = endpoint_head_refusal(row, base, fix)
+    if refused is not None:
+        return refused
+    extra = sorted(set(row) - set(TYPED_ROW_KEYS) - {ENDPOINT_HEAD_KEY})
     missing = sorted(set(TYPED_ROW_KEYS) - set(row))
     if extra or missing:
         return refusal(FAIL_CLOSED, TYPED_BODY_NONCONFORMANT, "TYPED_ROW_HAS_EXACTLY_THE_TYPED_KEYS",
@@ -497,7 +543,7 @@ def typed_refusal(row: Mapping[str, Any]) -> dict[str, Any] | None:
     if problems:
         return refusal(FAIL_CLOSED, TYPED_BODY_NONCONFORMANT, "TYPED_BODY_CONFORMS_TO_ITS_SCHEMA",
                        "; ".join(problems), fix, entrypoint=TYPED_ENTRYPOINT, detail="; ".join(problems), **base)
-    declared = intra_org_path(pid)
+    declared = intra_org_path(pid) or endpoint_path(pid)
     if declared is None or kind not in declared.get("endpoint_kinds", ()) \
             or schema not in declared.get("typed_body_schemas", ()) \
             or not row["destination_location"].startswith(declared.get("destination_location_prefix") or "\0"):
@@ -539,6 +585,8 @@ def typed_path_evidence(row: Mapping[str, Any], transfer_commit: str, merge_tran
             "endpoint_kind": row["endpoint_kind"], "typed_body_schema": msg["body"]["schema"],
             "typed_body_sha256": row["typed_body_sha256"], "message": msg, "message_sha256": sha(msg),
             "transfer_commit": transfer_commit, "merge_transfer_organization_receipt_sha256": merge_transfer_receipt}
+    if ENDPOINT_HEAD_KEY in row:     # optional; sealed by payload_sha256; absent rows are byte-identical to before
+        core[ENDPOINT_HEAD_KEY] = row[ENDPOINT_HEAD_KEY]
     return {**core, "payload_sha256": sha(core), "disposition": ALLOW, "communication_id": cid,
             "boundary_evidence": {"operation": OPERATION, "path_id": pid, "communication_id": cid}}
 

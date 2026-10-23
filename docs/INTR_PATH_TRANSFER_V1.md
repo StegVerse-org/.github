@@ -138,3 +138,11 @@ existing fixtures is byte-identical to main @907f4305 (`tests/fixtures/intr-path
 writer's output on a temporary copy of the pinned tip, for one typed row naming a synthetic genesis. It is not
 ledgered and not authentic. It is copied byte-identically to LLM-adapter#431, where `receive()` accepts it as
 `ACCEPTED_FOR_GENESIS_PIN`.
+
+### Independent endpoints and the endpoint head digest (KV independence; StegVerse-org/.github#160 comment 6372216673)
+
+KV and SKAP Vault are independent of the Orgs. Each runs its own ledger behind its own InTr ingress/egress endpoint, and that ledger is never stored on `refs/stegverse/organization-ledger`. Two things change here:
+
+- **Endpoint paths.** `mesh_path_transfer.endpoint_paths` is a list of data rows in the `intra_org_paths` path schema, with `destination_endpoint` in place of `destination`. It is empty for now, and each row lands through its own admitted change. The typed gate looks up `intra_org_paths` first, then `endpoint_paths`.
+- **Endpoint head digest.** A typed row can carry an optional `endpoint_head_sha256`. It is sealed into the typed source evidence (covered by `payload_sha256`), so the Org-side linked receipt records the endpoint's ledger head. It is required when `endpoint_kind` is KV or SKAP_VAULT; a missing digest fails closed with `INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING`, with six fields. The value is a `sha256:` digest and never a ledger ref; anything else is denied with `INTR_PATH_ENDPOINT_HEAD_NOT_A_DIGEST`. Rows without the field produce byte-identical evidence.
+- **Rollback watermark.** KV uses the newest recorded digest as its rollback watermark. A presented head older than that watermark is refused with `KV_LEDGER_HEAD_ROLLBACK_DETECTED` (StegVerse-org/LLM-adapter#431, `llm_adapter/endpoint_ledger_designation.py`).

@@ -539,6 +539,50 @@ class TypedBody(unittest.TestCase):
         # a GATEWAY row with no external ref is still not the genesis-observed source kind
         self.assert_six(pt.typed_refusal(gw), "FAIL_CLOSED", "INTR_PATH_TYPED_BODY_NONCONFORMANT")
 
+    def test_kv_and_skap_rows_must_record_the_endpoint_head_digest(self):
+        # Lane D condition 2 (StegVerse-org/.github#160 comment 6372216673): the Org-side linked receipt records the
+        # independent endpoint's head digest; required for KV and SKAP_VAULT, a digest only
+        head = "sha256:" + "ab" * 32
+        for kind in ("KV", "SKAP_VAULT"):
+            with self.subTest(kind=kind):
+                self.assert_six(pt.typed_refusal({**self.row, "endpoint_kind": kind}), "FAIL_CLOSED",
+                                "INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING")
+                # with the digest the row passes this check and is still not an admitted path or schema kind
+                later = pt.typed_refusal({**self.row, "endpoint_kind": kind, "endpoint_head_sha256": head})
+                self.assertNotIn(later["failure_code"], ("INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING",
+                                                         "INTR_PATH_ENDPOINT_HEAD_NOT_A_DIGEST"))
+                self.assertEqual(later["disposition"], "FAIL_CLOSED")
+        for bad in ("refs/stegverse/kv-ledger:01_KV_Ledger", "gdrive://folder/HEAD", "sha256:" + "AB" * 32,
+                    "sha256:" + "ab" * 31, None, 7):
+            with self.subTest(bad=bad):
+                self.assert_six(pt.typed_refusal({**self.row, "endpoint_kind": "KV", "endpoint_head_sha256": bad}),
+                                "DENY", "INTR_PATH_ENDPOINT_HEAD_NOT_A_DIGEST")
+        self.assert_six(self.refused_append({**self.row, "endpoint_kind": "KV"}), "FAIL_CLOSED",
+                        "INTR_PATH_ENDPOINT_HEAD_DIGEST_MISSING")
+
+    def test_the_endpoint_head_digest_is_optional_and_sealed_in_the_typed_evidence(self):
+        head = "sha256:" + "cd" * 32
+        self.assertNotIn("endpoint_head_sha256", pt.typed_path_evidence(self.row, TRANSFER, MT))
+        row = {**self.row, "endpoint_head_sha256": head}
+        self.assertIsNone(pt.typed_refusal(row))
+        ev = pt.typed_path_evidence(row, TRANSFER, MT)
+        self.assertEqual(ev["endpoint_head_sha256"], head)
+        core = {k: v for k, v in ev.items()
+                if k not in ("payload_sha256", "disposition", "communication_id", "boundary_evidence")}
+        self.assertEqual(ev["payload_sha256"], pt.sha(core))
+        self.assertNotEqual(ev["payload_sha256"], pt.typed_path_evidence(self.row, TRANSFER, MT)["payload_sha256"])
+        tampered = {**ev, "endpoint_head_sha256": "sha256:" + "ef" * 32}
+        tcore = {k: v for k, v in tampered.items()
+                 if k not in ("payload_sha256", "disposition", "communication_id", "boundary_evidence")}
+        self.assertNotEqual(tampered["payload_sha256"], pt.sha(tcore))
+
+    def test_endpoint_paths_are_a_data_row_list_with_no_row_yet(self):
+        mesh = pt.intr.load_contract()["mesh_path_transfer"]
+        self.assertEqual(mesh["endpoint_paths"], [])
+        self.assertIn("6372216673", mesh["endpoint_paths_note"])
+        self.assertEqual(pt.endpoint_paths(), [])
+        self.assertIsNone(pt.endpoint_path("01_KV_Ledger->StegVerse-org:intr-destination"))
+
     def test_the_intra_org_path_is_a_data_row_of_the_existing_path_schema(self):
         rows = pt.intra_org_paths()
         self.assertEqual([r["path_id"] for r in rows], [pt.typed_path_id()])

@@ -172,6 +172,8 @@
     "intra_org_paths": [
       {"path_id": "StegVerse-org/.github->StegVerse-org:intr-destination", "source": "StegVerse-org/.github", "destination": "StegVerse-org", "capability": "intr-destination", "kind": "INTRA_ORG_REPOSITORY_DESTINATION", "destination_location_prefix": "refs/stegverse/organization-ledger:repository-ledger/StegVerse-org/", "endpoint_kinds": ["ORG"], "typed_body_schemas": ["stegverse.repository-ledger-genesis-observed/v1"], "transition": "a typed row of .stegverse/intr-path-transfer/transfers.json naming this path_id (INTR-PATH-TRANSFER-TYPED-BODY-001)"}
     ],
+    "endpoint_paths": [],
+    "endpoint_paths_note": "Paths to an independent endpoint (KV, SKAP Vault: own ledger behind its own InTr ingress/egress, never stored on refs/stegverse/organization-ledger; StegVerse-org/.github#160 comment 6372216673). Rows use the intra_org_paths schema with destination_endpoint for destination; none is declared yet, each lands by its own admitted change. Typed evidence on such a path carries the sealed endpoint_head_sha256 (a digest, never a ledger ref), required for endpoint_kind KV and SKAP_VAULT.",
     "declared_paths": "every ordered pair of distinct organizations whose destination documents conform in tests/fixtures/intr-protocol/destinations/manifest.json; path_id <SOURCE>-><DESTINATION>:intr-destination",
     "transition": "a row of .stegverse/intr-path-transfer/transfers.json landing on main; .github/workflows/intr-path-transfer.yml appends after the push's main-merge transfer is ledgered (workflow_run, no dispatch)",
     "verifier": "resident-runtime/intr_path_transfer.py verify",
