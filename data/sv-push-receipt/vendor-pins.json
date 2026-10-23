@@ -1,0 +1,17 @@
+{
+  "schema": "stegverse.org-vendor-pins/v1",
+  "purpose": "sv-push-receipt.v1 producer and schema, vendored by blob from StegVerse-Labs/.github (Labs#3267, merged to Labs main as 2e923238; Labs main 86382e60 carries the same blobs). The org writer loads the producer only after every file below matches its git blob and sha256; a mismatch refuses every append (FAIL_CLOSED SV_PUSH_RECEIPT_PRODUCER_PIN_MISMATCH).",
+  "source_repository": "StegVerse-Labs/.github",
+  "source_commit": "bb780200862c76cd29e081c595beb29bf18527c6",
+  "vendor_root": "resident-runtime/vendor/labs_bb780200",
+  "files": {
+    "resident-runtime/sv_push_receipt.py": {
+      "git_blob": "0ea4ff4cafd127bbd18b2ee62d51cd344a1488ef",
+      "sha256": "sha256:67e9d037a63fe46079c1fa59a7c2935a69946ded3e3945dbd58800de1f88993a"
+    },
+    "schemas/sv-push-receipt.v1.schema.json": {
+      "git_blob": "67b9f7d3b3536dd686f7703dff609283c6035af7",
+      "sha256": "sha256:5892048af26a166f3b53cfec6bbed7f8cb45f26c604fbe9b1dd1049c39d5cfea"
+    }
+  }
+}
