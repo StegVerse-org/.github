@@ -19,6 +19,7 @@ on:
       - 'tests/test_intr_protocol_conformance.py'
       - 'tests/test_intr_protocol_conformance_merge_transfer.py'
       - 'tests/test_intr_protocol_conformance_merge_transfer_gitstore.py'
+      - 'tests/test_intr_protocol_copy_equality.py'
       - 'tests/fixtures/intr-protocol/**'
       - 'docs/INTR_PROTOCOL_V1.md'
   push:
@@ -39,6 +40,7 @@ on:
       - 'tests/test_intr_protocol_conformance.py'
       - 'tests/test_intr_protocol_conformance_merge_transfer.py'
       - 'tests/test_intr_protocol_conformance_merge_transfer_gitstore.py'
+      - 'tests/test_intr_protocol_copy_equality.py'
       - 'tests/fixtures/intr-protocol/**'
       - 'docs/INTR_PROTOCOL_V1.md'
   workflow_dispatch:
@@ -84,7 +86,7 @@ jobs:
       # Conformance evidence only; not admission, routing or execution authority.
       - name: Validate InTr protocol v1 conformance across the mesh snapshot
         run: |
-          python -m unittest tests.test_intr_protocol_conformance tests.test_intr_protocol_conformance_merge_transfer tests.test_intr_protocol_conformance_merge_transfer_gitstore -v
+          python -m unittest tests.test_intr_protocol_conformance tests.test_intr_protocol_conformance_merge_transfer tests.test_intr_protocol_conformance_merge_transfer_gitstore tests.test_intr_protocol_copy_equality -v
           python org-runtime/intr_protocol.py mesh --manifest tests/fixtures/intr-protocol/destinations/manifest.json --merge-transfer tests/fixtures/intr-protocol/merge-transfer/manifest.json > mesh.json
           python - <<'PY'
           import json
