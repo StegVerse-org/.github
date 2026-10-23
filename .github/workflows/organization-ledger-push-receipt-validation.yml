@@ -1,0 +1,38 @@
+name: Validate Push Receipt Writer
+
+# PR-facing checks for .github/workflows/organization-ledger-push-receipt.yml.
+# Read-only: the published ledger ref is fetched only so the fixtures' pinned
+# ledger tip is present; temp ledgers are copies of that tip. Nothing is pushed.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/organization-ledger-push-receipt.yml'
+      - '.github/workflows/organization-ledger-push-receipt-validation.yml'
+      - 'resident-runtime/sv_push_receipt_append.py'
+      - 'resident-runtime/vendor/labs_bb780200/**'
+      - 'data/sv-push-receipt/**'
+      - 'resident-runtime/merge_transfer.py'
+      - 'resident-runtime/intr_destination_ingress.py'
+      - 'resident-runtime/ledger_store.py'
+      - 'tests/test_sv_push_receipt_append.py'
+      - 'tests/test_merge_transfer.py'
+      - 'tests/fixtures/merge-transfer/**'
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary (full history)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch the ledger ref read-only (the fixtures pin a commit on it)
+        run: git fetch --no-tags origin "+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger"
+
+      - name: Emit, append, chain, refuse (temp ledgers from the pinned tip); census and action pins
+        run: python3 -m unittest tests.test_sv_push_receipt_append tests.test_governed_ingress_census tests.test_workflow_action_pins -v

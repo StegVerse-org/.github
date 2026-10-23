@@ -1,0 +1,128 @@
+name: Organization Ledger Push Receipt
+
+# Every push to a PR branch is one sealed sv-push-receipt.v1 on this
+# organization's ledger (operation sv_push_receipt, resident-runtime/
+# sv_push_receipt_append.py). TVC#519 v2 (StegVerse-Labs/TVC#531) derives
+# BRANCH_WRITER_IS_BRANCH_OWNER from that chain, read from a fresh fetch of
+# refs/stegverse/organization-ledger.
+#
+# Trigger: the push itself (a pull_request run holds no write token). main is
+# excluded: a push to main is ORGANIZATION_MAIN_MERGE_TRANSFER's. There is no
+# dispatch, schedule or cross-repository call. The writer code is main's, run
+# from a worktree of origin/main, never the pushed branch's; until the writer is
+# on main this run records SV_PUSH_RECEIPT_WRITER_NOT_ON_MAIN and writes nothing.
+# Inputs are GitHub's observation of the push (before, after, sender); the
+# epoch is the ledger head's supplied epoch, never a clock. The ledger ref is
+# published fast-forward only and the receipt is read back from a fresh fetch;
+# this run's success is not the evidence.
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: read
+
+# ORGANIZATION_LEDGER_LOCK, shared with the other organization ledger writers.
+# The fast-forward push is the compare-and-swap against the published ref.
+concurrency:
+  group: organization-ledger
+  cancel-in-progress: false
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      LEDGER_REF: refs/stegverse/organization-ledger
+      BEFORE: ${{ github.event.before }}
+      AFTER: ${{ github.event.after }}
+      SENDER_LOGIN: ${{ github.event.sender.login }}
+      SENDER_ID: ${{ github.event.sender.id }}
+    steps:
+      - name: Checkout organization boundary (full history, every branch)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Bind main's writer code, the ledger ref and the repository ledger subtree
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/results"
+          git worktree add -q --detach "$RUNNER_TEMP/main" origin/main
+          echo "WRITER=$RUNNER_TEMP/main" >> "$GITHUB_ENV"
+          if [ ! -f "$RUNNER_TEMP/main/resident-runtime/sv_push_receipt_append.py" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"SV_PUSH_RECEIPT_WRITER_NOT_ON_MAIN","failed_predicate":"PUSH_RECEIPT_WRITER_IS_MAINS_CODE","required_evidence_or_repair":"resident-runtime/sv_push_receipt_append.py on main; a branch never runs its own writer","retry_entrypoint":".github/workflows/organization-ledger-push-receipt.yml (the next push after the writer is on main)","owning_existing_goal":"StegVerse-org/.github#164","next_attempt":"pushes before the writer is on main stay UNKNOWN_NOT_AUTHENTICALLY_OBSERVED; nothing was written","consequence_committed":false}' \
+              | tee "$RUNNER_TEMP/results/append.json" >> "$GITHUB_STEP_SUMMARY"
+            echo "PUBLISH=no" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          cd "$RUNNER_TEMP/main"
+          ref=$(python3 -c 'import json; print(json.load(open(".stegverse/transition-ledger/org-contract.json")).get("organization_ledger_ref") or "refs/stegverse/organization-ledger")')
+          test "$ref" = "$LEDGER_REF"
+          namespace=$(python3 -c 'import json; l=json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]; assert l["ref"]=="refs/stegverse/organization-ledger", l; print(l["namespace"])')
+          echo "REPO_LEDGER_NAMESPACE=$namespace" >> "$GITHUB_ENV"
+          cd "$GITHUB_WORKSPACE"
+          git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
+          echo "ledger tip: $(git rev-parse "$LEDGER_REF")"
+          echo "PUBLISH=pending" >> "$GITHUB_ENV"
+
+      - name: Emit this push's sv-push-receipt.v1 and append it (main's writer)
+        if: env.PUBLISH == 'pending'
+        run: |
+          set -uo pipefail
+          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
+          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
+          rc=0
+          python3 "$WRITER/resident-runtime/sv_push_receipt_append.py" emit-append --git-dir "$GITHUB_WORKSPACE" \
+            --repository "$GITHUB_REPOSITORY" --ref "$GITHUB_REF" --before "$BEFORE" --after "$AFTER" \
+            --base-ref refs/remotes/origin/main --sender-login "$SENDER_LOGIN" --sender-id "$SENDER_ID" \
+            --out "$RUNNER_TEMP/results/append.json" || rc=$?
+          { echo '### push receipt append'; echo '```json'; cat "$RUNNER_TEMP/results/append.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$rc" -eq 0 ]; then
+            echo "PUBLISH=yes" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "PUBLISH=no" >> "$GITHUB_ENV"
+          # A branch deletion, or a new branch that carries no commit, moved nothing to receipt.
+          python3 - "$RUNNER_TEMP/results/append.json" <<'PY'
+          import json, os, sys
+          r = json.load(open(sys.argv[1]))
+          zero = "0" * 40
+          moved_nothing = r.get("failure_code") == "PUSH_NOT_OBSERVED" and zero in (os.environ["BEFORE"], os.environ["AFTER"])
+          sys.exit(0 if moved_nothing else 1)
+          PY
+
+      - name: Publish the ledger ref (fast-forward only)
+        if: env.PUBLISH == 'yes'
+        run: |
+          if ! git push origin "$LEDGER_REF:$LEDGER_REF"; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"ORGANIZATION_LEDGER_PUBLISH_RACE","failed_predicate":"PUBLISHED_REF_FAST_FORWARDS","required_evidence_or_repair":"another append moved the ref first; this run published nothing","retry_entrypoint":".github/workflows/organization-ledger-push-receipt.yml (re-run this push run)","owning_existing_goal":"StegVerse-org/.github#164","next_attempt":"re-run; a push already ledgered is answered from the ledger"}'
+            exit 1
+          fi
+
+      - name: Verify the receipt from a fresh fetch of the published ref
+        if: env.PUBLISH == 'yes'
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/readback.git"
+          git init -q --bare "$fresh"
+          auth_header=$(git config --local --get http.https://github.com/.extraheader || true)
+          if [ -z "$auth_header" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"LEDGER_READBACK_UNAVAILABLE","failed_predicate":"FRESH_FETCH_HAS_CREDENTIALS","required_evidence_or_repair":"checkout credentials unavailable for an independent ref fetch","retry_entrypoint":".github/workflows/organization-ledger-push-receipt.yml","owning_existing_goal":"StegVerse-org/.github#164","next_attempt":"re-run with repository contents permission"}'
+            exit 1
+          fi
+          git --git-dir="$fresh" -c "http.https://github.com/.extraheader=$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
+          export STEGVERSE_ORG_LEDGER_ROOT="git+$fresh#$LEDGER_REF"
+          export STEGVERSE_REPO_LEDGER_ROOT="git+$fresh#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
+          python3 "$WRITER/resident-runtime/sv_push_receipt_append.py" verify --result "$RUNNER_TEMP/results/append.json" \
+            --out "$RUNNER_TEMP/results/verify.json"
+          { echo '### push receipt readback'; echo '```json'; cat "$RUNNER_TEMP/results/verify.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain the run's evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: push-receipt-${{ github.run_id }}
+          path: ${{ runner.temp }}/results
