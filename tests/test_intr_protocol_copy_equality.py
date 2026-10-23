@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PINS = {
-    "data/intr-protocol/v1/protocol.json": "34dd4412dfb03791b3e2851e14b063031c676d2599c3c42b1a27713804272c2f",
+    "data/intr-protocol/v1/protocol.json": "ed6adab044b84737e58dffd28ca8d4b1644d28e670ef20f5d5cd0a457a2a3a45",
     "org-runtime/intr_protocol.py": "2fe0dbbca71a9800714c587863050134383e636ad6d4976381dfe1c395298c61",
 }
 CARRIERS = ("StegVerse-org/.github", "StegVerse-Labs/.github")
