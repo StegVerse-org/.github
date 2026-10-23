@@ -1,0 +1,74 @@
+{
+  "schema": "stegverse.provisional-resolution-set/v1",
+  "_note": "Provisional E1 resolutions of two class C joint items, drafted by Lane C (Goal StegVerse-org/.github#164) as G-8 drafts behind the E0 checks. Each records a PENDING C-review that a later Claude or ChatGPT review receipt supersedes. Nothing here edits a registry, a generation, a setting or a ledger: an op that uses a resolution writes only when its own E0 checks pass, from landed bytes, on the named event.",
+  "owning_existing_goal": "StegVerse-org/.github#164",
+  "resolutions": {
+    "Q-ORG-REGISTRY-GENERATION": {
+      "class": "C",
+      "provisional_mode": "E1",
+      "status": "PROVISIONAL",
+      "question": "how orchestration/task-registry.json (StegVerse-org/.github) declares its registry generation; the #3266 readback for org main is FAIL_CLOSED REGISTRY_GENERATION_NOT_DECLARED",
+      "resolution": "the registry's genesis generation is declared by a manifest transition, ORG_REGISTRY_GENERATION_GENESIS: one sealed organization-ledger receipt (FROM_HEAD on refs/stegverse/organization-ledger, through the existing two-level append) that binds generation 0 to the registry file's exact blob as observed by a sealed #3266 readback that is FAIL_CLOSED REGISTRY_GENERATION_NOT_DECLARED for this repository. The registry file is never edited. SV_CHANGE_ADMISSION_GENESIS then reads from_registry_generation 0 from that receipt and appends at 0 + 1 = 1",
+      "genesis_generation": 0,
+      "registry": {
+        "repository": "StegVerse-org/.github",
+        "file": "orchestration/task-registry.json"
+      },
+      "entrypoint": "resident-runtime/org_registry_generation_genesis.py append --base-state-receipt <readback.json> --mode E1",
+      "e0_checks": [
+        "REGISTRY_GENERATION_RESOLUTION_IS_RECORDED",
+        "READBACK_OBSERVES_THE_UNDECLARED_REGISTRY",
+        "REGISTRY_GENERATION_NOT_ALREADY_DECLARED",
+        "HB_EPOCH_IS_THE_LEDGER_HEAD_EPOCH",
+        "REGISTRY_GENERATION_GENESIS_APPEND_COMPLETES_AT_BOTH_LEVELS"
+      ],
+      "consumed_by": "resident-runtime/sv_change_admission_genesis.py check_base_state (REGISTRY_GENERATION_FROM_SEALED_BASE_STATE): a ledgered ORG_REGISTRY_GENERATION_GENESIS receipt for the readback's exact registry blob is E0 evidence",
+      "c_review": {
+        "status": "PENDING",
+        "reviewers": [
+          "Claude",
+          "ChatGPT"
+        ],
+        "receipt_sha256": "PENDING",
+        "supersedable_by": "a sealed Claude or ChatGPT review receipt naming question Q-ORG-REGISTRY-GENERATION and this resolution_sha256 (a later review receipt, posted under Q-SV-NATIVE-BOOTSTRAP on StegVerse-org/.github#167). ACCEPT fills receipt_sha256 and the resolution then also runs at E0; REVISE or DENY is answered by a successor resolution that names this one under supersedes",
+        "effect_of_a_later_deny": "an admission miss (P1 admission_miss) answered by a successor resolution and successor receipts; never a retroactive un-declaration of a ledgered receipt",
+        "pending_is_not_a_refusal": "at E1 the E0 checks plus this PENDING record are enough (E0_CHECKS_PLUS_LATER_RECEIPTED_REVIEW); it degrades, never stops"
+      }
+    },
+    "Q-SV-NATIVE-BOOTSTRAP": {
+      "class": "C",
+      "provisional_mode": "E1",
+      "status": "PROVISIONAL",
+      "question": "which existing resident or workflow event runs resident-runtime/sv_change_admission_genesis.py append on the genesis-request PR's exact head (genesis without merge)",
+      "resolution": "the existing GitHub pull_request event (types opened, synchronize, reopened) of the same-repository genesis-request PR that changes only control/sv-merge-admission/genesis-request.json, received by this repository's existing workflow .github/workflows/sv-change-admission-genesis-validation.yml as landed on main. Because the request PR does not edit that workflow, the run uses the landed workflow bytes, so the self-trigger problem does not arise. The run takes the existing ORGANIZATION_LEDGER_LOCK (concurrency group organization-ledger) and publishes by the existing fast-forward-only push compare-and-swap that organization-ledger-merge-transfer.yml and organization-ledger-transition.yml use. In that run, org_registry_generation_genesis.py append runs first (a replay once ledgered), then sv_change_admission_genesis.py append. No dispatch, no cron, no polling, no merge, no new dependency",
+      "event": {
+        "event_name": "pull_request",
+        "actions": [
+          "opened",
+          "synchronize",
+          "reopened"
+        ],
+        "repository": "StegVerse-org/.github",
+        "workflow_path": ".github/workflows/sv-change-admission-genesis-validation.yml",
+        "concurrency_group": "organization-ledger"
+      },
+      "landing_form": "the writer job is added to that workflow by its own admitted change (after this resolution is landed, or superseded by the review); this draft adds no writer job and the workflow stays contents: read",
+      "e0_checks": [
+        "GENESIS_EVENT_IS_THE_DECLARED_EVENT (event_name, action, repository, PR number and exact head equal the genesis request's; workflow_ref names the declared workflow at refs/heads/main)",
+        "the seven SV_CHANGE_ADMISSION_GENESIS E0 gates"
+      ],
+      "unknown": "whether the organization's Actions default allows a same-repository pull_request job to request contents: write (UNKNOWN_NOT_AUTHENTICALLY_OBSERVED; not a settings change; observed at landing, FAIL_CLOSED LEDGER_WRITER_REFUSED if it does not)",
+      "c_review": {
+        "status": "PENDING",
+        "reviewers": [
+          "Claude",
+          "ChatGPT"
+        ],
+        "receipt_sha256": "PENDING",
+        "supersedable_by": "a sealed Claude or ChatGPT review receipt naming question Q-SV-NATIVE-BOOTSTRAP and this resolution_sha256 (a later review receipt, posted under Q-SV-NATIVE-BOOTSTRAP on StegVerse-org/.github#167). ACCEPT fills receipt_sha256 and the resolution then also runs at E0; REVISE or DENY is answered by a successor resolution that names this one under supersedes",
+        "effect_of_a_later_deny": "an admission miss (P1 admission_miss) answered by a successor resolution and successor receipts; never a retroactive un-declaration of a ledgered receipt",
+        "pending_is_not_a_refusal": "at E1 the E0 checks plus this PENDING record are enough (E0_CHECKS_PLUS_LATER_RECEIPTED_REVIEW); it degrades, never stops"
+      }
+    }
+  }
+}
