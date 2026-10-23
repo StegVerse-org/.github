@@ -1,0 +1,40 @@
+name: Validate SV Change Admission Genesis
+
+# PR-facing checks for the SV_CHANGE_ADMISSION_GENESIS writer operation
+# (resident-runtime/sv_change_admission_genesis.py). Read-only: temp ledgers are
+# copies of the pinned ledger tip. There is no writer workflow for this op: which
+# event runs it on the genesis-request PR's exact head is the undecided
+# authorization form (Q-SV-NATIVE-BOOTSTRAP). This workflow never appends.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sv-change-admission-genesis-validation.yml'
+      - 'resident-runtime/sv_change_admission_genesis.py'
+      - 'resident-runtime/merge_transfer.py'
+      - 'resident-runtime/admission_predicate.py'
+      - 'resident-runtime/intr_destination_ingress.py'
+      - 'data/sv-merge-admission/**'
+      - 'tests/test_sv_change_admission_genesis.py'
+      - 'tests/fixtures/sv-change-admission-genesis/**'
+
+permissions:
+  contents: read
+
+env:
+  LEDGER_REF: refs/stegverse/organization-ledger
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary (full history)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch the ledger ref read-only (the fixtures pin a commit on it)
+        run: git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
+
+      - name: E0 gates, append at gen+1, verify, replay (temp ledgers from the pinned tip)
+        run: python3 -m unittest tests.test_sv_change_admission_genesis tests.test_governed_ingress_census tests.test_workflow_action_pins -v

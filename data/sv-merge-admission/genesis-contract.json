@@ -1,0 +1,54 @@
+{
+  "schema": "stegverse.sv-change-admission-genesis-contract/v1",
+  "_note": "Contract for the SV_CHANGE_ADMISSION_GENESIS organization-ledger writer op (resident-runtime/sv_change_admission_genesis.py). It holds no private TVC bytes: the request carries only the declared digest; TVC's SV_CHANGE_ADMISSION_GENESIS_DECLARED recomputes the digest from its own manifest on every evaluation.",
+  "operation": "SV_CHANGE_ADMISSION_GENESIS",
+  "append_mode": "FROM_HEAD",
+  "ledger_ref": "refs/stegverse/organization-ledger",
+  "request_path": "control/sv-merge-admission/genesis-request.json",
+  "request_schema": "stegverse.merge-admission-genesis-request/v1",
+  "request_origin": "StegVerse-Labs/TVC config/sv-merge-admission/genesis-request.json (manifest v2.2, TVC#534 @3019f1c2)",
+  "modes": [
+    "E0",
+    "E1",
+    "E2",
+    "E3"
+  ],
+  "cross_llm_forms": [
+    "E0_CHECKS_PLUS_LATER_RECEIPTED_REVIEW",
+    "LLM_VERIFIER_RECEIPTS"
+  ],
+  "test_suite_receipt": {
+    "schema": "stegverse.test-suite-skip-receipt/v1",
+    "producer_repository": "StegVerse-org/.github",
+    "producer_pull_request": 231,
+    "pinned_at_head": "8b7b93d43914bc71b24a004b543a9421402df9db",
+    "status": "Lane B draft, not on main: until it lands this op is FAIL_CLOSED TEST_SUITE_RECEIPT_PRODUCER_NOT_PINNED; re-pin to the landed bytes",
+    "files": {
+      "scripts/test_suite_skip_receipt.py": {
+        "git_blob_sha": "d10bbb89a315b355a708452af56f51212519810a",
+        "sha256": "2e7c79a550d8379ddcbd7764b6a75ea13b63d2019729b84351af379afe5ad53d"
+      },
+      "scripts/select_tests_for_change.py": {
+        "git_blob_sha": "8c4c42c36e13149f660bbc19fd16bfa6eb582800",
+        "sha256": "5ba97d673add4d92073e4d682332e4b613f8306ebf53b5d7d586b2ede82e4513"
+      },
+      ".github/workflows/test-suite-selected.yml": {
+        "git_blob_sha": "24cc4fdec269080bec3c016dc97011e6b7cda740",
+        "sha256": "d4c6992c66291b4631263937f0f0e5aee7af1f71f29f25fccead22ce13ce64e9"
+      },
+      "data/test-selection-map.json": {
+        "git_blob_sha": "8699805882a5f6286dc041b39fa2981aafd79279",
+        "sha256": "13e868710824c17d1094d64636fe58b96a8351bdb2972ed5ccc4214b5d10069c"
+      },
+      "data/test-suite-skip-items.json": {
+        "git_blob_sha": "8daa5c241d260c113c2bd5e5a3b0005cad5a28c6",
+        "sha256": "13bbdfab3da60bad5c09ac9639ef8bf8227a6590298f1a310d976b134bfa8ac3"
+      }
+    }
+  },
+  "base_state": {
+    "producer": "StegVerse-Labs/.github#3266 RTC-SV-CHANGE-BASE-STATE-READBACK-014 (pin config/admission-predicate/base-state-readback.pin.json)",
+    "repository": "StegVerse-org/.github",
+    "rule": "from_registry_generation is the ALLOW readback's base_ref.registry_generation; registry_generation = from + 1; the readback's hb_epoch (when sealed) must be the organization ledger head epoch now"
+  }
+}
