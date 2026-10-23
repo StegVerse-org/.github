@@ -7,11 +7,14 @@
  "fetch": "git fetch --no-tags --depth=1 <repository> <commit>, anonymous (no credential), then git archive of the declared modules only; no package index, no install",
  "input": "stegverse-sdk",
  "lowest_supported_mode": "E0",
- "manifest_sha256": "dca3b8a30ae9f8b446ff7af5056e3e6172caf4aafdecebb9a493369c3bf7500a",
+ "manifest_sha256": "a917c27cd98d8c2a33fc8895fe553e5835f11d0b9ec3c04a897b683a06bc6dbd",
  "owning_goal": "StegVerse-org/.github#163",
  "pins": {
   "0028cab9": {
    "commit": "0028cab992629414b4dda423dffb35c07eaf0771",
+   "exports_append": {
+    "PYTHONPATH": "{shim_root}"
+   },
    "modules": {
     "stegverse": {
      "file_sha256": {
@@ -250,10 +253,23 @@
      "sha256": "8626637fcf0921687226d9441cb727855e3cd65ab084d464b1f63fec4ab6760d"
     }
    },
-   "note": "the pin sdk-manifest-crossing-validation.yml already checks out: tests/test_sdk_manifest_crossing_fidelity.py's committed fixtures are what this SDK builds (on 74d9b473 they drift: 8 failures, 5 errors). This commit's own pyproject declares requests (removed from the SDK 2026-10-13); the job's interpreter must provide it - never installed here",
-   "runtime_requires_importable": [
-    "requests"
-   ],
+   "note": "the pin sdk-manifest-crossing-validation.yml already checks out: tests/test_sdk_manifest_crossing_fidelity.py's committed fixtures are what this SDK builds (on 74d9b473 they drift: 8 failures, 5 errors; so does every requests-free SDK commit - the drift begins 0e2d1c4, 2026-10-02, before requests left the SDK at 85c7e67, 2026-10-13). stegverse/__init__ imports requests at this commit (comparison_orchestrator, comparison_transport); the crossing-fidelity tests make no requests call, so the pin carries a sha256-pinned stdlib urllib stand-in (shims.requests) on the path after the tree, for this pin's run group only - requests is never installed or required",
+   "shims": {
+    "requests": {
+     "built_on": "urllib.request (stdlib); any other attribute is an AttributeError",
+     "covers": [
+      "post(url, json=, headers=, timeout=)",
+      "Response.status_code/.text/.content/.headers/.ok/.json()/.raise_for_status()",
+      "RequestException (HTTPError, ConnectionError, Timeout)"
+     ],
+     "declared_by_sets": [
+      "crossing_fidelity"
+     ],
+     "path": "shims/stegverse-sdk-0028cab9/requests/__init__.py",
+     "sha256": "a614a2185631056195d9866ac0e657af09d66aebe3ec3aa422b85390afbf0a4e",
+     "stands_in_for": "requests (imported by stegverse.comparison_orchestrator and stegverse.comparison_transport at 0028cab9; not called by the crossing-fidelity tests)"
+    }
+   },
    "tree": "725f17bc97fdaea011bd717dd90e6041f7c9516b"
   },
   "74d9b473": {
