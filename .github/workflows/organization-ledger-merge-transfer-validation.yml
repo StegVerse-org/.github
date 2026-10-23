@@ -14,12 +14,14 @@ on:
       - '.stegverse/transition-ledger/**'
       - 'resident-runtime/merge_transfer.py'
       - 'resident-runtime/merge_transfer_range.py'
+      - 'resident-runtime/merge_transfer_admission.py'
       - 'resident-runtime/merge_transfer_dry_run_check.py'
       - 'resident-runtime/intr_destination_ingress.py'
       - 'resident-runtime/aggregate_repo_transition.py'
       - 'resident-runtime/ledger_store.py'
       - 'tests/test_merge_transfer.py'
       - 'tests/test_merge_transfer_range.py'
+      - 'tests/test_merge_transfer_admission.py'
       - 'tests/test_merge_transfer_dry_run_check.py'
       - 'tests/fixtures/merge-transfer/**'
 
@@ -43,7 +45,7 @@ jobs:
         run: git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
 
       - name: Append, verify, refuse (temp ledgers from the pinned tip)
-        run: python3 -m unittest tests.test_merge_transfer tests.test_merge_transfer_range tests.test_merge_transfer_dry_run_check -v
+        run: python3 -m unittest tests.test_merge_transfer tests.test_merge_transfer_range tests.test_merge_transfer_dry_run_check tests.test_merge_transfer_admission -v
 
   dry-run:
     runs-on: ubuntu-latest
@@ -89,15 +91,21 @@ jobs:
           set -euo pipefail
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
-          python3 resident-runtime/merge_transfer.py append --commits-file "$RUNNER_TEMP/results/commits.txt" \
+          python3 resident-runtime/merge_transfer_admission.py append --commits-file "$RUNNER_TEMP/results/commits.txt" \
             --out "$RUNNER_TEMP/results/append.json"
           python3 resident-runtime/merge_transfer.py verify --commits-file "$RUNNER_TEMP/results/commits.txt" \
             --out "$RUNNER_TEMP/results/verify.json"
           tip=$(git rev-parse "$DRY_RUN_REF")
-          python3 resident-runtime/merge_transfer.py append --commits-file "$RUNNER_TEMP/results/commits.txt" \
+          python3 resident-runtime/merge_transfer_admission.py append --commits-file "$RUNNER_TEMP/results/commits.txt" \
             --out "$RUNNER_TEMP/results/replay.json"
           test "$(git rev-parse "$DRY_RUN_REF")" = "$tip"
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert all(x["replayed"] is True for x in r), r' "$RUNNER_TEMP/results/replay.json"
+          # B2: every checkpoint is ALLOW or FAIL_CLOSED with six fields (exit 0 or 1), never missing
+          rc=0
+          python3 resident-runtime/merge_transfer_admission.py checkpoint --commits-file "$RUNNER_TEMP/results/commits.txt" \
+            --out "$RUNNER_TEMP/results/admission-checkpoint.json" > /dev/null || rc=$?
+          test "$rc" -le 1
+          python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); six=("failure_code","failed_predicate","required_evidence_or_repair","retry_entrypoint","owning_existing_goal","next_attempt"); assert r and all(x["disposition"]=="ALLOW" or (x["disposition"]=="FAIL_CLOSED" and all(x.get(k) for k in six)) for x in r), r' "$RUNNER_TEMP/results/admission-checkpoint.json"
           # the published ref is untouched by this run: still the tip copied at the start
           test "$(git ls-remote origin "$LEDGER_REF" | cut -f1)" = "$(cat "$RUNNER_TEMP/results/published-tip")"
           { echo '### dry run (scratch ref, not published)'; echo '```json'; cat "$RUNNER_TEMP/results/verify.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

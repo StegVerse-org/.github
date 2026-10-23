@@ -15,6 +15,15 @@ name: Organization Ledger Main Merge Transfer
 # resident-runtime/merge_transfer.py verify on a fresh fetch of the published
 # ref; this run's success is not the evidence.
 #
+# B2 (StegVerse-org/.github#160 issuecomment-6353130407 section 1.3): the append
+# runs through resident-runtime/merge_transfer_admission.py, which calls
+# merge_transfer.py unchanged and adds admission_record_ref, merge_kind and
+# admission_checkpoint to the organization receipt's boundary. Every merge is
+# still receipted. After publish and verify, the checkpoint is read back from
+# the fresh fetch; a merged head that is not an admitted head fails this run
+# FAIL_CLOSED MERGED_HEAD_IS_NOT_THE_ADMITTED_HEAD with the six fields, so no
+# merge on main goes unobserved.
+#
 # Writer only. The PR-facing checks are
 # .github/workflows/organization-ledger-merge-transfer-validation.yml.
 on:
@@ -68,12 +77,12 @@ jobs:
             --pending .stegverse/merge-transfer/pending.json > "$RUNNER_TEMP/results/commits.txt"
           cat "$RUNNER_TEMP/results/commits.txt"
 
-      - name: Append each merge's repository and organization receipts
+      - name: Append each merge's repository and organization receipts (with the B2 admission checkpoint)
         run: |
           set -euo pipefail
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
-          python3 resident-runtime/merge_transfer.py append --commits-file "$RUNNER_TEMP/results/commits.txt" \
+          python3 resident-runtime/merge_transfer_admission.py append --commits-file "$RUNNER_TEMP/results/commits.txt" \
             --out "$RUNNER_TEMP/results/append.json"
 
       - name: Publish the ledger ref (fast-forward only)
@@ -99,6 +108,18 @@ jobs:
           python3 resident-runtime/merge_transfer.py verify --commits-file "$RUNNER_TEMP/results/commits.txt" \
             --out "$RUNNER_TEMP/results/verify.json"
           { echo '### main merge transfer'; echo '```json'; cat "$RUNNER_TEMP/results/verify.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Admission checkpoint (B2): each merged head is the admitted head, read back from the published ref"
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/readback.git"
+          export STEGVERSE_ORG_LEDGER_ROOT="git+$fresh#$LEDGER_REF"
+          export STEGVERSE_REPO_LEDGER_ROOT="git+$fresh#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
+          rc=0
+          python3 resident-runtime/merge_transfer_admission.py checkpoint --commits-file "$RUNNER_TEMP/results/commits.txt" \
+            --out "$RUNNER_TEMP/results/admission-checkpoint.json" > /dev/null || rc=$?
+          { echo '### admission checkpoint (B2)'; echo '```json'; cat "$RUNNER_TEMP/results/admission-checkpoint.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
 
       - name: Retain the run's evidence
         if: always()
