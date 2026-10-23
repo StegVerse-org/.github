@@ -2,7 +2,7 @@
 """``MERGE_ADMISSION_RECORD`` -- an ALLOW merge-admission record, sealed, on the organization ledger.
 
 TVC#519 v2 (StegVerse-Labs/TVC#531, record fields in TVC#534) emits, on ALLOW,
-a sealed ``stegverse.merge-admission-record/v2`` (record_sha256). It carries
+a sealed ``stegverse.merge-admission-record/v2.1`` (record_sha256). It carries
 the admitted head, change_digest, the manifest digest, hb_epoch from the
 organization ledger head, and every predicate's disposition. The B2 checkpoint
 (resident-runtime/merge_transfer_admission.py, StegVerse-org/.github#220)

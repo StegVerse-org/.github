@@ -1,6 +1,6 @@
 {
  "schema": "stegverse.org-merge-admission-record-contract/v1",
- "record_schema": "stegverse.merge-admission-record/v2",
+ "record_schema": "stegverse.merge-admission-record/v2.1",
  "record_fields": [
   "authoring_session",
   "authoring_session_source",
@@ -27,8 +27,8 @@
   "surface_kinds",
   "transition"
  ],
- "admitted_manifest_sha256": "sha256:7370db4088ea0fa5621f64ddd4f8c77778ce28358a1841254b3b6e28c58bf4e3",
- "manifest_source": "StegVerse-Labs/TVC#531 head d42843503fc0607010dba0c82025fd9fdd069505 config/sv-merge-admission/manifest.json, digest as sv_merge_admission.manifest_sha256 computes it (re-pin here when the manifest changes; a record under any other manifest is refused)",
- "record_producer": "StegVerse-Labs/TVC sv_merge_admission.admission_record (TVC#534, stacked on TVC#531); schema schemas/merge-admission-record.v2.schema.json there",
+ "admitted_manifest_sha256": "sha256:7b7a1b74b2e164792d0b2ff66092b519e6460ee758f3d9cc1304428d416b36bc",
+ "manifest_source": "StegVerse-Labs/TVC#534 (stacked on TVC#531) config/sv-merge-admission/manifest.json v2.1, digest as sv_merge_admission.admission_manifest_sha256 computes it; supersedes v2 sha256:7370db4088ea0fa5621f64ddd4f8c77778ce28358a1841254b3b6e28c58bf4e3 (re-pin here when the manifest changes; a record under any other manifest is refused)",
+ "record_producer": "StegVerse-Labs/TVC sv_merge_admission.admission_record (TVC#534, stacked on TVC#531); schema schemas/merge-admission-record.v2_1.schema.json there",
  "consumer": "resident-runtime/merge_transfer_admission.py admission_records (B2): boundary operation MERGE_ADMISSION_RECORD, boundary admission_record"
 }

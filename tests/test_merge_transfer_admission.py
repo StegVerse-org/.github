@@ -39,7 +39,7 @@ def fixture() -> dict:
 
 
 def record(f: dict, head: str | None = None, pull: int | None = None) -> dict:
-    body = {"schema": "stegverse.merge-admission-record/v2", "repository": f["repository"],
+    body = {"schema": "stegverse.merge-admission-record/v2.1", "repository": f["repository"],
             "pull_number": pull if pull is not None else int(mt.PR_SUBJECT.fullmatch(f["commit"]["subject"]).group(1)),
             "head_sha": head or f["commit"]["parents"][-1], "disposition": "ALLOW"}
     return {**body, "record_sha256": mt.sha(body)}
