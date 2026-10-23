@@ -1,7 +1,8 @@
 """REQUIRED_VERIFICATION (resident-runtime/required_verification.py) over toy repositories: every skipped,
 expected-failure, unexpected-success, unloaded, fixture-skipped, missing-at-head or zero-test run, and every
 path-filtered-out or missing required job, is FAIL_CLOSED REQUIRED_VERIFICATION_SKIPPED with six fields; a
-failing test is REQUIRED_TEST_FAILED and never pre-existing."""
+failing test is REQUIRED_TEST_FAILED and never pre-existing under `run`. The gate needs every job to succeed
+and the full suite to show a sealed selection that ran the core set."""
 from __future__ import annotations
 
 import json
@@ -166,6 +167,63 @@ class RequiredVerificationTests(unittest.TestCase):
         self.assertEqual(f("on:\n  push:\n    paths:\n      - 'x'\n"), (False, None, []))
         self.assertTrue(rv.glob_regex("tests/test_main_change_receipt*.py").match("tests/test_main_change_receipt_census.py"))
         self.assertTrue(rv.glob_regex("**/*.json").match("x.json"))
+
+    def gate(self, needs: dict, selection: str) -> tuple[int, dict]:
+        out = Path(self.tmp.name) / "gate.json"
+        done = subprocess.run([sys.executable, str(TOOL), "gate", "--needs", json.dumps(needs), "--selection",
+                               selection, "--require", "full-suite", "--require", "path-scope",
+                               "--retry-entrypoint", "toy.yml", "--out", str(out)],
+                              capture_output=True, text=True, env=ENV)
+        return done.returncode, json.loads(out.read_text())
+
+    def test_gate_allows_successful_jobs_with_a_shown_selection(self) -> None:
+        ok = {"full-suite": {"result": "success"}, "path-scope": {"result": "success"}}
+        shown = json.dumps({"receipt_sha256": "sha256:ab", "seal_verifies": True, "core_selected": True,
+                            "mode": "DIFF", "sets_total": 98, "selected_count": 2, "input_unavailable": []})
+        code, record = self.gate(ok, shown)
+        self.assertEqual((code, record["disposition"]), (0, "ALLOW"))
+        self.assertEqual(record["selection"]["selected_count"], 2)
+        self.assertNotIn("SKIPPED", json.dumps(record["selection"]))   # unselected sets are counted, not "skipped"
+
+    def test_gate_fails_closed_on_an_unsuccessful_or_missing_job_or_an_unshown_selection(self) -> None:
+        shown = json.dumps({"receipt_sha256": "sha256:ab", "seal_verifies": True, "core_selected": True})
+        code, record = self.gate({"full-suite": {"result": "failure"}, "path-scope": {"result": "success"}}, shown)
+        self.assertEqual(self.assert_rvs(code, record, "REQUIRED_JOB_NOT_SUCCESSFUL")["test"], "full-suite")
+        code, record = self.gate({"full-suite": {"result": "success"}}, shown)
+        self.assertEqual(self.assert_rvs(code, record, "REQUIRED_JOB_MISSING")["test"], "path-scope")
+        ok = {"full-suite": {"result": "success"}, "path-scope": {"result": "success"}}
+        for sel in ("", "not json", json.dumps({"receipt_sha256": "sha256:ab", "seal_verifies": False,
+                                                "core_selected": True}),
+                    json.dumps({"receipt_sha256": "sha256:ab", "seal_verifies": True, "core_selected": False})):
+            code, record = self.gate(ok, sel)
+            self.assert_rvs(code, record, "SELECTION_NOT_SHOWN")
+
+    def test_the_full_suite_runs_only_the_selected_sets_with_the_pinned_labs_tool(self) -> None:
+        wf = (ROOT / ".github/workflows/required-verification.yml").read_text()
+        for needle in ('test_set_selection.py" select', "--selection", "--baseline-receipt", "labs-tool-pin.json",
+                       "required_verification.py gate", "--require full-suite --require path-scope"):
+            self.assertIn(needle, wf)
+        self.assertNotIn("run --pattern", wf)            # no whole-suite run beside the selected sets
+        pin = json.loads((ROOT / ".stegverse/test-suite-baseline/labs-tool-pin.json").read_text())
+        self.assertRegex(pin["commit"], r"^[0-9a-f]{40}$")
+        self.assertIn("scripts/test_set_selection.py", pin["files"])
+        self.assertIn("scripts/test_suite_baseline_drift.py", pin["files"])
+        for digest in pin["files"].values():
+            self.assertRegex(digest, r"^[0-9a-f]{64}$")
+        spec = json.loads((ROOT / ".stegverse/test-set-spec.json").read_text())
+        self.assertEqual(spec["core"]["tests"], ["tests/test_required_verification.py"])
+        for path in (".github/workflows/required-verification.yml", ".stegverse/test-suite-baseline/labs-tool-pin.json"):
+            self.assertIn(path, spec["selects_all"])
+        for name, decl in spec["inputs"].items():
+            for key in ("owner", "repair", "finish_point", "check"):
+                self.assertTrue(decl.get(key), (name, key))
+        manifest = json.loads((ROOT / ".stegverse/test-sets.json").read_text())
+        ids = {s["id"] for s in manifest["sets"]}
+        self.assertIn("core", ids)
+        for path in sorted((ROOT / "tests").glob("test_*.py")):
+            rel = path.relative_to(ROOT).as_posix()
+            self.assertTrue(any(i == rel or i.startswith(rel + "[") for i in ids) or
+                            rel in spec["core"]["tests"], rel)
 
     def test_the_workflows_of_this_pull_request_use_the_strict_runner(self) -> None:
         for name in ("drift-receipt-appender-validation.yml", "main-change-receipt-validation.yml",

@@ -1,21 +1,29 @@
 """REQUIRED_VERIFICATION: no required test is skipped, unrun or missing, and no required job is left unrun
 (StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001; Rigel's standing rule relayed by
-Coordination, Oct 23: merge readiness needs the full suite run on the exact head with 0 skipped).
+Coordination, Oct 23, refined the same day: the skip rule must never stop work, so the suite is split into
+callable test sets and a pull request must run the sets its change requires, with 0 skipped).
 
 Lowest supported operating mode: E0. Stdlib only; no clock, no network, no secret, nothing written outside
---out. Two commands:
+--out. Three commands:
 
   run         runs unittest modules (discovered or listed) with a result class that records every outcome.
               A skipped test, an expected failure, an unexpected success, a module or fixture that did not
               load (loader _FailedTest, setUpClass / setUpModule error or skip), a run of 0 tests, and (with
               --base) a test present at the base commit and absent at the head are each FAIL_CLOSED
               REQUIRED_VERIFICATION_SKIPPED with six fields. A failing test is FAIL_CLOSED REQUIRED_TEST_FAILED:
-              this repository holds no receipted test baseline, so no failure is ever marked pre-existing.
+              `run` holds no baseline. (The required-verification.yml full-suite job instead runs the selected
+              test sets and adjudicates them against the receipted main baseline with the pinned
+              StegVerse-Labs tool; see .stegverse/test-set-spec.json.)
   path-scope  for every path-filtered pull_request workflow at the head, a change that edits a file the
               workflow runs but that its filter does not match leaves a required job unrun ->
               REQUIRED_JOB_PATH_FILTERED_OUT; a pull_request job present at the base and absent at the head
               -> REQUIRED_JOB_MISSING. Both are REQUIRED_VERIFICATION_SKIPPED. (Transitive imports are not
               followed; the unfiltered required-verification.yml full-suite job covers them.)
+  gate        every required job completed and succeeded, and the full-suite job showed a sealed test-set
+              selection whose seal verified and which selected the always-run core set. Otherwise FAIL_CLOSED
+              REQUIRED_VERIFICATION_SKIPPED (REQUIRED_JOB_NOT_SUCCESSFUL, REQUIRED_JOB_MISSING or
+              SELECTION_NOT_SHOWN). Sets the selection did not select are listed by count only: they are not
+              run and are not reported as skipped.
 
 Exit 0 only when nothing is FAIL_CLOSED.
 """
@@ -45,6 +53,8 @@ PREDICATES = {
     "SUITE_ACCOUNTING_UNOBSERVED": "EVERY_TEST_OUTCOME_IS_ACCOUNTED",
     "REQUIRED_JOB_PATH_FILTERED_OUT": "REQUIRED_JOB_RUNS_ON_A_CHANGE_IN_ITS_SCOPE",
     "REQUIRED_JOB_MISSING": "EVERY_REQUIRED_JOB_AT_THE_BASE_EXISTS_AT_THE_HEAD",
+    "REQUIRED_JOB_NOT_SUCCESSFUL": "EVERY_REQUIRED_JOB_COMPLETED_AND_SUCCEEDED",
+    "SELECTION_NOT_SHOWN": "THE_FULL_SUITE_SHOWS_A_SEALED_SELECTION_THAT_RAN_THE_CORE_SET",
 }
 FIXTURE_IDS = re.compile(r"^(setUpClass|tearDownClass|setUpModule|tearDownModule) \((.+)\)$")
 
@@ -317,6 +327,30 @@ def path_scope(root: Path, base: str, head: str, retry: str) -> dict[str, Any]:
     return record
 
 
+def gate(needs: dict[str, Any], selection: dict[str, Any] | None, required: list[str], retry: str) -> dict[str, Any]:
+    nxt = "the next push to this pull request"
+    rows = []
+    for job in sorted(set(required) - set(needs)):
+        rows.append(rvs("REQUIRED_JOB_MISSING", job, f"the gate needs {job}; restore it in the gate's needs", retry, nxt))
+    for job, v in sorted(needs.items()):
+        result = (v or {}).get("result")
+        if result != "success":
+            rows.append(rvs("REQUIRED_JOB_NOT_SUCCESSFUL", job, f"{job} ended {result!r}; its own record names the "
+                            "six fields to repair", retry, nxt, result=result))
+    sel = selection if isinstance(selection, dict) else {}
+    if not (sel.get("seal_verifies") is True and sel.get("core_selected") is True and sel.get("receipt_sha256")):
+        rows.append(rvs("SELECTION_NOT_SHOWN", "full-suite", "the full-suite job must output a test-set selection "
+                        "whose seal verifies and which selected the core set (seal_verifies, core_selected, "
+                        f"receipt_sha256); got {json.dumps(sel, sort_keys=True)[:400]}", retry, nxt))
+    record: dict[str, Any] = {"schema": "stegverse.required-verification-gate/v1", "jobs": {k: (v or {}).get("result")
+                              for k, v in sorted(needs.items())}, "required_jobs": sorted(required),
+                              "selection": sel, "tests": rows, "authority_effect": "NONE",
+                              "required_verification_skipped": len(rows)}
+    record.update({"disposition": "FAIL_CLOSED", **{k: rows[0][k] for k in SIX_FIELDS}} if rows else
+                  {"disposition": "ALLOW"})
+    return record
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="REQUIRED_VERIFICATION (E0)")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -334,12 +368,25 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--head", required=True)
     s.add_argument("--retry-entrypoint", required=True)
     s.add_argument("--out", required=True)
+    g = sub.add_parser("gate")
+    g.add_argument("--needs", required=True, help="the gate job's toJSON(needs)")
+    g.add_argument("--selection", default="", help="the full-suite job's selection summary (JSON)")
+    g.add_argument("--require", action="append", required=True, help="a job the gate needs (repeat)")
+    g.add_argument("--retry-entrypoint", required=True)
+    g.add_argument("--out", required=True)
     a = ap.parse_args(argv)
-    root = Path(a.root).resolve()
-    record = (run(root, a.start, a.pattern, a.module, a.base, a.retry_entrypoint) if a.cmd == "run"
-              else path_scope(root, a.base, a.head, a.retry_entrypoint))
+    if a.cmd == "gate":
+        try:
+            selection = json.loads(a.selection) if a.selection.strip() else None
+        except json.JSONDecodeError:
+            selection = None
+        record = gate(json.loads(a.needs), selection, a.require, a.retry_entrypoint)
+    else:
+        root = Path(a.root).resolve()
+        record = (run(root, a.start, a.pattern, a.module, a.base, a.retry_entrypoint) if a.cmd == "run"
+                  else path_scope(root, a.base, a.head, a.retry_entrypoint))
     Path(a.out).write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
-    print(json.dumps({k: record.get(k) for k in ("disposition", "counts", "required_verification_skipped",
+    print(json.dumps({k: record.get(k) for k in ("disposition", "counts", "required_verification_skipped", "jobs",
                                                  *SIX_FIELDS) if k in record}, sort_keys=True))
     for t in record["tests"]:
         print(f"FAIL_CLOSED {t['failure_code']}{'/' + t['kind'] if t.get('kind') else ''} {t['test']}")
