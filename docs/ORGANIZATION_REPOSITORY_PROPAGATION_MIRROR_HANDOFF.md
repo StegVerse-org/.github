@@ -35,7 +35,7 @@ resident-runtime/propagate_repository_receipts.py
 
 * **Order.** Receipts are propagated in repository chain order, so the organization's record of a repository cannot imply a sequence the repository never had.
 * **Verification.** Each receipt's claimed digest is checked against the digest of its body before it is carried. An unverifiable receipt stops the walk: unverified evidence on the organization chain is worse than none.
-* **Exactly once.** Already-propagated receipts are skipped by reading what the organization chain already carries, not by a side marker. A second run carries nothing instead of failing on `ORG_LEDGER_DUPLICATE_RECEIPT_RECOVERY_REQUIRED`.
+* **Exactly once.** Already-propagated receipts are skipped by reading what the organization chain already carries, not by a side marker. A second run carries nothing instead of failing on a duplicate; at the append itself, an idempotent append returns the organization receipt the chain already holds for that source receipt (`aggregate_repo_transition.py::recorded`), and one consuming it under another class is `ledger_receipt_collision`.
 * **Scope.** The repositories in scope are read off the service registry, which is the organization's own statement of what belongs to it. A list written into the propagation step would be a second answer to a question the registry already answers.
 * **Absence is not failure.** A declared repository whose ledger is not present on this node has nothing here to carry, which is a report rather than an error — that is what an ephemeral node materializing a subset of capabilities looks like.
 
@@ -61,7 +61,7 @@ registration at the adapter's ingress boundary
 
 Both ledger homes are redirected per test and per CI step. The ledgers are durable sovereign state, and a run that appended into either default location would be writing runtime reality from a test.
 
-`federation_cycle.py` had no CI coverage before this; the new workflow is the first to exercise it. It now also asserts that two cycles are recorded in the node state root the node was told to use, that the resolution reports `DERIVED_FROM_ENVIRONMENT`, and that the run leaves `resident-runtime/federation/` absent from the checkout.
+`federation_cycle.py` had no CI coverage before this; the new workflow is the first to exercise it. It now also asserts that two cycles are recorded in the node state root the node was told to use, that the resolution reports `SUPPLIED`, and that the run leaves `resident-runtime/federation/` absent from the checkout.
 
 ## The cycle receipt no longer lands in the repository tree
 

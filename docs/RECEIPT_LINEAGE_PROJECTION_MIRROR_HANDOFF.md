@@ -100,7 +100,7 @@ The chain projected is a real inter-organization crossing —
 
 ```text
 tests.test_receipt_lineage_projection                 17 tests OK
-org-runtime/runtime_boundary.py validate              valid: true, 13/13
+org-runtime/runtime_boundary.py validate              valid: true, 13/13  (17 checks on main 40a5d23)
 actionlint on the new workflow                        clean
 ```
 

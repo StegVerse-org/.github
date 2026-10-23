@@ -1,7 +1,7 @@
 # ORG_BOUNDARY_MIRROR_HANDOFF.md
 
 Status: ACTIVE
-Updated: 2026-08-31
+Updated: 2026-10-18
 Organization: StegVerse-org
 Repository: StegVerse-org/.github
 
@@ -24,6 +24,8 @@ Egress: validate result/evidence -> resolve destination org -> generate governed
 ## Runtime home
 - `resident-runtime/`
 - `org-boundary/runtime/`
+- `org-runtime/`: the activation and boundary declarations (`activation.json`, `interlock-intr.json`) and their generator and validator, `runtime_boundary.py` (`activation.json` `activation_request_generator`)
+- `org-kernel/`: the kernel, referenced by `resident-runtime/activation-manifest.json` and vendored here from `canonical_source: StegVerse-Labs/.github/org-kernel`; this copy is the one this organization runs
 - organization-specific existing resident/runtime machinery referenced by the activation manifest
 
 GitHub Actions may validate or convey evidence but are not sovereign runtime authority.
