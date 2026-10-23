@@ -216,6 +216,11 @@ def _repository_store(surface: Any) -> Any:
     return surface._repository_store()
 
 
+# The preflight predicate protocol.json pins (ledger_module.preflight_predicate): a stray
+# STEGVERSE_ORG_LEDGER_GIT_REF is refused under this one name in every organization.
+BOUND_REF_PREDICATE = "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF"
+
+
 def preflight(root: Path | str = ROOT, *, surface: Any = None) -> tuple[_Location, _Location]:
     """Both halves' locations, resolved as the writers will resolve them, checked before any write."""
     root = Path(root)
@@ -231,6 +236,19 @@ def preflight(root: Path | str = ROOT, *, surface: Any = None) -> tuple[_Locatio
     except (LookupError, OSError) as exc:
         refuse("THE_CHECKOUT_CARRIES_A_TWO_LEVEL_APPEND", "carry this organization's two-level writer",
                detail=str(exc))
+    # A materializer variable naming the organization ledger is non-authoritative. Present, it must name the ref
+    # the organization contract declares (the ref the organization half lands on), checked before either location
+    # is resolved, so no writer's own locus check runs first and every stray ref is named by this one predicate.
+    supplied_ref = os.environ.get("STEGVERSE_ORG_LEDGER_GIT_REF")
+    if supplied_ref:
+        try:
+            declared = gitstore.org_contract(root).get("organization_ledger_ref")
+        except (OSError, ValueError):
+            declared = None
+        if declared and supplied_ref != declared:
+            refuse(BOUND_REF_PREDICATE,
+                   "STEGVERSE_ORG_LEDGER_GIT_REF names " + supplied_ref + "; the organization contract declares "
+                   + declared, level="organization", supplied_ref=supplied_ref, declared_ref=declared)
     located = []
     for level, resolve in (("repository", _repository_store), ("organization", _organization_store)):
         try:
@@ -240,11 +258,9 @@ def preflight(root: Path | str = ROOT, *, surface: Any = None) -> tuple[_Locatio
                    "the " + level + " ledger location this writer binds is refused: " + str(exc)[:300],
                    level=level, detail=type(exc).__name__)
     repository_location, organization_location = located
-    # A materializer variable naming the organization ledger is non-authoritative: present, it must agree
-    # with what the organization half resolves to, whether or not this checkout's writer reads it.
-    supplied_ref = os.environ.get("STEGVERSE_ORG_LEDGER_GIT_REF")
+    # With no declared ref to compare, the variable must still agree with what the organization half resolves to.
     if supplied_ref and organization_location.key[0] == "git" and supplied_ref != organization_location.ref:
-        refuse("STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF",
+        refuse(BOUND_REF_PREDICATE,
                "STEGVERSE_ORG_LEDGER_GIT_REF names " + supplied_ref + "; the organization half resolves to "
                + str(organization_location.ref), level="organization", supplied_ref=supplied_ref)
     declared_org = gitstore.org_contract(root).get("organization_ledger_ref")

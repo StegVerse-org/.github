@@ -7,7 +7,7 @@ organization binds merge_transfer.py, unchanged.
 
 The git-store tests here use a contract whose pin also names this organization, and Lane D's modules as pinned
 byte copies in a checkout layout (tests/fixtures/intr-path-ledger/gitstore-checkout/resident-runtime/:
-ledger_gitstore.py sha256 258e1cf5..., merge_transfer_gitstore.py sha256 bf9f1c15...), so the real
+ledger_gitstore.py sha256 436ecfc3..., merge_transfer_gitstore.py sha256 bf9f1c15...), so the real
 ledger_gitstore.append runs on this organization's own writer surface over temporary ledgers at the pinned tip.
 Every receipt written is NOT LEDGERED and NOT AUTHENTIC.
 """
@@ -110,7 +110,8 @@ class Selection(unittest.TestCase):
             self.assertEqual((pin["path"], pin["mode"]), ("resident-runtime/merge_transfer_gitstore.py", "dual"))
             self.assertEqual(pin["ledger_module"]["path"], "resident-runtime/ledger_gitstore.py")
             self.assertEqual(pin["ledger_module"]["sha256"],
-                             "sha256:258e1cf555d8080a3174ac1962dff2d735ccbb1caa01a4966c1bddd3e2e09241")
+                             "sha256:436ecfc3557a35d6c55f430ff650fe525b051c12586a6693c614840a718b2e1b")
+            self.assertEqual(pin["ledger_module"]["preflight_predicate"], "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF")
             chosen = pl.binding(ROOT, organization=org, module_root=CHECKOUT)
             self.assertEqual((chosen.kind, chosen.mode, chosen.verifier, chosen.writer_module),
                              ("MERGE_TRANSFER_GITSTORE", "dual", "resident-runtime/merge_transfer_gitstore.py verify",
@@ -231,7 +232,7 @@ class GitstoreBackend(unittest.TestCase):
 
 
 class TwoLevelPreflight(unittest.TestCase):
-    """ledger_gitstore.py (258e1cf5) checks both halves' locations before either is written, and rolls back by
+    """ledger_gitstore.py (436ecfc3) checks both halves' locations before either is written, and rolls back by
     compare-and-swap. Its refusals reach the path results with six fields, and both halves' tips stay where they
     were (in this layout the repository chain lives on the organization ledger ref, so every ref and every
     document of the temporary ledger is compared)."""
@@ -271,24 +272,28 @@ class TwoLevelPreflight(unittest.TestCase):
 
     def test_preflight_refusals_surface_with_six_fields_and_both_tips_stay_unchanged(self):
         commit = EXPECTED["verified_transfer_commit"]
-        # predicate -> (the env that breaks one half's location, the predicates the preflight may name: an
-        # organization writer that itself refuses the location (StegVerse-Labs: organization_ledger_locus_mismatch)
-        # is reported as ORGANIZATION_LEDGER_LOCATION_RESOLVES)
-        cases = {
-            "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF":
-                ({"STEGVERSE_ORG_LEDGER_GIT_REF": "refs/heads/organization-ledger/elsewhere"},
-                 {"STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF", "ORGANIZATION_LEDGER_LOCATION_RESOLVES"}),
-            "REPOSITORY_LEDGER_REF_IS_THE_DECLARED_REF":
-                ({"STEGVERSE_REPO_LEDGER_ROOT": "git+%s#refs/heads/organization-ledger/elsewhere:%s"
+        bound_ref = "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF"   # protocol.json ledger_module.preflight_predicate
+        elsewhere = "refs/heads/organization-ledger/elsewhere"
+        # (case, the env that breaks one half's location, the predicates the preflight may name). A stray
+        # STEGVERSE_ORG_LEDGER_GIT_REF is named by the single pinned predicate whether or not the organization root
+        # names the same stray ref; for the other halves an organization writer that itself refuses the location is
+        # reported as *_LOCATION_RESOLVES.
+        cases = [
+            ("git_ref_only", {"STEGVERSE_ORG_LEDGER_GIT_REF": elsewhere}, {bound_ref}),
+            ("root_and_git_ref", {"STEGVERSE_ORG_LEDGER_GIT_REF": elsewhere,
+                                  "STEGVERSE_ORG_LEDGER_ROOT": "git+%s#%s" % (self.ledger.root, elsewhere)}, {bound_ref}),
+            ("REPOSITORY_LEDGER_REF_IS_THE_DECLARED_REF",
+                {"STEGVERSE_REPO_LEDGER_ROOT": "git+%s#refs/heads/organization-ledger/elsewhere:%s"
                                                % (self.ledger.root, NAMESPACE)},
-                 {"REPOSITORY_LEDGER_REF_IS_THE_DECLARED_REF", "REPOSITORY_LEDGER_LOCATION_RESOLVES"}),
-            "ORGANIZATION_LEDGER_GIT_DIR_EXISTS":
-                ({"STEGVERSE_ORG_LEDGER_ROOT": "git+%s#refs/stegverse/organization-ledger" % (Path(self.ledger.dir.name) / "absent.git"),
+                {"REPOSITORY_LEDGER_REF_IS_THE_DECLARED_REF", "REPOSITORY_LEDGER_LOCATION_RESOLVES"}),
+            ("ORGANIZATION_LEDGER_GIT_DIR_EXISTS",
+                {"STEGVERSE_ORG_LEDGER_ROOT": "git+%s#refs/stegverse/organization-ledger" % (Path(self.ledger.dir.name) / "absent.git"),
                  "STEGVERSE_ORG_LEDGER_GIT_DIR": str(Path(self.ledger.dir.name) / "absent.git")},
-                 {"ORGANIZATION_LEDGER_GIT_DIR_EXISTS", "ORGANIZATION_LEDGER_LOCATION_RESOLVES"}),
-        }
-        for predicate, (env, named) in cases.items():
-            with self.subTest(predicate=predicate):
+                {"ORGANIZATION_LEDGER_GIT_DIR_EXISTS", "ORGANIZATION_LEDGER_LOCATION_RESOLVES"}),
+        ]
+        self.assertEqual(self.binding.lg.BOUND_REF_PREDICATE, bound_ref)
+        for case, env, named in cases:
+            with self.subTest(case=case):
                 before = self.tips()
                 restore = self.broken(env)
                 try:
@@ -305,10 +310,10 @@ class TwoLevelPreflight(unittest.TestCase):
                 for result in paths:
                     self.assertEqual(result["disposition"], "FAIL_CLOSED", result)
                     self.six(result)
-                if predicate == "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF":
+                if case == "git_ref_only":
                     # the readers still find the transfer, so the refusal is the writer's own preflight
                     self.assertEqual({r["failure_code"] for r in paths}, {self.PREFLIGHT}, paths)
-                    self.assertLessEqual({r["failed_predicate"] for r in paths}, named, paths)
+                    self.assertEqual({r["failed_predicate"] for r in paths}, {bound_ref}, paths)
                 self.assertEqual(self.tips(), before)
 
     def test_a_rollback_that_cannot_restore_a_tip_surfaces_with_six_fields(self):
