@@ -241,6 +241,37 @@ class Atomic(unittest.TestCase):
                                          "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF")
                     self.assertUntouched(ledger, before)
 
+    def test_a_stray_organization_ref_is_named_as_the_bound_ref_predicate_with_both_tips_unchanged(self):
+        # A stray STEGVERSE_ORG_LEDGER_GIT_REF surfaces as STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF whether
+        # this organization's writer refuses the ref itself (its locus check) or reads it unchecked; it still
+        # fails closed before either half is written, so the bound ref's tip and the stray ref's tip are unchanged.
+        for variable_set in ("root_and_git_ref", "git_ref_only"):
+            for writer in ("ledger_gitstore", "ingress"):
+                with self.subTest(variables=variable_set, writer=writer), TempLedger() as ledger:
+                    ledger._git("update-ref", WRONG_REF, ledger.tip())
+                    os.environ["STEGVERSE_ORG_LEDGER_GIT_REF"] = WRONG_REF
+                    if variable_set == "root_and_git_ref":
+                        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = "git+" + ledger.git_dir + "#" + WRONG_REF
+                    before = self.tips(ledger)
+                    self.assertTrue(all(before), before)
+                    with self.assertRaises(ValueError) as caught:
+                        self.path_append(9) if writer == "ledger_gitstore" else self.ingress_append(9)
+                    self.assertEqual(type(caught.exception).__name__, "TwoLevelAppendRefused")
+                    refusal = caught.exception.refusal
+                    self.assertEqual(refusal["failure_code"], lg.PREFLIGHT_REFUSED)
+                    if variable_set == "git_ref_only":
+                        self.assertEqual(refusal["failed_predicate"], "STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF")
+                    else:
+                        # the root names the stray ref too: a writer that resolves it refuses it as an undeclared
+                        # organization ref (GCAT-BCAT-Engine); a writer whose locus check refuses it first names
+                        # the bound-ref predicate (StegVerse-Labs)
+                        self.assertIn(refusal["failed_predicate"], ("STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF",
+                                                                    "ORGANIZATION_LEDGER_REF_IS_THE_DECLARED_REF"))
+                    for field in lg.SIX_FIELDS:
+                        self.assertTrue(refusal[field], field)
+                    self.assertEqual(self.tips(ledger), before)   # bound ref tip and stray ref tip both unchanged
+                    self.assertEqual(ledger.tip(), before[0])
+
     def test_an_organization_half_in_another_git_dir_refuses_before_either_half_is_written(self):
         with TempLedger() as ledger, tempfile.TemporaryDirectory() as other:
             subprocess.run(["git", "init", "-q", "--bare", other], check=True)
