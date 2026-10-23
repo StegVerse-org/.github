@@ -32,8 +32,6 @@ jobs:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       WORKFLOW_REF: .github/workflows/required-verification.yml full-suite
-      LABS: ${{ runner.temp }}/labs-tool
-      RESULTS: ${{ runner.temp }}/results
     steps:
       - name: Checkout organization boundary
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -47,6 +45,9 @@ jobs:
           test "$(git rev-parse HEAD^2)" = "$HEAD_SHA"
           git config --global user.name ci
           git config --global user.email ci@stegverse.invalid
+          LABS="$RUNNER_TEMP/labs-tool"
+          RESULTS="$RUNNER_TEMP/results"
+          printf 'LABS=%s\nRESULTS=%s\n' "$LABS" "$RESULTS" >> "$GITHUB_ENV"
           mkdir -p "$RESULTS"
           pin=.stegverse/test-suite-baseline/labs-tool-pin.json
           commit=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["commit"])' "$pin")
