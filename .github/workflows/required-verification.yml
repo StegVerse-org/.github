@@ -77,6 +77,18 @@ jobs:
           # pinned: the runner's system jsonschema 4.10.3 equates a nested true with 1 in enum/const
           python -m pip install "jsonschema==4.26.0"
 
+      # Pinned SDK verification inputs (StegVerse-org/.github#163, P1). Every pin a `pinned_source` input of the spec
+      # declares (.stegverse/verification-inputs/stegverse-sdk.json: repository, commit, tree, module paths, sha256 per
+      # file) is fetched at its exact commit with one anonymous git fetch, only its declared modules are extracted and
+      # every file is re-hashed. No package index, nothing installed. A pin that does not verify is printed in six
+      # fields and its env is left unset, so the selector reports exactly the sets that need it as
+      # REQUIRED_VERIFICATION_INPUT_UNAVAILABLE (owner #163) and blocks only changes that select them.
+      - name: Pinned SDK verification inputs (exact commits, sha256-checked, read-only)
+        run: |
+          set -euo pipefail
+          python "$LABS/scripts/pinned_source_input.py" declared --root . --spec .stegverse/test-set-spec.json \
+            --dest-root "$RUNNER_TEMP/pinned-inputs" --env-out "$GITHUB_ENV" --retry-entrypoint "$WORKFLOW_REF"
+
       - name: Select the test sets this change requires
         run: |
           set -euo pipefail
@@ -93,19 +105,24 @@ jobs:
           mapfile -t selected < "$RESULTS/test-set-args.txt"
           if [ "${#selected[@]}" -eq 0 ]; then echo "no runnable selected set" | tee "$RESULTS/unittest.txt"; echo 5 > "$RESULTS/unittest-status"; exit 0; fi
           # the step shell is bash -e: capture the status so the adjudication step reads it (never lose a failure)
+          # each run group of the sealed selection (the pinned inputs its sets declare) runs once in its own process
+          # with only that pin's exports; sets that declare no pinned input run exactly as before
           status=0
-          python -m unittest -v "${selected[@]}" > "$RESULTS/unittest.txt" 2>&1 || status=$?
-          echo "$status" > "$RESULTS/unittest-status"
-          tail -n 4 "$RESULTS/unittest.txt"
+          python "$LABS/scripts/test_set_selection.py" run --selection "$RESULTS/test-set-selection.json" \
+            --out "$RESULTS/unittest.txt" --status-out "$RESULTS/unittest-status" || status=$?
+          test -s "$RESULTS/unittest-status" || echo "$status" > "$RESULTS/unittest-status"
+          grep -E '^### test-set run group |^Ran [0-9]+ test|^(OK|FAILED)' "$RESULTS/unittest.txt" | tail -n 12
 
       - name: Module-level test functions of the selected sets
         run: |
           set -euo pipefail
-          python - "$RESULTS/test-set-args.txt" <<'PY'
-          import ast, runpy, sys
+          # run in each run group's environment (a pinned group gets only its pin's exports), one process per group
+          cat > "$RESULTS/module_level_tests.py" <<'PY'
+          import ast, os, runpy, sys
           from pathlib import Path
+          sys.path.insert(0, os.getcwd())   # as `python -` did: the checkout first, then the group's exports
           ran = failed = 0
-          mods = sorted({a.split(".")[0] + "." + a.split(".")[1] for a in Path(sys.argv[1]).read_text().split()
+          mods = sorted({a.split(".")[0] + "." + a.split(".")[1] for a in sys.argv[1:]
                          if a.startswith("tests.") and a.count(".") >= 1})
           for mod in mods:
               path = Path(*mod.split(".")).with_suffix(".py")
@@ -126,6 +143,23 @@ jobs:
                       print(f"FAIL {mod}::{name}: {exc!r}")
           print(f"module-level test functions: ran={ran} failed={failed}")
           raise SystemExit(1 if failed else 0)
+          PY
+          python - "$RESULTS/test-set-selection.json" "$RESULTS/module_level_tests.py" <<'PY'
+          import json, os, subprocess, sys
+          sel = json.load(open(sys.argv[1]))
+          groups = sel.get("run_groups") or [{"id": "all", "inputs": [], "env": {}, "tests": sel["run"]["tests"]}]
+          worst = 0
+          for g in groups:
+              if not g["tests"]:
+                  continue
+              env = dict(os.environ)
+              if g["inputs"]:
+                  env.pop("PYTHONPATH", None)
+                  env.pop("PYTHONHOME", None)
+                  env.update(g["env"])
+              print(f"### run group {g['id']} inputs={','.join(g['inputs']) or '-'}", flush=True)
+              worst = max(worst, subprocess.run([sys.executable, sys.argv[2], *g["tests"]], env=env).returncode)
+          raise SystemExit(worst)
           PY
 
       - name: Adjudicate (receipted pre-existing failures non-blocking; skips, collection errors, unavailable inputs and introduced failures block)

@@ -23,8 +23,8 @@
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 35,
-      "NAMING_ONLY": 34,
-      "total": 246
+      "NAMING_ONLY": 42,
+      "total": 254
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1783,6 +1783,62 @@
       "text": "\"tests/test_canonical_master_records_local_adapter_repair.py::CanonicalMasterRecordsLocalAdapterRepairTests::test_calls_existing_state_transition_authority_without_schema_relabel\"",
       "classification": "HISTORICAL_EVIDENCE",
       "reason": "Retained drift-receipt fixture (StegVerse-org/.github#166): quotes a StegVerse-Labs test id as it appeared in a receipted run; evidence, not a role statement."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 142,
+      "text": "\"stegverse/master_records_custody.py\": \"ce46bd5069517ccb71310529f96e6cc550817b5086c90c98449fc6c3ae496c78\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 143,
+      "text": "\"stegverse/master_records_http.py\": \"9396d268519d64c92ec322c876a756202c0761eec2d2ad2c679594d33b266e6c\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 414,
+      "text": "\"stegverse/master_records_custody.py\": \"22a3332f70218a8d9352f0af05dd189dcdbe306a2db3971f3c25214ab01f4bd5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 415,
+      "text": "\"stegverse/master_records_http.py\": \"a1f49710396a33c3796ba3e496c87a3835a8e5270c8962643b74c6752b1ab9af\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 416,
+      "text": "\"stegverse/master_records_organization_record.py\": \"5b81f2459b078386f37db0df4ae848b111ce09e7677e1789287907298ab411f5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 675,
+      "text": "\"stegverse/master_records_custody.py\": \"22a3332f70218a8d9352f0af05dd189dcdbe306a2db3971f3c25214ab01f4bd5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 676,
+      "text": "\"stegverse/master_records_http.py\": \"a1f49710396a33c3796ba3e496c87a3835a8e5270c8962643b74c6752b1ab9af\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 677,
+      "text": "\"stegverse/master_records_organization_record.py\": \"5b81f2459b078386f37db0df4ae848b111ce09e7677e1789287907298ab411f5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
     }
   ]
 }

@@ -67,12 +67,28 @@
   },
   "stegverse-sdk": {
    "check": {
-    "kind": "python_module",
-    "module": "stegverse"
+    "env": "STEGVERSE_SDK_PIN_74D9B473",
+    "kind": "pinned_source",
+    "manifest": ".stegverse/verification-inputs/stegverse-sdk.json",
+    "module": "stegverse",
+    "pin": "74d9b473"
    },
-   "finish_point": "required-verification.yml full-suite imports the pinned stegverse SDK and the set's tests run and pass at the exact head",
+   "finish_point": "required-verification.yml full-suite materializes pin 74d9b473 (scripts/pinned_source_input.py materialize, sha256-checked against .stegverse/verification-inputs/stegverse-sdk.json), sets STEGVERSE_SDK_PIN_74D9B473 to its tree, and the set's tests run in that pin's run group and pass at the exact head with 0 skipped",
    "owner": "P1 (StegVerse-org/.github#163)",
-   "repair": "the pinned StegVerse SDK installed in required-verification.yml full-suite (8 workflows here already check out StegVerse-SDK and pip install -e it; P1 decides whether the full-suite job does the same)"
+   "repair": "materialize pin 74d9b473 with scripts/pinned_source_input.py (one anonymous git fetch of the pinned commit; no package index, no install) and export STEGVERSE_SDK_PIN_74D9B473=<dest>/tree before selection; a sha256 mismatch is FAIL_CLOSED, never loaded"
+  },
+  "stegverse-sdk@0028cab9": {
+   "check": {
+    "env": "STEGVERSE_SDK_PIN_0028CAB9",
+    "kind": "pinned_source",
+    "manifest": ".stegverse/verification-inputs/stegverse-sdk.json",
+    "module": "stegverse",
+    "pin": "0028cab9"
+   },
+   "finish_point": "required-verification.yml full-suite materializes pin 0028cab9 (scripts/pinned_source_input.py, sha256-checked against .stegverse/verification-inputs/stegverse-sdk.json; the pin sdk-manifest-crossing-validation.yml already checks out), sets STEGVERSE_SDK_PIN_0028CAB9, the interpreter already provides the pin's declared runtime module requests (never installed), and tests/test_sdk_manifest_crossing_fidelity.py runs in that pin's run group and passes at the exact head with 0 skipped",
+   "owner": "P1 (StegVerse-org/.github#163)",
+   "repair": "materialize pin 0028cab9 with scripts/pinned_source_input.py (one anonymous git fetch of the pinned commit; no package index, no install) and export STEGVERSE_SDK_PIN_0028CAB9=<dest>/tree before selection. 0028cab9's stegverse/__init__ imports requests: when the job's interpreter lacks it the input is unavailable (PINNED_INPUT_RUNTIME_MODULE_UNAVAILABLE) and the repair is to re-pin the crossing fixtures to a requests-free SDK commit (P1, #163); requests is never installed from an index",
+   "why_this_pin": "tests/test_sdk_manifest_crossing_fidelity.py replays fixtures sealed against 0028cab9 (sdk-manifest-crossing-validation.yml); on 74d9b473 8 fail and 5 error (fixture drift: the SDK reads no destination)"
   },
   "tvc": {
    "check": {
@@ -135,7 +151,7 @@
    "labs-stdlib-json-schema"
   ],
   "tests/test_sdk_manifest_crossing_fidelity.py": [
-   "stegverse-sdk"
+   "stegverse-sdk@0028cab9"
   ],
   "tests/test_stdlib_json_schema_agreement.py": [
    "jsonschema",
