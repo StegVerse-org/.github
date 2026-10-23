@@ -32,20 +32,36 @@ while the epoch is what binds.
 
 A record already ledgered is answered from the ledger (verify-first).
 
-Delivery is the open part. TVC is private and holds the record; getting it into
-this public repository's writer is a cross-organization transition that needs a
-TV/TVC-issued credential (class B, not built here). No credential is embedded,
-and no workflow writes until delivery exists. ``append`` with no delivered record
-is FAIL_CLOSED ADMISSION_RECORD_NOT_DELIVERED. Stdlib only; no environment read
-beyond the ledger location variables the writers already use; no clock.
+Delivery (A2). TVC is private and holds the record. It reaches this public
+writer as a ``stegverse.merge-admission-record-delivery/v1`` envelope:
+``{schema, record, signed_payload, signer_key_id, signature}``. The signature is
+ed25519 over the canonical bytes of signed_payload =
+``{schema, record_sha256, repository, pull_number, head_sha, manifest_sha256}``.
+It is verified with the system ``openssl pkeyutl -verify -rawin`` against the
+public key pinned in data/merge-admission/record-contract.json ``delivery``:
+  * no key pinned -> FAIL_CLOSED ADMISSION_RECORD_SIGNER_KEY_NOT_PINNED. The event
+    that pins it is a TVC resident issuance receipt that publishes the
+    merge-admission signer public key; the private key stays in TV/TVC custody;
+  * a malformed envelope -> FAIL_CLOSED ADMISSION_RECORD_DELIVERY_ENVELOPE_INVALID;
+  * the payload does not match the record, or the signature fails -> DENY
+    ADMISSION_RECORD_DELIVERY_SIGNATURE_INVALID.
+Only a public key is ever pinned here. No private key or credential is
+embedded, read or minted, and no workflow writes until the key is pinned and the
+delivery event exists. ``append`` with nothing delivered is FAIL_CLOSED
+ADMISSION_RECORD_NOT_DELIVERED. Stdlib plus the system openssl binary; no
+environment read beyond the ledger location variables the writers already use;
+no clock.
 """
 from __future__ import annotations
 
 import argparse
+import base64
 import importlib.util
 import json
 import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -75,8 +91,12 @@ READBACK_SCHEMA = "stegverse.org-merge-admission-record-readback/v1"
 CONTRACT_FILE = ROOT / "data" / "merge-admission" / "record-contract.json"
 LEDGER_REF = "refs/stegverse/organization-ledger"
 GOAL = "StegVerse-org/.github#164 (TVC#519 v2 MERGE_ADMISSION record on the organization ledger; B2 consumer #220)"
-ENTRYPOINT = ("resident-runtime/merge_admission_record_append.py append --record <the TVC-emitted record>, run by the "
-              "record-delivery transition (TV/TVC-issued credential; not built)")
+ENTRYPOINT = ("resident-runtime/merge_admission_record_append.py append --delivery <the TVC-signed delivery envelope>, run by "
+              "the record-delivery event (signer public key pinned from a TVC resident issuance receipt)")
+DELIVERY_SCHEMA = "stegverse.merge-admission-record-delivery/v1"
+SIGNED_PAYLOAD_SCHEMA = "stegverse.merge-admission-record-delivery-payload/v1"
+KEY_PIN_EVENT = ("a TVC resident issuance receipt that publishes the merge-admission signer public key (ed25519, PEM) and "
+                 "its key id; a PR re-pins data/merge-admission/record-contract.json delivery.signer_public_key_pem from it")
 SHA40 = re.compile(r"[0-9a-f]{40}\Z")
 ALLOW, DENY, FAIL_CLOSED = "ALLOW", "DENY", "FAIL_CLOSED"
 SIX_FIELDS = mt.SIX_FIELDS
@@ -86,6 +106,11 @@ PREDICATES = {
     "ADMISSION_RECORD_IS_DELIVERED": {
         "lowest_supported_mode": "E0", "E3": _E0_ONLY, "E2": _E0_ONLY, "E1": _E0_ONLY,
         "E0": "the record bytes are present to this writer as a JSON object (delivery is the TV/TVC transition)",
+        "llm_inputs": "none at any rung"},
+    "ADMISSION_RECORD_DELIVERY_IS_SIGNED_BY_THE_PINNED_TVC_KEY": {
+        "lowest_supported_mode": "E0", "E3": _E0_ONLY, "E2": _E0_ONLY, "E1": _E0_ONLY,
+        "E0": ("the envelope is " + DELIVERY_SCHEMA + ", its signed_payload equals the record's identity, and the ed25519 "
+               "signature verifies (openssl pkeyutl -verify -rawin) against the contract's pinned signer public key"),
         "llm_inputs": "none at any rung"},
     "ADMISSION_RECORD_SEAL_VERIFIES": {
         "lowest_supported_mode": "E0", "E3": _E0_ONLY, "E2": _E0_ONLY, "E1": _E0_ONLY,
@@ -163,6 +188,72 @@ def recorded(record_sha256: str, organization: Any = None,
         if b.get("operation") == OPERATION and b.get("record_sha256") == record_sha256:
             return receipt, mt._receipt(repository_store, receipt.get("repo_receipt_sha256"))
     return None, None
+
+
+def canonical(value: Any) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def signed_payload(record: Mapping[str, Any]) -> dict[str, Any]:
+    return {"schema": SIGNED_PAYLOAD_SCHEMA, "record_sha256": record.get("record_sha256"), "repository": record.get("repository"),
+            "pull_number": record.get("pull_number"), "head_sha": record.get("head_sha"), "manifest_sha256": record.get("manifest_sha256")}
+
+
+def _ed25519_verifies(public_key_pem: str, message: bytes, signature: bytes) -> bool:
+    with tempfile.TemporaryDirectory() as tmp:
+        t = Path(tmp)
+        (t / "k.pem").write_text(public_key_pem, encoding="utf-8")
+        (t / "m").write_bytes(message)
+        (t / "s").write_bytes(signature)
+        try:
+            run = subprocess.run(["openssl", "pkeyutl", "-verify", "-pubin", "-inkey", str(t / "k.pem"), "-rawin",
+                                  "-in", str(t / "m"), "-sigfile", str(t / "s")], capture_output=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return False
+        return run.returncode == 0
+
+
+def check_delivery(envelope: Any, delivery: Mapping[str, Any] | None = None) -> tuple[Any, dict[str, Any] | None]:
+    """(record, None) when the envelope is signed by the pinned TVC key; (None, refusal) otherwise. Writes nothing."""
+    pid = "ADMISSION_RECORD_DELIVERY_IS_SIGNED_BY_THE_PINNED_TVC_KEY"
+    if envelope is None:
+        return None, refusal("ADMISSION_RECORD_NOT_DELIVERED", "ADMISSION_RECORD_IS_DELIVERED",
+                             "a " + DELIVERY_SCHEMA + " envelope carrying the sealed record TVC emitted on ALLOW",
+                             "after the record-delivery event exists; nothing was written")
+    d = delivery if delivery is not None else (contract().get("delivery") or {})
+    pem, kid = d.get("signer_public_key_pem"), d.get("signer_key_id")
+    if not (isinstance(pem, str) and pem.startswith("-----BEGIN PUBLIC KEY-----") and isinstance(kid, str) and kid):
+        return None, refusal("ADMISSION_RECORD_SIGNER_KEY_NOT_PINNED", pid,
+                             "the merge-admission signer public key and key id pinned in data/merge-admission/record-contract.json "
+                             "delivery, taken from " + KEY_PIN_EVENT,
+                             "after that issuance receipt exists and a PR pins the key (class A once TVC issues it; the "
+                             "issuance is the TV/TVC custody transition); nothing was written")
+    if not (isinstance(envelope, Mapping) and envelope.get("schema") == DELIVERY_SCHEMA and isinstance(envelope.get("record"), Mapping)
+            and isinstance(envelope.get("signed_payload"), Mapping) and isinstance(envelope.get("signature"), str)
+            and isinstance(envelope.get("signer_key_id"), str)):
+        return None, refusal("ADMISSION_RECORD_DELIVERY_ENVELOPE_INVALID", pid,
+                             "a " + DELIVERY_SCHEMA + " envelope {schema, record, signed_payload, signer_key_id, signature}",
+                             "re-deliver a well-formed envelope; nothing was written")
+    record = envelope["record"]
+    try:
+        sig = base64.b64decode(envelope["signature"], validate=True)
+    except ValueError:
+        sig = b""
+    if envelope["signer_key_id"] != kid or dict(envelope["signed_payload"]) != signed_payload(record) \
+            or not sig or not _ed25519_verifies(pem, canonical(envelope["signed_payload"]), sig):
+        return None, refusal("ADMISSION_RECORD_DELIVERY_SIGNATURE_INVALID", pid,
+                             "an envelope whose signed_payload is this record's identity, signed by pinned key " + kid,
+                             "re-deliver the envelope as TVC signed it; nothing was written", disposition=DENY,
+                             envelope_signer_key_id=envelope.get("signer_key_id"))
+    return record, None
+
+
+def deliver(envelope: Any, *, repository: str | None = None, delivery: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """The delivery entrypoint: verify the TVC signature, then the record path (verify-first, check, append)."""
+    record, bad = check_delivery(envelope, delivery)
+    if bad is not None:
+        return bad
+    return append_admission_record(record, repository=repository)
 
 
 def check(record: Any, repository: str, epoch: Any) -> dict[str, Any] | None:
@@ -282,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
     a = sub.add_parser("append", help="append one delivered admission record")
-    a.add_argument("--record", help="path of the delivered record JSON; absent -> FAIL_CLOSED ADMISSION_RECORD_NOT_DELIVERED")
+    a.add_argument("--delivery", help="path of the TVC-signed delivery envelope; absent -> FAIL_CLOSED ADMISSION_RECORD_NOT_DELIVERED")
     a.add_argument("--out")
     v = sub.add_parser("verify", help="read one record back from the ledger")
     v.add_argument("--record-sha256", required=True)
@@ -290,10 +381,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "append":
         try:
-            record = json.loads(Path(args.record).read_text(encoding="utf-8")) if args.record else None
+            envelope = json.loads(Path(args.delivery).read_text(encoding="utf-8")) if args.delivery else None
         except (OSError, ValueError):
-            record = None
-        out = append_admission_record(record)
+            envelope = None
+        out = deliver(envelope)
     else:
         out = verify_admission_record(args.record_sha256)
     text = json.dumps(out, indent=2, sort_keys=True)

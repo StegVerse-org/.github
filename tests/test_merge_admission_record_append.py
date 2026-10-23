@@ -6,10 +6,13 @@ tests/fixtures/merge-admission-record/README.md): not an admission of the fixtur
 """
 from __future__ import annotations
 
+import base64
 import copy
 import importlib.util
 import json
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -106,6 +109,7 @@ class Refusals(Base):
 
     def test_not_delivered(self):
         self.unchanged(ar.append_admission_record(None), "ADMISSION_RECORD_NOT_DELIVERED")
+        self.unchanged(ar.deliver(None), "ADMISSION_RECORD_NOT_DELIVERED")
         self.assertEqual(ar.main(["append"]), 1)
 
     def test_tampered_or_wrong_schema(self):
@@ -145,6 +149,80 @@ class Refusals(Base):
         self.assertEqual((cp["disposition"], cp["failure_code"]), ("FAIL_CLOSED", b2.NOT_ADMITTED))
 
 
+class EphemeralSigner:
+    """A throwaway ed25519 key made in a temp dir for this test run (never committed, not a credential)."""
+    def __init__(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        t = Path(self.tmp.name)
+        subprocess.run(["openssl", "genpkey", "-algorithm", "ed25519", "-out", str(t / "k.pem")], check=True, capture_output=True)
+        subprocess.run(["openssl", "pkey", "-in", str(t / "k.pem"), "-pubout", "-out", str(t / "p.pem")], check=True, capture_output=True)
+        self.pem = (t / "p.pem").read_text()
+        self.delivery = {"signer_public_key_pem": self.pem, "signer_key_id": "test-ephemeral"}
+
+    def sign(self, payload: dict) -> str:
+        t = Path(self.tmp.name)
+        (t / "m").write_bytes(ar.canonical(payload))
+        subprocess.run(["openssl", "pkeyutl", "-sign", "-inkey", str(t / "k.pem"), "-rawin", "-in", str(t / "m"), "-out", str(t / "s")],
+                       check=True, capture_output=True)
+        return base64.b64encode((t / "s").read_bytes()).decode()
+
+    def envelope(self, record: dict, **over) -> dict:
+        payload = ar.signed_payload(record)
+        env = {"schema": ar.DELIVERY_SCHEMA, "record": record, "signed_payload": payload, "signer_key_id": "test-ephemeral",
+               "signature": self.sign(payload)}
+        env.update(over)
+        return env
+
+
+class Delivery(Base):
+    """A2: the TVC-signed delivery envelope, verified against the pinned public key before the record path."""
+    @classmethod
+    def setUpClass(cls):
+        cls.signer = EphemeralSigner()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.signer.tmp.cleanup()
+
+    def unchanged(self, out, code, disposition="FAIL_CLOSED"):
+        before = self.ledger.files()
+        self.assert_refused(out, code, disposition)
+        self.assertEqual(self.ledger.files(), before)
+
+    def test_signed_delivery_appends_and_b2_finds_it(self):
+        out = ar.deliver(self.signer.envelope(RECORD), delivery=self.signer.delivery)
+        self.assertEqual((out["disposition"], out["appended"]), ("ALLOW", True), out)
+        cp = b2.admission_checkpoint(self.f["repository"], self.f["commit"], mt.org_store())
+        self.assertEqual((cp["disposition"], cp["admission_record_ref"]), ("ALLOW", RECORD["record_sha256"]), cp)
+
+    def test_the_committed_contract_pins_no_key_so_delivery_is_fail_closed(self):
+        d = ar.contract()["delivery"]
+        self.assertIsNone(d["signer_public_key_pem"]); self.assertIsNone(d["signer_key_id"])
+        out = ar.deliver(self.signer.envelope(RECORD))
+        self.unchanged(out, "ADMISSION_RECORD_SIGNER_KEY_NOT_PINNED")
+        self.assertIn("issuance receipt", out["required_evidence_or_repair"])
+        self.assertNotIn("PRIVATE KEY", json.dumps(ar.contract()))
+
+    def test_wrong_key_tampered_payload_or_signature_is_deny(self):
+        other = EphemeralSigner(); self.addCleanup(other.tmp.cleanup)
+        self.unchanged(ar.deliver(other.envelope(RECORD), delivery=self.signer.delivery), "ADMISSION_RECORD_DELIVERY_SIGNATURE_INVALID", "DENY")
+        env = self.signer.envelope(RECORD); env["record"] = reseal({**RECORD, "pull_number": 201})
+        self.unchanged(ar.deliver(env, delivery=self.signer.delivery), "ADMISSION_RECORD_DELIVERY_SIGNATURE_INVALID", "DENY")
+        env = self.signer.envelope(RECORD, signature=base64.b64encode(b"\0" * 64).decode())
+        self.unchanged(ar.deliver(env, delivery=self.signer.delivery), "ADMISSION_RECORD_DELIVERY_SIGNATURE_INVALID", "DENY")
+        env = self.signer.envelope(RECORD, signer_key_id="someone-else")
+        self.unchanged(ar.deliver(env, delivery=self.signer.delivery), "ADMISSION_RECORD_DELIVERY_SIGNATURE_INVALID", "DENY")
+
+    def test_malformed_envelope(self):
+        self.unchanged(ar.deliver(RECORD, delivery=self.signer.delivery), "ADMISSION_RECORD_DELIVERY_ENVELOPE_INVALID")
+        self.unchanged(ar.deliver(self.signer.envelope(RECORD, schema="x"), delivery=self.signer.delivery),
+                       "ADMISSION_RECORD_DELIVERY_ENVELOPE_INVALID")
+
+    def test_signed_but_record_refused_is_still_refused(self):
+        env = self.signer.envelope(reseal({**RECORD, "manifest_sha256": "sha256:" + "1" * 64}))
+        self.unchanged(ar.deliver(env, delivery=self.signer.delivery), "ADMISSION_MANIFEST_NOT_PINNED")
+
+
 class Contract(unittest.TestCase):
     def test_every_predicate_declares_its_ladder(self):
         for pid, p in ar.PREDICATES.items():
@@ -160,6 +238,11 @@ class Contract(unittest.TestCase):
         for wf in (ROOT / ".github/workflows").glob("*.yml"):
             text = wf.read_text()
             self.assertNotIn("merge_admission_record_append.py append", text, wf.name)
+
+    def test_the_contract_pins_the_v2_2_manifest(self):
+        self.assertEqual(ar.contract()["admitted_manifest_sha256"],
+                         "sha256:9f0e58ec71438b65fae7a739530ce11fd59eeca04a3e56b8243432fb24bb7217")
+        self.assertEqual(RECORD["manifest_sha256"], ar.contract()["admitted_manifest_sha256"])
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@
   "ran": 4,
   "skipped": 0
  },
- "corpus_head": "sha256:d9ad4447044372de521b589d59a272a7d5b4113e207c075b20d549312d2e9e93",
+ "corpus_head": "sha256:9d1a5cb60a3571aff0e62a2a5a81d58978af0f6520a6b934f4ba6ff28550fcbe",
  "effect": {
   "ledger_receipt": {
    "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
@@ -41,7 +41,7 @@
    ]
   }
  },
- "genesis_receipt_sha256": "sha256:cc56e4084d9eaee016c3d0979097a7e4bd49576c03bba0154a2e2d8ae17985e6",
+ "genesis_receipt_sha256": "sha256:2a73275431b33f19f21bcc448280e4f2c336f922511acdbf517cdca0ac9e7ab5",
  "hb_epoch": "446655631",
  "head_sha": "8129a93602ddb722020431e445450bc91433354b",
  "ledger_head": {
@@ -51,7 +51,7 @@
   "receipt": "receipts/51a48225fb0229c54f1e6f2a703c215c9f86b467c0b9b0815a401bb6835c5a64.json"
  },
  "ledger_operation": "MERGE_ADMISSION_RECORD",
- "manifest_sha256": "sha256:7b7a1b74b2e164792d0b2ff66092b519e6460ee758f3d9cc1304428d416b36bc",
+ "manifest_sha256": "sha256:9f0e58ec71438b65fae7a739530ce11fd59eeca04a3e56b8243432fb24bb7217",
  "predicates": [
   {
    "disposition": "ALLOW",
@@ -72,6 +72,11 @@
    "disposition": "ALLOW",
    "lowest_supported_mode": "E0",
    "predicate": "ALL_JOBS_RAN_AND_PASSED"
+  },
+  {
+   "disposition": "ALLOW",
+   "lowest_supported_mode": "E0",
+   "predicate": "SELECTED_TESTS_RECEIPTED_ZERO_SKIPPED_AT_EXACT_HEAD"
   },
   {
    "disposition": "ALLOW",
@@ -100,8 +105,8 @@
   }
  ],
  "pull_number": 200,
- "push_receipt_head_sha256": "sha256:fe7f7acc51de374f86670f0f468da0065453e4a3325b4bd8444d6c6c71672bfc",
- "record_sha256": "sha256:8f2c5e881d3477af3317426c0789a554963ec40d3b3075e5f8d49c364c0e4102",
+ "push_receipt_head_sha256": "sha256:5f93d0b02103c3719e77cfe32c8f7f85c1973b13173111f7f07bd4eb15a6eb39",
+ "record_sha256": "sha256:fb8c70d136f215f003918f288335ee67bd5cf5a606f6076230cd85660388b85d",
  "repository": "StegVerse-org/.github",
  "required_checks": [
   "dry-run",
