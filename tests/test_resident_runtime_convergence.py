@@ -439,11 +439,14 @@ class Standard(unittest.TestCase):
         for forbidden in ("urllib", "socket", "http.client", "requests", "AI_SESSION_GATE", "time.time("):
             self.assertNotIn(forbidden, source)
 
-    def test_the_workflow_runs_on_request_and_pull_request_only(self):
+    def test_the_workflow_runs_on_pull_request_only_and_is_never_dispatched(self):
+        # #160 issuecomment-6353130407 C1: a manifest state transition is the only trigger;
+        # the request trigger this test used to assert is now asserted absent.
         workflow = (ROOT / ".github/workflows/resident-runtime-convergence-validation.yml").read_text()
-        self.assertIn("workflow_dispatch:", workflow)
+        self.assertNotIn("workflow_dispatch", workflow)
+        self.assertNotIn("repository_dispatch", workflow)
         self.assertIn("pull_request:", workflow)
-        for trigger in ("schedule:", "cron", "push:", "pull_request_target:", "workflow_run:"):
+        for trigger in ("schedule:", "cron", "push:", "pull_request_target:", "workflow_run:", "workflow_call:"):
             self.assertNotIn(trigger, workflow)
 
     def test_the_repository_manifest_validates(self):

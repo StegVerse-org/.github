@@ -1,0 +1,99 @@
+name: Workflow Invariant Check
+
+# WORKFLOW_INVARIANTS_HOLD (StegVerse-org/.github#160 issuecomment-6353130407, section 2 rank 6; C1, C3, I9).
+# A deterministic, stdlib-only check; lowest supported operating mode E0 (no LLM;
+# #160 issuecomment-6354238464). It runs on the pull_request state transition only and evaluates
+# the files the pull request changes, read at its head: no request trigger, no schedule, no polling,
+# no external machine, no new third-party action or import, no clock read in a receipt path, no
+# AI_SESSION_GATE. Other repositories call it as a reusable workflow pinned to a commit of this
+# repository (workflow_call is a call from the caller's own pull_request run, not a trigger of its own):
+#
+#   on: pull_request
+#   jobs:
+#     invariants:
+#       uses: StegVerse-org/.github/.github/workflows/workflow-invariant-check.yml@<40-hex commit>
+#       with:
+#         checker_ref: <the same 40-hex commit>
+#         checker_sha256: <sha256 of resident-runtime/workflow_invariant_check.py at that commit>
+#
+# Making it a required check is a repository-settings transition this workflow never performs.
+on:
+  pull_request:
+  workflow_call:
+    inputs:
+      checker_ref:
+        description: "40-hex commit of StegVerse-org/.github that carries the checker (equal to the uses: pin)"
+        required: true
+        type: string
+      checker_sha256:
+        description: "sha256 of resident-runtime/workflow_invariant_check.py at checker_ref"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the pull request
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout the pinned checker (reusable call only)
+        if: ${{ inputs.checker_ref != '' }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: StegVerse-org/.github
+          ref: ${{ inputs.checker_ref }}
+          path: .stegverse-workflow-invariant-checker
+          persist-credentials: false
+
+      - name: Bind the checker bytes
+        env:
+          CHECKER_REF: ${{ inputs.checker_ref }}
+          CHECKER_SHA256: ${{ inputs.checker_sha256 }}
+        run: |
+          set -euo pipefail
+          if [ -n "$CHECKER_REF" ]; then
+            checker=.stegverse-workflow-invariant-checker/resident-runtime/workflow_invariant_check.py
+            actual=$(sha256sum "$checker" | cut -d' ' -f1)
+            if ! printf '%s' "$CHECKER_REF" | grep -Eq '^[0-9a-f]{40}$' || [ "$actual" != "$CHECKER_SHA256" ]; then
+              echo '{"disposition":"FAIL_CLOSED","failure_code":"WORKFLOW_INVARIANT_CHECKER_NOT_AT_PIN","failed_predicate":"CHECKER_BYTES_EQUAL_PINNED_SHA256","required_evidence_or_repair":"pin checker_ref to a 40-hex commit and checker_sha256 to the checker bytes at that commit","retry_entrypoint":".github/workflows/workflow-invariant-check.yml (the caller pull_request)","owning_existing_goal":"ENTERPRISE-HOST-PROVIDER-ERADICATION-001 (StegVerse-org/.github#166)","next_attempt":"the next push to the PR head"}'
+              exit 1
+            fi
+          else
+            checker=resident-runtime/workflow_invariant_check.py
+          fi
+          echo "CHECKER=$checker" >> "$GITHUB_ENV"
+          echo "checker $checker sha256 $(sha256sum "$checker" | cut -d' ' -f1)"
+
+      - name: Evaluate the files this pull request changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          status=0
+          python3 "$CHECKER" --root . --base "$BASE" --head "$HEAD" --out "$RUNNER_TEMP/workflow-invariants.json" > /dev/null || status=$?
+          { echo '### workflow invariants (pull request diff)'; echo '```json'; cat "$RUNNER_TEMP/workflow-invariants.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/workflow-invariants.json"
+          exit "$status"
+
+      - name: Census of the whole tree at the head (report only)
+        env:
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 "$CHECKER" --root . --all --head "$HEAD" --out "$RUNNER_TEMP/workflow-invariants-census.json" > /dev/null
+          python3 - "$RUNNER_TEMP/workflow-invariants-census.json" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import collections, json, sys
+          d = json.load(open(sys.argv[1]))
+          print("### workflow invariants (tree census, report only)")
+          print(f"files {d['files_evaluated']}, findings {len(d['findings'])}: {dict(collections.Counter(f['failure_code'] for f in d['findings']))}")
+          for f in d["findings"]:
+              print(f"- `{f['path']}:{f['line']}` {f['failure_code']} ({f['detail']})")
+          PY
