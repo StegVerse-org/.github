@@ -93,7 +93,8 @@ and every refusal carries six fields. Nothing is written for a refused row.
 5. The body is sealed: `typed_body_sha256` must equal the body's digest. Otherwise the row is denied with
    `INTR_PATH_TYPED_BODY_UNSEALED`.
 6. The body must be exactly the pointer StegVerse-org/LLM-adapter#431's pre-pin receiver
-   (`scripts/llm_adapter_genesis_pin_ingress.py`) accepts: `{schema, ledger_location, genesis_receipt_sha256}`. It
+   (`scripts/llm_adapter_genesis_pin_ingress.py`) accepts: `{schema, ledger_location, genesis_receipt_sha256, node_ref}`, where `node_ref` is
+   `StegVerse-org/.github`, the org's own path (the carrier derives the path_id from it). It
    points at the genesis on the recorded receipt chain and copies no record (StegVerse-org/.github#167 comment
    6372442705). In addition:
    - `ledger_location` points at another repository of this organization;
