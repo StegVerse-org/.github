@@ -53,7 +53,8 @@ REGISTRY = {"organization": ORGANIZATION, "services": [
     {"service_id": CONTROL, "repository": "Kernel-Test/.github",
      "boundary_role": "BOUNDARY_LOCAL_CONTROL",
      "accepts": ["ecosystem.work.request"]}]}
-TICK = kernel.HB_ANCHOR_UNIX_NS + 1_000_000_000
+# The supplied epoch these frames are stamped at (no clock sample is taken).
+TICK_EPOCH = kernel.HB_ANCHOR_EPOCH + 100
 
 
 class NodeFixture:
@@ -97,7 +98,7 @@ def fixture(case):
 class FederationRoundTripTests(unittest.TestCase):
     def test_a_frame_published_to_a_supplied_mesh_is_found_and_consumed(self):
         node = fixture(self)
-        published = kernel.publish_packet(node.packet(), root=node.mesh_root, now_ns=TICK)
+        published = kernel.publish_packet(node.packet(), root=node.mesh_root, epoch=TICK_EPOCH)
         found = kernel.scan_addressed_frames(ORGANIZATION, store=node.mesh)
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0]["frame"], published["frame"])
@@ -113,12 +114,12 @@ class FederationRoundTripTests(unittest.TestCase):
         other = kernel.build_packet(origin_org="Peer", origin_service="peer.org-control",
                                     destination_org="Somewhere-Else",
                                     destination_service="somewhere-else.org-control", payload={}, standing=GENESIS)
-        kernel.publish_packet(other, root=node.mesh_root, now_ns=TICK)
+        kernel.publish_packet(other, root=node.mesh_root, epoch=TICK_EPOCH)
         self.assertEqual(kernel.scan_addressed_frames(ORGANIZATION, store=node.mesh), [])
 
     def test_a_consumed_frame_is_not_offered_again(self):
         node = fixture(self)
-        kernel.publish_packet(node.packet(), root=node.mesh_root, now_ns=TICK)
+        kernel.publish_packet(node.packet(), root=node.mesh_root, epoch=TICK_EPOCH)
         found = kernel.scan_addressed_frames(ORGANIZATION, store=node.mesh)
         result = kernel.ingest_frame(node.node_root, found[0]["frame"])
         kernel.mark_federation_frame_seen(node.node_root, found[0]["path"],
@@ -131,14 +132,14 @@ class FederationRoundTripTests(unittest.TestCase):
     def test_republishing_the_same_frame_is_idempotent(self):
         node = fixture(self)
         packet = node.packet()
-        first = kernel.publish_packet(packet, root=node.mesh_root, now_ns=TICK)
-        second = kernel.publish_packet(packet, root=node.mesh_root, now_ns=TICK)
+        first = kernel.publish_packet(packet, root=node.mesh_root, epoch=TICK_EPOCH)
+        second = kernel.publish_packet(packet, root=node.mesh_root, epoch=TICK_EPOCH)
         self.assertEqual(first["path"], second["path"])
         self.assertEqual(len(kernel.scan_addressed_frames(ORGANIZATION, store=node.mesh)), 1)
 
     def test_a_different_frame_at_a_held_key_fails_closed(self):
         node = fixture(self)
-        published = kernel.publish_packet(node.packet(), root=node.mesh_root, now_ns=TICK)
+        published = kernel.publish_packet(node.packet(), root=node.mesh_root, epoch=TICK_EPOCH)
         with self.assertRaises(ValueError) as raised:
             kernel.publish_frame({**published["frame"], "destination_org": "Other"},
                                  store=node.mesh)
@@ -148,7 +149,7 @@ class FederationRoundTripTests(unittest.TestCase):
 class NodeStateNamespaceTests(unittest.TestCase):
     def test_the_outbox_records_a_published_frame_once(self):
         node = fixture(self)
-        published = kernel.publish_packet(node.packet(), root=node.mesh_root, now_ns=TICK)
+        published = kernel.publish_packet(node.packet(), root=node.mesh_root, epoch=TICK_EPOCH)
         first = kernel.persist_outbox(node.node_root, published["frame"], store=node.state)
         second = kernel.persist_outbox(node.node_root, published["frame"], store=node.state)
         self.assertEqual(first, second)
@@ -183,7 +184,7 @@ class NodeStateNamespaceTests(unittest.TestCase):
 
     def test_each_node_namespace_stays_in_its_own_prefix(self):
         node = fixture(self)
-        published = kernel.publish_packet(node.packet(), root=node.mesh_root, now_ns=TICK)
+        published = kernel.publish_packet(node.packet(), root=node.mesh_root, epoch=TICK_EPOCH)
         found = kernel.scan_addressed_frames(ORGANIZATION, store=node.mesh)
         result = kernel.ingest_frame(node.node_root, found[0]["frame"])
         kernel.persist_outbox(node.node_root, published["frame"], store=node.state)
@@ -203,7 +204,7 @@ class LayoutCompatibilityTests(unittest.TestCase):
 
     def test_a_frame_lands_where_the_kernel_wrote_it_before(self):
         node = fixture(self)
-        published = kernel.publish_packet(node.packet(), root=node.mesh_root, now_ns=TICK)
+        published = kernel.publish_packet(node.packet(), root=node.mesh_root, epoch=TICK_EPOCH)
         frame = published["frame"]
         digest = hashlib.sha256(
             (frame["packet_id"] + "|" + frame["frame_sha256"]).encode()).hexdigest()
@@ -212,7 +213,7 @@ class LayoutCompatibilityTests(unittest.TestCase):
 
     def test_node_documents_land_where_the_kernel_wrote_them_before(self):
         node = fixture(self)
-        published = kernel.publish_packet(node.packet(), root=node.mesh_root, now_ns=TICK)
+        published = kernel.publish_packet(node.packet(), root=node.mesh_root, epoch=TICK_EPOCH)
         found = kernel.scan_addressed_frames(ORGANIZATION, store=node.mesh)
         result = kernel.ingest_frame(node.node_root, found[0]["frame"])
         federation = node.node_root / "resident-runtime/federation"
@@ -229,7 +230,7 @@ class LayoutCompatibilityTests(unittest.TestCase):
     def test_the_dedup_identity_is_still_the_frame_name(self):
         """A marker written before state was addressed must still suppress."""
         node = fixture(self)
-        kernel.publish_packet(node.packet(), root=node.mesh_root, now_ns=TICK)
+        kernel.publish_packet(node.packet(), root=node.mesh_root, epoch=TICK_EPOCH)
         found = kernel.scan_addressed_frames(ORGANIZATION, store=node.mesh)
         name = found[0]["name"]
         node.state.put_once(node_store.seen_key(name), {
