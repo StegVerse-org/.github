@@ -1,0 +1,111 @@
+name: Validate Main Change Receipt Writer and Session Binder
+
+# PR-facing checks for B1 (resident-runtime/main_change_receipt.py, the reusable main-change-receipt.yml and the
+# census / install patch generator) and B1b (resident-runtime/push_receipt_session_binder.py),
+# StegVerse-org/.github#160 issuecomment-6353130407. E0: no LLM, no clock, nothing published. The dry run
+# receipts this PR's own base..head into a scratch copy and verifies it from a fresh fetch of that copy; the
+# binder runs over the published organization ledger read back read-only.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/main-change-receipt.yml'
+      - '.github/workflows/main-change-receipt-validation.yml'
+      - 'resident-runtime/main_change_receipt.py'
+      - 'resident-runtime/main_change_receipt_census.py'
+      - 'resident-runtime/push_receipt_session_binder.py'
+      - 'tests/test_main_change_receipt*.py'
+      - 'tests/test_push_receipt_session_binder.py'
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Writer, census and binder unit tests
+        run: |
+          set -euo pipefail
+          git config --global user.name ci
+          git config --global user.email ci@stegverse.invalid
+          python3 -m unittest discover -s tests -p 'test_main_change_receipt*.py' -v
+          python3 -m unittest discover -s tests -p 'test_push_receipt_session_binder.py' -v
+
+  dry-run:
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+    steps:
+      - name: Checkout organization boundary (full history)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: "Writer on a scratch copy: receipt this PR's base..head, verify from a fresh fetch, replay is idempotent"
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/results"
+          scratch="$RUNNER_TEMP/scratch.git"
+          git clone -q --bare "$GITHUB_WORKSPACE" "$scratch"
+          git --git-dir="$scratch" fetch -q "$GITHUB_WORKSPACE" "+$HEAD_SHA:refs/heads/main"
+          # the range this PR adds on top of main (base.sha can be ahead of the branch point)
+          before=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          writer_sha=$(sha256sum resident-runtime/main_change_receipt.py | cut -d' ' -f1)
+          python3 resident-runtime/main_change_receipt.py observe --root "$scratch" --repository "$GITHUB_REPOSITORY" \
+            --before "$before" --after "$HEAD_SHA" --writer-ref "$HEAD_SHA" --writer-sha256 "$writer_sha" \
+            --organization-ledger-writer-installed --out "$RUNNER_TEMP/results/receipts.json" > /dev/null
+          python3 resident-runtime/main_change_receipt.py append --root "$scratch" --receipts "$RUNNER_TEMP/results/receipts.json" \
+            --out "$RUNNER_TEMP/results/append.json" > /dev/null
+          tip=$(git --git-dir="$scratch" rev-parse refs/stegverse/main-change-receipts)
+          python3 resident-runtime/main_change_receipt.py append --root "$scratch" --receipts "$RUNNER_TEMP/results/receipts.json" \
+            --out "$RUNNER_TEMP/results/replay.json" > /dev/null
+          test "$(git --git-dir="$scratch" rev-parse refs/stegverse/main-change-receipts)" = "$tip"
+          fresh="$RUNNER_TEMP/fresh.git"
+          git init -q --bare "$fresh"
+          git --git-dir="$fresh" fetch -q "$scratch" "+refs/stegverse/main-change-receipts:refs/stegverse/main-change-receipts"
+          python3 resident-runtime/main_change_receipt.py verify --root "$fresh" --receipts "$RUNNER_TEMP/results/receipts.json" \
+            --out "$RUNNER_TEMP/results/verify.json"
+          python3 - "$RUNNER_TEMP/results/receipts.json" "$HEAD_SHA" <<'PY'
+          import json, sys
+          receipts, head = json.load(open(sys.argv[1])), sys.argv[2]
+          assert receipts and receipts[-1]["commit"] == head and not receipts[-1]["push"]["history_rewritten"], receipts
+          for r in receipts:
+              assert r["lowest_supported_mode"] == "E0" and r["admission_record_ref"] is None
+              print(r["commit"], r["merge_kind"], r["disposition"], [i["failure_code"] for i in r["items"]])
+          PY
+          # nothing was published
+          test -z "$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" refs/stegverse/main-change-receipts | grep -F "$tip" || true)"
+
+      - name: "Binder over the published organization ledger (read only): ALLOW or six-field FAIL_CLOSED, never an error"
+        run: |
+          set -euo pipefail
+          ledger="$RUNNER_TEMP/ledger.git"
+          git init -q --bare "$ledger"
+          git --git-dir="$ledger" fetch -q "https://github.com/$GITHUB_REPOSITORY" "+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger"
+          status=0
+          python3 resident-runtime/push_receipt_session_binder.py --repository "$GITHUB_REPOSITORY" --base-sha "$BASE_SHA" \
+            --head-sha "$HEAD_SHA" --branch "refs/heads/$HEAD_REF" --ledger-git-dir "$ledger" > "$RUNNER_TEMP/results/binding.json" || status=$?
+          python3 - "$RUNNER_TEMP/results/binding.json" <<'PY'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          six = ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint", "owning_existing_goal", "next_attempt")
+          assert r["disposition"] == "ALLOW" or (r["disposition"] == "FAIL_CLOSED" and all(r.get(k) for k in six)), r
+          print(r["disposition"], r.get("failure_code"), r.get("authoring_session"), r.get("detail", {}).get("gap"))
+          PY
+          { echo '### binder (read-only ledger readback)'; echo '```json'; cat "$RUNNER_TEMP/results/binding.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain the dry run's evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: main-change-receipt-dry-run
+          path: ${{ runner.temp }}/results
