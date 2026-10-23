@@ -63,6 +63,10 @@ EPOCH_UNOBSERVED = "LEDGER_HEAD_EPOCH_UNOBSERVED"  # an end's ledger head has no
 CLASSES = (GENESIS_READY, CARRY_AFTER_GENESIS, EPOCH_UNOBSERVED, TVC_SOURCE, TVC_DESTINATION, SOURCE_NOT_LEDGERED,
            INGRESS_NOT_ON_MAIN, INBOUND_ROW_ABSENT)
 ALLOW_READY = (GENESIS_READY, CARRY_AFTER_GENESIS)
+EPOCH_RESEAL_RULE = ("the end's ledger head has no supplied epoch, so the source receipt is not written yet; once "
+                     "head_epoch_state reads supplied (derived_from_clock false), `seal` re-classifies this path from "
+                     "the anonymous copy, and until then the replay recomputes the full evidence from the read-back "
+                     "source pair and requires the ledgered evidence to equal it")
 
 
 def _module(name: str, relative: str):
@@ -287,6 +291,14 @@ def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers:
         rec.update(cls=cls, expected_at_genesis=FAIL_CLOSED, status=status)
         if writer:
             rec.update(source_writer_pr=writer["pr"], source_writer_head=writer["head"])
+        if cls == EPOCH_UNOBSERVED and not later:
+            # the same rule as a carry path: once the head carries a supplied epoch the writer appends the source
+            # receipt, the row is carried, and the replay recomputes the evidence from the read-back source pair
+            core = {"schema": ingress.EVIDENCE_SCHEMA, "repository": dst + "/.github", "path_id": pid,
+                    "source_repository": src + "/.github", "addressed_service": destination_address(dst)}
+            rec["payload"] = {"evidence_known_before_source": core, "evidence_known_before_source_sha256": digest(core),
+                              "rule": EPOCH_RESEAL_RULE}
+            rec.update(expected_after_supplied_epoch=ALLOW, reseal_on_supplied_epoch=True)
         rec["blockers"] = [status] + [b for b in epochs + later + [source_six] if b is not status]
         return seal(rec)
     checked = ingress.check_source_pair(org_r, rb.get("repository_receipt"), pid, cid, dst)
@@ -319,7 +331,8 @@ def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers:
         return seal(rec)
     if epochs:
         rec.update(cls=EPOCH_UNOBSERVED, expected_at_genesis=FAIL_CLOSED, status=epochs[0],
-                   genesis_pr=genesis["pr"], genesis_head=genesis["head"])
+                   genesis_pr=genesis["pr"], genesis_head=genesis["head"], expected_after_supplied_epoch=ALLOW,
+                   reseal_on_supplied_epoch=True)
         rec["blockers"] = epochs
         return seal(rec)
     status = six(ingress.NOT_LEDGERED, "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
@@ -350,6 +363,10 @@ def seal_all(inputs: Mapping[str, Any], public_ledgers: Path | str) -> tuple[lis
                      "genesis_allow": sorted(r["path_id"] for r in records if r["cls"] == GENESIS_READY),
                      "carry_allow": sorted(r["path_id"] for r in records if r["cls"] == CARRY_AFTER_GENESIS),
                      "allow_ready_after_genesis": sum(1 for r in records if r["cls"] in ALLOW_READY),
+                     "epoch_reseal_allow": sorted(r["path_id"] for r in records
+                                                  if r.get("expected_after_supplied_epoch") == ALLOW),
+                     "allow_ready_after_supplied_epoch": sum(1 for r in records if r["cls"] in ALLOW_READY
+                                                             or r.get("expected_after_supplied_epoch") == ALLOW),
                      "files_sha256": dict(sorted(entries.items())), "ledgered": False, "authentic": False,
                      "authority_effect": "NONE", "owning_existing_goal": GOAL})
     return records, {"texts": texts, "manifest": manifest, "entries": entries}
@@ -404,14 +421,19 @@ def check_record(record: Mapping[str, Any], manifest: Mapping[str, Any] | None =
     if record.get("cls") == EPOCH_UNOBSERVED and record["status"].get("failure_code") != "HB_EPOCH_SOURCE_UNOBSERVED":
         problems.append("an epoch-blocked path is FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED")
     src = record.get("source_receipts")
-    if record.get("cls") == CARRY_AFTER_GENESIS:
+    if record.get("cls") == EPOCH_UNOBSERVED and record.get("expected_after_supplied_epoch") == ALLOW \
+            and record.get("reseal_on_supplied_epoch") is not True:
+        problems.append("an epoch path expecting ALLOW after a supplied epoch re-seals on it")
+    if record.get("cls") != EPOCH_UNOBSERVED and "expected_after_supplied_epoch" in record:
+        problems.append("only epoch paths carry expected_after_supplied_epoch")
+    if record.get("cls") == CARRY_AFTER_GENESIS or "evidence_known_before_source" in (record.get("payload") or {}):
         p = record.get("payload") or {}
         core = {"schema": ingress.EVIDENCE_SCHEMA, "repository": record["destination"] + "/.github",
                 "path_id": record["path_id"], "source_repository": record["source"] + "/.github",
                 "addressed_service": destination_address(record["destination"])}
         if src is not None or p.get("evidence_known_before_source") != core \
                 or p.get("evidence_known_before_source_sha256") != digest(core):
-            problems.append("carry payload does not recompute")
+            problems.append("known-before-source payload does not recompute")
     elif record.get("payload") is not None:
         if not isinstance(src, Mapping):
             return problems + ["payload without its source receipts"]
@@ -566,7 +588,13 @@ def replay_path(record: Mapping[str, Any], inputs: Mapping[str, Any], public_led
         return {**out, **verifier, "kit_blockers": record.get("blockers", [])}
     d_repo = dst.get("repository_receipt") if isinstance(dst.get("repository_receipt"), Mapping) else {}
     evidence = d_repo.get("evidence") if isinstance(d_repo.get("evidence"), Mapping) else {}
-    if record.get("cls") == CARRY_AFTER_GENESIS:
+    payload = record.get("payload") if isinstance(record.get("payload"), Mapping) else None
+    if payload is None:
+        return {**out, "disposition": FAIL_CLOSED, **six(
+            "INTR_POST_GENESIS_SEALED_PAYLOAD_ABSENT", "A_VERIFIED_PATH_HAS_A_SEALED_PAYLOAD",
+            "a sealed payload for " + path["path_id"] + ": re-seal from the anonymous ledger copies",
+            "scripts/intr_post_genesis_replay.py seal", GOAL, "re-seal, then re-run replay; nothing was written")}
+    if "evidence_known_before_source" in payload:
         # no sealed source half existed: recompute from the read-back source pair, then hold it to the sealed core
         s_org = src.get("organization_receipt") if src else None
         checked = ingress.check_source_pair(s_org, src.get("repository_receipt") if src else None, path["path_id"],
@@ -594,6 +622,8 @@ def replay_path(record: Mapping[str, Any], inputs: Mapping[str, Any], public_led
                 **six("INTR_POST_GENESIS_VERIFIERS_DISAGREE", "END_TO_END_VIA_TVC_AGREES_WITH_VERIFY_END_TO_END",
                       "end-to-end-via-tvc --public-ledgers returned " + str(cli.get("failure_code")),
                       "resident-runtime/intr_path_ingress.py end-to-end-via-tvc", GOAL, "inspect and re-run")}
+    if record.get("cls") == EPOCH_UNOBSERVED:
+        out["reseal_on_supplied_epoch"] = True
     return {**out, "disposition": ALLOW, "path": "VERIFIED", "payload_matches_sealed": True,
             "destination_organization_receipt_sha256": result.get("destination_organization_receipt_sha256"),
             "source_organization_receipt_sha256": result.get("source_organization_receipt_sha256"),
@@ -620,6 +650,8 @@ def replay_all(public_ledgers: Path | str, kit_dir: Path = KIT_DIR, inputs_path:
                                                    if r["cls"] == GENESIS_READY and r["disposition"] != ALLOW),
                  "carry_ready_not_allow": sorted(r["path_id"] for r in results
                                                  if r["cls"] == CARRY_AFTER_GENESIS and r["disposition"] != ALLOW),
+                 "epoch_ready_not_allow": sorted(r["path_id"] for r in results
+                                                 if r["cls"] == EPOCH_UNOBSERVED and r["disposition"] != ALLOW),
                  "allow": sorted(r["path_id"] for r in results if r["disposition"] == ALLOW),
                  "results": results, "authority_effect": "NONE"})
 
@@ -638,6 +670,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="exit 1 unless every GENESIS_READY path is ALLOW (use after both genesis PRs are admitted)")
     r.add_argument("--require-carry-allow", action="store_true",
                    help="exit 1 unless every CARRY_AFTER_GENESIS path is ALLOW (use after the carried rows land)")
+    r.add_argument("--require-epoch-allow", action="store_true",
+                   help="exit 1 unless every LEDGER_HEAD_EPOCH_UNOBSERVED path is ALLOW (use after the end's head "
+                        "carries a supplied epoch and its rows land)")
     c = sub.add_parser("carry", help="write the inbound.json rows a destination must land (after the source wrote)")
     c.add_argument("--public-ledgers", required=True)
     c.add_argument("--destination", required=True)
@@ -662,7 +697,9 @@ def main(argv: list[str] | None = None) -> int:
         digest_hex = write_sealed(out)
         print(json.dumps({"manifest_sha256": digest_hex, "class_counts": out["manifest"]["class_counts"],
                           "genesis_allow": out["manifest"]["genesis_allow"], "carry_allow": out["manifest"]["carry_allow"],
-                          "allow_ready_after_genesis": out["manifest"]["allow_ready_after_genesis"]},
+                          "allow_ready_after_genesis": out["manifest"]["allow_ready_after_genesis"],
+                          "epoch_reseal_allow": out["manifest"]["epoch_reseal_allow"],
+                          "allow_ready_after_supplied_epoch": out["manifest"]["allow_ready_after_supplied_epoch"]},
                          indent=1, sort_keys=True))
         return 0
     if a.command == "check":
@@ -681,6 +718,8 @@ def main(argv: list[str] | None = None) -> int:
     if a.require_genesis_allow and result["genesis_ready_not_allow"]:
         return 1
     if a.require_carry_allow and result["carry_ready_not_allow"]:
+        return 1
+    if a.require_epoch_allow and result["epoch_ready_not_allow"]:
         return 1
     return 0
 

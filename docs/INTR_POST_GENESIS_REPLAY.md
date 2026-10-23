@@ -38,7 +38,7 @@ For each path whose source receipt is on an anonymously readable source ledger, 
 |---|---|---|---|
 | `GENESIS_READY` | 4: org→Labs, Labs→org, org→SV-LLM, Labs→SV-LLM | **ALLOW** | now `INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED`; retry: the destination's `intr-path-ingress.yml` after org#224 / Labs#3312 / SV-LLM#50 are admitted |
 | `CARRY_AFTER_GENESIS` | 2: SV-LLM→org, SV-LLM→Labs | FAIL_CLOSED, then **ALLOW** after carry | `INTR_PATH_RECEIPT_NOT_LEDGERED` until SV-LLM#50's writer appends; then `carry` the rows into org/Labs; replay recomputes the evidence from the read-back source pair (`--require-carry-allow`) |
-| `LEDGER_HEAD_EPOCH_UNOBSERVED` | 6: org→AE, Labs→AE, AE→org, AE→Labs, AE→SV-LLM, SV-LLM→AE | FAIL_CLOSED | `HB_EPOCH_SOURCE_UNOBSERVED` / `MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH`: the AE ledger head has a clock-derived epoch; repair Admissible-Existence/.github#97 (B-P31), then an AE append with a supplied epoch |
+| `LEDGER_HEAD_EPOCH_UNOBSERVED` | 6: org→AE, Labs→AE, AE→org, AE→Labs, AE→SV-LLM, SV-LLM→AE | FAIL_CLOSED, then **ALLOW** once the AE head carries a supplied epoch | `HB_EPOCH_SOURCE_UNOBSERVED` / `MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH`: the AE ledger head has a clock-derived epoch. Repair: Admissible-Existence/.github#100 (E1 successor of #97, B-P31; folded into AE#99) or #97, then an AE append with a supplied epoch. Each record has `expected_after_supplied_epoch: ALLOW` and `reseal_on_supplied_epoch: true`. Once `head_epoch_state` reads supplied, `seal` re-classifies the paths from the anonymous copy. Until then, the replay recomputes their evidence from the read-back source pair, the same way it does for carry paths (`--require-epoch-allow`) |
 | `TVC_PRIVATE_SOURCE_READ` | 28: every path from SV-011, GCAT, StegGhost or 002 | FAIL_CLOSED | `INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`; retry StegVerse-Labs/TVC#532 + #535; goal TVC-PRIVATE-SOURCE-READ-001 (TVC#33) |
 | `TVC_PRIVATE_DESTINATION_READ` | 16: org, Labs, AE or SV-LLM → SV-011, GCAT, StegGhost, 002 | FAIL_CLOSED | `INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`; retry TVC#532 + #535; also an inbound row and an ingress or public-route port at the destination (the 4 AE-sourced paths also carry the AE epoch blocker) |
 
@@ -59,7 +59,7 @@ For each path, the replay:
 4. Checks that the ledgered ingress evidence equals the sealed `evidence_invariant` and that `source_inclusion.state` is `VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ`.
 5. Where this organization is an end of the path, also runs `intr_path_ingress.py end-to-end-via-tvc --public-ledgers`, binding this organization's ledger read-only to its fetched copy. The two verifiers must agree.
 
-A non-ALLOW carries the verifier's six fields and, beside them, the kit's known repairs (`kit_blockers`). With `--require-genesis-allow`, the run exits 1 unless every `GENESIS_READY` path is ALLOW. With `--require-carry-allow`, it does the same for `CARRY_AFTER_GENESIS`.
+A non-ALLOW carries the verifier's six fields and, beside them, the kit's known repairs (`kit_blockers`). With `--require-genesis-allow`, the run exits 1 unless every `GENESIS_READY` path is ALLOW. With `--require-carry-allow`, it does the same for `CARRY_AFTER_GENESIS`, and with `--require-epoch-allow` for `LEDGER_HEAD_EPOCH_UNOBSERVED`. The manifest lists those paths as `epoch_reseal_allow` and gives `allow_ready_after_supplied_epoch` (12).
 
 Before genesis (today's ledgers) the replay gives ALLOW 0, DENY 0, FAIL_CLOSED 56, and every path is E0-terminal.
 
@@ -73,3 +73,8 @@ Rehearsal of the AE/SV-LLM extension (NOT AUTHENTIC: scratch bare copies of all 
 - AE: every merge-transfer append and every consume was FAIL_CLOSED `HB_EPOCH_SOURCE_UNOBSERVED`, with nothing written.
 - `carry` then landed SV-LLM→org and SV-LLM→Labs as a simulated PR, and their consumes went ALLOW.
 - The replay over those copies gave ALLOW 6 / DENY 0 / FAIL_CLOSED 50, every non-ALLOW with six fields. The 6 ALLOW paths were org↔Labs, org/Labs→SV-LLM and SV-LLM→org/Labs.
+
+Rehearsal with the B-P31 successor folded in (NOT AUTHENTIC: same scratch setup; AE#99 at `0a9a8a8e`, which merges Admissible-Existence/.github#100; the AE head was given a simulated self-closure with a supplied hb_epoch first):
+- AE: the merge-transfer appends (genesis and carry) went ALLOW at the supplied epoch 469411997, and the AE chain stayed supplied. The consumes org→AE, Labs→AE and SV-LLM→AE went ALLOW, and AE's source receipts were carried into org, Labs and SV-LLM, where they went ALLOW.
+- The replay (`--require-genesis-allow --require-carry-allow --require-epoch-allow`) gave ALLOW 12 / DENY 0 / FAIL_CLOSED 44, exit 0. The 44 are the TVC private-end paths (TVC#532/#535).
+- The same rehearsal without the simulated supplied head still gives ALLOW 6 / FAIL_CLOSED 50, so the real state does not change until an authentic AE append with a supplied epoch exists.

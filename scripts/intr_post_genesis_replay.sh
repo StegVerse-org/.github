@@ -8,7 +8,7 @@
 #      its paths stay FAIL_CLOSED with retry at StegVerse-Labs/TVC#532 + #535.
 #   2. replay: scripts/intr_post_genesis_replay.py reads only those local copies (no network, no clock).
 #
-# usage: scripts/intr_post_genesis_replay.sh <out-dir> [--require-genesis-allow] [--require-carry-allow]
+# usage: scripts/intr_post_genesis_replay.sh <out-dir> [--require-genesis-allow] [--require-carry-allow] [--require-epoch-allow]
 set -euo pipefail
 out="${1:?usage: $0 <out-dir> [--require-genesis-allow]}"; shift || true
 ref=refs/stegverse/organization-ledger

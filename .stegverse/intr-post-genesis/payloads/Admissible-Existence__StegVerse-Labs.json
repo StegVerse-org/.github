@@ -6,8 +6,8 @@
    "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
    "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
    "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
-   "owning_existing_goal": "Admissible-Existence/.github#97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE); InTr mesh StegVerse-org/.github#162",
-   "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#97 (B-P31: writers require a supplied epoch, no clock fallback) admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false)",
+   "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162",
+   "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
    "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows"
   },
   {
@@ -15,7 +15,7 @@
    "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
    "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination StegVerse-Labs",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for Admissible-Existence->StegVerse-Labs:intr-destination on Admissible-Existence/.github's ledger (read anonymously at 2b117af78f27e94830b0ff20e2fb3aa49872d80d: none); the writer and the transfers.json row are in Admissible-Existence/.github#99 (head 8396d24e)",
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for Admissible-Existence->StegVerse-Labs:intr-destination on Admissible-Existence/.github's ledger (read anonymously at 2b117af78f27e94830b0ff20e2fb3aa49872d80d: none); the writer and the transfers.json row are in Admissible-Existence/.github#99 (head 0a9a8a8e)",
    "retry_entrypoint": "Admissible-Existence/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
   }
  ],
@@ -23,6 +23,7 @@
  "communication_id": "intr-path-v1:Admissible-Existence->StegVerse-Labs",
  "destination": "StegVerse-Labs",
  "e0_terminal": true,
+ "expected_after_supplied_epoch": "ALLOW",
  "expected_at_genesis": "FAIL_CLOSED",
  "ledger_head_epoch": {
   "Admissible-Existence": {
@@ -35,19 +36,30 @@
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "Admissible-Existence->StegVerse-Labs:intr-destination",
- "payload": null,
- "record_sha256": "sha256:9db1ab2e4f311806e3dbc45e0fe1499b1c10f67794ec9b57c5f9318e46d9fbdb",
+ "payload": {
+  "evidence_known_before_source": {
+   "addressed_service": "stegverse-labs.intr-destination",
+   "path_id": "Admissible-Existence->StegVerse-Labs:intr-destination",
+   "repository": "StegVerse-Labs/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_repository": "Admissible-Existence/.github"
+  },
+  "evidence_known_before_source_sha256": "sha256:1fa5a3d6e281b91c5c57fbe811e95706521637f26a9ed8b76ea53280dddab157",
+  "rule": "the end's ledger head has no supplied epoch, so the source receipt is not written yet; once head_epoch_state reads supplied (derived_from_clock false), `seal` re-classifies this path from the anonymous copy, and until then the replay recomputes the full evidence from the read-back source pair and requires the ledgered evidence to equal it"
+ },
+ "record_sha256": "sha256:d3d1dfe2308cfe5bd7834f843dff3b3244343aedcf3925d764241aad2fa63cc4",
+ "reseal_on_supplied_epoch": true,
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Admissible-Existence",
  "source_receipts": null,
- "source_writer_head": "8396d24e93add6f61324eb4b3ff4797894e2fe0f",
+ "source_writer_head": "0a9a8a8e0cf7bddc92e635cebe7032f1e9727723",
  "source_writer_pr": "Admissible-Existence/.github#99",
  "status": {
   "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
   "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
   "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
-  "owning_existing_goal": "Admissible-Existence/.github#97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE); InTr mesh StegVerse-org/.github#162",
-  "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#97 (B-P31: writers require a supplied epoch, no clock fallback) admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false)",
+  "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162",
+  "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows"
  }
 }

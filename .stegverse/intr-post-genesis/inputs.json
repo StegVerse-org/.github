@@ -5,7 +5,7 @@
  "genesis": {
   "Admissible-Existence": {
    "pr": "Admissible-Existence/.github#99",
-   "head": "8396d24e93add6f61324eb4b3ff4797894e2fe0f",
+   "head": "0a9a8a8e0cf7bddc92e635cebe7032f1e9727723",
    "inbound_rows": [
     "StegVerse-Labs->Admissible-Existence:intr-destination",
     "StegVerse-org->Admissible-Existence:intr-destination"
@@ -72,7 +72,7 @@
  "source_writers": {
   "Admissible-Existence": {
    "pr": "Admissible-Existence/.github#99",
-   "head": "8396d24e93add6f61324eb4b3ff4797894e2fe0f"
+   "head": "0a9a8a8e0cf7bddc92e635cebe7032f1e9727723"
   },
   "SV-LLM": {
    "pr": "SV-LLM/.github#50",
@@ -82,9 +82,9 @@
  "source_writer_entity": "INTR_MESH_PATH_TRANSFER via resident-runtime/intr_path_transfer.py + .github/workflows/intr-path-transfer.yml (workflow_run), linked to ORGANIZATION_MAIN_MERGE_TRANSFER from organization-ledger-merge-transfer.yml. P4's B1 writer (StegVerse-org/.github#222 main_change_receipt.py) resolves to this established entity: its census (main_change_receipt_census.py EXISTING_WRITER) counts a repository with the merge-transfer writer as covered.",
  "ledger_head_epoch_owner": {
   "Admissible-Existence": {
-   "repair": "Admissible-Existence/.github#97 (B-P31: writers require a supplied epoch, no clock fallback) admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false)",
+   "repair": "Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
    "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows",
-   "owning_existing_goal": "Admissible-Existence/.github#97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE); InTr mesh StegVerse-org/.github#162"
+   "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162"
   }
  }
 }

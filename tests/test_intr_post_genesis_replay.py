@@ -74,11 +74,15 @@ class IntrPostGenesisKitTests(unittest.TestCase):
                 self.assertIn(record["cls"], kit.ALLOW_READY + (kit.EPOCH_UNOBSERVED,), p["path_id"])
                 if record["cls"] == kit.EPOCH_UNOBSERVED:
                     self.assertIn("Admissible-Existence", (p["source"], p["destination"]))
-                    self.assertIn("Admissible-Existence/.github#97", record["status"]["owning_existing_goal"])
+                    self.assertIn("Admissible-Existence/.github#100", record["status"]["owning_existing_goal"])
+                    self.assertEqual(record["expected_after_supplied_epoch"], "ALLOW")
+                    self.assertIs(record["reseal_on_supplied_epoch"], True)
             else:
                 self.assertIn(record["cls"], (kit.TVC_SOURCE, kit.TVC_DESTINATION), p["path_id"])
                 self.assertIn("TVC#535", record["status"]["retry_entrypoint"])
         self.assertEqual(MANIFEST["class_counts"].get(kit.EPOCH_UNOBSERVED), 6)
+        self.assertEqual(len(MANIFEST["epoch_reseal_allow"]), 6)
+        self.assertEqual(MANIFEST["allow_ready_after_supplied_epoch"], 12)
 
     def test_carry_document_reproduces_this_repositorys_inbound_rows_and_refuses_with_six_fields(self):
         here = kit.ingress.organization()
@@ -110,7 +114,13 @@ class IntrPostGenesisKitTests(unittest.TestCase):
         carry = kit.load_record("SV-LLM->StegVerse-org:intr-destination")
         moved = copy.deepcopy(carry)
         moved["payload"]["evidence_known_before_source"]["addressed_service"] = "sv-011.intr-destination"
-        self.assertIn("carry payload does not recompute", kit.check_record(kit.seal(moved)))
+        self.assertIn("known-before-source payload does not recompute", kit.check_record(kit.seal(moved)))
+        epoch = kit.load_record("Admissible-Existence->StegVerse-org:intr-destination")
+        unflagged = kit.seal({**epoch, "reseal_on_supplied_epoch": False})
+        self.assertIn("an epoch path expecting ALLOW after a supplied epoch re-seals on it", kit.check_record(unflagged))
+        moved = copy.deepcopy(epoch)
+        moved["payload"]["evidence_known_before_source"]["addressed_service"] = "sv-011.intr-destination"
+        self.assertIn("known-before-source payload does not recompute", kit.check_record(kit.seal(moved)))
         dropped = kit.seal({**carry, "expected_after_carry": None})
         self.assertIn("exactly the carry paths expect ALLOW after carry", kit.check_record(dropped))
 
