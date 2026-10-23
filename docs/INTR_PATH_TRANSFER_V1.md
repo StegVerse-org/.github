@@ -66,9 +66,11 @@ credential; no classic PAT or FEDERATION_* token is used.
 the repositories are internal. No token is minted and no `FEDERATION_*` token is used. Paths whose source is
 another organization also need this transition installed in that organization's `.github`.
 
-**Real state** (`tests/fixtures/intr-path-transfer/expected-real-state.json`, ledger tip `0db6e0bd`): 56/56
-FAIL_CLOSED `INTR_PATH_RECEIPT_NOT_LEDGERED`. No path receipt exists yet. Path receipts appear only once this
-transition lands on main. After that, the 7 paths from StegVerse-org verify their source half, and every path
-stays FAIL_CLOSED at the destination half (`INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`, class A, retry at TVC) until its TVC read receipt is landed. Receipts in
+**Real state** (`tests/fixtures/intr-path-transfer/expected-real-state.json`, ledger tip `21648778`, read with
+`git ls-remote` on 2026-10-23): 56/56 FAIL_CLOSED. The 7 paths sourced in StegVerse-org carry their path receipts
+(transfer commit `5b98086e`, #209): source half ALLOW, destination half FAIL_CLOSED
+(`INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`, class A) until the destination's read of this ledger verifies
+(a TVC read receipt, or the anonymous public-ledger read for a public source). The other 49 are FAIL_CLOSED
+`INTR_PATH_RECEIPT_NOT_LEDGERED` here. Fresh appends are tested on a copy of the pre-receipt tip `0db6e0bd`. Receipts in
 the tests and the PR dry-run are written to temporary directories or a scratch ref. They are not ledgered and
 not authentic.
