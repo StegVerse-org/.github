@@ -14,6 +14,7 @@ on:
       - 'resident-runtime/main_change_receipt.py'
       - 'resident-runtime/main_change_receipt_census.py'
       - 'resident-runtime/push_receipt_session_binder.py'
+      - 'resident-runtime/required_verification.py'
       - 'tests/test_main_change_receipt*.py'
       - 'tests/test_push_receipt_session_binder.py'
 
@@ -23,19 +24,29 @@ permissions:
 jobs:
   unit:
     runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      WORKFLOW_REF: .github/workflows/main-change-receipt-validation.yml unit
     steps:
       - name: Checkout organization boundary
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Writer, census and binder unit tests
+      # Strict runner (resident-runtime/required_verification.py): any skipped, unrun or missing test is
+      # FAIL_CLOSED REQUIRED_VERIFICATION_SKIPPED (six fields); the job fails.
+      - name: Writer, census and binder unit tests (strict, 0 skipped, exact head)
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD^2)" = "$HEAD_SHA"
           git config --global user.name ci
           git config --global user.email ci@stegverse.invalid
-          python3 -m unittest discover -s tests -p 'test_main_change_receipt*.py' -v
-          python3 -m unittest discover -s tests -p 'test_push_receipt_session_binder.py' -v
+          python3 resident-runtime/required_verification.py run --pattern 'test_main_change_receipt*.py' --base "$BASE_SHA" \
+            --retry-entrypoint "$WORKFLOW_REF" --out "$RUNNER_TEMP/writer-unit.json"
+          python3 resident-runtime/required_verification.py run --pattern 'test_push_receipt_session_binder.py' --base "$BASE_SHA" \
+            --retry-entrypoint "$WORKFLOW_REF" --out "$RUNNER_TEMP/binder-unit.json"
 
   dry-run:
     runs-on: ubuntu-latest
@@ -109,3 +120,30 @@ jobs:
         with:
           name: main-change-receipt-dry-run
           path: ${{ runner.temp }}/results
+
+  # Green only when every job above completed and succeeded: a skipped, cancelled or failed job (or one an
+  # `if:` left unrun) fails this gate closed with six fields. Validation only.
+  required-verification:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [unit, dry-run]
+    steps:
+      - name: Every required job completed and succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          needs = json.loads(os.environ["RESULTS"])
+          bad = {k: v["result"] for k, v in needs.items() if v["result"] != "success"}
+          print(json.dumps({k: v["result"] for k, v in needs.items()}, sort_keys=True))
+          if bad or set(needs) != {"unit", "dry-run"}:
+              print("FAIL_CLOSED REQUIRED_VERIFICATION_SKIPPED", json.dumps({
+                  "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+                  "failed_predicate": "EVERY_REQUIRED_JOB_COMPLETED_AND_SUCCEEDED",
+                  "required_evidence_or_repair": f"jobs not successful: {bad}",
+                  "retry_entrypoint": ".github/workflows/main-change-receipt-validation.yml (pull_request)",
+                  "owning_existing_goal": "StegVerse-org/.github#166",
+                  "next_attempt": "the next push to this pull request"}, sort_keys=True))
+              raise SystemExit(1)
+          PY

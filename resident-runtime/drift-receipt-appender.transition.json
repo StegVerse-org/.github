@@ -38,7 +38,7 @@
   "verifier": {
     "path": "resident-runtime/drift_receipt_appender.py",
     "command": "python3 resident-runtime/drift_receipt_appender.py receipt --root <REPO> --payload <DRIFT_PAYLOAD> --writer-ref <PIN> --out <OUT>",
-    "sha256": "sha256:6e26eb7055d15c915bb5b53642baf29f51b168ccb68d361de03e7b26d8fc1265",
+    "sha256": "sha256:748a55af5d6306300d42cddf9488ee067be1e07878dcda71f45259a6f5b1af86",
     "landed": false
   },
   "admission": {

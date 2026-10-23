@@ -114,6 +114,36 @@ def check_payload(writer: ModuleType, payload: Any) -> dict[str, Any] | None:
     return None
 
 
+def verification_item(payload: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Rigel's standing rule (Coordination, Oct 23): merge readiness needs the full suite run at the exact head
+    with 0 skipped; drift handling only marks a receipted pre-existing FAILURE non-blocking. A payload that does
+    not account its run (no ``verification`` block, as every payload before StegVerse-Labs/.github#3317
+    f8cf522f), or that names a skipped / not-run / missing test or job, is receipted with a first item
+    FAIL_CLOSED REQUIRED_VERIFICATION_SKIPPED, whatever disposition the payload itself carries."""
+    v = payload.get("verification")
+    if not isinstance(v, Mapping):
+        return fail("REQUIRED_VERIFICATION_SKIPPED", "PAYLOAD_ACCOUNTS_EVERY_TEST_OF_ITS_RUN",
+                    "the drift payload carries no required-verification accounting, so a skipped, xfailed, uncollected "
+                    "or unrun test cannot be told from a passing one; re-run the drift job with "
+                    "scripts/test_suite_baseline_drift.py at or after StegVerse-Labs/.github#3317 f8cf522f "
+                    "(--junit-xml / --unittest-modules)", "the next drift payload carrying a verification block")
+    rows = [r for r in (payload.get("tests") or v.get("rows") or [])
+            if isinstance(r, Mapping) and r.get("failure_code") == "REQUIRED_VERIFICATION_SKIPPED"]
+    counts = v.get("counts") if isinstance(v.get("counts"), Mapping) else {}
+    skipped = sum(int(counts.get(k, 0) or 0) for k in ("skipped", "xfailed", "xpassed", "expected failures",
+                                                         "unexpected successes"))
+    named = int(v.get("required_verification_skipped") or 0)
+    if rows or named or skipped:
+        first = rows[0] if rows else {}
+        return {**fail("REQUIRED_VERIFICATION_SKIPPED", first.get("failed_predicate") or "REQUIRED_TEST_IS_NOT_SKIPPED",
+                       f"the run left {max(named, len(rows), skipped)} required test(s) or job(s) skipped, unrun or "
+                       f"missing (first: {first.get('kind')} {first.get('test')}); a skipped run is unproven, not "
+                       "passed, and is never a pre-existing baseline failure",
+                       "the next drift payload with 0 skipped", retry=first.get("retry_entrypoint") or ENTRYPOINT),
+                "skipped_or_unrun": max(named, len(rows), skipped)}
+    return None
+
+
 def receipt(root: Path | str, payload: Mapping[str, Any], writer: ModuleType, writer_ref: str) -> dict[str, Any]:
     head = payload["head"]
     if subprocess.run(["git", "-C", str(root), "cat-file", "-e", head + "^{commit}"], capture_output=True).returncode:
@@ -123,7 +153,9 @@ def receipt(root: Path | str, payload: Mapping[str, Any], writer: ModuleType, wr
                             capture_output=True, text=True).stdout.strip()
     pin = {"repository": "StegVerse-org/.github", "path": WRITER_PATH, "ref": writer_ref, "sha256": WRITER_SHA256}
     main_change = writer.observe(root, repository=payload["repository"], before=parent, after=head, writer=pin)[-1]
-    items = [*main_change["items"], ADMISSION_PENDING_GENESIS]
+    verification = verification_item(payload)
+    items = [*([verification] if verification else []), *main_change["items"], ADMISSION_PENDING_GENESIS]
+    first = verification or ADMISSION_PENDING_GENESIS
     body = {"schema": SCHEMA, "operation": OPERATION, "lowest_supported_mode": "E0",
             "transition_declaration": MANIFEST, "repository": payload["repository"],
             "commit": head, "committer_time_recorded": main_change["committer_time_recorded"],
@@ -133,7 +165,8 @@ def receipt(root: Path | str, payload: Mapping[str, Any], writer: ModuleType, wr
             "main_change_receipt": main_change, "main_change_receipt_sha256": main_change["receipt_sha256"],
             "hb_epoch": payload["hb_epoch"], "writer": pin,
             "admission": dict(ADMISSION_PENDING_GENESIS), "items": items, "disposition": "FAIL_CLOSED",
-            "first_item": {k: ADMISSION_PENDING_GENESIS[k] for k in SIX_FIELDS},
+            "required_verification": verification or {"disposition": "ALLOW"},
+            "first_item": {k: first[k] for k in SIX_FIELDS},
             "organization_ledger_effect": "NONE", "authority_effect": "NONE"}
     return writer.seal(body)
 

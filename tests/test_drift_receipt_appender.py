@@ -55,7 +55,8 @@ class AppenderTests(unittest.TestCase):
         body = {"schema": "stegverse.test-suite-baseline-drift/v1", "repository": "Toy/.github", "head": self.head,
                 "hb_epoch": "469411750", "disposition": "FAIL_CLOSED", "failure_code": "TEST_SUITE_BASELINE_DRIFT",
                 "failed_predicate": "MAIN_FAILING_SET_IS_WITHIN_BASELINE", "required_evidence_or_repair": "repair",
-                "retry_entrypoint": "toy.yml", "owning_existing_goal": "#166", "next_attempt": "next push"}
+                "retry_entrypoint": "toy.yml", "owning_existing_goal": "#166", "next_attempt": "next push",
+                "verification": {"runner": "pytest", "counts": {"passed": 2}, "required_verification_skipped": 0}}
         body.update(over)
         return self.writer.seal(body)
 
@@ -172,6 +173,38 @@ class AppenderTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "drift-receipt-appender-validation.yml").read_text()
         for word in ("workflow_dispatch", "schedule", "cron", "contents: write"):
             self.assertNotIn(word, workflow)
+
+    def test_payload_without_verification_accounting_is_required_verification_skipped(self) -> None:
+        body = self.payload()
+        body.pop("verification")
+        body.pop("receipt_sha256")
+        r = appender.receipt(self.repo, self.writer.seal(body), self.writer, "test")
+        self.assertEqual(r["first_item"]["failure_code"], "REQUIRED_VERIFICATION_SKIPPED")
+        self.assertEqual(r["items"][0]["failure_code"], "REQUIRED_VERIFICATION_SKIPPED")
+        self.assert_six(r["items"][0])
+        self.assertEqual(r["disposition"], "FAIL_CLOSED")
+        self.assertEqual(r["admission"]["failure_code"], "DRIFT_RECEIPT_APPENDER_ADMISSION_PENDING_GENESIS")
+
+    def test_pre_existing_payload_naming_a_skip_is_never_receipted_as_pre_existing_alone(self) -> None:
+        row = {"test": "tests/test_s.py::test_s", "kind": "SKIPPED", "failure_code": "REQUIRED_VERIFICATION_SKIPPED",
+               "failed_predicate": "REQUIRED_TEST_IS_NOT_SKIPPED", "retry_entrypoint": "toy.yml",
+               "disposition": "FAIL_CLOSED", "blocking": True}
+        for over in ({"tests": [row], "verification": {"counts": {"skipped": 1}, "required_verification_skipped": 1}},
+                     {"verification": {"counts": {"passed": 3, "xfailed": 1}}},
+                     {"verification": {"counts": {"skipped": 2}}}):
+            payload = self.payload(schema="stegverse.test-suite-pr-disposition/v1",
+                                   disposition="PRE_EXISTING_BASELINE_FAILURE", **over)
+            r = appender.receipt(self.repo, payload, self.writer, "test")
+            first = r["items"][0]
+            self.assertEqual(first["failure_code"], "REQUIRED_VERIFICATION_SKIPPED", over)
+            self.assertNotEqual(r["first_item"]["failure_code"], "PRE_EXISTING_BASELINE_FAILURE")
+            self.assert_six(first)
+            self.assertGreaterEqual(first["skipped_or_unrun"], 1)
+
+    def test_clean_verification_block_adds_no_item(self) -> None:
+        r = appender.receipt(self.repo, self.payload(), self.writer, "test")
+        self.assertEqual(r["required_verification"], {"disposition": "ALLOW"})
+        self.assertNotIn("REQUIRED_VERIFICATION_SKIPPED", [i["failure_code"] for i in r["items"]])
 
     def test_retained_fixtures_verify_under_the_b1_seal(self) -> None:
         for path in sorted(FIXTURES.glob("*.json")):
