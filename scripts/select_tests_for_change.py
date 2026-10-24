@@ -10,7 +10,8 @@ committed at data/test-selection-map.json:
 - references, derived from the head's own bytes by the declared method
   (``reference_method``): repository path -> the test files that read it (a
   literal repo path containing "/" in the test, a path it joins under ROOT,
-  or a Python module it imports; closed over this repository's own Python
+  or a Python module it imports, never resolved to a component's packaged
+  payload copy; closed over this repository's own Python
   files, so a path a module the test loads names is the test's too). Derived at selection time from the
   tree being judged, so the map cannot go stale; ``--references`` prints them.
 - ``rules``: declared path globs -> test globs, for what references miss.
@@ -46,6 +47,12 @@ LITERAL = re.compile(r"""["']([A-Za-z0-9_.\-][A-Za-z0-9_.\-/]*)["']""")
 JOINED = re.compile(r"""(?:/\s*["'][A-Za-z0-9_.\-][A-Za-z0-9_.\-/]*["']\s*){1,}""")
 PART = re.compile(r"""["']([^"']+)["']""")
 SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv"}
+# A component's packaged payload (components/<id>/<version>/files/ or templates/) is bytes an
+# installer copies into another tree; nothing here imports it by module name. Resolving an
+# import by stem to such a copy would make every test that imports the live module
+# (e.g. resident-runtime/ledger_store.py) a test of the vendored copy too. A test that names a
+# payload path literally still selects it through referenced_paths.
+PAYLOAD = re.compile(r"^components/.+/(?:files|templates)/")
 
 
 def repo_files(root: Path) -> list[str]:
@@ -104,7 +111,7 @@ def generate(root: Path) -> dict:
     dirs |= {"/".join(f.split("/")[:i]) for f in files for i in range(1, f.count("/") + 1)}
     by_stem: dict[str, list[str]] = {}
     for f in files:
-        if f.endswith(".py"):
+        if f.endswith(".py") and not PAYLOAD.match(f):
             by_stem.setdefault(Path(f).stem, []).append(f)
     deps = {}  # every Python file: the repo modules it imports and the repo paths it names
     for f in files:

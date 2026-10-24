@@ -105,5 +105,28 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(doc["unmapped_path_policy"], "SELECT_FULL_SUITE")
 
 
+class PayloadCopyTests(unittest.TestCase):
+    """An import resolves to the live module, not to a component's packaged copy of it."""
+
+    def test_a_vendored_payload_copy_does_not_select_the_live_modules_tests(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = {
+                "resident-runtime/store.py": "",
+                "components/pkg/v1/files/resident-runtime/store.py": "",
+                "components/pkg/v1/templates/resident-runtime/store.py": "",
+                "tests/test_store.py": "import store\n",
+                "tests/test_pkg.py": "p = 'components/pkg/v1/files/resident-runtime/store.py'\n",
+            }
+            for rel, text in files.items():
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text(text, encoding="utf-8")
+            refs = sel.generate(root)
+            tests = sel.test_files(sel.repo_files(root))
+            pick = lambda *c: sel.select(MAP | {"references": refs}, list(c), tests)["selected_tests"]
+            self.assertEqual(pick("resident-runtime/store.py"), ["tests/test_store.py"])
+            self.assertEqual(pick("components/pkg/v1/files/resident-runtime/store.py"), ["tests/test_pkg.py"])
+
+
 if __name__ == "__main__":
     unittest.main()
