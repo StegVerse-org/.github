@@ -308,7 +308,7 @@ def run_group(gid):
             step_env[key] = substitute(value, env)
         with tempfile.TemporaryDirectory() as scratch:
             scratch = Path(scratch)
-            files = {k: scratch / k.lower() for k in ("GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_PATH")}
+            files = {k: scratch / k.lower() for k in ("GITHUB_ENV", "GITHUB_OUTPUT", "GITHUB_PATH", "GITHUB_STEP_SUMMARY")}
             for key, path in files.items():
                 path.write_text("", encoding="utf-8")
                 step_env[key] = str(path)
@@ -324,6 +324,10 @@ def run_group(gid):
                 code = 124
             print("::endgroup::", flush=True)
             env.update(read_env_file(files["GITHUB_ENV"]))
+            summary = files["GITHUB_STEP_SUMMARY"].read_text(encoding="utf-8")
+            if summary and os.environ.get("GITHUB_STEP_SUMMARY"):
+                with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+                    handle.write(summary)
             added = [p for p in files["GITHUB_PATH"].read_text(encoding="utf-8").splitlines() if p.strip()]
             if added:
                 env["PATH"] = os.pathsep.join(list(reversed(added)) + [env.get("PATH", "")])
