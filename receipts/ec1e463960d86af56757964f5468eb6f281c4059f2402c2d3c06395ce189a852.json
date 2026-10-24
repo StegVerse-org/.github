@@ -1,0 +1,38 @@
+{
+  "authority_effect": "NONE",
+  "boundary_evidence": {
+    "communication_id": "intr-path-v1:StegVerse-org->AdmittedCode",
+    "destination_organization": "AdmittedCode",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "StegVerse-org->AdmittedCode:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "StegVerse-org/.github",
+    "transfer_commit": "dd7997173beeb5b23f84b3f4cfc77cd607e45095"
+  },
+  "canonical_state_transition_receipt_sha256": null,
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 446655631,
+    "frequency_hz": 100,
+    "generation": 446655631,
+    "heartbeat_id": "HB:446655631",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+  },
+  "org_transition_class": "REPO_STATE_PROPAGATION",
+  "organization": "StegVerse-org",
+  "predecessor_org_state_sha256": "sha256:be844628635a633f7734052ba98b3611505881670014da3aa79a4190fb3805b0",
+  "previous_receipt_sha256": "sha256:da07a7b06510f4fd40c247c7b6f96d8650c88f9b1d9f51473a93a08d631af8be",
+  "receipt_sha256": "sha256:ec1e463960d86af56757964f5468eb6f281c4059f2402c2d3c06395ce189a852",
+  "repo_receipt_sha256": "sha256:5bd621fdfae41e729b7064003ece60342d344f77570dafd0392d8e3ef7c03deb",
+  "repo_transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->AdmittedCode:intr-destination@intr-path-v1:StegVerse-org->AdmittedCode",
+  "schema": "stegverse.organization-transition-receipt/v1",
+  "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+  "source_repository": "StegVerse-org/.github",
+  "source_transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->AdmittedCode:intr-destination@intr-path-v1:StegVerse-org->AdmittedCode",
+  "source_transition_sha256": "sha256:5bd621fdfae41e729b7064003ece60342d344f77570dafd0392d8e3ef7c03deb",
+  "subject_or_correlation_id": null,
+  "successor_org_state_sha256": "sha256:e65baa895fbb60c75dc057c2f028523fd383aa50f751d5d47d0007c84bf4ad98"
+}
