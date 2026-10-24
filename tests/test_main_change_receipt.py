@@ -4,6 +4,7 @@ from the published ref, idempotent, no clock, E0; a forced update of main is rec
 from __future__ import annotations
 
 import ast
+import hashlib
 import importlib.util
 import json
 import os
@@ -139,7 +140,7 @@ class MainChangeReceiptTest(unittest.TestCase):
         reg = json.loads((ROOT / "control/workflow-surface-registry.json").read_text())
         row = next(r for r in reg["fail_closed_pending"] if r["surface"].startswith("main-change-receipt.yml"))
         self.assertEqual((row["disposition"], row["failure_code"]),
-                         ("FAIL_CLOSED", "REUSABLE_WRITER_WORKFLOW_EXCEEDS_G17_SURFACE"))
+                         ("FAIL_CLOSED", "MAIN_CHANGE_RECEIPT_ADMISSION_PENDING_GENESIS"))
         for key in ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
                     "owning_existing_goal", "next_attempt"):
             self.assertTrue(row[key], key)
@@ -154,6 +155,34 @@ class MainChangeReceiptTest(unittest.TestCase):
         for line in body.splitlines():
             if line.strip().startswith(("uses:", "- uses:")):
                 self.assertRegex(line, r"@[0-9a-f]{40}")
+
+
+    def test_the_default_placement_is_a_read_only_catalog_group_and_a_manifest_directed_append(self):
+        # #238 default: no 4th workflow, no hosted writer job; the receipt is produced read-only on push to
+        # main and the append is a transition organization-ledger-writer.yml carries once admitted
+        workflows = sorted(p.name for p in (ROOT / ".github/workflows").glob("*.yml"))
+        self.assertEqual(len(workflows), 3, workflows)
+        cat = json.loads((ROOT / "tools/tasks/task_catalog.json").read_text())
+        group = next(g for g in cat["groups"] if g["id"] == "main-change-receipt.receipt")
+        self.assertEqual(group["events"], ["push"])
+        self.assertEqual(group["runner"]["persist_credentials"], "false")
+        self.assertEqual(group["env"]["WRITER_SHA256"],
+                         hashlib.sha256((ROOT / "resident-runtime/main_change_receipt.py").read_bytes()).hexdigest())
+        body = "\n".join((ROOT / s["run_file"]).read_text() for s in group["steps"])
+        code = "\n".join(l for l in body.splitlines() if not l.lstrip().startswith("#"))
+        self.assertNotIn("git push", code)
+        self.assertNotIn("--force", code)
+        self.assertIn("MAIN_CHANGE_RECEIPT_ADMISSION_PENDING_GENESIS", code)
+        decl = json.loads((ROOT / "resident-runtime/main-change-receipt.transition.json").read_text())
+        self.assertEqual(decl["trigger"]["catalog_group"], "main-change-receipt.receipt")
+        self.assertEqual(decl["reuses"]["writer"]["sha256"], group["env"]["WRITER_SHA256"])
+        self.assertEqual(decl["admission"]["failure_code"], "MAIN_CHANGE_RECEIPT_ADMISSION_PENDING_GENESIS")
+        for key in ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
+                    "owning_existing_goal", "next_attempt"):
+            self.assertTrue(decl["admission"][key], key)
+        for word in decl["trigger"]["forbidden"]:
+            self.assertNotIn(word, group["events"])
+        self.assertEqual((decl["organization_ledger_effect"], decl["authority_effect"]), ("NONE", "NONE"))
 
 
 if __name__ == "__main__":
