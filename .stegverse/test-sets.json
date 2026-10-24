@@ -2118,6 +2118,10 @@
   "org-boundary/runtime/node_standing.py": [
    "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
   ],
+  "org-boundary/runtime/process_boundary.py": [
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py"
+  ],
   "org-kernel/kernel.py": [
    ".stegverse/transition-ledger/emit.py",
    "org-boundary/registry/federation.json",
@@ -2126,6 +2130,7 @@
    "org-boundary/runtime/manifest_selection.py",
    "org-boundary/runtime/node_standing.py",
    "org-boundary/runtime/process_boundary.py",
+   "org-kernel/node_store.py",
    "resident-runtime/activation-manifest.json",
    "resident-runtime/aggregate_repo_transition.py"
   ],
@@ -2405,6 +2410,10 @@
   "tests/fixtures/d6_far_side_registry.py": [
    "tests/fixtures/d6-far-side-non-allow.json"
   ],
+  "tests/fixtures/sdk_manifest_fixture_build.py": [
+   "tests/fixtures/sdk-manifest-build-spec.json",
+   "tests/fixtures/sdk-manifests/**"
+  ],
   "tests/peer_organization.py": [
    ".stegverse/transition-ledger/contract.json",
    ".stegverse/transition-ledger/emit.py",
@@ -2423,6 +2432,9 @@
   "tests/test_admission_predicate.py": [
    "config/admission-predicate/**",
    "resident-runtime/admission_predicate.py",
+   "tests/fixtures/**",
+   "tests/fixtures/admission-predicate/base-state-readback/**",
+   "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880.json",
    "vendor/lane_a/**"
   ],
   "tests/test_boundary_processing_selection.py": [
