@@ -1,0 +1,1 @@
+python -m unittest tests.test_org_emp_kv_projection_schema -v

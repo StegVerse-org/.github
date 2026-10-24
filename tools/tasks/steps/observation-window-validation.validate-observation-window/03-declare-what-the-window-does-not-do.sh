@@ -1,0 +1,7 @@
+echo 'authority_effect=NONE_OBSERVATION_ONLY; delivery_mode=LOCAL_PULL_SAMPLED'
+echo 'canonical_delivery=PUBLISHER->SDK_RETURN->INTR_EGRESS->FAR_SIDE_INTR'
+echo 'canonical_delivery_blocked_by=external_interlock_intr:DEFERRED_AFTER_TESTS_5_AND_6'
+echo 'ordering=OSCILLATOR_HEARTBEAT_EPOCH_ONLY; wall_clock_ordering=false'
+echo 'zero_observed_is_not_proof_none_occurred=true; resolution=sample_gaps_hb'
+echo 'window_dispositions_receipted=OBSERVATION_WINDOW_OPENED,OBSERVATION_WINDOW_CLOSED'
+echo 'recording_is_explicit=true; unrecorded_window_declares_it_left_no_receipt'

@@ -35,7 +35,7 @@
     "kind": "env_path"
    },
    "finish_point": "STEGVERSE_LABS_ROOT names the pinned StegVerse-Labs checkout (sha256-checked) and the schema-conformance tests run and pass at the exact head",
-   "owner": "StegVerse-org/.github#166 (P4 lane: wired in required-verification.yml full-suite)",
+   "owner": "StegVerse-org/.github#166 (P4 lane: wired in catalog group required-verification.full-suite)",
    "repair": "the job fetches the commit in .stegverse/test-suite-baseline/labs-tool-pin.json (resident-runtime/pinned_labs.py fetch) and sets STEGVERSE_LABS_ROOT"
   },
   "ledger-store-step-b": {
@@ -70,9 +70,9 @@
     "kind": "python_module",
     "module": "stegverse"
    },
-   "finish_point": "required-verification.yml full-suite imports the pinned stegverse SDK and the set's tests run and pass at the exact head",
+   "finish_point": "catalog group required-verification.full-suite imports the pinned stegverse SDK and the set's tests run and pass at the exact head",
    "owner": "P1 (StegVerse-org/.github#163)",
-   "repair": "the pinned StegVerse SDK installed in required-verification.yml full-suite (8 workflows here already check out StegVerse-SDK and pip install -e it; P1 decides whether the full-suite job does the same)"
+   "repair": "the pinned StegVerse SDK installed in catalog group required-verification.full-suite (8 workflows here already check out StegVerse-SDK and pip install -e it; P1 decides whether the full-suite job does the same)"
   },
   "tvc": {
    "check": {
@@ -152,7 +152,8 @@
  "runner": "unittest",
  "schema": "stegverse.test-set-spec/v1",
  "selects_all": [
-  ".github/workflows/required-verification.yml",
+  "tools/tasks/steps/required-verification.full-suite/*",
+  "tools/tasks/task_catalog.json",
   ".stegverse/test-suite-baseline/labs-tool-pin.json",
   "*conftest.py",
   "tests/*__init__.py"

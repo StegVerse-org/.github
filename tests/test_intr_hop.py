@@ -282,7 +282,9 @@ class OneWayHopTests(unittest.TestCase):
         assert_six_fields(self, {"disposition": "DENY", **intr_hop._closure_refused([])})
 
     def test_workflow_non_allow_outcomes_carry_the_six_fields(self) -> None:
-        workflow = (ROOT / ".github/workflows/intr-destination-hop.yml").read_text(encoding="utf-8")
+        # G17: the hop job is FAIL_CLOSED pending (dispatch + FEDERATION_HOP_TOKEN) and
+        # retained verbatim as a non-executing record; its validate job is a catalog group.
+        workflow = (ROOT / "tools/tasks/retired/intr-destination-hop.yml").read_text(encoding="utf-8")
         lines = [line for line in workflow.splitlines() if '"disposition":"FAIL_CLOSED"' in line
                  or '"disposition": "FAIL_CLOSED"' in line]
         self.assertGreaterEqual(len(lines), 4)

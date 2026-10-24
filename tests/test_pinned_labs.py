@@ -11,6 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "resident-runtime"))
+if str(ROOT) not in sys.path:  # tests.workflow_surface (G17 #238) when run with --start tests
+    sys.path.append(str(ROOT))
 import pinned_labs  # noqa: E402
 
 
@@ -64,14 +66,17 @@ class PinnedLabsTests(unittest.TestCase):
         self.assertEqual(pinned_labs.main(["verify", "--root", str(root)]), 2)
 
     def test_the_workflows_load_the_validator_from_the_pin_and_jsonschema_only_as_the_agreement_oracle(self) -> None:
-        wf = ROOT / ".github/workflows"
-        for name in ("task-registry-validation.yml", "reviewer-prompt-conformance.yml"):
-            text = (wf / name).read_text()
-            self.assertIn("resident-runtime/pinned_labs.py fetch", text, name)
-            self.assertIn("STEGVERSE_LABS_ROOT", text, name)
-            self.assertNotIn("-m pip install", text, name)
-            self.assertIn("'resident-runtime/pinned_labs.py'", text, name)   # a change to the loader runs the job
-        rv = (wf / "required-verification.yml").read_text()
+        from tests.workflow_surface import DISPATCHER, catalog_group, catalog_groups, step_bodies
+        from required_verification import workflow_pr_filter
+        # G17 (#238): both workflows are folded catalog groups; #222's edit is carried onto their steps
+        for gid in ("task-registry-validation.validate-task-registry",
+                    "reviewer-prompt-conformance.validate-reviewer-prompts"):
+            text = step_bodies(catalog_group(gid))
+            self.assertIn("resident-runtime/pinned_labs.py fetch", text, gid)
+            self.assertIn("STEGVERSE_LABS_ROOT", text, gid)
+            self.assertNotIn("-m pip install", text, gid)
+        self.assertIsNone(workflow_pr_filter(DISPATCHER.read_text())[1])   # a change to the loader runs every group
+        rv = "\n".join(step_bodies(g) for g in catalog_groups("required-verification.yml"))
         self.assertIn('python -m pip install "jsonschema==4.26.0"', rv)                # the agreement oracle input
         self.assertIn("STEGVERSE_LABS_ROOT", rv)
         importer = re.compile(r"(?m)^\s*(import jsonschema|from jsonschema\b)")
