@@ -27,6 +27,8 @@ NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").rea
     "repository_ledger_location"]["namespace"]
 TRANSFER = EXPECTED["verified_transfer_commit"]   # main-merge transfer VERIFIED at the pinned tip
 UNLEDGERED = EXPECTED["unledgered_commit"]        # no main-merge transfer receipt at the pinned tip
+APPEND_BASE = EXPECTED["append_base_tip"]          # last tip before the path receipts: fresh appends are tested here
+LEDGERED_TRANSFER = EXPECTED["ledgered_transfer_commit"]   # the transfer commit of the 7 path receipts at LEDGER_TIP
 
 
 def load(name, relative):
@@ -41,10 +43,10 @@ pt = load("intr_path_transfer_under_test", "resident-runtime/intr_path_transfer.
 
 
 class Ledger:
-    def __init__(self):
+    def __init__(self, tip=LEDGER_TIP):
         self.dir = tempfile.TemporaryDirectory()
         self.root = Path(self.dir.name)
-        subprocess.run("git -C '%s' archive %s | tar -x -C '%s'" % (ROOT, LEDGER_TIP, self.root), shell=True, check=True)
+        subprocess.run("git -C '%s' archive %s | tar -x -C '%s'" % (ROOT, tip, self.root), shell=True, check=True)
         self.saved = {k: os.environ.get(k) for k in ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_REPO_LEDGER_ROOT")}
         os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = str(self.root)
         os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = str(self.root / NAMESPACE)
@@ -112,10 +114,27 @@ class RealState(unittest.TestCase):
         self.assertEqual(state["paths"], EXPECTED["paths"])
         self.assertEqual(state["counts"], EXPECTED["counts"])
 
+    def test_paths_sourced_here_are_answered_from_the_ledger_at_the_pinned_tip(self):
+        ledger = Ledger()
+        try:
+            before = ledger.files()
+            results = pt.append_transfers(TRANSFER)
+            self.assertEqual([(r["disposition"], bool(r.get("replayed"))) for r in results], [("ALLOW", True)] * 7, results)
+            self.assertEqual(ledger.files(), before)
+            for p in mine():
+                source = pt.verify_source(p, cid(p))
+                self.assertEqual((source["disposition"], source["transfer_commit"]), ("ALLOW", LEDGERED_TRANSFER))
+                whole = pt.verify_path(p, cid(p))
+                self.assertEqual(whole["halves"], {"source": "ALLOW", "destination": "FAIL_CLOSED"})
+                for field in pt.SIX_FIELDS:
+                    self.assertTrue(whole[field], field)
+        finally:
+            ledger.close()
+
 
 class Append(unittest.TestCase):
     def setUp(self):
-        self.ledger = Ledger()
+        self.ledger = Ledger(APPEND_BASE)
 
     def tearDown(self):
         self.ledger.close()
