@@ -2055,9 +2055,12 @@
    "tests/test_llm_org_foundation.py"
   ],
   "tests/test_main_change_receipt.py": [
+   ".github/workflows/**",
    "control/workflow-surface-registry.json",
+   "resident-runtime/main-change-receipt.transition.json",
    "resident-runtime/main_change_receipt.py",
-   "tools/tasks/retired/main-change-receipt.yml"
+   "tools/tasks/retired/main-change-receipt.yml",
+   "tools/tasks/task_catalog.json"
   ],
   "tests/test_main_change_receipt_census.py": [
    "resident-runtime/main_change_receipt_census.py"

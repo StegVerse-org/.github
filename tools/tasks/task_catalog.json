@@ -2193,6 +2193,44 @@
       }
     },
     {
+      "id": "main-change-receipt.receipt",
+      "source": {
+        "added_by": "P4 #222 writer placement default (StegVerse-org/.github#238)",
+        "note": "the retired workflow_call writer's receipt computation, read-only on push to main; the append is a manifest-directed transition (resident-runtime/main-change-receipt.transition.json) carried by organization-ledger-writer.yml once admitted",
+        "name": "Main change receipt"
+      },
+      "events": [
+        "push"
+      ],
+      "env": {
+        "BEFORE_SHA": "${{ github.event.before }}",
+        "AFTER_SHA": "${{ github.event.after }}",
+        "WRITER_SHA256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+      },
+      "steps": [
+        {
+          "name": "Receipt the pushed main range on a scratch copy, verify from a fresh fetch, retain the candidate (admission FAIL_CLOSED pending genesis; nothing published)",
+          "run_file": "tools/tasks/steps/main-change-receipt.receipt/01-receipt-the-pushed-main-range-on-a-scratch-copy-retain-the-candidate.sh",
+          "run_sha256": "c3c479b2e5b878e6f1ccf67fbbd1979ae8fe4cca07549d7c45e291ae79d7007a"
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "main-change-receipt",
+          "path": "${{ runner.temp }}/results",
+          "if_no_files_found": "warn",
+          "if": "always()"
+        }
+      ],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360,
+        "artifact_name": "main-change-receipt",
+        "artifact_if_no_files_found": "warn"
+      }
+    },
+    {
       "id": "required-verification.full-suite",
       "source": {
         "workflow": ".github/workflows/required-verification.yml",
