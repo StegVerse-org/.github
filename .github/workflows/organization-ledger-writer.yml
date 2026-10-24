@@ -18,6 +18,11 @@ name: Organization Ledger Writer
 #                      (was organization-ledger-transition.yml)
 #   governance-return  when .stegverse/governance-return-requests/** changed
 #                      (was organization-governance-return.yml)
+#   ledger-ingest      when .stegverse/organization-ledger-ingest/** changed: a
+#                      committed ingest request (a test receipt sealed by its
+#                      producer's CI) appended by the governed writer
+#                      (resident-runtime/organization_ledger_ingest.py; the same
+#                      route StegVerse-Labs/.github runs). No dispatch.
 # Jobs run one after another because each publishes the same ledger ref
 # fast-forward only. Their steps are the original steps unchanged except that
 # github.event.workflow_run.head_sha is github.sha (the same commit: the
@@ -48,6 +53,7 @@ jobs:
     outputs:
       ledger-transition: ${{ steps.plan.outputs.ledger-transition }}
       governance-return: ${{ steps.plan.outputs.governance-return }}
+      ledger-ingest: ${{ steps.plan.outputs.ledger-ingest }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -968,5 +974,86 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: organization-governance-return
+          path: ${{ runner.temp }}/results
+          if-no-files-found: ignore
+
+  # A committed ingest request: .stegverse/organization-ledger-ingest/request.json.
+  # Today one operation, sealed_test_receipt: a receipt sealed by its producer's
+  # own CI (e.g. StegVerse-Labs/TVC's conformance receipt) that names this
+  # organization's ledger as its ledger_candidate.target. The writer admits it
+  # (seal over the canonical body, an accepted kind, ALLOW, zero skipped, failed
+  # and errored, this ledger as target, provenance agreeing) and appends it
+  # through aggregate_repo_transition.append at the epoch the ledger head carries
+  # (no clock), retaining the receipt unchanged as its source receipt. The ref
+  # moves only by the fast-forward push below; it is read back from a fresh
+  # fetch. The PR-facing check is catalog group organization-ledger-ingest-validation.unit.
+  ledger-ingest:
+    needs: [plan, merge-transfer, path-transfer, path-ingress, ledger-transition, governance-return]
+    if: ${{ !cancelled() && needs.plan.outputs.ledger-ingest == 'true' }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      LEDGER_REF: refs/stegverse/organization-ledger
+      REQUEST: .stegverse/organization-ledger-ingest/request.json
+    steps:
+      - name: Checkout organization boundary
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Read the ingest request from the pushed commit
+        run: |
+          python -m py_compile resident-runtime/organization_ledger_ingest.py \
+            resident-runtime/aggregate_repo_transition.py resident-runtime/organization_ledger_readback.py
+          python resident-runtime/organization_ledger_ingest.py read --request "$REQUEST"
+
+      - name: Bind the designated organization ledger ref
+        run: |
+          ref=$(python -c 'import json; c=json.load(open(".stegverse/transition-ledger/org-contract.json")); assert c["organization_ledger_repository"]=="StegVerse-org/.github", c; print(c["organization_ledger_ref"])')
+          test "$ref" = "$LEDGER_REF"
+          if ! git ls-remote --exit-code origin "$LEDGER_REF" >/dev/null; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"ORGANIZATION_LEDGER_UNAVAILABLE","failed_predicate":"SUPPLIED_ORGANIZATION_LEDGER_STORE_OPENS","required_evidence_or_repair":"the designated ledger ref exists; an ingest never opens a ledger at genesis","retry_entrypoint":".github/workflows/organization-ledger-writer.yml ledger-ingest","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-run the push once the ledger ref is published; nothing was written","consequence_committed":false}' >&2
+            exit 1
+          fi
+          git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
+          echo "ledger tip: $(git rev-parse "$LEDGER_REF")"
+
+      - name: Append the sealed receipt through the governed writer
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/results"
+          STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF" \
+            python resident-runtime/organization_ledger_ingest.py append-sealed --request "$REQUEST" \
+              --ledger-repository "$GITHUB_REPOSITORY" --out "$RUNNER_TEMP/results/sealed-receipt-append.json" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish the ledger ref (fast-forward only)
+        run: |
+          if ! git push origin "$LEDGER_REF:$LEDGER_REF"; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"ORGANIZATION_LEDGER_PUBLISH_RACE","failed_predicate":"PUBLISHED_REF_FAST_FORWARDS","required_evidence_or_repair":"another append moved the ref first; this run published nothing","retry_entrypoint":".github/workflows/organization-ledger-writer.yml ledger-ingest","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-run; the request is answered from the ledger if already recorded","consequence_committed":false}'
+            exit 1
+          fi
+
+      - name: Read the appended sealed receipt back from a fresh fetch
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/readback.git"
+          git init -q --bare "$fresh"
+          auth_header=$(git config --local --get http.https://github.com/.extraheader || true)
+          if [ -z "$auth_header" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE","failed_predicate":"FRESH_FETCH_AUTHENTICATED","required_evidence_or_repair":"checkout credentials unavailable for independent sovereign ref fetch","retry_entrypoint":".github/workflows/organization-ledger-writer.yml ledger-ingest","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"retry with authorized existing repository contents token","consequence_committed":false}'
+            exit 1
+          fi
+          git --git-dir="$fresh" -c http.https://github.com/.extraheader="$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
+          python resident-runtime/organization_ledger_ingest.py readback-sealed --request "$REQUEST" \
+            --location "git+$fresh#$LEDGER_REF" --out "$RUNNER_TEMP/results/sealed-receipt-readback.json" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain the run's evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: organization-ledger-ingest
           path: ${{ runner.temp }}/results
           if-no-files-found: ignore
