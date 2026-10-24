@@ -317,16 +317,22 @@ class Refusals(unittest.TestCase):
 
 class PushedCommits(unittest.TestCase):
     def test_pending_first_then_the_first_parent_range(self):
-        fixture = json.loads(FIXTURES[0].read_text())
+        fixtures = [json.loads(p.read_text()) for p in FIXTURES]
+        # the newest pending merge: every other pending merge is its ancestor
+        fixture = next(f for f in fixtures if all(
+            subprocess.run(["git", "-C", str(ROOT), "merge-base", "--is-ancestor", g["commit"]["merge_commit"],
+                            f["commit"]["merge_commit"]]).returncode == 0 for g in fixtures))
         merge = fixture["commit"]["merge_commit"]
         first_parent = fixture["commit"]["parents"][0]
+        pending = mt.pending(PENDING)
         self.assertEqual(mt.pushed_commits(first_parent, merge, None), [merge])
         self.assertEqual(mt.pushed_commits("0" * 40, merge, None), [merge])
-        self.assertEqual(mt.pushed_commits(first_parent, merge, PENDING), [merge])
+        self.assertEqual(mt.pushed_commits(first_parent, merge, PENDING), pending)
         head = git("rev-parse", "HEAD").strip()
         listed = mt.pushed_commits(merge, head, PENDING)
-        self.assertEqual(listed[0], merge)
-        self.assertEqual(listed[1:], git("rev-list", "--first-parent", "--reverse", merge + ".." + head).split())
+        self.assertEqual(listed[:len(pending)], pending)
+        self.assertEqual(listed[len(pending):],
+                         git("rev-list", "--first-parent", "--reverse", merge + ".." + head).split())
 
     def test_a_pending_merge_not_on_main_is_refused(self):
         fixture = json.loads(FIXTURES[0].read_text())

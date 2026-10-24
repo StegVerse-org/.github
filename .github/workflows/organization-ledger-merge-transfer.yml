@@ -41,7 +41,7 @@ jobs:
       BEFORE: ${{ github.event.before }}
     steps:
       - name: Checkout organization boundary
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -60,7 +60,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/results"
-          python3 resident-runtime/merge_transfer.py commits --before "$BEFORE" --after "$GITHUB_SHA" \
+          # pending merges, then the push's base when it is on main with no receipt, then the pushed range
+          # (resident-runtime/merge_transfer_range.py); the base is checked on the ledger about to be appended to
+          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
+          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"
+          python3 resident-runtime/merge_transfer_range.py --before "$BEFORE" --after "$GITHUB_SHA" \
             --pending .stegverse/merge-transfer/pending.json > "$RUNNER_TEMP/results/commits.txt"
           cat "$RUNNER_TEMP/results/commits.txt"
 
@@ -98,7 +102,7 @@ jobs:
 
       - name: Retain the run's evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: main-merge-transfer-${{ github.sha }}
           path: ${{ runner.temp }}/results

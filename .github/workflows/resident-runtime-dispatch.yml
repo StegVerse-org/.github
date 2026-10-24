@@ -45,7 +45,7 @@ jobs:
       NODE_STATE_ROOT: ${{ github.event.inputs.node_state_root }}
     steps:
       - name: Checkout organization boundary
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # Gate first: an empty, signed, padded, fullwidth or sub-anchor epoch is
       # refused six-field and nothing below runs. A workflow_dispatch string
@@ -74,7 +74,7 @@ jobs:
 
       - name: Retain the dispatch evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: resident-runtime-dispatch
           path: ${{ runner.temp }}/results

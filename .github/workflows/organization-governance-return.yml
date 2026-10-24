@@ -63,7 +63,7 @@ jobs:
       LEDGER_REF: refs/stegverse/organization-ledger
     steps:
       - name: Checkout organization boundary
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -114,7 +114,7 @@ jobs:
           fi
 
       - name: Checkout exact merged SDK manifest state-transition runtime
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: StegVerse-org/StegVerse-SDK
           ref: ${{ env.RETURN_SDK_REF || '74d9b473aa415b06a9d550c28b2779a691b4ba32' }}
@@ -246,7 +246,7 @@ jobs:
       # and is evidence only: it never changes this run's disposition.
       - name: Checkout the SDK acceptance verifier
         if: ${{ always() && env.RETURN_DECIDING_LEDGER != '' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: StegVerse-org/StegVerse-SDK
           ref: d6873d84dddc91ef6b26774336b05c8e1f4042c0
@@ -270,7 +270,7 @@ jobs:
 
       - name: Retain the run's evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: organization-governance-return
           path: ${{ runner.temp }}/results

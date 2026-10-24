@@ -134,11 +134,29 @@ def append(transition_id,transition_class,predecessor_state_sha256,successor_sta
    return r
  raise SystemExit("REPO_LEDGER_APPEND_CONTENTION_EXHAUSTED")
 
+# --hb-epoch is taken as typed (type=str) and checked by the shared supplied-epoch
+# rule. argparse type=int coerced ' 32', '+32', '3_2' and non-ASCII digits such
+# as '\u0663\u0662' into an epoch the rule refuses (P1-FC-10
+# HB_EPOCH_INVALID_COERCED); now they are refused FAIL_CLOSED in six fields and
+# nothing is appended. An absent --hb-epoch is unchanged.
+EPOCH_ENTRYPOINT=".stegverse/transition-ledger/emit.py (--hb-epoch)"
+def cli_hb_epoch(text):
+ if text is None:return None,None
+ _bspec=importlib.util.spec_from_file_location("organization_egress_boundary_cli_epoch",ROOT/"resident-runtime/organization_egress_boundary.py")
+ boundary=importlib.util.module_from_spec(_bspec);_bspec.loader.exec_module(boundary)
+ failure=boundary.supplied_epoch_failure(text)
+ if failure is None:return int(text),None
+ code,detail=failure
+ return None,{"disposition":"FAIL_CLOSED","failure_code":code,"failed_predicate":"SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH","detail":detail,"required_evidence_or_repair":"pass --hb-epoch as the carrier supplied it: ASCII digits with value >= 32","retry_entrypoint":EPOCH_ENTRYPOINT,"owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001","next_attempt":"run again with the supplied epoch; nothing was appended","appended":False,"authority_effect":"NONE_REFUSAL_ONLY"}
+
 def main():
  # An exact rerun returns the receipt recorded for this transition (F-POST-HEAD):
  # the same id with any other field is a ledger_receipt_collision, never a second receipt.
  p=argparse.ArgumentParser();p.add_argument("--transition-id",required=True);p.add_argument("--transition-class",required=True);p.add_argument("--predecessor-state-sha256",required=True);p.add_argument("--successor-state-sha256",required=True);p.add_argument("--evidence-json",default="{}");p.add_argument("--authority-effect",default="NONE");p.add_argument("--hb-epoch",default=None,help="heartbeat epoch, as supplied (ASCII digits >= 32); refused FAIL_CLOSED when absent, never derived from a clock");a=p.parse_args()
- try:ev=json.loads(a.evidence_json);r=append(a.transition_id,a.transition_class,a.predecessor_state_sha256,a.successor_state_sha256,ev,a.authority_effect,a.hb_epoch,idempotent_on=tuple(sorted(ev)) if isinstance(ev,dict) else ())
+ hb_epoch,refused=cli_hb_epoch(a.hb_epoch)
+ if refused is not None:
+  print(json.dumps(refused,sort_keys=True));raise SystemExit(1)
+ try:ev=json.loads(a.evidence_json);r=append(a.transition_id,a.transition_class,a.predecessor_state_sha256,a.successor_state_sha256,ev,a.authority_effect,hb_epoch,idempotent_on=tuple(sorted(ev)) if isinstance(ev,dict) else ())
  except RepoLedgerChainBreak as exc:
   print(json.dumps(chain_break_refusal(exc),sort_keys=True));raise SystemExit(1)
  except RepoLedgerEpochRefused as exc:

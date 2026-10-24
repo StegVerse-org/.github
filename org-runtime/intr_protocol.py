@@ -269,10 +269,12 @@ MERGE_TRANSFER_RESULT_SCHEMA = "stegverse.intr-main-merge-transfer-result/v1"
 NOT_LEDGERED = "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED"
 LINK_UNVERIFIED = "MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED"
 SUBJECT_UNOBSERVED = "MERGE_TRANSFER_SUBJECT_UNOBSERVED"
+DUAL_DIVERGENCE = "MERGE_TRANSFER_DUAL_LEDGER_DIVERGENCE"
 # failed_predicate ids, as resident-runtime/merge_transfer.py verify names them
 LEDGERED_PREDICATE = "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT"
 LINK_PREDICATE = "ORGANIZATION_RECEIPT_LINKS_TO_THE_MERGE_COMMIT"
 SUBJECT_PREDICATE = "READBACK_NAMES_THE_MERGE"
+DUAL_PREDICATE = "REPOSITORY_AND_ORGANIZATION_LEDGERS_HOLD_ONE_RECEIPT"
 _HEX = set("0123456789abcdef")
 
 
@@ -291,6 +293,19 @@ def _evidence_payload_digest(evidence: Mapping[str, Any]) -> str:
                    if k not in ("payload_sha256", "disposition", "communication_id")})
 
 
+def merge_transfer_verifier(organization: Any, contract: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """The pinned verifier for one organization: verifiers_by_organization, else the default (single read)."""
+    contract = contract or load_contract()
+    spec = contract["main_merge_transfer"]
+    pinned = spec.get("verifiers_by_organization", {}).get(organization)
+    if isinstance(pinned, Mapping):
+        return {"path": pinned["path"], "checked_by": pinned["checked_by"], "mode": pinned["mode"],
+                "sha256": pinned["sha256"]}
+    default = spec["verifier"]
+    return {"path": default["path"], "checked_by": spec["destination_predicates"][0]["checked_by"],
+            "mode": "single", "sha256": default["sha256"]}
+
+
 def verify_merge_transfer_evidence(readback: Any, contract: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Check supplied main-merge transfer evidence offline: the contract of merge_transfer.py verify.
 
@@ -307,6 +322,12 @@ def verify_merge_transfer_evidence(readback: Any, contract: Mapping[str, Any] | 
     DENY MERGE_TRANSFER_RECEIPT_LINK_UNVERIFIED: present, sealed evidence that
     contradicts the merge (repository, link, evidence schema, merge_commit,
     repository, ref, or evidence digest). No ledger, clock, network or git is read.
+
+    For an organization whose pinned verifier runs in mode dual
+    (verifiers_by_organization: merge_transfer_gitstore.py verify), the readback
+    also carries retained_repository_receipt, the copy the organization ledger
+    retained under source-receipts/ for the linked receipt; absent or different
+    is FAIL_CLOSED MERGE_TRANSFER_DUAL_LEDGER_DIVERGENCE, as that verifier answers.
     """
     contract = contract or load_contract()
     spec = contract["main_merge_transfer"]
@@ -362,6 +383,15 @@ def verify_merge_transfer_evidence(readback: Any, contract: Mapping[str, Any] | 
     repo_receipt = readback.get("repository_receipt")
     if not receipt_sealed(repo_receipt):
         return not_ledgered("repository receipt " + str(linked) + " is absent or unsealed")
+    verifier = merge_transfer_verifier(repo.split("/")[0], contract)
+    if verifier["mode"] == "dual" and readback.get("retained_repository_receipt") != repo_receipt:
+        retained = readback.get("retained_repository_receipt")
+        return refuse(FAIL_CLOSED, DUAL_DIVERGENCE, DUAL_PREDICATE,
+                      "the repository chain's receipt " + str(linked) + " and the copy " + repo.split("/")[0]
+                      + "'s organization ledger retained under source-receipts/ must be the same receipt",
+                      "inspect both copies of " + str(linked) + "; neither is preferred and nothing was verified",
+                      "retained copy is absent" if retained is None
+                      else "retained copy differs from the repository chain's receipt")
     evidence = repo_receipt.get("evidence")
     evidence = evidence if isinstance(evidence, Mapping) else {}
     contradictions = []
@@ -391,7 +421,8 @@ def verify_merge_transfer_evidence(readback: Any, contract: Mapping[str, Any] | 
                    "organization_receipt_sha256": org_receipt["receipt_sha256"],
                    "repository_receipt_sha256": repo_receipt["receipt_sha256"],
                    "pull_request": evidence.get("pull_request"),
-                   "hb_epoch": hb.get("epoch") if isinstance(hb, Mapping) else None})
+                   "hb_epoch": hb.get("epoch") if isinstance(hb, Mapping) else None,
+                   "verifier": verifier["checked_by"], "verifier_mode": verifier["mode"]})
     result["result_digest"] = digest(result)
     return result
 
@@ -421,6 +452,9 @@ def conform_mesh(manifest_path: Path | str, contract: Mapping[str, Any] | None =
         documents = {}
         for key in ("interlock", "services"):
             entry = row[key]
+            if not entry or not entry.get("file"):
+                documents[key] = None
+                continue
             path = base / entry["file"]
             if not path.is_file():
                 documents[key] = None

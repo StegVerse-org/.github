@@ -127,9 +127,16 @@ class OrgLedgerEpochRefused(OrgLedgerAppendRefused):
         self.refusal = dict(refusal)
 
 
-def epoch_refusal(hb_epoch):
-    """The six-field FAIL_CLOSED refusal of an append's epoch, or None."""
-    failure = supplied_epoch_failure(hb_epoch)
+def epoch_refusal(hb_epoch, reference=None):
+    """The six-field FAIL_CLOSED refusal of an append's epoch, or None.
+
+    `reference` is the source receipt's own heartbeat reference when it carries
+    one. A two-level binder passes the repository receipt's epoch here; when
+    that epoch was derived from a clock (`derived_from_clock` not exactly
+    false) it is not a supplied one and is HB_EPOCH_INVALID (P1 #163
+    CLOCK_DERIVED_EPOCH_ADMITTED_BY_ORG_APPEND, repair (a)).
+    """
+    failure = supplied_epoch_failure(hb_epoch, reference)
     if failure is None:
         return None
     code, detail = failure
@@ -143,7 +150,8 @@ def epoch_refusal(hb_epoch):
             + str(HB_ANCHOR_EPOCH) + "; it is never derived from a clock"),
         "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
         "owning_existing_goal": INTR_PROTOCOL_GOAL,
-        "next_attempt": "append again with the supplied epoch; nothing was written",
+        "next_attempt": ("append again with the supplied epoch, from a source receipt whose own epoch "
+                         "was supplied rather than derived from a clock; nothing was written"),
     }
 
 
@@ -531,7 +539,7 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
     # and checked by the shared rule; an absent or invalid one is refused
     # six-field FAIL_CLOSED before the store is opened (PR-1c). It used to be
     # derived from the host clock and marked as derived.
-    refusal = epoch_refusal(hb_epoch)
+    refusal = epoch_refusal(hb_epoch, source_receipt.get("hb_reference"))
     if refusal is not None:
         raise OrgLedgerEpochRefused(refusal)
     heartbeat = (kernel.hb_reference(epoch=int(str(hb_epoch))) if hb_provenance is None

@@ -116,7 +116,7 @@ D7: when the manifest's published route binds `stegverse.manifest_state_transiti
 
 What the refusal record does *not* claim is anything the organization did not produce: no resolved service, no boundary receipt chain, no runtime result. And `organization_receipt_observed` stays false on every refusal, because it means an admitted crossing was observed and a refusal receipt is not that — a caller reading one as the other would treat a refused submission as a completed transition. The refusal's own digests are returned under `refusal_repository_receipt_sha256` and `refusal_organization_receipt_sha256`.
 
-The capability this organization's internal endpoint currently serves is `ecosystem_diagnostic`. `governance` is refused at the far side as a capability that service does not admit.
+This organization's internal endpoints admit `ecosystem_diagnostic` and, through the ACTIVE `stegverse-org.governance` service (adapter `resident-runtime/governance_endpoint.py`), `governance`.
 
 The latent conflict once recorded here is resolved at its owner. The SDK's governance result validator no longer requires `organization_master_records_closure_observed: true`; it now requires `records_authority: ORGANIZATION_RECORDS_ONLY` and refuses a governance result that claims a Master Records organization record (`GOVERNANCE_RESULT_MASTER_RECORDS_NOT_IN_GOVERNANCE_PATH`, `stegverse/manifest_state_transition_runtime.py` on StegVerse-SDK main). That matches `ORGANIZATION-ROLE-RUNTIME-REALITY-DEPLOYMENT-001` (`may_be_awaited_by_a_transition: false`, `may_gate_organization_runtime_reality: false`). `governance` is now admitted by `stegverse-org.governance`.
 

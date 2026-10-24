@@ -105,6 +105,10 @@ organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
 
 INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
+#: The shared supplied-epoch rule (P1-FC-8, PR-1b), as on the kernel path.
+capability_epoch = _module("capability_ingress_epoch", "org-boundary/runtime/capability_ingress.py")
+RECEIVE_ENTRYPOINT = "resident-runtime/intr_destination_ingress.py::receive"
+CLOSURE_ENTRYPOINT = "resident-runtime/intr_destination_ingress.py::closure"
 
 
 #: P1 interface (#163): where the ledger writers load from and where their
@@ -481,6 +485,24 @@ def receive(payload: Any, *, registry: Mapping[str, Any], standing: Mapping[str,
     A diagnostic does not leave, so the mesh is not used.
     """
     del standing, mesh_root
+    # PR-1b: no epoch, or one the shared rule refuses, is FAIL_CLOSED before
+    # anything is appended; the host clock is never the fallback.
+    epoch_refused = capability_epoch.direct_epoch_refusal(hb_epoch, RECEIVE_ENTRYPOINT)
+    if epoch_refused is not None:
+        return {
+            "schema": RESULT_SCHEMA,
+            "organization": organization_ledger.C["organization"],
+            "receiving_operation": OPERATION_ID,
+            "profile_id": PROFILE_ID,
+            **epoch_refused,
+            "received": False,
+            "communication_acknowledged": False,
+            "repository_receipt_observed": False,
+            "organization_receipt_observed": False,
+            "refusal_recorded": False,
+            "authority_effect": "NONE_REFUSAL_ONLY",
+        }
+    hb_epoch = capability_epoch.supplied_epoch(hb_epoch)
     if not isinstance(registry, Mapping):
         return _recorded(DENY, payload, packet_id, hb_epoch,
                          failed_predicate="CAPABILITY_MAP_IS_A_MAPPING",
@@ -588,6 +610,19 @@ def closure(communication_id: Any, *, registry: Mapping[str, Any], packet_id: An
     chain is extended: the predecessor link is the published HEAD, and an empty
     chain is not reopened over receipts that are already there.
     """
+    epoch_refused = capability_epoch.direct_epoch_refusal(hb_epoch, CLOSURE_ENTRYPOINT)
+    if epoch_refused is not None:
+        return {
+            "schema": CLOSURE_SCHEMA,
+            "organization": organization_ledger.C["organization"],
+            "receiving_operation": OPERATION_ID,
+            "self_closure": True,
+            "communication_id": communication_id if isinstance(communication_id, str) else None,
+            **epoch_refused,
+            "received": False,
+            "communication_acknowledged": False,
+            "authority_effect": "NONE_REFUSAL_ONLY",
+        }
     address = _served_address(registry)
     communication_id = _token(communication_id, "COMMUNICATION_ID_REQUIRED")
     packet_id = _token(packet_id, "PACKET_ID_REQUIRED")

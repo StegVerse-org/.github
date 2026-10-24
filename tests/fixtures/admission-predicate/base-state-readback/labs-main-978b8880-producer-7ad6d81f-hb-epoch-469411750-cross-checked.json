@@ -1,0 +1,41 @@
+{
+  "authority_effect": "NONE_READBACK_ONLY",
+  "base_ref": {
+    "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
+    "registry_generation": 319
+  },
+  "bound_main_commit": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+  "component_id": "RTC-SV-CHANGE-BASE-STATE-READBACK-014",
+  "cross_checked": true,
+  "disposition": "ALLOW",
+  "hb_epoch": "469411750",
+  "hb_epoch_source": {
+    "field": "$.hb_reference.epoch",
+    "ledger_head": "a5bb54d81893b392a3ce28182986fc39857807e1",
+    "receipt": "receipts/35810b6598e99cef32d9a0f1f97d07394d9f21c540ed7d3a395d9d78b753db3d.json"
+  },
+  "ledger_chain_length": 7,
+  "ledger_chain_verifies": true,
+  "ledger_head_receipt_sha256": "sha256:35810b6598e99cef32d9a0f1f97d07394d9f21c540ed7d3a395d9d78b753db3d",
+  "main_ref": "refs/remotes/origin/main",
+  "main_tip": "978b8880d238dc3e3a8b690c0675d8bb0e9d6985",
+  "readback_writes": false,
+  "repository": "StegVerse-Labs/.github",
+  "result_sha256": "sha256:24ea962bc6da85c53af0472603b1989a9c54100506e263fa4a25e19db5f2ebd9",
+  "schema": "stegverse.sv-change-base-state-readback/v1",
+  "sources": [
+    {
+      "blob_sha": "8d3ff1902412ab85c0fafcdb4c2f11cc0b0afbef",
+      "file": "data/canonical-task-registry.json"
+    },
+    {
+      "blob_sha": "5c1a3631639449b9788d16901b5e4f4b57e377ac",
+      "file": "refs/stegverse/organization-ledger:HEAD.json"
+    },
+    {
+      "blob_sha": "068854be56b9f6159728d9e67681e8de05819692",
+      "file": "refs/stegverse/organization-ledger:receipts/35810b6598e99cef32d9a0f1f97d07394d9f21c540ed7d3a395d9d78b753db3d.json"
+    }
+  ],
+  "supplied_hb_epoch": "469411750"
+}

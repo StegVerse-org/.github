@@ -464,9 +464,13 @@ class MasterRecordsRoleAuditTests(unittest.TestCase):
                 if pattern.search(line):
                     measured.append((rel.as_posix(), line.strip()[:240]))
         declared = [(e["file"], e["text"]) for e in self.audit["occurrences"] if e["line"] is not None]
-        self.assertEqual(sorted(measured), sorted(declared),
+        from collections import Counter
+        newly_observed = list((Counter(measured) - Counter(declared)).elements())
+        stale_declared = list((Counter(declared) - Counter(measured)).elements())
+        self.assertEqual((newly_observed, stale_declared), ([], []),
                          "the Master Records role audit has drifted from the tree; "
-                         "re-measure data/master-records-role-audit.json")
+                         "re-measure data/master-records-role-audit.json. "
+                         "newly_observed=" + repr(newly_observed) + " stale_declared=" + repr(stale_declared))
 
     def test_the_completion_evidence_class_is_classified_not_renamed(self):
         entries = [e for e in self.audit["occurrences"] if "MASTER_RECORDS_RECONSTRUCTED" in e["text"]]

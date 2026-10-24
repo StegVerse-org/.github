@@ -243,14 +243,15 @@ def main() -> int:
     if refused is not None:
         print(json.dumps({**refused, "retry_entrypoint": CLI_ENTRYPOINT}, sort_keys=True))
         return 1
+    hb_epoch = int(str(args.hb_epoch))  # admitted as ASCII digits by the shared rule
 
     if args.repository:
         result = propagate(args.repository, repository_root=args.repository_ledger_root,
-                           hb_epoch=args.hb_epoch)
+                           hb_epoch=hb_epoch)
     else:
         if args.repository_ledger_root is not None:
             raise SystemExit("--repository-ledger-root names one repository's ledger; pass --repository")
-        result = propagate_all(hb_epoch=args.hb_epoch)
+        result = propagate_all(hb_epoch=hb_epoch)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

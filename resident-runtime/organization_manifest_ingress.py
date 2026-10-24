@@ -205,6 +205,10 @@ def _module(name: str, relative: str):
 
 
 crossing_module = _module("sdk_manifest_crossing", "resident-runtime/sdk_manifest_crossing.py")
+#: The shared supplied-epoch rule (P1-FC-8, PR-1b): a direct call is checked by
+#: the same `supplied_epoch_failure` the kernel path uses.
+capability_epoch = _module("capability_ingress_epoch", "org-boundary/runtime/capability_ingress.py")
+RECEIVE_ENTRYPOINT = "resident-runtime/organization_manifest_ingress.py::receive"
 repository_ledger = _module("repo_transition_emit", ".stegverse/transition-ledger/emit.py")
 organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
@@ -1081,6 +1085,21 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     names it: {"source": "COMMITTED_REQUEST", "request_sha256": ...}. It is
     recorded in the receipts beside the supplied epoch; it never supplies one.
     """
+    # PR-1b: no epoch, or one the shared rule refuses, is FAIL_CLOSED before
+    # anything is derived or appended; the host clock is never the fallback.
+    epoch_refused = capability_epoch.direct_epoch_refusal(hb_epoch, RECEIVE_ENTRYPOINT)
+    if epoch_refused is not None:
+        return {
+            "schema": RESULT_SCHEMA_ORG,
+            "organization": "StegVerse-org",
+            "receiving_operation": OPERATION_ID,
+            **epoch_refused,
+            "received": False,
+            "refusal_recorded": False,
+            "organization_receipt_observed": False,
+            "authority_effect": "NONE_REFUSAL_ONLY",
+        }
+    hb_epoch = capability_epoch.supplied_epoch(hb_epoch)
     request: dict[str, Any] | None = None
     submitted_epoch = hb_epoch
 
