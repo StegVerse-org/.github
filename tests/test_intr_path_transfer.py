@@ -288,5 +288,72 @@ class DestinationHalf(unittest.TestCase):
             self.assertTrue(absent[field], field)
 
 
+class DocumentedDefaults(unittest.TestCase):
+    """Main's default, pinned (StegVerse-org/.github#162, Lane B). No definition is changed here.
+
+    Lines quoted at main 907f4305.
+    - data/intr-protocol/v1/protocol.json:172 "declared_paths": "every ordered pair of distinct organizations ..."
+      and resident-runtime/federation_cycle.py:14-15 "It is intra-organization: no boundary is crossed and no InTr is
+      involved.": a row naming a repository of this organization as the destination is undeclared and writes nothing.
+    - docs/INTR_PATH_TRANSFER_V1.md:42 "carried pair's inclusion in the source ledger | FAIL_CLOSED
+      INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED": with no TVC read receipt, the production writer's consume
+      (.github/workflows/organization-ledger-writer.yml path-ingress, which neither fetches an anonymous copy nor sets
+      STEGVERSE_INTR_PUBLIC_LEDGERS) stays FAIL_CLOSED; the public-ledger route is reached only through its explicit
+      flag (--public-ledgers / STEGVERSE_INTR_PUBLIC_LEDGERS) and stays a proposal.
+    """
+
+    def test_an_intra_organization_repository_destination_is_undeclared_and_writes_nothing(self):
+        org = pt.organization()
+        pid = org + "/.github->" + org + "/LLM-adapter:intr-destination"
+        self.assertNotIn(pid, {p["path_id"] for p in pt.declared_paths()})
+        for p in pt.declared_paths():
+            self.assertNotIn("/", p["source"] + p["destination"], p["path_id"])
+        ledger = Ledger()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                declaration = Path(tmp) / "transfers.json"
+                declaration.write_text(json.dumps({
+                    "schema": pt.DECLARATION_SCHEMA, "source_repository": pt.repository(),
+                    "transfers": [{"path_id": pid, "communication_id": "intr-path-v1:" + pid.split(":")[0]}]}))
+                before = ledger.files()
+                (result,) = pt.append_transfers(TRANSFER, declaration=declaration)
+                self.assertEqual(ledger.files(), before)
+        finally:
+            ledger.close()
+        self.assertEqual((result["disposition"], result["failure_code"], result["failed_predicate"]),
+                         ("FAIL_CLOSED", "INTR_PATH_UNDECLARED", "TRANSFER_NAMES_A_DECLARED_PATH_FROM_THIS_ORGANIZATION"))
+        for field in pt.SIX_FIELDS:
+            self.assertTrue(result[field], field)
+
+    def test_the_production_writer_does_not_opt_into_the_anonymous_read(self):
+        writer = (ROOT / ".github" / "workflows" / "organization-ledger-writer.yml").read_text(encoding="utf-8")
+        for opt_in in ("STEGVERSE_INTR_PUBLIC_LEDGERS", "intr_public_ledgers", "--public-ledgers"):
+            self.assertNotIn(opt_in, writer, opt_in)
+
+    def test_source_inclusion_without_the_flag_is_fail_closed_credential_not_issued(self):
+        pi = load("intr_path_ingress_documented_default", "resident-runtime/intr_path_ingress.py")
+        row = json.loads((ROOT / ".stegverse/intr-path-transfer/inbound.json").read_text(encoding="utf-8"))["transfers"][0]
+        carried = row["carried"]
+        checked = {"path_id": row["path_id"], "communication_id": row["communication_id"],
+                   "source_repository": carried["source_organization_receipt"]["source_repository"],
+                   "source_organization_receipt_sha256": carried["source_organization_receipt"]["receipt_sha256"],
+                   "source_repository_receipt_sha256": carried["source_repository_receipt"]["receipt_sha256"]}
+        saved = os.environ.pop(pi.PUBLIC_LEDGERS_ENV, None)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                (Path(tmp) / (checked["source_repository"].split("/")[0] + ".git")).mkdir()   # a copy no flag names
+                self.assertIsNone(pi.public_ledger_dir(checked["source_repository"]))
+                got = pi.source_inclusion(checked, Path(tmp) / "no-tvc-read-receipts")
+        finally:
+            if saved is not None:
+                os.environ[pi.PUBLIC_LEDGERS_ENV] = saved
+        self.assertEqual((got["disposition"], got["failure_code"], got["failed_predicate"]),
+                         ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+                          "OTHER_ORGANIZATION_LEDGER_IS_READ_THROUGH_TV_TVC"))
+        self.assertIn("StegVerse-Labs/TVC", got["retry_entrypoint"])
+        for field in pt.SIX_FIELDS:
+            self.assertTrue(got[field], field)
+
+
 if __name__ == "__main__":
     unittest.main()

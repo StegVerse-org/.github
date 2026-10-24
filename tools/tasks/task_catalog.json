@@ -539,6 +539,41 @@
       }
     },
     {
+      "id": "intr-path-public-ledger-read.validate",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#224 (Lane B, lane-b-91117956), stacked on #238",
+        "note": "Carries #224's intr-path-transfer-validation.yml unit step 'Public-ledger route of the cross-org read' as a catalog group (G17: a new check is a catalog group, never a workflow file).",
+        "name": "InTr public-ledger route of the cross-organization read"
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "env": {
+        "LEDGER_REF": "refs/stegverse/organization-ledger"
+      },
+      "steps": [
+        {
+          "name": "Fetch the ledger ref read-only",
+          "run_file": "tools/tasks/steps/intr-path-public-ledger-read.validate/01-fetch-the-ledger-ref-read-only.sh",
+          "run_sha256": "23d3ba4d4667391d4c731e9630fbf7fda623b69e7164369665c88cf283b947cc"
+        },
+        {
+          "name": "Public-ledger route of the cross-org read (E0, no credential); inbound rows dry-run end to end on a scratch ref",
+          "run_file": "tools/tasks/steps/intr-path-public-ledger-read.validate/02-public-ledger-route-of-the-cross-org-read-dry-run.sh",
+          "run_sha256": "9ab6113e3586ce46a63cc42dd1dfc92d2dd52a8e137d38fbc600f20b4df77d59"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "true",
+        "timeout_minutes": 30
+      }
+    },
+    {
       "id": "llm-org-foundation-validation.validate-foundation-sandbox",
       "source": {
         "workflow": ".github/workflows/llm-org-foundation-validation.yml",
