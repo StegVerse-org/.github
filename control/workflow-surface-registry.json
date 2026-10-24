@@ -906,6 +906,12 @@
         "workflow-surface-registry.validate"
       ],
       "reason": "G17: enforces the registry (replaces per-workflow existence and count pins)"
+    },
+    {
+      "catalog_groups": [
+        "intr-path-public-ledger-read.validate"
+      ],
+      "reason": "StegVerse-org/.github#224: the cross-org read's public-ledger route (E0, no credential) and its scratch-ref dry run, carried as a catalog group instead of a step in the folded intr-path-transfer-validation.yml"
     }
   ]
 }
