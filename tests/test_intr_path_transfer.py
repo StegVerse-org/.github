@@ -84,7 +84,7 @@ class DeclaredPaths(unittest.TestCase):
     def test_paths_are_ordered_pairs_of_conformant_organizations(self):
         paths = pt.declared_paths()
         orgs = sorted({p["source"] for p in paths})
-        self.assertEqual(len(orgs), 8)
+        self.assertEqual(len(orgs), 13)
         self.assertEqual(len(paths), len(orgs) * (len(orgs) - 1))
         self.assertEqual(len({p["path_id"] for p in paths}), len(paths))
         for p in paths:
@@ -110,7 +110,7 @@ class RealState(unittest.TestCase):
             state = pt.real_state()
         finally:
             ledger.close()
-        self.assertEqual(state["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 56})
+        self.assertEqual(state["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 156})
         self.assertEqual(state["paths"], EXPECTED["paths"])
         self.assertEqual(state["counts"], EXPECTED["counts"])
 
@@ -118,12 +118,21 @@ class RealState(unittest.TestCase):
         ledger = Ledger()
         try:
             before = ledger.files()
+            ledgered = set(EXPECTED["ledgered_path_ids"])
             results = pt.append_transfers(TRANSFER)
-            self.assertEqual([(r["disposition"], bool(r.get("replayed"))) for r in results], [("ALLOW", True)] * 7, results)
-            self.assertEqual(ledger.files(), before)
+            got = {r["path_id"]: (r["disposition"], bool(r.get("replayed"))) for r in results}
+            # the 7 paths ledgered at the pinned tip are answered from the ledger; a row added after it appends
+            # fresh on this temporary copy (NOT LEDGERED, NOT AUTHENTIC), and no pre-existing file changes
+            self.assertEqual(got, {p["path_id"]: ("ALLOW", p["path_id"] in ledgered) for p in mine()}, results)
+            self.assertEqual(len(ledgered), 7)
+            after = ledger.files()
+            for name, data in before.items():
+                if not name.endswith("HEAD.json"):
+                    self.assertEqual(after[name], data, name)
             for p in mine():
                 source = pt.verify_source(p, cid(p))
-                self.assertEqual((source["disposition"], source["transfer_commit"]), ("ALLOW", LEDGERED_TRANSFER))
+                self.assertEqual((source["disposition"], source["transfer_commit"]),
+                                 ("ALLOW", LEDGERED_TRANSFER if p["path_id"] in ledgered else TRANSFER))
                 whole = pt.verify_path(p, cid(p))
                 self.assertEqual(whole["halves"], {"source": "ALLOW", "destination": "FAIL_CLOSED"})
                 for field in pt.SIX_FIELDS:
@@ -142,7 +151,7 @@ class Append(unittest.TestCase):
     def test_append_links_the_transfer_and_the_source_half_verifies(self):
         before = self.ledger.files()
         results = pt.append_transfers(TRANSFER)
-        self.assertEqual([r["disposition"] for r in results], ["ALLOW"] * 7, results)
+        self.assertEqual([r["disposition"] for r in results], ["ALLOW"] * len(mine()), results)
         after = self.ledger.files()
         for name, data in before.items():
             if not name.endswith("HEAD.json"):
@@ -222,8 +231,8 @@ class Append(unittest.TestCase):
 
     def test_contradicted_path_receipts_are_denied(self):
         cases = {
-            "path": lambda e: e.update(destination_organization="AaCT-E"),
-            "address": lambda e: e.update(destination_address="aact-e.intr-destination"),
+            "path": lambda e: e.update(destination_organization="Infrastructure-Continuity-Ventures"),
+            "address": lambda e: e.update(destination_address="infrastructure-continuity-ventures.intr-destination"),
             "transfer": lambda e: e.update(transfer_commit=UNLEDGERED),
             "message": lambda e: e["message"].update(communication_id="other"),
         }
