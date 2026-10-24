@@ -67,12 +67,31 @@
   },
   "stegverse-sdk": {
    "check": {
-    "kind": "python_module",
-    "module": "stegverse"
+    "env": "STEGVERSE_SDK_PIN_74D9B473",
+    "kind": "pinned_source",
+    "manifest": ".stegverse/verification-inputs/stegverse-sdk.json",
+    "module": "stegverse",
+    "pin": "74d9b473"
    },
-   "finish_point": "catalog group required-verification.full-suite imports the pinned stegverse SDK and the set's tests run and pass at the exact head",
+   "finish_point": "catalog group required-verification.full-suite (tools/tasks/task_catalog.json) materializes pin 74d9b473 (scripts/pinned_source_input.py materialize, sha256-checked against .stegverse/verification-inputs/stegverse-sdk.json), sets STEGVERSE_SDK_PIN_74D9B473 to its tree, and the set's tests run in that pin's run group and pass at the exact head with 0 skipped",
    "owner": "P1 (StegVerse-org/.github#163)",
-   "repair": "the pinned StegVerse SDK installed in catalog group required-verification.full-suite (8 workflows here already check out StegVerse-SDK and pip install -e it; P1 decides whether the full-suite job does the same)"
+   "repair": "materialize pin 74d9b473 with scripts/pinned_source_input.py (one anonymous git fetch of the pinned commit; no package index, no install) and export STEGVERSE_SDK_PIN_74D9B473=<dest>/tree before selection; a sha256 mismatch is FAIL_CLOSED, never loaded"
+  },
+  "stegverse-sdk@0028cab9": {
+   "check": {
+    "env": "STEGVERSE_SDK_PIN_0028CAB9",
+    "kind": "pinned_source",
+    "manifest": ".stegverse/verification-inputs/stegverse-sdk.json",
+    "module": "stegverse",
+    "pin": "0028cab9",
+    "shims": [
+     "requests"
+    ]
+   },
+   "finish_point": "catalog group required-verification.full-suite (tools/tasks/task_catalog.json) materializes pin 0028cab9 (scripts/pinned_source_input.py, sha256-checked against .stegverse/verification-inputs/stegverse-sdk.json; the pin sdk-manifest-crossing-validation.yml already checks out) together with its sha256-pinned urllib stand-in for requests (shims.requests, declared here), sets STEGVERSE_SDK_PIN_0028CAB9, and tests/test_sdk_manifest_crossing_fidelity.py runs in that pin's run group - requests unimportable from the interpreter is fine, it is never installed or required - and passes at the exact head with 0 skipped",
+   "owner": "P1 (StegVerse-org/.github#163)",
+   "repair": "materialize pin 0028cab9 with scripts/pinned_source_input.py (one anonymous git fetch of the pinned commit; no package index, no install; its shim is copied from .stegverse/verification-inputs/shims after a sha256 check) and export STEGVERSE_SDK_PIN_0028CAB9=<dest>/tree before selection. A shim that does not hash to the manifest is FAIL_CLOSED PINNED_INPUT_SHIM_SHA256_MISMATCH; a shim this check does not list is PINNED_INPUT_SHIM_NOT_DECLARED_BY_THE_SET; an installed requests that shadows the shim is PINNED_INPUT_SHIM_NOT_LOADED. No requests-free SDK commit replays these fixtures (the drift begins 0e2d1c4, before requests left the SDK at 85c7e67), so re-pinning is not the repair",
+   "why_this_pin": "tests/test_sdk_manifest_crossing_fidelity.py replays fixtures sealed against 0028cab9 (sdk-manifest-crossing-validation.yml); on 74d9b473 8 fail and 5 error (fixture drift: the SDK reads no destination)"
   },
   "tvc": {
    "check": {
@@ -135,7 +154,7 @@
    "labs-stdlib-json-schema"
   ],
   "tests/test_sdk_manifest_crossing_fidelity.py": [
-   "stegverse-sdk"
+   "stegverse-sdk@0028cab9"
   ],
   "tests/test_stdlib_json_schema_agreement.py": [
    "jsonschema",

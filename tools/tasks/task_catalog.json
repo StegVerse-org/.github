@@ -2360,6 +2360,11 @@
           "run_sha256": "4f25a06c1d7c98ff23b814c8b98fab2057269fcdc4e3051e47ea4812700d930c"
         },
         {
+          "name": "Pinned SDK verification inputs (exact commits, sha256-checked, read-only; anonymous fetch)",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/02b-pinned-sdk-verification-inputs-exact-commits-s.sh",
+          "run_sha256": "7ed4e336a8452d0ac607a16b43882a8062994ca1cb2cf58a9348262ce0156e87"
+        },
+        {
           "name": "Select the test sets this change requires",
           "run_file": "tools/tasks/steps/required-verification.full-suite/03-select-the-test-sets-this-change-requires.sh",
           "run_sha256": "75f2c72ff73f22126e75719e68bcf9b235e86c6aa90ab450e6197c1a5b066a97"
@@ -2367,12 +2372,12 @@
         {
           "name": "Run the selected sets once (exact head)",
           "run_file": "tools/tasks/steps/required-verification.full-suite/04-run-the-selected-sets-once-exact-head.sh",
-          "run_sha256": "649182abcbc09d307fd11fd152028b1b7f11ab957bd77d17b6bccfe645ecbdfc"
+          "run_sha256": "7cca93ed8d3dd07bf13d707d85c2f7c88b02d0fda15d2a535dc74f75b21481c3"
         },
         {
           "name": "Module-level test functions of the selected sets",
           "run_file": "tools/tasks/steps/required-verification.full-suite/05-module-level-test-functions-of-the-selected-sets.sh",
-          "run_sha256": "9d51f2a776830423cb777362eddb7626bc95a58814a54203a58834e5bf13aff0"
+          "run_sha256": "da1248c5302550b3c1903ff7fee4780703b0bc1b47bb2485decc1830e5c6dfd3"
         },
         {
           "name": "Adjudicate (receipted pre-existing failures non-blocking; skips, collection errors, unavailable inputs and introduced failures block)",
