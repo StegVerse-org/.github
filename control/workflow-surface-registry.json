@@ -951,6 +951,18 @@
         "main-change-receipt.receipt"
       ],
       "reason": "P4 #222 writer placement default (StegVerse-org/.github#238): the retired workflow_call writer's receipt computation runs read-only on push to main; the append is a manifest-directed transition carried by organization-ledger-writer.yml once admitted (resident-runtime/main-change-receipt.transition.json)"
+    },
+    {
+      "catalog_groups": [
+        "intr-path-public-ledger-read.validate"
+      ],
+      "reason": "StegVerse-org/.github#224: the cross-org read's public-ledger route (E0, no credential) and its scratch-ref dry run, carried as a catalog group instead of a step in the folded intr-path-transfer-validation.yml"
+    },
+    {
+      "catalog_groups": [
+        "intr-protocol-copy-equality.validate"
+      ],
+      "reason": "StegVerse-org/.github#218: tests.test_intr_protocol_copy_equality, carried as a catalog group instead of an edit to the folded intr-destination-capability-validation step"
     }
   ]
 }
