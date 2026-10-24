@@ -773,7 +773,7 @@
       "workstream": "intr-protocol-v1",
       "depends_on": [],
       "required_evidence": [
-        "components/intr-ingress-ledger/v1/component.json pins every packaged file by sha256 to StegGhost/.github cffd741 + 03d8b94 (files at da5c947) and StegVerse-org/.github 5acbacc",
+        "components/intr-ingress-ledger/v1/component.json pins every packaged file by sha256 to StegGhost/.github cffd741 + 03d8b94 (files at da5c947) and StegVerse-org/.github 907f430",
         "tests/test_intr_ingress_ledger_component_package.py installs the component into a temporary copy of an unadopted organization and observes plan ALLOW, InTr v1 conformance ALLOW, a self-closure at both ledger levels on temporary ledgers, and FAIL_CLOSED with six fields for each conflict or missing prerequisite",
         "per adopting organization: a draft whose CI runs the installed tests/test_intr_ingress_ledger_component.py and org-runtime/intr_protocol.py conform at its head",
         "per adopting organization: the destination row of tests/fixtures/intr-protocol/destinations/manifest.json turns ALLOW only from a byte snapshot of its main after adoption lands"

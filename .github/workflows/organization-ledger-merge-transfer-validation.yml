@@ -13,10 +13,14 @@ on:
       - '.stegverse/merge-transfer/**'
       - '.stegverse/transition-ledger/**'
       - 'resident-runtime/merge_transfer.py'
+      - 'resident-runtime/merge_transfer_range.py'
+      - 'resident-runtime/merge_transfer_dry_run_check.py'
       - 'resident-runtime/intr_destination_ingress.py'
       - 'resident-runtime/aggregate_repo_transition.py'
       - 'resident-runtime/ledger_store.py'
       - 'tests/test_merge_transfer.py'
+      - 'tests/test_merge_transfer_range.py'
+      - 'tests/test_merge_transfer_dry_run_check.py'
       - 'tests/fixtures/merge-transfer/**'
 
 permissions:
@@ -31,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout organization boundary (full history)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -39,7 +43,7 @@ jobs:
         run: git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
 
       - name: Append, verify, refuse (temp ledgers from the pinned tip)
-        run: python3 -m unittest tests.test_merge_transfer -v
+        run: python3 -m unittest tests.test_merge_transfer tests.test_merge_transfer_range tests.test_merge_transfer_dry_run_check -v
 
   dry-run:
     runs-on: ubuntu-latest
@@ -47,7 +51,7 @@ jobs:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - name: Checkout organization boundary (full history)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -56,21 +60,29 @@ jobs:
           set -euo pipefail
           git fetch --no-tags origin "+$LEDGER_REF:$DRY_RUN_REF"
           echo "published ledger tip: $(git rev-parse "$DRY_RUN_REF")"
+          mkdir -p "$RUNNER_TEMP/results"
+          git rev-parse "$DRY_RUN_REF" > "$RUNNER_TEMP/results/published-tip"
           namespace=$(python3 -c 'import json; print(json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]["namespace"])')
           echo "REPO_LEDGER_NAMESPACE=$namespace" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/results"
-          python3 resident-runtime/merge_transfer.py commits --before "$BASE_SHA" --after "$BASE_SHA" \
+          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
+          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$namespace"
+          python3 resident-runtime/merge_transfer_range.py --before "$BASE_SHA" --after "$BASE_SHA" \
             --pending .stegverse/merge-transfer/pending.json > "$RUNNER_TEMP/results/commits.txt"
           cat "$RUNNER_TEMP/results/commits.txt"
           test -s "$RUNNER_TEMP/results/commits.txt"
 
-      - name: "Real state, read-only: each pending merge is FAIL_CLOSED (no receipt)"
+      - name: "Real state, read-only: each selected merge is VERIFIED or FAIL_CLOSED with six fields, never DENY"
         run: |
           set -euo pipefail
           export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
           export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
-          python3 resident-runtime/merge_transfer.py verify --expect FAIL_CLOSED \
-            --commits-file "$RUNNER_TEMP/results/commits.txt" --out "$RUNNER_TEMP/results/real-state.json"
+          # a mix of ledgered and unledgered merges is expected, so verify may exit 1; any other status is a failure
+          rc=0
+          python3 resident-runtime/merge_transfer.py verify \
+            --commits-file "$RUNNER_TEMP/results/commits.txt" --out "$RUNNER_TEMP/results/real-state.json" > /dev/null || rc=$?
+          test "$rc" -le 1
+          python3 resident-runtime/merge_transfer_dry_run_check.py "$RUNNER_TEMP/results/real-state.json"
 
       - name: The writer's append on the scratch ref, then VERIFIED, then an idempotent replay
         run: |
@@ -86,6 +98,6 @@ jobs:
             --out "$RUNNER_TEMP/results/replay.json"
           test "$(git rev-parse "$DRY_RUN_REF")" = "$tip"
           python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert all(x["replayed"] is True for x in r), r' "$RUNNER_TEMP/results/replay.json"
-          # the published ref is untouched by this run
-          test "$(git rev-parse "$DRY_RUN_REF")" != "$(git ls-remote origin "$LEDGER_REF" | cut -f1)"
+          # the published ref is untouched by this run: still the tip copied at the start
+          test "$(git ls-remote origin "$LEDGER_REF" | cut -f1)" = "$(cat "$RUNNER_TEMP/results/published-tip")"
           { echo '### dry run (scratch ref, not published)'; echo '```json'; cat "$RUNNER_TEMP/results/verify.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

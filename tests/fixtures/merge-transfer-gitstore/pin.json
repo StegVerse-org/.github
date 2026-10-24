@@ -1,0 +1,24 @@
+{
+  "ledger_ref": "refs/stegverse/organization-ledger",
+  "ledger_tip": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+  "ledger_tree": "2848e793fb19058a0a691408e89313d370a39f1e",
+  "real_commit": {
+    "merge_commit": "5acbacc1bd8a74acf3a8c4d4abdfb0352a72fd81",
+    "parents": [
+      "41035e9e4bca6d4114f2f6a181b03dda2de85481",
+      "e0171e716d58c28fc8e88919640ab57e5f062d85"
+    ],
+    "subject": "Merge pull request #205 from StegVerse-org/laneb/intr-merge-transfer-sv011-repin",
+    "tree": "a81de3e1a23dde924f4554c166f8ddbe0b2f96ae"
+  },
+  "real_state_at_ledger_tip": {
+    "disposition": "ALLOW",
+    "failure_code": null
+  },
+  "repository": "StegVerse-org/.github",
+  "repository_ledger_namespace": "repository-ledger/StegVerse-org/.github",
+  "schema": "stegverse.merge-transfer-gitstore-test-pin/v1",
+  "snapshot": "ledger-snapshot.json",
+  "snapshot_note": "the pinned ledger tip's tree, blob for blob (its git tree id is ledger_tree); copied from the published ref, not authored here",
+  "writer_surface": "TWO_MODULE_APPEND"
+}

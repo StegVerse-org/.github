@@ -1,0 +1,129 @@
+{
+  "append_result": {
+    "disposition": "ALLOW",
+    "hb_epoch": 446655631,
+    "merge_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+    "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+    "organization_receipt_sha256": "sha256:b437e7d71cb543a4b3fea908223f325cb912b9a18b691b14c3f881ebccaf014b",
+    "pull_request": 203,
+    "replayed": false,
+    "repository": "StegVerse-org/.github",
+    "repository_receipt_sha256": "sha256:fb6bfb8eccb169ad00c0c964e99989c55f949614263252577740afc70013e771",
+    "schema": "stegverse.main-merge-transfer-result/v1"
+  },
+  "commit": {
+    "merge_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+    "parents": [
+      "f160ac7d61891ee8b187368fbf05372eacc8064c",
+      "fdd71d65903e7345710273f28c944ed011e53f14"
+    ],
+    "subject": "Merge pull request #203 from StegVerse-org/laneb/intr-merge-transfer-predicate",
+    "tree": "cb0bbfc7434b20ccc357b5f225759a564b3ca7a8"
+  },
+  "expected_organization_receipt": {
+    "authority_effect": "NONE",
+    "boundary_evidence": {
+      "communication_id": "main-merge-transfer:StegVerse-org/.github@f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+      "disposition": "ALLOW",
+      "merge_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+      "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+      "profile_id": "main-merge-transfer",
+      "repository": "StegVerse-org/.github"
+    },
+    "canonical_state_transition_receipt_sha256": null,
+    "hb_reference": {
+      "authority_effect": "NONE",
+      "derived_from_clock": false,
+      "epoch": 446655631,
+      "frequency_hz": 100,
+      "generation": 446655631,
+      "heartbeat_id": "HB:446655631",
+      "phase_offset_ns": 0,
+      "progression_dependency": "OSCILLATOR_ONLY"
+    },
+    "org_transition_class": "REPO_STATE_PROPAGATION",
+    "organization": "StegVerse-org",
+    "predecessor_org_state_sha256": "sha256:5cc3e5c2805950c04538a114b6bc65146e09fe4ed389a300b2dbd0b4a8a562d0",
+    "previous_receipt_sha256": "sha256:c283271587d8c3f506c9b98594d46193dc2a52e7f2084a281f6a63ab6ba9747c",
+    "receipt_sha256": "sha256:b437e7d71cb543a4b3fea908223f325cb912b9a18b691b14c3f881ebccaf014b",
+    "repo_receipt_sha256": "sha256:fb6bfb8eccb169ad00c0c964e99989c55f949614263252577740afc70013e771",
+    "repo_transition_id": "ORGANIZATION_MAIN_MERGE_TRANSFER:f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+    "schema": "stegverse.organization-transition-receipt/v1",
+    "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+    "source_repository": "StegVerse-org/.github",
+    "source_transition_id": "ORGANIZATION_MAIN_MERGE_TRANSFER:f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+    "source_transition_sha256": "sha256:fb6bfb8eccb169ad00c0c964e99989c55f949614263252577740afc70013e771",
+    "subject_or_correlation_id": null,
+    "successor_org_state_sha256": "sha256:df034ce2c79c4999116eba5ab5d3b3edf76b45206d8b1f68dbd60853413afcc7"
+  },
+  "expected_repository_receipt": {
+    "authority_effect": "NONE",
+    "evidence": {
+      "communication_id": "main-merge-transfer:StegVerse-org/.github@f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+      "disposition": "ALLOW",
+      "merge_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+      "merge_kind": "MERGE_COMMIT",
+      "parents": [
+        "f160ac7d61891ee8b187368fbf05372eacc8064c",
+        "fdd71d65903e7345710273f28c944ed011e53f14"
+      ],
+      "payload_sha256": "sha256:5cc3e5c2805950c04538a114b6bc65146e09fe4ed389a300b2dbd0b4a8a562d0",
+      "pull_request": 203,
+      "pull_request_source": "MERGE_COMMIT_SUBJECT",
+      "ref": "refs/heads/main",
+      "repository": "StegVerse-org/.github",
+      "schema": "stegverse.main-merge-transfer-evidence/v1",
+      "tree": "cb0bbfc7434b20ccc357b5f225759a564b3ca7a8"
+    },
+    "hb_reference": {
+      "authority_effect": "NONE",
+      "derived_from_clock": false,
+      "epoch": 446655631,
+      "frequency_hz": 100,
+      "generation": 446655631,
+      "heartbeat_id": "HB:446655631",
+      "phase_offset_ns": 0,
+      "progression_dependency": "OSCILLATOR_ONLY"
+    },
+    "predecessor_state_sha256": "sha256:5cc3e5c2805950c04538a114b6bc65146e09fe4ed389a300b2dbd0b4a8a562d0",
+    "previous_receipt_sha256": "sha256:87b872453c53f80f6ac48226c943957370ab731cca43a63c5d779f5ff1444b6e",
+    "receipt_sha256": "sha256:fb6bfb8eccb169ad00c0c964e99989c55f949614263252577740afc70013e771",
+    "repository": "StegVerse-org/.github",
+    "schema": "stegverse.repo-transition-receipt/v1",
+    "successor_state_sha256": "sha256:df034ce2c79c4999116eba5ab5d3b3edf76b45206d8b1f68dbd60853413afcc7",
+    "transition_class": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+    "transition_id": "ORGANIZATION_MAIN_MERGE_TRANSFER:f40ad7dd47160add7f1f18559b2dda6c73f57f29"
+  },
+  "ledger_ref": "refs/stegverse/organization-ledger",
+  "ledger_tip": "824e0b76d470081bcabceb096c59e0695361e6d4",
+  "real_state_at_ledger_tip": {
+    "detail": "no organization receipt names ORGANIZATION_MAIN_MERGE_TRANSFER for StegVerse-org/.github@f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+    "disposition": "FAIL_CLOSED",
+    "failed_predicate": "MAIN_MERGE_HAS_AN_ORGANIZATION_LEDGER_RECEIPT",
+    "failure_code": "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED",
+    "merge_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+    "next_attempt": "the next push to main runs .github/workflows/organization-ledger-merge-transfer.yml (push to main), which appends every listed pending merge (.stegverse/merge-transfer/pending.json) and the pushed range; verify again after it reads back",
+    "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+    "owning_existing_goal": "StegVerse-org/.github#162 (INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001)",
+    "repository": "StegVerse-org/.github",
+    "required_evidence_or_repair": "a sealed organization receipt on this organization's ledger with boundary_evidence.operation ORGANIZATION_MAIN_MERGE_TRANSFER, repository StegVerse-org/.github and merge_commit f40ad7dd47160add7f1f18559b2dda6c73f57f29, linked to a sealed repository receipt carrying the same merge",
+    "retry_entrypoint": ".github/workflows/organization-ledger-merge-transfer.yml (push to main)",
+    "schema": "stegverse.main-merge-transfer-result/v1",
+    "transfer": "UNVERIFIED"
+  },
+  "repository": "StegVerse-org/.github",
+  "repository_ledger_namespace": "repository-ledger/StegVerse-org/.github",
+  "schema": "stegverse.main-merge-transfer-fixture/v1",
+  "verified": {
+    "disposition": "ALLOW",
+    "hb_epoch": 446655631,
+    "merge_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+    "operation": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+    "organization_receipt_sha256": "sha256:b437e7d71cb543a4b3fea908223f325cb912b9a18b691b14c3f881ebccaf014b",
+    "pull_request": 203,
+    "repository": "StegVerse-org/.github",
+    "repository_receipt_sha256": "sha256:fb6bfb8eccb169ad00c0c964e99989c55f949614263252577740afc70013e771",
+    "schema": "stegverse.main-merge-transfer-result/v1",
+    "transfer": "VERIFIED"
+  }
+}
