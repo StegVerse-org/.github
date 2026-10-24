@@ -106,6 +106,20 @@ class PublicLedgerRoute(unittest.TestCase):
         self.assertEqual((got["disposition"], got["state"], got["source_ledger_tip"], got["tvc_read_receipt"]),
                          ("ALLOW", pi.PUBLIC_STATE, self.tip, None))
 
+    def test_public_readback_carries_the_sealed_head_epoch(self):
+        # The source head receipt's $.hb_reference.epoch is the head epoch (TVC route parity); never a clock.
+        epoch = ORG_RECEIPT["hb_reference"]["epoch"]
+        self.assertEqual(pi.public_readback(PID, CID, SOURCE_REPOSITORY, self.root)["ledger_head_epoch"], epoch)
+        got = pi.source_inclusion(self.checked, self.no_tvc, self.root)
+        self.assertEqual((got["disposition"], got["source_ledger_head_epoch"]), ("ALLOW", epoch))
+
+    def test_head_epoch_is_none_unless_a_supplied_integer(self):
+        for hb in (None, {}, {"epoch": "469411750"}, {"epoch": True}, {"epoch": 1}, {"epoch": 4.6e8}):
+            with self.subTest(hb=hb):
+                self.assertIsNone(pi.head_epoch({"hb_reference": hb}))
+        self.assertIsNone(pi.head_epoch(None))
+        self.assertEqual(pi.head_epoch({"hb_reference": {"epoch": 469411750}}), 469411750)
+
     def test_contradicted_copy_is_deny_with_six_fields(self):
         got = pi.source_inclusion({**self.checked, "source_repository_receipt_sha256": "sha256:" + "0" * 64},
                                   self.no_tvc, self.root)

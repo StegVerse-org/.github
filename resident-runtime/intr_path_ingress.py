@@ -272,8 +272,18 @@ def public_readback(path_id: str, communication_id: str, other_repository: str,
                     if repo_key else None)
     return {"schema": READBACK_SCHEMA, "repository": str(other_repository), "ledger_tip": tip,
             "head_receipt_sha256": chain[0].get("receipt_sha256") if chain else None,
+            "ledger_head_epoch": head_epoch(chain[0]) if chain and found is not None else None,
             "chain": chain if found is not None else [], "organization_receipt": found,
             "repository_receipt": repo_receipt, "read_route": "ANONYMOUS_PUBLIC_LEDGER_READ"}
+
+
+def head_epoch(head_receipt: Any) -> int | None:
+    """The head receipt's sealed supplied epoch ($.hb_reference.epoch, the #3266 hb_epoch_source field), the value
+    the TVC route carries as ledger_head_epoch; None unless it is an integer >= tvc_read.MIN_EPOCH. Never a clock."""
+    hb = head_receipt.get("hb_reference") if isinstance(head_receipt, Mapping) else None
+    epoch = hb.get("epoch") if isinstance(hb, Mapping) else None
+    ok = isinstance(epoch, int) and not isinstance(epoch, bool) and epoch >= tvc_read.MIN_EPOCH
+    return epoch if ok else None
 
 
 def other_readback(path_id: str, communication_id: str, other_repository: str, directory: Path | str | None = None,
