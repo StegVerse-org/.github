@@ -76,12 +76,21 @@
   },
   "tvc": {
    "check": {
-    "env": "STEGVERSE_TVC_ROOT",
-    "kind": "env_path"
+    "allow": "ALLOW",
+    "argv": [
+     "consume",
+     "--ledger",
+     "git+{root}#refs/stegverse/organization-ledger",
+     "--head-root",
+     "{root}"
+    ],
+    "consumer": "resident-runtime/tvc_conformance_receipt.py",
+    "consumer_source": "ported from StegVerse-Labs/.github#3332 (acc4adf6); the receipt producer is StegVerse-Labs/TVC#539 (run block tvc-conformance-receipt)",
+    "kind": "receipt_consumer"
    },
-   "finish_point": "STEGVERSE_TVC_ROOT names a TVC checkout in the full-suite job and the conformance exchange tests run and pass at the exact head",
-   "owner": "GitHub Product, Lane C (StegVerse-org/.github#164)",
-   "repair": "a TV/TVC checkout supplied as STEGVERSE_TVC_ROOT to the full-suite job"
+   "finish_point": "resident-runtime/tvc_conformance_receipt.py consume returns ALLOW at the exact head. That needs a TVC org conformance test receipt (TVC_ORG_CONFORMANCE_TEST_RECEIPT) on refs/stegverse/organization-ledger, sealed by StegVerse-Labs/TVC's CI run block tvc-conformance-receipt (TVC#539) and appended by the organization ledger writer, whose consumed org surface has the same sha256 as this head. The [tvc] set is then verified by that receipt and not run here.",
+   "owner": "GitHub Product, Lane C (StegVerse-org/.github#164; taken over by the admission coordinator, #167); producer StegVerse-Labs/TVC#539; append: the organization ledger writer",
+   "repair": "TVC's run block tvc-conformance-receipt seals an ALLOW org conformance receipt on a push to TVC main with config/org_conformance_source.json pinned to a commit holding this head's surface, and the organization ledger writer appends it. A TVC checkout in this job does not satisfy this input, and no credential is routed around."
   }
  },
  "manifest": ".stegverse/test-sets.json",
