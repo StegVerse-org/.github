@@ -764,6 +764,42 @@
         "SDK_BUILDABLE_DELIBERATE_UNADMITTED_CAPABILITY_REQUEST",
         "AUTHENTICATED_READBACK_OF_BOTH_ORGANIZATION_LEDGERS"
       ]
+    },
+    {
+      "task_id": "SVORG-INTR-INGRESS-LEDGER-COMPONENT-001",
+      "issue": 162,
+      "title": "Package InTr destination ingress + organization ledger as one reusable component and adopt it per organization",
+      "status": "in_progress",
+      "workstream": "intr-protocol-v1",
+      "depends_on": [],
+      "required_evidence": [
+        "components/intr-ingress-ledger/v1/component.json pins every packaged file by sha256 to StegGhost/.github cffd741 + 03d8b94 (files at da5c947) and StegVerse-org/.github 907f430",
+        "tests/test_intr_ingress_ledger_component_package.py installs the component into a temporary copy of an unadopted organization and observes plan ALLOW, InTr v1 conformance ALLOW, a self-closure at both ledger levels on temporary ledgers, and FAIL_CLOSED with six fields for each conflict or missing prerequisite",
+        "per adopting organization: a draft whose CI runs the installed tests/test_intr_ingress_ledger_component.py and org-runtime/intr_protocol.py conform at its head",
+        "per adopting organization: the destination row of tests/fixtures/intr-protocol/destinations/manifest.json turns ALLOW only from a byte snapshot of its main after adoption lands"
+      ],
+      "outputs": [
+        "components/intr-ingress-ledger/v1/component.json",
+        "components/intr-ingress-ledger/v1/bindings.json",
+        "resident-runtime/intr_ingress_ledger_component.py",
+        "tests/test_intr_ingress_ledger_component_package.py",
+        "docs/INTR_INGRESS_LEDGER_COMPONENT_V1.md"
+      ],
+      "tag_allowed": false,
+      "activation_condition": "an adoption draft lands on an organization's main; its ledger ref opens at genesis only when that organization dispatches its own organization-ledger-transition.yml",
+      "destinations": [
+        "AaCT-E/.github",
+        "Data-Continuation/.github",
+        "ECAT-ICAT-Formal/.github",
+        "Infrastructure-Continuity-Ventures/.github",
+        "Triad-Test/.github",
+        "formalism-tests/.github",
+        "AdmittedCode/.github"
+      ],
+      "unresolved_obligations": [
+        "AdmittedCode/.github has no org-runtime/interlock-intr.json; the component binds into that document and does not author it (FAIL_CLOSED COMPONENT_INTERLOCK_DOCUMENT_ABSENT)",
+        "the downstream recorder organization does not adopt: by its canonical role (recorder of released organization batch receipts) it cannot admit a transition and is not in the path"
+      ]
     }
   ]
 }

@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 175,
+      "PROPER": 177,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 33,
       "NAMING_ONLY": 22,
-      "total": 230
+      "total": 232
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1677,6 +1677,20 @@
       "text": "\"re-measure data/master-records-role-audit.json. \"",
       "classification": "NAMING_ONLY",
       "reason": "Test diagnostic names the Master Records audit artifact; no assignment of transition authority."
+    },
+    {
+      "file": "components/intr-ingress-ledger/v1/templates/resident-runtime/organization_ledger_readback.py.tmpl",
+      "line": 131,
+      "text": "\"master_records_awaited\": False,",
+      "classification": "PROPER",
+      "reason": "Component template of StegGhost/.github resident-runtime/organization_ledger_readback.py (intr-ingress-ledger/v1): the readback states the downstream recorder is not awaited, which repeats its canonical role (recorder of released organization batch receipts; not in the path)."
+    },
+    {
+      "file": "docs/INTR_INGRESS_LEDGER_COMPONENT_V1.md",
+      "line": 54,
+      "text": "The downstream recorder organization does not adopt. Its canonical role is `RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER` (`data/master-records-role-audit.json`, docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md \"restated\"), under which ",
+      "classification": "PROPER",
+      "reason": "Cites this repository's role audit file for the canonical role RELEASED_ORGANIZATION_BATCH_RECEIPT_RECORDER as the basis for the recorder organization not adopting an InTr destination (not in the path; cannot admit a transition)."
     }
   ],
   "remeasured": [

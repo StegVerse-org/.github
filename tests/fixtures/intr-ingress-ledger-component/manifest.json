@@ -1,0 +1,23 @@
+{
+  "schema": "stegverse.component-target-fixture/v1",
+  "source": {
+    "repository": "AaCT-E/.github",
+    "commit": "f63382b"
+  },
+  "authentic_receipt": false,
+  "rule": "Byte snapshots of the three documents the component binds into, from an organization that has not adopted it. The component tests install into a temporary copy; nothing here is ledgered or authentic.",
+  "files": [
+    {
+      "path": "org-boundary/registry/services.json",
+      "sha256": "sha256:ed1da9119ef18fa98626161edb6d38794527a7f8486dab4fa5ce00509487c5f1"
+    },
+    {
+      "path": "org-kernel/kernel.py",
+      "sha256": "sha256:94db9b4efda6bed65659c797f0859c101c50c7923791abd619a4d010178c934a"
+    },
+    {
+      "path": "org-runtime/interlock-intr.json",
+      "sha256": "sha256:79c4a7362f2c52fb4e88a06514aa13ce67ec08ef798d0ef59ff163610c939d5a"
+    }
+  ]
+}

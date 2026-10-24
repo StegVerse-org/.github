@@ -1,0 +1,201 @@
+{
+  "schema": "stegverse.reusable-component/v1",
+  "component_id": "intr-ingress-ledger/v1",
+  "task_id": "SVORG-INTR-INGRESS-LEDGER-COMPONENT-001",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "title": "InTr destination ingress + organization ledger",
+  "packages": [
+    {
+      "repository": "StegGhost/.github",
+      "commit": "cffd741",
+      "subject": "Advertise and serve InTr Destination at stegghost.intr-destination"
+    },
+    {
+      "repository": "StegGhost/.github",
+      "commit": "03d8b94",
+      "subject": "Designate the organization ledger ref and record diagnostic closures on it."
+    },
+    {
+      "repository": "StegGhost/.github",
+      "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+      "subject": "files taken at this commit (includes 643d36b: hb_epoch is a dispatch input)"
+    },
+    {
+      "repository": "StegVerse-org/.github",
+      "commit": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+      "subject": "org-runtime/intr_protocol.py and data/intr-protocol/v1/protocol.json"
+    }
+  ],
+  "template_variables": {
+    "ORGANIZATION": "services.json organization",
+    "REPOSITORY": "<ORGANIZATION>/.github",
+    "SLUG": "org-kernel/kernel.py::organization_slug(ORGANIZATION)"
+  },
+  "installer": "resident-runtime/intr_ingress_ledger_component.py",
+  "install_record": ".stegverse/components/intr-ingress-ledger-v1.json",
+  "bindings": "components/intr-ingress-ledger/v1/bindings.json",
+  "does_not_install": [
+    "organization egress (resident-runtime/organization_egress_boundary.py) and its emitting_operation binding",
+    "organization batch release or any handoff to the downstream recorder",
+    "a ledger ref: refs/stegverse/organization-ledger opens at genesis only when the organization's own organization-ledger-transition.yml runs there on a committed closure request (.stegverse/intr-destination-closure/request.json pushed to main)"
+  ],
+  "authentic_receipt": false,
+  "files": [
+    {
+      "path": "resident-runtime/aggregate_repo_transition.py",
+      "kind": "VENDORED",
+      "component_file": "files/resident-runtime/aggregate_repo_transition.py",
+      "sha256": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986",
+      "source": {
+        "repository": "StegGhost/.github",
+        "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+        "path": "resident-runtime/aggregate_repo_transition.py",
+        "git_blob": "258db8472a2f617c47425ce1fa20a952587261ae",
+        "sha256": "sha256:618c79859cfae212d3d54622b56aa897793798814f1afec4153911c1505f6986"
+      }
+    },
+    {
+      "path": "resident-runtime/ledger_store.py",
+      "kind": "VENDORED",
+      "component_file": "files/resident-runtime/ledger_store.py",
+      "sha256": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5",
+      "source": {
+        "repository": "StegGhost/.github",
+        "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+        "path": "resident-runtime/ledger_store.py",
+        "git_blob": "81548205f9f5682fefe00b53006daf59770be096",
+        "sha256": "sha256:a8caa85390fbc265852eb49eea7f4b03071da4e1f209ab077d8b2edc8174dbe5"
+      }
+    },
+    {
+      "path": ".stegverse/transition-ledger/emit.py",
+      "kind": "VENDORED",
+      "component_file": "files/.stegverse/transition-ledger/emit.py",
+      "sha256": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7",
+      "source": {
+        "repository": "StegGhost/.github",
+        "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+        "path": ".stegverse/transition-ledger/emit.py",
+        "git_blob": "e4606f4256aeb6fca431359922900a57659e0376",
+        "sha256": "sha256:46f905de429a80b1f3f144574b3225436cc30cc8f11bfda53c6a4b54234813b7"
+      }
+    },
+    {
+      "path": "org-boundary/runtime/capability_ingress.py",
+      "kind": "VENDORED",
+      "component_file": "files/org-boundary/runtime/capability_ingress.py",
+      "sha256": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44",
+      "source": {
+        "repository": "StegGhost/.github",
+        "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+        "path": "org-boundary/runtime/capability_ingress.py",
+        "git_blob": "5154d116d569dff262fb9885881619c70c396e91",
+        "sha256": "sha256:731dab382f43ff3321f6e039cee1be338099345bf4b0e8fec89e7de1a72bca44"
+      }
+    },
+    {
+      "path": "org-runtime/intr_protocol.py",
+      "kind": "VENDORED",
+      "component_file": "files/org-runtime/intr_protocol.py",
+      "sha256": "sha256:2fe0dbbca71a9800714c587863050134383e636ad6d4976381dfe1c395298c61",
+      "source": {
+        "repository": "StegVerse-org/.github",
+        "commit": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "path": "org-runtime/intr_protocol.py",
+        "git_blob": "7a46d3319f8d60372981809144d64b96eced1c0f",
+        "sha256": "sha256:2fe0dbbca71a9800714c587863050134383e636ad6d4976381dfe1c395298c61"
+      }
+    },
+    {
+      "path": "data/intr-protocol/v1/protocol.json",
+      "kind": "VENDORED",
+      "component_file": "files/data/intr-protocol/v1/protocol.json",
+      "sha256": "sha256:6caef6d83b62adc3b680a103c4931d6b61f28287da0fe370e327ef97d0521a73",
+      "source": {
+        "repository": "StegVerse-org/.github",
+        "commit": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "path": "data/intr-protocol/v1/protocol.json",
+        "git_blob": "318e97fb7dd2da1b788ebd1c79dfd555188ce173",
+        "sha256": "sha256:6caef6d83b62adc3b680a103c4931d6b61f28287da0fe370e327ef97d0521a73"
+      }
+    },
+    {
+      "path": "resident-runtime/intr_destination_ingress.py",
+      "kind": "TEMPLATE",
+      "component_file": "templates/resident-runtime/intr_destination_ingress.py.tmpl",
+      "sha256": "sha256:c41fb032d1ac8842b4c2debb8f57ae2e6d6d5b9fcde364511f5976de5299f039",
+      "source": {
+        "repository": "StegGhost/.github",
+        "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+        "path": "resident-runtime/intr_destination_ingress.py",
+        "git_blob": "ebd9a60405ec2e4a1c5edae2bfc9a51527046570",
+        "sha256": "sha256:0427990e12863491637ad11981ab166ec60effa4afc64f0e03a32c37c8ccbbc3"
+      },
+      "binding": "OWNER_REPOSITORY and the docstring name the adopting organization"
+    },
+    {
+      "path": "resident-runtime/organization_ledger_readback.py",
+      "kind": "TEMPLATE",
+      "component_file": "templates/resident-runtime/organization_ledger_readback.py.tmpl",
+      "sha256": "sha256:e24650287c04a964686a331c8e19af572617aff91d0a2885ec376f3e8db790b8",
+      "source": {
+        "repository": "StegGhost/.github",
+        "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+        "path": "resident-runtime/organization_ledger_readback.py",
+        "git_blob": "cd5d7fc522fe9d9ef6e0151f7a89c51dfec36232",
+        "sha256": "sha256:dd54fd401797c9c8db5358cabe442fd0c37f5f17c6193a621e7dfaac0f1cf96d"
+      },
+      "binding": "GOAL names the owning goal of the component instead of StegGhost's local goal"
+    },
+    {
+      "path": ".stegverse/transition-ledger/contract.json",
+      "kind": "TEMPLATE",
+      "component_file": "templates/.stegverse/transition-ledger/contract.json.tmpl",
+      "sha256": "sha256:b6072f4b3f21320c5a0e17ef164abfc4012b7d9873ca7514463e57ffde1e915c",
+      "source": {
+        "repository": "StegGhost/.github",
+        "commit": "da5c94758601decb69cfea2084975b74e974bbc9",
+        "path": ".stegverse/transition-ledger/contract.json",
+        "git_blob": "86402d7792bfae4f8b48cbe982b9d145940e43d0",
+        "sha256": "sha256:520279d0661030686e7097a2da672edac8518aec067814b9dd77fbeeec5856aa"
+      },
+      "binding": "the repository and its ledger namespace"
+    },
+    {
+      "path": ".stegverse/transition-ledger/org-contract.json",
+      "kind": "TEMPLATE",
+      "component_file": "templates/.stegverse/transition-ledger/org-contract.json.tmpl",
+      "sha256": "sha256:beec1819cc44fbdfbf9987076a1fdcc485797eaf4d48dcc5cfbd80f4b32af4bb",
+      "source": {
+        "description": "StegGhost/.github da5c947 .stegverse/transition-ledger/org-contract.json, without its batch-release surfaces and local exemption"
+      }
+    },
+    {
+      "path": ".github/workflows/organization-ledger-transition.yml",
+      "kind": "TEMPLATE",
+      "component_file": "templates/.github/workflows/organization-ledger-transition.yml.tmpl",
+      "sha256": "sha256:b50edcc53c6f5e830aff1591fd54990bd14e1317ca4754da3a9d8f31791c06c1",
+      "source": {
+        "description": "StegGhost/.github da5c947 .github/workflows/organization-ledger-transition.yml (03d8b94, 643d36b), organization-bound"
+      }
+    },
+    {
+      "path": ".github/workflows/intr-ingress-ledger-component-validation.yml",
+      "kind": "TEMPLATE",
+      "component_file": "templates/.github/workflows/intr-ingress-ledger-component-validation.yml.tmpl",
+      "sha256": "sha256:2675c735e88a91371e93be424527f52b357977b7e4b5977d5f0b37246d28fbe0",
+      "source": {
+        "description": "component"
+      }
+    },
+    {
+      "path": "tests/test_intr_ingress_ledger_component.py",
+      "kind": "TEMPLATE",
+      "component_file": "templates/tests/test_intr_ingress_ledger_component.py.tmpl",
+      "sha256": "sha256:91e1d8ff9b1d24ac9daeaf526c5a9ddf9974c7851f703b6085e91fe0f7983702",
+      "source": {
+        "description": "component"
+      }
+    }
+  ]
+}
