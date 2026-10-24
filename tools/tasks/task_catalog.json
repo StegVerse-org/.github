@@ -2032,7 +2032,7 @@
         {
           "name": "Registry, catalog and writer plan hold",
           "run_file": "tools/tasks/steps/workflow-surface-registry.validate/01-registry,-catalog-and-writer-plan-hold.sh",
-          "run_sha256": "c205087de28bb22b9b39cb846fb920049920e1e52f839e4db0a7c7b5c05a7e30"
+          "run_sha256": "8cbb935889183200c1eeace944a53fbdf3f3922156106d15a40eec038dc49dde"
         }
       ]
     }
