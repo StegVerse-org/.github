@@ -7,7 +7,7 @@ REQUEST_PATH, read on push to main by the writer's ledger-ingest job
 (.github/workflows/organization-ledger-writer.yml, selected by
 control/workflow-surface-registry.json writer_jobs[]). Nothing here or in the
 workflow hand-writes the ledger ref; the append is the existing writer
-(aggregate_repo_transition.append over ledger_store) and the ref moves only by
+(aggregate_repo_transition.append over ledger_store, see writer()) and the ref moves only by
 the job's fast-forward publish.
 
   {"schema": "stegverse.organization-ledger-ingest-request/v1",
@@ -16,9 +16,16 @@ the job's fast-forward publish.
    "provenance": {"repository": "<producer>", "run_id": <int>, "head_sha": "<producer commit>", ...}}
 
 The sealed receipt is retained unchanged as source-receipts/<receipt_sha256>.json,
-consumed by one organization transition receipt (aggregate_repo_transition
-.verify_sealed_test_receipt), at the supplied epoch the ledger head carries
-(merge_transfer.head_epoch; no clock). Before any write it must: carry a seal
+consumed by one organization transition receipt, at the supplied epoch the
+ledger head carries (merge_transfer.head_epoch; no clock). The append is the
+writer's own aggregate_repo_transition.append (lineage, head validation,
+idempotent replay, one atomic receipt + source + HEAD transaction) on a private
+instance whose source binding also accepts this schema (sealed_source). The
+shared aggregate_repo_transition.py and org-contract.json are not edited: they
+are in the selection of every ledger test, two of which skip without a TV/TVC
+checkout or a deferred step, so this route keeps its own binding and its own
+admission gate (ACCEPTED_PATH) until the contract names the schema under its
+own change. Before any write it must: carry a seal
 that verifies over its canonical body; match an entry of ACCEPTED_PATH; be
 ALLOW with no refusals and zero skipped, failed and errored tests; name this
 organization's ledger as ledger_candidate.target; and agree with the request's
@@ -113,6 +120,49 @@ def load_accepted(path: Path | str | None = None) -> list[dict[str, Any]] | dict
     return doc["accepted"]
 
 
+SEALED_TEST_RECEIPT_SCHEMA = "stegverse.test-suite-skip-receipt/v1"
+
+
+def sealed_source(receipt: Mapping[str, Any]) -> dict[str, Any]:
+    """The organization source binding of a sealed test receipt (SystemExit when it is not one).
+
+    Bound by its producer's seal: source_transition_sha256 is its receipt_sha256, so
+    source-receipts/<receipt_sha256>.json holds the producer's exact bytes and
+    organization_ledger_readback.self_verifies accepts it. It is no repository
+    transition of this organization: repo_receipt_sha256 and source_repository are None.
+    """
+    if not isinstance(receipt, Mapping) or receipt.get("schema") != SEALED_TEST_RECEIPT_SCHEMA:
+        raise SystemExit("not a sealed test receipt")
+    if not seal_verifies(dict(receipt)):
+        raise SystemExit("sealed test receipt hash mismatch")
+    identity = [receipt.get(k) for k in ("receipt_kind", "repository", "head_sha")]
+    if not all(isinstance(v, str) and v for v in identity):
+        raise SystemExit("sealed test receipt identity invalid")
+    return {"source_receipt_schema": SEALED_TEST_RECEIPT_SCHEMA,
+            "source_transition_sha256": receipt["receipt_sha256"],
+            "source_transition_id": "@".join(identity),
+            "source_repository": None, "repo_receipt_sha256": None, "repo_transition_id": None,
+            "canonical_state_transition_receipt_sha256": None, "subject_or_correlation_id": None}
+
+
+def writer():
+    """A private instance of the organization writer whose source binding also takes sealed_source.
+
+    Only this instance's verify_source changes; every other schema still goes to the
+    writer's own verify_source, and the shared module other callers import is untouched.
+    """
+    org = _module("aggregate_repo_transition_sealed_ingest", "resident-runtime/aggregate_repo_transition.py")
+    contract_source = org.verify_source
+
+    def verify_source(receipt):
+        if isinstance(receipt, Mapping) and receipt.get("schema") == SEALED_TEST_RECEIPT_SCHEMA:
+            return sealed_source(receipt)
+        return contract_source(receipt)
+
+    org.verify_source = verify_source
+    return org
+
+
 def ledger_target(ledger_repository: str) -> str:
     return "git+https://github.com/" + ledger_repository + "#" + LEDGER_REF
 
@@ -180,7 +230,7 @@ def append_sealed(receipt: Any, provenance: Any, *, ledger_repository: str,
     refused = admit_sealed(receipt, provenance, ledger_repository=ledger_repository, accepted=accepted)
     if refused:
         return refused
-    org = _module("aggregate_repo_transition", "resident-runtime/aggregate_repo_transition.py")
+    org = writer()
     ledger_store = _module("ledger_store", "resident-runtime/ledger_store.py")
     transfer = _module("merge_transfer", "resident-runtime/merge_transfer.py")
     try:

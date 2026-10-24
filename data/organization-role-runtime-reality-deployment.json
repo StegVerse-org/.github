@@ -25,10 +25,8 @@
     "admission_gate": "ORGANIZATION_LEDGER_CONTRACT_CONSUMES_LIST",
     "consumes": [
       "stegverse.repo-transition-receipt/v1",
-      "stegverse.canonical-state-transition-receipt/v1",
-      "stegverse.test-suite-skip-receipt/v1"
+      "stegverse.canonical-state-transition-receipt/v1"
     ],
-    "sealed_test_receipt_binding": "BOUND_BY_ITS_PRODUCER_SEAL_ADMITTED_BY_resident-runtime/organization_ledger_ingest.py",
     "canonical_state_transition_binding": "BOUND_BY_ITS_OWN_CANONICAL_DIGEST",
     "canonical_state_transition_relabelled_as_repository_transition": false,
     "preserves_source_transition_receipt": true,

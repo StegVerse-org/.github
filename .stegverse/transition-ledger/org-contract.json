@@ -4,8 +4,7 @@
   "ledger_level": "ORGANIZATION",
   "consumes": [
     "stegverse.repo-transition-receipt/v1",
-    "stegverse.canonical-state-transition-receipt/v1",
-    "stegverse.test-suite-skip-receipt/v1"
+    "stegverse.canonical-state-transition-receipt/v1"
   ],
   "emits": "stegverse.organization-transition-receipt/v1",
   "replay_rule": "ORGANIZATION_REPLAY_MUST_REQUIRE_ONLY_VERIFIED_REPO_RECEIPTS_AND_ORG_RECEIPTS_NOT_ECOSYSTEM_REPLAY",

@@ -115,12 +115,19 @@ class Admission(unittest.TestCase):
                 path.write_text(json.dumps(bad), encoding="utf-8")
                 self.refused(ing.read_request(path), "INGEST_REQUEST_SCHEMA_MISMATCH")
 
-    def test_verify_source_binds_a_sealed_receipt_by_its_own_seal(self):
-        source = org.verify_source(self.receipt)
-        self.assertEqual(source["source_transition_sha256"], DIGEST)
-        self.assertIsNone(source["repo_receipt_sha256"])
+    def test_the_ingest_writer_binds_a_sealed_receipt_by_its_own_seal(self):
+        writer = ing.writer()
+        for source in (ing.sealed_source(self.receipt), writer.verify_source(self.receipt)):
+            self.assertEqual(source["source_transition_sha256"], DIGEST)
+            self.assertIsNone(source["repo_receipt_sha256"])
         with self.assertRaisesRegex(SystemExit, "sealed test receipt hash mismatch"):
-            org.verify_source({**self.receipt, "suite": "OTHER"})
+            writer.verify_source({**self.receipt, "suite": "OTHER"})
+        # Other schemas still reach the contract's own gate, and the shared writer is unchanged.
+        with self.assertRaisesRegex(SystemExit, "schema mismatch"):
+            writer.verify_source({**self.receipt, "schema": "stegverse.other/v1"})
+        with self.assertRaisesRegex(SystemExit, "schema mismatch"):
+            org.verify_source(self.receipt)
+        self.assertNotIn(ing.SEALED_TEST_RECEIPT_SCHEMA, org.C["consumes"])
 
 
 class SealedAppend(unittest.TestCase):

@@ -273,40 +273,6 @@ def verify_required_evidence(receipt):
             raise SystemExit("canonical required evidence digest mismatch")
 
 
-SEALED_TEST_RECEIPT_SCHEMA = "stegverse.test-suite-skip-receipt/v1"
-
-
-def verify_sealed_test_receipt(receipt):
-    """A test receipt sealed by its producer's own CI (e.g. TVC's conformance receipt), retained unchanged.
-
-    It is bound by its own seal: receipt_sha256 is the sha256 of the canonical
-    body, so source-receipts/<receipt_sha256>.json holds the producer's exact
-    bytes and organization_ledger_readback.self_verifies accepts it. It is not
-    a repository transition of this organization, so repo_receipt_sha256 and
-    source_repository stay None; its producer is named by the receipt itself.
-    Admission beyond the seal (which kinds, ALLOW, zero skipped, this ledger as
-    target) is the ingest operation's: resident-runtime/organization_ledger_ingest.py.
-    """
-    claimed = receipt.get("receipt_sha256")
-    body = dict(receipt)
-    body.pop("receipt_sha256", None)
-    if not isinstance(claimed, str) or claimed != sha(body):
-        raise SystemExit("sealed test receipt hash mismatch")
-    identity = [receipt.get(k) for k in ("receipt_kind", "repository", "head_sha")]
-    if not all(isinstance(v, str) and v for v in identity):
-        raise SystemExit("sealed test receipt identity invalid")
-    return {
-        "source_receipt_schema": SEALED_TEST_RECEIPT_SCHEMA,
-        "source_transition_sha256": claimed,
-        "source_transition_id": "@".join(identity),
-        "source_repository": None,
-        "repo_receipt_sha256": None,
-        "repo_transition_id": None,
-        "canonical_state_transition_receipt_sha256": None,
-        "subject_or_correlation_id": None,
-    }
-
-
 def verify_source(receipt):
     """Verify a source transition receipt this organization's contract consumes.
 
@@ -322,9 +288,6 @@ def verify_source(receipt):
         allowed = [allowed]
     if schema not in (allowed or []):
         raise SystemExit("organization source receipt schema mismatch")
-    if schema == SEALED_TEST_RECEIPT_SCHEMA:
-        # Bound by its producer's seal, not by a transition id it does not carry.
-        return verify_sealed_test_receipt(receipt)
     transition_id = receipt.get("transition_id")
     if not isinstance(transition_id, str) or not transition_id:
         raise SystemExit("organization source transition id invalid")
