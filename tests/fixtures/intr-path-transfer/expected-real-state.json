@@ -1,8 +1,12 @@
 {
   "schema": "stegverse.intr-path-transfer-expected-real-state/v1",
-  "rule": "real state of every declared path, computed by resident-runtime/intr_path_transfer.py verify over the organization ledger at ledger_tip; no path receipt exists yet, so every path is FAIL_CLOSED. Path receipts appear only once the transfer declaration lands on main and .github/workflows/intr-path-transfer.yml appends them; even then the destination half stays FAIL_CLOSED class B until a carrier and a TV/TVC read credential exist.",
+  "rule": "real state of every declared path, computed by resident-runtime/intr_path_transfer.py verify over the organization ledger at ledger_tip. At ledger_tip the 7 paths sourced here carry their INTR_MESH_PATH_TRANSFER receipts (transfer commit ledgered_transfer_commit, StegVerse-org/.github#209): source half ALLOW, destination half FAIL_CLOSED INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED until the destination's read of this ledger verifies; the other 49 have no source path receipt on this ledger (FAIL_CLOSED INTR_PATH_RECEIPT_NOT_LEDGERED).",
   "ledger_ref": "refs/stegverse/organization-ledger",
-  "ledger_tip": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+  "ledger_tip": "216487782daa161b886e608e64256877c14ca86f",
+  "ledger_tip_note": "refs/stegverse/organization-ledger tip read with git ls-remote on 2026-10-23 (Lane B); the tests archive this commit and read nothing from the network",
+  "append_base_tip": "0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159",
+  "append_base_note": "the last ledger tip before the 7 path receipts: the Append tests exercise a fresh append on a temporary copy of it (not ledgered, not authentic)",
+  "ledgered_transfer_commit": "5b98086eb5fe83e2a2f825aadbdc58fb12a8d02d",
   "verified_transfer_commit": "41035e9e4bca6d4114f2f6a181b03dda2de85481",
   "verified_transfer_note": "a main merge whose main-merge transfer receipt is on the ledger at ledger_tip (StegVerse-org/.github#202)",
   "later_verified_transfer_commit": "f160ac7d61891ee8b187368fbf05372eacc8064c",
@@ -609,85 +613,85 @@
       "path_id": "StegVerse-org->Admissible-Existence:intr-destination",
       "capability": "intr-destination",
       "disposition": "FAIL_CLOSED",
-      "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-      "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+      "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+      "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
       "halves": {
-        "source": "FAIL_CLOSED",
+        "source": "ALLOW",
         "destination": "FAIL_CLOSED"
       },
-      "classification": null
+      "classification": "A"
     },
     {
       "path_id": "StegVerse-org->GCAT-BCAT-Engine:intr-destination",
       "capability": "intr-destination",
       "disposition": "FAIL_CLOSED",
-      "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-      "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+      "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+      "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
       "halves": {
-        "source": "FAIL_CLOSED",
+        "source": "ALLOW",
         "destination": "FAIL_CLOSED"
       },
-      "classification": null
+      "classification": "A"
     },
     {
       "path_id": "StegVerse-org->SV-011:intr-destination",
       "capability": "intr-destination",
       "disposition": "FAIL_CLOSED",
-      "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-      "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+      "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+      "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
       "halves": {
-        "source": "FAIL_CLOSED",
+        "source": "ALLOW",
         "destination": "FAIL_CLOSED"
       },
-      "classification": null
+      "classification": "A"
     },
     {
       "path_id": "StegVerse-org->SV-LLM:intr-destination",
       "capability": "intr-destination",
       "disposition": "FAIL_CLOSED",
-      "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-      "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+      "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+      "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
       "halves": {
-        "source": "FAIL_CLOSED",
+        "source": "ALLOW",
         "destination": "FAIL_CLOSED"
       },
-      "classification": null
+      "classification": "A"
     },
     {
       "path_id": "StegVerse-org->StegGhost:intr-destination",
       "capability": "intr-destination",
       "disposition": "FAIL_CLOSED",
-      "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-      "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+      "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+      "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
       "halves": {
-        "source": "FAIL_CLOSED",
+        "source": "ALLOW",
         "destination": "FAIL_CLOSED"
       },
-      "classification": null
+      "classification": "A"
     },
     {
       "path_id": "StegVerse-org->StegVerse-002:intr-destination",
       "capability": "intr-destination",
       "disposition": "FAIL_CLOSED",
-      "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-      "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+      "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+      "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
       "halves": {
-        "source": "FAIL_CLOSED",
+        "source": "ALLOW",
         "destination": "FAIL_CLOSED"
       },
-      "classification": null
+      "classification": "A"
     },
     {
       "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
       "capability": "intr-destination",
       "disposition": "FAIL_CLOSED",
-      "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-      "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+      "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+      "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
       "halves": {
-        "source": "FAIL_CLOSED",
+        "source": "ALLOW",
         "destination": "FAIL_CLOSED"
       },
-      "classification": null
+      "classification": "A"
     }
   ]
 }

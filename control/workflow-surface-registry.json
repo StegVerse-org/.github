@@ -912,6 +912,12 @@
         "intr-path-public-ledger-read.validate"
       ],
       "reason": "StegVerse-org/.github#224: the cross-org read's public-ledger route (E0, no credential) and its scratch-ref dry run, carried as a catalog group instead of a step in the folded intr-path-transfer-validation.yml"
+    },
+    {
+      "catalog_groups": [
+        "intr-protocol-copy-equality.validate"
+      ],
+      "reason": "StegVerse-org/.github#218: tests.test_intr_protocol_copy_equality, carried as a catalog group instead of an edit to the folded intr-destination-capability-validation step"
     }
   ]
 }
