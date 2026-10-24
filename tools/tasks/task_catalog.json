@@ -374,6 +374,33 @@
       }
     },
     {
+      "id": "intr-protocol-copy-equality.validate",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#218 (Lane B, lane-b-91117956), stacked on #238",
+        "note": "Carries the test module #218 added to intr-destination-capability-validation.yml step 'Validate InTr protocol v1 conformance across the mesh snapshot' as its own catalog group, so the folded group's pinned step bodies stay byte for byte.",
+        "name": "InTr protocol v1 copy equality"
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "steps": [
+        {
+          "name": "The InTr protocol copies are byte-equal",
+          "run_file": "tools/tasks/steps/intr-protocol-copy-equality.validate/01-intr-protocol-copies-are-byte-equal.sh",
+          "run_sha256": "3633432669e7e4e3cd9daa058c88582832ef53df06f722fcdb5ab49be8c4eccf"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "1",
+        "persist_credentials": "false",
+        "timeout_minutes": 30
+      }
+    },
+    {
       "id": "intr-destination-hop.validate",
       "source": {
         "workflow": ".github/workflows/intr-destination-hop.yml",

@@ -906,6 +906,12 @@
         "workflow-surface-registry.validate"
       ],
       "reason": "G17: enforces the registry (replaces per-workflow existence and count pins)"
+    },
+    {
+      "catalog_groups": [
+        "intr-protocol-copy-equality.validate"
+      ],
+      "reason": "StegVerse-org/.github#218: tests.test_intr_protocol_copy_equality, carried as a catalog group instead of an edit to the folded intr-destination-capability-validation step"
     }
   ]
 }
