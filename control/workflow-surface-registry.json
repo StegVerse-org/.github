@@ -74,6 +74,9 @@
           },
           "governance-return": {
             "contents": "write"
+          },
+          "ledger-ingest": {
+            "contents": "write"
           }
         }
       },
@@ -152,6 +155,15 @@
       ],
       "after": [],
       "state_transition": "a committed governance return request changed"
+    },
+    {
+      "job": "ledger-ingest",
+      "source_workflow": null,
+      "paths": [
+        ".stegverse/organization-ledger-ingest/**"
+      ],
+      "after": [],
+      "state_transition": "a committed organization ledger ingest request changed (a sealed test receipt naming this ledger; resident-runtime/organization_ledger_ingest.py, the route StegVerse-Labs/.github runs)"
     }
   ],
   "folded": [
@@ -901,6 +913,12 @@
     "dispatch-only writer modes (self-closure, dispatched return locators)"
   ],
   "catalog_additions": [
+    {
+      "catalog_groups": [
+        "organization-ledger-ingest-validation.unit"
+      ],
+      "reason": "StegVerse-org/.github#162: the PR check for the writer's ledger-ingest job (a committed .stegverse/organization-ledger-ingest/request.json appended on push), carried as a catalog group instead of a workflow file"
+    },
     {
       "catalog_groups": [
         "workflow-surface-registry.validate"

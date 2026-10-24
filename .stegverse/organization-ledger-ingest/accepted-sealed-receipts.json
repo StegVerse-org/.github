@@ -1,0 +1,16 @@
+{
+ "schema": "stegverse.organization-ledger-ingest-accepted-sealed-receipts/v1",
+ "authority_effect": "NONE",
+ "owning_existing_goal": "StegVerse-org/.github#164 (GITHUB-UNIVERSAL-GOVERNANCE-PRODUCT-001)",
+ "rule": "a sealed test receipt is appended by this organization's ledger writer only when it matches an entry here, verifies its own seal, is ALLOW with zero skipped, failed and errored tests, and names this organization's ledger as ledger_candidate.target (resident-runtime/organization_ledger_ingest.py)",
+ "accepted": [
+  {
+   "schema": "stegverse.test-suite-skip-receipt/v1",
+   "receipt_kind": "TVC_ORG_CONFORMANCE_TEST_RECEIPT",
+   "suite": "TVC_ORG_CONFORMANCE",
+   "repository": "StegVerse-Labs/TVC",
+   "producer": "StegVerse-Labs/TVC .github/workflows/merge-admitted-pull-request-validation.yml job conformance-receipt (StegVerse-Labs/TVC#539)",
+   "consumer": ".stegverse/verification-inputs/tvc-conformance-receipt.json (resident-runtime/tvc_conformance_receipt.py, StegVerse-org/.github#245)"
+  }
+ ]
+}

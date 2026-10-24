@@ -1207,6 +1207,38 @@
       }
     },
     {
+      "id": "organization-ledger-ingest-validation.unit",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#162 (Lane B, lane-b-91117956)",
+        "note": "The PR check for the writer's ledger-ingest job (resident-runtime/organization_ledger_ingest.py): unit tests at 0 skipped, then the committed request admitted, appended and read back on a scratch copy of the published ledger. A catalog group, not a workflow file (G17).",
+        "name": "Organization ledger ingest"
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "steps": [
+        {
+          "name": "Ingest unit tests (strict 0 skipped, exact head)",
+          "run_file": "tools/tasks/steps/organization-ledger-ingest-validation.unit/01-ingest-unit-tests-strict-0-skipped.sh",
+          "run_sha256": "d992edd28913bdc0785e3922326de7760e77c7288d491c5d1d3742a9f5bd9de7"
+        },
+        {
+          "name": "The committed request on a scratch copy of the published ledger",
+          "run_file": "tools/tasks/steps/organization-ledger-ingest-validation.unit/02-the-committed-request-on-a-scratch-copy-of-the-published-ledger.sh",
+          "run_sha256": "547c2161f14595f1f6a5d70c7ca5bde5394bcb17028e124575d2fd1d9ca8f6dd"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "1",
+        "persist_credentials": "false",
+        "timeout_minutes": 30
+      }
+    },
+    {
       "id": "organization-manifest-ingress-validation.validate-manifest-ingress",
       "source": {
         "workflow": ".github/workflows/organization-manifest-ingress-validation.yml",
