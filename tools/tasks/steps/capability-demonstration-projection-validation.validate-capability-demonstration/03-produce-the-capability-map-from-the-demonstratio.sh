@@ -1,0 +1,127 @@
+python - <<'PY'
+import importlib.util, json, os, shutil, tempfile
+from pathlib import Path
+
+os.environ["STEGVERSE_ORG_FEDERATION_ROOT"] = os.environ["RUNNER_TEMP"] + "/demo-mesh"
+os.environ["STEGVERSE_NODE_STATE_ROOT"] = os.environ["RUNNER_TEMP"] + "/demo-node"
+ROOT = Path.cwd()
+
+def module(name, relative):
+    spec = importlib.util.spec_from_file_location(name, relative)
+    loaded = importlib.util.module_from_spec(spec); spec.loader.exec_module(loaded)
+    return loaded
+
+egress = module("egress", "resident-runtime/organization_egress_boundary.py")
+capmap = module("capmap", "resident-runtime/capability_demonstration_projection.py")
+kernel = egress.kernel
+PEER = "StegVerse-Labs"
+CAPABILITY = "sdk-manifest-ingress"
+GENESIS = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci-capability-map",
+           "predecessor": None}
+mesh = Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"])
+
+# Before any demonstration: the declaration is on the map and unexercised.
+# That cell is the ecosystem's own defect class, and it must be visible.
+peer = Path(tempfile.mkdtemp())
+peer_state = Path(tempfile.mkdtemp())  # supplied node state, never a checkout
+(peer / "org-boundary/registry").mkdir(parents=True)
+(peer / "org-boundary/registry/services.json").write_text(json.dumps({
+    "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
+    "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
+    "services": [
+        {"service_id": "stegverse-labs.org-control", "repository": PEER + "/.github",
+         "boundary_role": "BOUNDARY_LOCAL_CONTROL"},
+        {"service_id": "stegverse-labs." + CAPABILITY, "repository": PEER + "/.github",
+         "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
+(peer / "org-boundary/runtime").mkdir(parents=True)
+for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
+    shutil.copy2(ROOT / "org-boundary/runtime" / name,
+                 peer / "org-boundary/runtime" / name)
+(peer / "docs").mkdir(parents=True, exist_ok=True)
+shutil.copy2(ROOT / "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+             peer / "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json")
+
+# Demonstration 1: outbound, addressed to the peer's capability address,
+# closed against a far-side chain recomputed from inputs held here.
+emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
+                             "communication_id": "ci-capability-map", "body": {}},
+                      standing=GENESIS, capability=CAPABILITY,
+                      mesh_root=mesh, hb_epoch=32)
+assert emitted["destination_service"] == "stegverse-labs." + CAPABILITY
+# The peer consumes through its own kernel into its own ledgers.
+_po_spec = importlib.util.spec_from_file_location("peer_organization", "tests/peer_organization.py")
+_po = importlib.util.module_from_spec(_po_spec); _po_spec.loader.exec_module(_po)
+_peer_registry = json.loads((peer / "org-boundary/registry/services.json").read_text())
+peer_node = _po.materialize(None, _peer_registry["organization"], _peer_registry["services"])
+peer_node.consume(mesh_root=mesh, node_state_root=peer_state)
+closure = egress.close(PEER, emitted["packet_id"], "ci-capability-map",
+                       mesh_root=mesh, hb_epoch=32)
+assert closure["closed"] is True, closure.get("closure_findings")
+
+# Demonstration 2: inbound, a peer's manifest submitted at this
+# organization's own capability address.
+manifest = json.loads(Path(
+    "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json").read_text())
+standing = {k: v for k, v in json.loads(Path(
+    "tests/fixtures/crossing-standing-genesis.json").read_text()).items()
+    if not k.startswith("_")}
+packet = kernel.build_packet(
+    origin_org=PEER, origin_service="stegverse-labs." + CAPABILITY,
+    destination_org="StegVerse-org", destination_service="stegverse-org." + CAPABILITY,
+    payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
+             "declared_transition_surface": "LLM_ADAPTER",
+             "manifest_sha256": kernel.sha(manifest), "manifest": manifest},
+    standing=standing, transition_reference="intr:transition:ci-capability-map",
+    authority_effect="NONE", packet_id="ci-capability-map-inbound")
+kernel.publish_packet(packet, root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]))
+# The mesh still holds the peer's acknowledgement of the outbound
+# crossing, which is also addressed here, so this asserts the frame it
+# published rather than a count of everything consumed.
+consumed = kernel.consume_addressed_frames(ROOT, mesh_root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]),
+    repo_ledger_root=Path(os.environ["STEGVERSE_REPO_LEDGER_ROOT"]),
+    org_ledger_root=Path(os.environ["STEGVERSE_ORG_LEDGER_ROOT"]))
+submission = [c for c in consumed
+              if c["result"].get("packet", {}).get("packet_id")
+              == "ci-capability-map-inbound"]
+assert len(submission) == 1, [c["result"].get("status") for c in consumed]
+execution = submission[0]["result"]["execution_result"]
+assert execution["service_id"] == "stegverse-org." + CAPABILITY
+assert execution["consumed"] is True
+
+# The map, derived from exactly those two demonstrations.
+out = capmap.projection()
+Path(os.environ["RUNNER_TEMP"] + "/capability-map.json").write_text(
+    json.dumps(out, indent=2, sort_keys=True) + "\n")
+
+own = {r["capability_profile_id"]: r for r in out["this_organization"]["capabilities"]}
+row = own[CAPABILITY]
+assert row["declared"] is True
+assert row["demonstrated"] is True
+assert row["exercised"] is True
+assert row["state"] == "DECLARED_AND_DEMONSTRATED", row["state"]
+assert row["admitted_demonstration_count"] == 1, row
+assert row["evidence_receipts"], "a demonstration with nothing to cite"
+
+address, = out["peer_addresses"]["addresses"]
+assert address["address"] == "stegverse-labs." + CAPABILITY
+assert address["capability_profile_id"] == CAPABILITY
+assert address["served_demonstration_count"] == 1
+assert address["unserved_attempt_count"] == 0
+# No declared column is invented for a peer, ever.
+assert address["declared_profile_readable_here"] is False
+assert "declared" not in address
+
+# What the map must never be read as.
+assert out["demonstration_is_evidence_not_a_grant"] is True
+assert out["a_profile_enables_capability_it_does_not_decide_admissibility"] is True
+assert out["admissibility_resolves_per_transition_not_from_this_projection"] is True
+assert out["absence_of_a_demonstration_is_not_evidence_of_absent_capability"] is True
+assert out["a_peer_address_is_not_an_identified_organization"] is True
+assert out["nothing_is_declared_or_stored_by_this_projection"] is True
+assert out["authority_effect"] == "NONE_PROJECTION_ONLY"
+assert "ST-022" in out["profile_declaration_authority"]
+
+print("CAPABILITY_MAP_DERIVED_FROM_DEMONSTRATIONS=PASS",
+      out["demonstration_count"], "demonstrations |",
+      row["state"], "|", address["address"])
+PY
