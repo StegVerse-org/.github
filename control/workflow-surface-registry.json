@@ -945,6 +945,12 @@
         "test-suite-baseline-refresh.refresh"
       ],
       "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/test-suite-baseline-refresh.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml"
+    },
+    {
+      "catalog_groups": [
+        "test-suite-selected.selected"
+      ],
+      "reason": "Lane B #231 (StegVerse-org/.github#162) ported onto G17 #238 via #239: .github/workflows/test-suite-selected.yml was a workflow file #231 added; its one job is this catalog group run by validation-dispatcher.yml"
     }
   ]
 }

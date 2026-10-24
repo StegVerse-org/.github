@@ -2382,6 +2382,93 @@
         "artifact_name": "test-suite-baseline-refresh",
         "artifact_if_no_files_found": "warn"
       }
+    },
+    {
+      "id": "test-suite-selected.selected",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#231 (Lane B, lane-b-91117956), on #239 (P4 #222 port) over G17 #238",
+        "note": "Carries #231's .github/workflows/test-suite-selected.yml job selected-tests as a catalog group (G17: a new check is a catalog group, never a workflow file). Run bodies byte for byte from b2f9fad2 except: step 01 replaces actions/checkout ref and the job env expressions (|| is not a dispatcher expression), and step 08 --retry-entrypoint names this group.",
+        "name": "Selected Tests Skip Receipt",
+        "folded_from_commit": "b2f9fad29e7f7d39201f1bc9af8ce7fe0da97da3",
+        "triggers_before": [
+          "pull_request",
+          "push"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "env": {
+        "PR_HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
+        "PR_BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "PUSH_SHA": "${{ github.sha }}",
+        "PUSH_BEFORE": "${{ github.event.before }}"
+      },
+      "steps": [
+        {
+          "name": "Check out the exact head the folded job checked out (pull request head, or the pushed commit)",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/01-check-out-the-exact-head-the-folded-job-checked.sh",
+          "run_sha256": "8d203696a3a3d63dac7e814bd34509ea16051c20184e0094a7ad778817fa3540"
+        },
+        {
+          "name": "Fetch the organization ledger ref read-only",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/02-fetch-the-organization-ledger-ref-read-only.sh",
+          "run_sha256": "eba852b2baecf94802930ba13b75b7489a5009b6c7aae27c20a272748650384a"
+        },
+        {
+          "name": "The pinned StegVerse SDK and this repository's existing jsonschema dependency",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/03-the-pinned-stegverse-sdk-and-this-repository-s-e.sh",
+          "run_sha256": "070fc1d83208d2777cbf08378c9c0a4b801f3bea049aa00b4b61fc53039cdd4c"
+        },
+        {
+          "name": "The pinned StegVerse-Labs tool (anonymous fetch, sha256-checked)",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/04-the-pinned-stegverse-labs-tool-anonymous-fetch-s.sh",
+          "run_sha256": "442d4046bd353d9a274251d79cdae630013f0433365d6e627ff9e5f5da7db442"
+        },
+        {
+          "name": "Select the tests this change needs (data/test-selection-map.json)",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/05-select-the-tests-this-change-needs-data-test-sel.sh",
+          "run_sha256": "88b85f7134b35769037cbeefab9afabc2131960961eedec48bb933888b8bb1f3"
+        },
+        {
+          "name": "Run the selected tests on the exact head",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/06-run-the-selected-tests-on-the-exact-head.sh",
+          "run_sha256": "30d3e512cb7c8637fd518f20e0db0fb63a8ca20e97ccd0d247688b2c3f834048"
+        },
+        {
+          "name": "Run the same selected tests on the base",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/07-run-the-same-selected-tests-on-the-base.sh",
+          "run_sha256": "3757c59fe2fcd114fbda122ddc98157fc445e7178d01f1937f7a17f3ffcd7a98",
+          "if": "env.DIFF_BASE != ''"
+        },
+        {
+          "name": "Receipt the selected set; a skip in it, or a new failure, fails closed",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh",
+          "run_sha256": "65827c508f617343ce2e6b5c472f91827963e413165a87b6eacc887edc45071c",
+          "if": "${{ !cancelled() }}"
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "test-suite-skip-receipt",
+          "path": "${{ runner.temp }}/test-suite-skip-receipt.json",
+          "if_no_files_found": "error",
+          "if": "always()"
+        }
+      ],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360,
+        "artifact_name": "test-suite-skip-receipt",
+        "artifact_if_no_files_found": "error"
+      }
     }
   ]
 }
