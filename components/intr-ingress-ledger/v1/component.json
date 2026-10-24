@@ -37,7 +37,7 @@
   "does_not_install": [
     "organization egress (resident-runtime/organization_egress_boundary.py) and its emitting_operation binding",
     "organization batch release or any handoff to the downstream recorder",
-    "a ledger ref: refs/stegverse/organization-ledger opens at genesis only when the organization's own organization-ledger-transition.yml is dispatched there"
+    "a ledger ref: refs/stegverse/organization-ledger opens at genesis only when the organization's own organization-ledger-transition.yml runs there on a committed closure request (.stegverse/intr-destination-closure/request.json pushed to main)"
   ],
   "authentic_receipt": false,
   "files": [
@@ -174,7 +174,7 @@
       "path": ".github/workflows/organization-ledger-transition.yml",
       "kind": "TEMPLATE",
       "component_file": "templates/.github/workflows/organization-ledger-transition.yml.tmpl",
-      "sha256": "sha256:ae58a956bb25e7a6926eaf9a1a26446b45db0b0f82b7fcaf77060b7c38a0f0b8",
+      "sha256": "sha256:b50edcc53c6f5e830aff1591fd54990bd14e1317ca4754da3a9d8f31791c06c1",
       "source": {
         "description": "StegGhost/.github da5c947 .github/workflows/organization-ledger-transition.yml (03d8b94, 643d36b), organization-bound"
       }

@@ -1,28 +1,20 @@
 name: Organization Ledger Transition
 
-# A workflow_dispatch run performs an intr-destination diagnostic self-closure:
-# both ledger levels append receipts carrying communication_id, the designated
-# ref (org-contract.json organization_ledger_ref) is published by a
-# fast-forward-only push, and a fresh fetch reads the receipts back.
+# A committed closure request (.stegverse/intr-destination-closure/request.json,
+# pushed to main) performs an intr-destination diagnostic self-closure: both
+# ledger levels append receipts carrying the request's communication_id at its
+# supplied hb_epoch, the designated ref (org-contract.json
+# organization_ledger_ref) is published by a fast-forward-only push, and a
+# fresh fetch reads the receipts back. There is no workflow_dispatch trigger:
+# the request is a reviewed commit, not a manual run.
 # The ledger is the evidence; this run's success is not.
 # Installed by StegVerse-org/.github components/intr-ingress-ledger/v1. No
 # organization batch handoff is performed here.
 on:
-  workflow_dispatch:
-    inputs:
-      communication_id:
-        description: 'communication_id the diagnostic self-closure correlates on'
-        required: true
-        type: string
-      hb_epoch:
-        description: 'supplied heartbeat epoch the receipts carry (non-negative integer); no clock is read for it'
-        required: true
-        type: string
-      packet_id:
-        description: 'packet id binding this diagnostic'
-        required: false
-        default: organization-intr-destination-self-closure
-        type: string
+  push:
+    branches: [main]
+    paths:
+      - '.stegverse/intr-destination-closure/request.json'
 
 permissions:
   contents: write
@@ -39,7 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LEDGER_REF: refs/stegverse/organization-ledger
-      HB_EPOCH: ${{ github.event.inputs.hb_epoch }}
     steps:
       - name: Checkout organization boundary
         uses: actions/checkout@v4
@@ -83,26 +74,33 @@ jobs:
             echo "ledger ref not yet materialized; the first append opens it at genesis"
           fi
 
-      - name: Accept the dispatch identifiers
-        env:
-          INPUT_COMMUNICATION_ID: ${{ github.event.inputs.communication_id }}
-          INPUT_PACKET_ID: ${{ github.event.inputs.packet_id }}
+      - name: Accept the committed closure request
         run: |
           set -euo pipefail
-          if ! INPUT_COMMUNICATION_ID="$INPUT_COMMUNICATION_ID" INPUT_PACKET_ID="$INPUT_PACKET_ID" python - <<'PY'
-          import os, sys
-          communication_id = os.environ.get("INPUT_COMMUNICATION_ID") or ""
-          packet_id = os.environ.get("INPUT_PACKET_ID") or "organization-intr-destination-self-closure"
+          if ! python - <<'PY'
+          import json, os, sys
+          try:
+              request = json.load(open(".stegverse/intr-destination-closure/request.json", encoding="utf-8"))
+          except (OSError, ValueError):
+              sys.exit(1)
+          if not isinstance(request, dict) or set(request) - {"communication_id", "packet_id", "hb_epoch"}:
+              sys.exit(1)
+          communication_id = request.get("communication_id") or ""
+          packet_id = request.get("packet_id") or "organization-intr-destination-self-closure"
+          hb_epoch = request.get("hb_epoch")
           def printable(value):
-              return bool(value.strip()) and all(32 <= ord(char) <= 126 for char in value)
+              return isinstance(value, str) and bool(value.strip()) and all(32 <= ord(char) <= 126 for char in value)
           if not printable(communication_id) or not printable(packet_id):
               sys.exit(1)
           if any(token in communication_id or token in packet_id for token in ("..", "/", "\\")):
               sys.exit(1)
+          if not isinstance(hb_epoch, int) or isinstance(hb_epoch, bool) or hb_epoch < 0:
+              sys.exit(1)
           open(os.environ["RUNNER_TEMP"] + "/closure-id.txt", "w").write(communication_id + "\n" + packet_id + "\n")
+          open(os.environ["GITHUB_ENV"], "a").write("HB_EPOCH=" + str(hb_epoch) + "\n")
           PY
           then
-            echo "FAIL_CLOSED: DISPATCH_IDENTIFIER_INVALID" >&2
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"CLOSURE_REQUEST_INVALID","failed_predicate":"COMMITTED_CLOSURE_REQUEST_CARRIES_PRINTABLE_IDS_AND_AN_INTEGER_HB_EPOCH","required_evidence_or_repair":"commit .stegverse/intr-destination-closure/request.json with communication_id, optional packet_id and an integer hb_epoch","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","owning_existing_goal":"StegVerse-org/.github#162","next_attempt":"push a corrected request to main; nothing was appended"}' >&2
             exit 1
           fi
 
@@ -114,10 +112,10 @@ jobs:
           communication_id=$(sed -n '1p' "$RUNNER_TEMP/closure-id.txt")
           packet_id=$(sed -n '2p' "$RUNNER_TEMP/closure-id.txt")
           mkdir -p "$RUNNER_TEMP/results/self-closure"
-          # Time is supplied with the dispatch. It is not sampled from a clock.
+          # Time is supplied by the committed request. It is not sampled from a clock.
           case "$HB_EPOCH" in
             ''|*[!0-9]*)
-              echo '{"disposition":"FAIL_CLOSED","failure_code":"DISPATCH_HB_EPOCH_INVALID","failed_predicate":"HB_EPOCH_IS_SUPPLIED_AS_A_NON_NEGATIVE_INTEGER","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","consequence_committed":false}'
+              echo '{"disposition":"FAIL_CLOSED","failure_code":"CLOSURE_REQUEST_HB_EPOCH_INVALID","failed_predicate":"HB_EPOCH_IS_SUPPLIED_AS_A_NON_NEGATIVE_INTEGER","retry_entrypoint":".github/workflows/organization-ledger-transition.yml","consequence_committed":false}'
               exit 1 ;;
           esac
           python resident-runtime/intr_destination_ingress.py \

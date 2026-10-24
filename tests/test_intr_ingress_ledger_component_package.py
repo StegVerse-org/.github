@@ -61,6 +61,13 @@ class Pinned(unittest.TestCase):
             self.assertEqual(sha((FIXTURE / "target" / row["path"]).read_bytes()), row["sha256"])
 
 
+    def test_no_packaged_workflow_template_has_a_dispatch_trigger(self):
+        # The ledger transition runs on a committed closure request pushed to main, never a manual dispatch.
+        for template in sorted((comp.COMPONENT / "templates/.github/workflows").glob("*.tmpl")):
+            with self.subTest(template=template.name):
+                self.assertNotIn("workflow_dispatch:", template.read_text(encoding="utf-8"))
+
+
 class Install(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
