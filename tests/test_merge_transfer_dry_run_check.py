@@ -172,7 +172,9 @@ class EmptyRangeSelectionTests(unittest.TestCase):
 
 
 class EmptyCommitsNeverRaiseTests(unittest.TestCase):
-    def test_verify_with_no_commits_writes_a_six_field_record(self):
+    def test_verify_with_no_commits_is_six_field_and_the_gate_fails_closed(self):
+        # merge_transfer.py is the pinned shared verifier (sha256 032ed727...); it is not changed here. With no
+        # commits it prints a six-field refusal and writes no --out; the gate reads that as six-field FAIL_CLOSED.
         with tempfile.TemporaryDirectory() as tmp:
             empty, out = Path(tmp) / "commits.txt", Path(tmp) / "real-state.json"
             empty.write_text("\n", encoding="utf-8")
@@ -180,13 +182,15 @@ class EmptyCommitsNeverRaiseTests(unittest.TestCase):
             result = subprocess.run([sys.executable, str(script), "verify", "--commits-file", str(empty),
                                      "--out", str(out)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 1)
-            records = json.loads(out.read_text(encoding="utf-8"))
-            self.assertEqual(len(records), 1)
-            self.assertTrue(_six_ok(records[0]), records)
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertTrue(_six_ok(json.loads(result.stdout)), result.stdout)
             gated = subprocess.run([sys.executable, str(ROOT / "resident-runtime/merge_transfer_dry_run_check.py"),
                                     str(out)], capture_output=True, text=True)
             self.assertEqual(gated.returncode, 1)
             self.assertNotIn("Traceback", gated.stderr)
+            line = gated.stdout.strip()
+            self.assertTrue(line.startswith("DRY_RUN_GATE_FAIL: "), line)
+            self.assertTrue(_six_ok(json.loads(line.split(": ", 1)[1])), line)
 
     def test_gate_on_a_missing_result_is_six_field_fail_closed_not_a_traceback(self):
         with tempfile.TemporaryDirectory() as tmp:

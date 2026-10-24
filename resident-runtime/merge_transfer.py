@@ -384,13 +384,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.commits_file:
         commits += Path(args.commits_file).read_text(encoding="utf-8").split()
     if not commits:
-        # The refusal is also the --out record, so a reader of --out sees six fields, never a missing file.
-        refused = [refusal(FACTS_INVALID, "A_PUSH_NAMES_ITS_COMMITS", "name at least one commit",
-                           "re-run with --commit or --commits-file; nothing was done")]
-        text = json.dumps(refused, indent=2, sort_keys=True)
-        if args.out:
-            Path(args.out).write_text(text + "\n", encoding="utf-8")
-        print(text)
+        print(json.dumps(refusal(FACTS_INVALID, "A_PUSH_NAMES_ITS_COMMITS", "name at least one commit",
+                                 "re-run with --commit or --commits-file; nothing was done"), indent=2))
         return 1
     results = []
     for commit in commits:
