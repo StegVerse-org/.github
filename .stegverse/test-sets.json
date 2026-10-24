@@ -449,6 +449,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_intr_path_public_ledger_read.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_path_public_ledger_read.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_public_ledger_read"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_intr_path_transfer.py",
    "inputs": [
     "organization-ledger-ref"
@@ -508,6 +520,18 @@
    ],
    "tests": [
     "tests.test_intr_protocol_conformance_merge_transfer_gitstore"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_protocol_copy_equality.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_protocol_copy_equality.py"
+   ],
+   "tests": [
+    "tests.test_intr_protocol_copy_equality"
    ]
   },
   {
@@ -1571,6 +1595,7 @@
   ],
   "resident-runtime/intr_path_ingress.py": [
    ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/inbound.json",
    "org-kernel/kernel.py",
    "resident-runtime/intr_path_tvc_read.py",
    "resident-runtime/merge_transfer.py"
@@ -1598,7 +1623,8 @@
    "resident-runtime/ledger_store.py"
   ],
   "resident-runtime/merge_transfer_dry_run_check.py": [
-   "resident-runtime/merge_transfer.py"
+   "resident-runtime/merge_transfer.py",
+   "tools/tasks/run_catalog.py"
   ],
   "resident-runtime/merge_transfer_gitstore.py": [
    ".stegverse/merge-transfer/pending.json",
@@ -1931,8 +1957,16 @@
    "resident-runtime/intr_path_ingress.py",
    "tests/fixtures/intr-path-ingress/pin.json"
   ],
+  "tests/test_intr_path_public_ledger_read.py": [
+   ".stegverse/intr-path-transfer/inbound.json",
+   "resident-runtime/intr_path_ingress.py"
+  ],
   "tests/test_intr_path_transfer.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/intr-path-transfer/inbound.json",
    ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
    "resident-runtime/intr_path_transfer.py",
    "tests/fixtures/**",
    "tests/fixtures/intr-path-transfer/**"
@@ -1967,6 +2001,10 @@
    "tests/fixtures/**",
    "tests/fixtures/intr-protocol/merge-transfer-gitstore/**",
    "tests/fixtures/intr-protocol/merge-transfer/manifest.json"
+  ],
+  "tests/test_intr_protocol_copy_equality.py": [
+   "data/intr-protocol/v1/protocol.json",
+   "org-runtime/intr_protocol.py"
   ],
   "tests/test_kernel_crossing_organization_receipts.py": [
    "org-kernel/kernel.py",
@@ -2016,9 +2054,12 @@
    "tests/test_llm_org_foundation.py"
   ],
   "tests/test_main_change_receipt.py": [
+   ".github/workflows/**",
    "control/workflow-surface-registry.json",
+   "resident-runtime/main-change-receipt.transition.json",
    "resident-runtime/main_change_receipt.py",
-   "tools/tasks/retired/main-change-receipt.yml"
+   "tools/tasks/retired/main-change-receipt.yml",
+   "tools/tasks/task_catalog.json"
   ],
   "tests/test_main_change_receipt_census.py": [
    "resident-runtime/main_change_receipt_census.py"
@@ -2040,8 +2081,10 @@
    "tests/workflow_surface.py"
   ],
   "tests/test_merge_transfer_dry_run_check.py": [
+   "resident-runtime/ledger_publish_guard.py",
    "resident-runtime/merge_transfer.py",
-   "resident-runtime/merge_transfer_dry_run_check.py"
+   "resident-runtime/merge_transfer_dry_run_check.py",
+   "resident-runtime/merge_transfer_range.py"
   ],
   "tests/test_merge_transfer_gitstore.py": [
    ".stegverse/merge-transfer/pending.json",
