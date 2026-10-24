@@ -945,6 +945,12 @@
         "test-suite-baseline-refresh.refresh"
       ],
       "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/test-suite-baseline-refresh.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml"
+    },
+    {
+      "catalog_groups": [
+        "intr-path-public-ledger-read.validate"
+      ],
+      "reason": "StegVerse-org/.github#224: the cross-org read's public-ledger route (E0, no credential) and its scratch-ref dry run, carried as a catalog group instead of a step in the folded intr-path-transfer-validation.yml"
     }
   ]
 }

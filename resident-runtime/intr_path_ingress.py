@@ -32,8 +32,10 @@ and the other organization's from its verified TVC read receipt.
 
 Public-ledger route (E0, no credential, least privilege): when the other
 organization's .github repository is public, its ledger ref is readable with no
-credential at all. intr-path-ingress.yml (and the PR-facing validation) fetch
-it anonymously, before any verifier runs, into
+credential at all. tools/tasks/intr_public_ledgers.sh (run by catalog group
+intr-path-public-ledger-read.validate, and by the ledger writer's path-ingress
+job once its owner adds that step under G17) fetches it anonymously, before any
+verifier runs, into
 $STEGVERSE_INTR_PUBLIC_LEDGERS/<Organization>.git; the verifiers here only read
 that local copy (no network, no clock). A ledger the anonymous fetch could not
 read is simply absent, and the predicate falls back to the TV/TVC route above,

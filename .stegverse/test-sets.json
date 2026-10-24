@@ -2640,7 +2640,11 @@
    "resident-runtime/intr_path_ingress.py"
   ],
   "tests/test_intr_path_transfer.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/intr-path-transfer/inbound.json",
    ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
    "resident-runtime/intr_path_transfer.py",
    "tests/fixtures/**",
    "tests/fixtures/intr-path-transfer/**"
