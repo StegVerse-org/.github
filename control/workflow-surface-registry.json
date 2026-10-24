@@ -74,6 +74,9 @@
           },
           "governance-return": {
             "contents": "write"
+          },
+          "ledger-ingest": {
+            "contents": "write"
           }
         }
       },
