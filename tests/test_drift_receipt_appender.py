@@ -14,6 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "resident-runtime"
 sys.path.insert(0, str(RUNTIME))
+if str(ROOT) not in sys.path:  # tests.workflow_surface (G17 #238) when run with --start tests
+    sys.path.append(str(ROOT))
 import drift_receipt_appender as appender  # noqa: E402
 
 WRITER = RUNTIME / "main_change_receipt.py"

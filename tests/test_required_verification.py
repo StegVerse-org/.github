@@ -16,6 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TOOL = ROOT / "resident-runtime" / "required_verification.py"
 sys.path.insert(0, str(TOOL.parent))
+if str(ROOT) not in sys.path:  # tests.workflow_surface (G17 #238) when run with --start tests
+    sys.path.append(str(ROOT))
 import required_verification as rv  # noqa: E402
 
 SIX = rv.SIX_FIELDS

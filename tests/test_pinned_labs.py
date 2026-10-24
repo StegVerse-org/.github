@@ -11,6 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "resident-runtime"))
+if str(ROOT) not in sys.path:  # tests.workflow_surface (G17 #238) when run with --start tests
+    sys.path.append(str(ROOT))
 import pinned_labs  # noqa: E402
 
 
