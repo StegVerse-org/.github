@@ -3,7 +3,7 @@
  "generated_from": {
   "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
   "spec": ".stegverse/test-set-spec.json",
-  "spec_sha256": "abe0ee365a5e0185533b0914ff037dc0e0a63946ecf391f43914e9b0624f6c49"
+  "spec_sha256": "d2c2e6a09a2669c35f3abeaef2d49ea860f34173113b98aaf804b42891660c84"
  },
  "inputs": {
   "jsonschema": {
@@ -448,6 +448,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_intr_path_public_ledger_read.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_path_public_ledger_read.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_public_ledger_read"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_intr_path_transfer.py",
    "inputs": [
     "organization-ledger-ref"
@@ -471,6 +483,690 @@
    ],
    "tests": [
     "tests.test_intr_path_tvc_read"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_post_genesis_replay.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisKitTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__StegVerse_Labs"
    ]
   },
   {
@@ -1537,6 +2233,7 @@
   "resident-runtime/intr_path_ingress.py": [
    ".github/workflows/intr-path-ingress.yml",
    ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/inbound.json",
    "org-kernel/kernel.py",
    "resident-runtime/intr_path_tvc_read.py",
    "resident-runtime/merge_transfer.py"
@@ -1699,6 +2396,16 @@
    "org-kernel/kernel.py",
    "org-kernel/node_store.py",
    "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "scripts/intr_post_genesis_replay.py": [
+   ".github/workflows/intr-path-ingress.yml",
+   ".github/workflows/intr-path-transfer.yml",
+   ".github/workflows/organization-ledger-transition.yml",
+   ".stegverse/intr-post-genesis/**",
+   ".stegverse/transition-ledger/**",
+   ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
+   "resident-runtime/intr_path_transfer.py"
   ],
   "tests/fixtures/d6_far_side_registry.py": [
    "tests/fixtures/d6-far-side-non-allow.json"
@@ -1912,6 +2619,10 @@
    "resident-runtime/intr_path_ingress.py",
    "tests/fixtures/intr-path-ingress/pin.json"
   ],
+  "tests/test_intr_path_public_ledger_read.py": [
+   ".stegverse/intr-path-transfer/inbound.json",
+   "resident-runtime/intr_path_ingress.py"
+  ],
   "tests/test_intr_path_transfer.py": [
    ".stegverse/transition-ledger/contract.json",
    "resident-runtime/intr_path_transfer.py",
@@ -1921,6 +2632,12 @@
   "tests/test_intr_path_tvc_read.py": [
    "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
    "tests/test_intr_path_ingress.py"
+  ],
+  "tests/test_intr_post_genesis_replay.py": [
+   ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/inbound.json",
+   ".stegverse/intr-post-genesis/**",
+   "scripts/intr_post_genesis_replay.py"
   ],
   "tests/test_intr_protocol_conformance.py": [
    "org-boundary/registry/**",

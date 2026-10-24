@@ -1,0 +1,188 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
+   "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
+   "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
+   "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162",
+   "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
+   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows"
+  }
+ ],
+ "cls": "LEDGER_HEAD_EPOCH_UNOBSERVED",
+ "communication_id": "intr-path-v1:StegVerse-Labs->Admissible-Existence",
+ "destination": "Admissible-Existence",
+ "e0_terminal": true,
+ "expected_after_supplied_epoch": "ALLOW",
+ "expected_at_genesis": "FAIL_CLOSED",
+ "genesis_head": "0a9a8a8e0cf7bddc92e635cebe7032f1e9727723",
+ "genesis_pr": "Admissible-Existence/.github#99",
+ "ledger_head_epoch": {
+  "Admissible-Existence": {
+   "epoch": 469411996,
+   "head_receipt_sha256": "sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327",
+   "organization": "Admissible-Existence",
+   "supplied": false
+  }
+ },
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+ "payload": {
+  "evidence_at_observed_source_tip": {
+   "addressed_service": "admissible-existence.intr-destination",
+   "communication_id": "intr-path-v1:StegVerse-Labs->Admissible-Existence",
+   "disposition": "ALLOW",
+   "message": {
+    "body": {
+     "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "ee934df1e1909d964ac36caffe65b8a02287d989"
+    },
+    "communication_id": "intr-path-v1:StegVerse-Labs->Admissible-Existence",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:f976076cd90043f1c44aa47d96380c1ba00f4ca2bda50e3e2f6c3369fa5cc460",
+   "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+   "payload_sha256": "sha256:d6033876eec18742d86a661e75a7f09f0c1b636fa657095c4a1e6adb2cfb0ff8",
+   "repository": "Admissible-Existence/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_inclusion": {
+    "source_ledger_tip": "9a407561062757a30f90818ec6c8105b04331a39",
+    "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+    "tvc_read_receipt": null
+   },
+   "source_organization_receipt_sha256": "sha256:307e11842e1caaca470fc96f506acbc20f77a2ad4755ac467d55ab3bd5b89e4a",
+   "source_repository": "StegVerse-Labs/.github",
+   "source_repository_receipt_sha256": "sha256:6424c1d65f3ed4d74f5245e9374fed7cd0c60c8dec00d41de11b7882014f4de4"
+  },
+  "evidence_invariant": {
+   "addressed_service": "admissible-existence.intr-destination",
+   "message": {
+    "body": {
+     "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "ee934df1e1909d964ac36caffe65b8a02287d989"
+    },
+    "communication_id": "intr-path-v1:StegVerse-Labs->Admissible-Existence",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:f976076cd90043f1c44aa47d96380c1ba00f4ca2bda50e3e2f6c3369fa5cc460",
+   "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+   "repository": "Admissible-Existence/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_organization_receipt_sha256": "sha256:307e11842e1caaca470fc96f506acbc20f77a2ad4755ac467d55ab3bd5b89e4a",
+   "source_repository": "StegVerse-Labs/.github",
+   "source_repository_receipt_sha256": "sha256:6424c1d65f3ed4d74f5245e9374fed7cd0c60c8dec00d41de11b7882014f4de4"
+  },
+  "evidence_invariant_sha256": "sha256:1726ff42487323869531890bc0f5b64157f02a270ec8529d9e24648d220bd806",
+  "source_inclusion_rule": {
+   "source_ledger_tip": "the source ledger tip read at consume time; its chain must include source_organization_receipt_sha256",
+   "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+   "tvc_read_receipt": null
+  }
+ },
+ "record_sha256": "sha256:935ece6239d6a54382df315bec797e4f00ed7d811d2db5560e052ec8cb5470ff",
+ "reseal_on_supplied_epoch": true,
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "StegVerse-Labs",
+ "source_receipts": {
+  "organization_receipt": {
+   "authority_effect": "NONE",
+   "boundary_evidence": {
+    "communication_id": "intr-path-v1:StegVerse-Labs->Admissible-Existence",
+    "destination_organization": "Admissible-Existence",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "StegVerse-Labs/.github",
+    "transfer_commit": "ee934df1e1909d964ac36caffe65b8a02287d989"
+   },
+   "canonical_state_transition_receipt_sha256": null,
+   "custody_authority_basis": "PRE_EXISTING_MATERIALIZATION_UNAUTHENTICATED; LOCATION_CHECK_IS_ANOMALY_DETECTION_ONLY",
+   "custody_generation": 0,
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469411750,
+    "frequency_hz": 100,
+    "generation": 469411750,
+    "heartbeat_id": "HB:469411750",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "observed_at": "2026-10-20T02:13:22.660262+00:00",
+   "org_transition_class": "REPO_STATE_PROPAGATION",
+   "organization": "StegVerse-Labs",
+   "predecessor_org_state_sha256": "sha256:e3d94cb804eef5839d9dd744bdcb1b00a4c1e21c15576da7616e2076b6839663",
+   "previous_receipt_sha256": "sha256:23906e93dae2bf71b943f4c2ff0f8d8da211a2d3a052e27194d36b442aeab12d",
+   "receipt_sha256": "sha256:307e11842e1caaca470fc96f506acbc20f77a2ad4755ac467d55ab3bd5b89e4a",
+   "repo_receipt_sha256": "sha256:6424c1d65f3ed4d74f5245e9374fed7cd0c60c8dec00d41de11b7882014f4de4",
+   "repo_transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-Labs->Admissible-Existence:intr-destination@intr-path-v1:StegVerse-Labs->Admissible-Existence",
+   "schema": "stegverse.organization-transition-receipt/v1",
+   "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+   "source_repository": "StegVerse-Labs/.github",
+   "source_transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-Labs->Admissible-Existence:intr-destination@intr-path-v1:StegVerse-Labs->Admissible-Existence",
+   "source_transition_sha256": "sha256:6424c1d65f3ed4d74f5245e9374fed7cd0c60c8dec00d41de11b7882014f4de4",
+   "subject_or_correlation_id": null,
+   "successor_org_state_sha256": "sha256:f00ccae7ac5b794022576b9906058abd9307b39e044af23b285856b862c6ce76"
+  },
+  "repository_receipt": {
+   "authority_effect": "NONE",
+   "evidence": {
+    "capability": "intr-destination",
+    "communication_id": "intr-path-v1:StegVerse-Labs->Admissible-Existence",
+    "destination_address": "admissible-existence.intr-destination",
+    "destination_organization": "Admissible-Existence",
+    "disposition": "ALLOW",
+    "merge_transfer_organization_receipt_sha256": "sha256:23906e93dae2bf71b943f4c2ff0f8d8da211a2d3a052e27194d36b442aeab12d",
+    "message": {
+     "body": {
+      "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+      "schema": "stegverse.org-intr-destination-diagnostic/v1",
+      "transfer_commit": "ee934df1e1909d964ac36caffe65b8a02287d989"
+     },
+     "communication_id": "intr-path-v1:StegVerse-Labs->Admissible-Existence",
+     "message_class": "ecosystem.communication"
+    },
+    "message_sha256": "sha256:f976076cd90043f1c44aa47d96380c1ba00f4ca2bda50e3e2f6c3369fa5cc460",
+    "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
+    "payload_sha256": "sha256:e3d94cb804eef5839d9dd744bdcb1b00a4c1e21c15576da7616e2076b6839663",
+    "repository": "StegVerse-Labs/.github",
+    "schema": "stegverse.intr-path-transfer-evidence/v1",
+    "source_organization": "StegVerse-Labs",
+    "transfer_commit": "ee934df1e1909d964ac36caffe65b8a02287d989"
+   },
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469411750,
+    "frequency_hz": 100,
+    "generation": 469411750,
+    "heartbeat_id": "HB:469411750",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "predecessor_state_sha256": "sha256:e3d94cb804eef5839d9dd744bdcb1b00a4c1e21c15576da7616e2076b6839663",
+   "previous_receipt_sha256": "sha256:1c7c5a7a218ab69d546803f71ea26b18ded01c64ec65c32596706a4eb0c4eff2",
+   "receipt_sha256": "sha256:6424c1d65f3ed4d74f5245e9374fed7cd0c60c8dec00d41de11b7882014f4de4",
+   "repository": "StegVerse-Labs/.github",
+   "schema": "stegverse.repo-transition-receipt/v1",
+   "successor_state_sha256": "sha256:f00ccae7ac5b794022576b9906058abd9307b39e044af23b285856b862c6ce76",
+   "transition_class": "INTR_MESH_PATH_TRANSFER",
+   "transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-Labs->Admissible-Existence:intr-destination@intr-path-v1:StegVerse-Labs->Admissible-Existence"
+  },
+  "source_ledger_tip_observed": "9a407561062757a30f90818ec6c8105b04331a39"
+ },
+ "status": {
+  "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
+  "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
+  "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
+  "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162",
+  "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
+  "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows"
+ }
+}

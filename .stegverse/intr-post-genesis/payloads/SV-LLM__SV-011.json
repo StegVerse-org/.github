@@ -1,0 +1,53 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
+   "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+   "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
+   "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
+   "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the destination_readback read for SV-LLM->SV-011:intr-destination needs a TV/TVC read receipt (scope SV-LLM->SV-011:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
+   "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+  },
+  {
+   "failed_predicate": "DESTINATION_INGRESS_HAS_THE_PUBLIC_LEDGER_ROUTE",
+   "failure_code": "INTR_PATH_DESTINATION_PUBLIC_ROUTE_NOT_ON_MAIN",
+   "next_attempt": "re-run seal and replay after the port is admitted",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "the public-ledger route of resident-runtime/intr_path_ingress.py (as in StegVerse-org/.github#224 and StegVerse-Labs/.github#3312) on SV-011/.github main",
+   "retry_entrypoint": "a Lane B public-route port draft to SV-011/.github (laneb/ branch)"
+  },
+  {
+   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination SV-011",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for SV-LLM->SV-011:intr-destination on SV-LLM/.github's ledger (read anonymously at e9ee01335e757b5d179b71e889c99d9016bfce73: none); the writer and the transfers.json row are in SV-LLM/.github#50 (head 7c64558a)",
+   "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+  }
+ ],
+ "cls": "TVC_PRIVATE_DESTINATION_READ",
+ "communication_id": "intr-path-v1:SV-LLM->SV-011",
+ "destination": "SV-011",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "SV-LLM->SV-011:intr-destination",
+ "payload": null,
+ "record_sha256": "sha256:562f361ef9f1fbe210703fb350f2f0843d0da6bbfbbb5e4b2ea3db5cb5f51e10",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "SV-LLM",
+ "source_receipts": null,
+ "source_writer_head": "7c64558a8d07eec1c61760aeac32c6495d853735",
+ "source_writer_pr": "SV-LLM/.github#50",
+ "status": {
+  "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
+  "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+  "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
+  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
+  "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the destination_readback read for SV-LLM->SV-011:intr-destination needs a TV/TVC read receipt (scope SV-LLM->SV-011:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
+  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+ }
+}

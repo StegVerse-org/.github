@@ -1,0 +1,90 @@
+{
+ "schema": "stegverse.intr-post-genesis-inputs/v1",
+ "owning_existing_goal": "StegVerse-org/.github#162",
+ "observed": "2026-10-23 by Lane B (91117956); committed facts, not read by any verifier from a clock or the network",
+ "genesis": {
+  "Admissible-Existence": {
+   "pr": "Admissible-Existence/.github#99",
+   "head": "0a9a8a8e0cf7bddc92e635cebe7032f1e9727723",
+   "inbound_rows": [
+    "StegVerse-Labs->Admissible-Existence:intr-destination",
+    "StegVerse-org->Admissible-Existence:intr-destination"
+   ]
+  },
+  "SV-LLM": {
+   "pr": "SV-LLM/.github#50",
+   "head": "7c64558a8d07eec1c61760aeac32c6495d853735",
+   "inbound_rows": [
+    "StegVerse-Labs->SV-LLM:intr-destination",
+    "StegVerse-org->SV-LLM:intr-destination"
+   ]
+  },
+  "StegVerse-Labs": {
+   "pr": "StegVerse-Labs/.github#3312",
+   "head": "94ba7ebbe2f6970062ba18a11c672d5063842c44",
+   "inbound_rows": [
+    "StegVerse-org->StegVerse-Labs:intr-destination"
+   ]
+  },
+  "StegVerse-org": {
+   "pr": "StegVerse-org/.github#224",
+   "head": "529267189d888742bd3081a15f86e0dec378894e",
+   "inbound_rows": [
+    "StegVerse-Labs->StegVerse-org:intr-destination"
+   ]
+  }
+ },
+ "destination_ingress_on_main": {
+  "Admissible-Existence": "IN_GENESIS_DRAFT",
+  "GCAT-BCAT-Engine": "PRESENT_WITHOUT_PUBLIC_ROUTE",
+  "SV-011": "PRESENT_WITHOUT_PUBLIC_ROUTE",
+  "SV-LLM": "IN_GENESIS_DRAFT",
+  "StegGhost": false,
+  "StegVerse-002": false,
+  "StegVerse-Labs": true,
+  "StegVerse-org": true
+ },
+ "destination_ingress_evidence": {
+  "StegVerse-Labs": "main 86382e60: resident-runtime/intr_path_ingress.py blob 426eb456, .github/workflows/intr-path-ingress.yml blob a783a44e",
+  "StegVerse-org": "main 907f4305: resident-runtime/intr_path_ingress.py blob 8b0d1650, .github/workflows/intr-path-ingress.yml blob 23b65aec",
+  "Admissible-Existence": "main 0476eeac: both absent; in Admissible-Existence/.github#99 (laneb/intr-mesh-path 8396d24e), byte-identical to StegVerse-org/.github#224",
+  "SV-LLM": "main a00a72ec: both absent; in SV-LLM/.github#50 (laneb/intr-mesh-path 7c64558a), byte-identical to StegVerse-org/.github#224",
+  "StegGhost": "absent (56-path table, StegVerse-org/.github#162 comment 6354680103)",
+  "StegVerse-002": "absent (56-path table, StegVerse-org/.github#162 comment 6354680103)",
+  "SV-011": "ingress present, public-ledger route not ported (56-path table D1)",
+  "GCAT-BCAT-Engine": "ingress present, public-ledger route not ported (56-path table D1)"
+ },
+ "anonymous_ledger_read": {
+  "Admissible-Existence": "2b117af78f27e94830b0ff20e2fb3aa49872d80d",
+  "GCAT-BCAT-Engine": "NOT_ANONYMOUSLY_READABLE",
+  "SV-011": "NOT_ANONYMOUSLY_READABLE",
+  "SV-LLM": "e9ee01335e757b5d179b71e889c99d9016bfce73",
+  "StegGhost": "NOT_ANONYMOUSLY_READABLE",
+  "StegVerse-002": "NOT_ANONYMOUSLY_READABLE",
+  "StegVerse-Labs": "9a407561062757a30f90818ec6c8105b04331a39",
+  "StegVerse-org": "216487782daa161b886e608e64256877c14ca86f"
+ },
+ "tvc": {
+  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host",
+  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162"
+ },
+ "authority_effect": "NONE",
+ "source_writers": {
+  "Admissible-Existence": {
+   "pr": "Admissible-Existence/.github#99",
+   "head": "0a9a8a8e0cf7bddc92e635cebe7032f1e9727723"
+  },
+  "SV-LLM": {
+   "pr": "SV-LLM/.github#50",
+   "head": "7c64558a8d07eec1c61760aeac32c6495d853735"
+  }
+ },
+ "source_writer_entity": "INTR_MESH_PATH_TRANSFER via resident-runtime/intr_path_transfer.py + .github/workflows/intr-path-transfer.yml (workflow_run), linked to ORGANIZATION_MAIN_MERGE_TRANSFER from organization-ledger-merge-transfer.yml. P4's B1 writer (StegVerse-org/.github#222 main_change_receipt.py) resolves to this established entity: its census (main_change_receipt_census.py EXISTING_WRITER) counts a repository with the merge-transfer writer as covered.",
+ "ledger_head_epoch_owner": {
+  "Admissible-Existence": {
+   "repair": "Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
+   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows",
+   "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162"
+  }
+ }
+}
