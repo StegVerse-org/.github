@@ -909,6 +909,12 @@
     },
     {
       "catalog_groups": [
+        "intr-path-public-ledger-read.validate"
+      ],
+      "reason": "StegVerse-org/.github#224: the cross-org read's public-ledger route (E0, no credential) and its scratch-ref dry run, carried as a catalog group instead of a step in the folded intr-path-transfer-validation.yml"
+    },
+    {
+      "catalog_groups": [
         "intr-ingress-ledger-component-validation.package"
       ],
       "reason": "StegVerse-org/.github#210: the intr-ingress-ledger/v1 component package check, carried as a catalog group instead of the workflow file #210 added"
