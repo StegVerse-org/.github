@@ -49,12 +49,21 @@
   },
   "repo-standards": {
    "check": {
-    "env": "REPO_STANDARDS_ROOT",
-    "kind": "env_path"
+    "allow": "ALLOW",
+    "argv": [
+     "consume",
+     "--ledger",
+     "git+{root}#refs/stegverse/organization-ledger",
+     "--head-root",
+     "{root}"
+    ],
+    "consumer": "resident-runtime/repo_standards_owner_drift_receipt.py",
+    "consumer_source": "ported from resident-runtime/tvc_conformance_receipt.py; the receipt producer is StegVerse-Labs/repo-standards#83 (run block org-owner-drift-receipt)",
+    "kind": "receipt_consumer"
    },
-   "finish_point": "REPO_STANDARDS_ROOT names a repo-standards checkout and OwnerDriftTests run and pass at the exact head",
-   "owner": "TVC-PRIVATE-SOURCE-READ-001 (GitHub Product)",
-   "repair": "a read of the private repo-standards repository supplied as REPO_STANDARDS_ROOT through a sanctioned private-source read (no credential is routed around)"
+   "finish_point": "resident-runtime/repo_standards_owner_drift_receipt.py consume returns ALLOW at the exact head. That needs a repo-standards OwnerDriftTests receipt (REPO_STANDARDS_ORG_OWNER_DRIFT_TEST_RECEIPT) on refs/stegverse/organization-ledger, sealed by StegVerse-Labs/repo-standards' CI run block org-owner-drift-receipt and appended by the organization ledger writer, whose bound org surface (the vendored schema, PROVENANCE.json and the test file) has the same sha256 as this head. The [repo-standards] set is then verified by that receipt and not run here.",
+   "owner": "GitHub Product, Lane C (StegVerse-org/.github#164; taken over by the admission coordinator, #167); producer StegVerse-Labs/repo-standards#83; append: the organization ledger writer (Lane B, #162)",
+   "repair": "repo-standards' run block org-owner-drift-receipt seals an ALLOW receipt on a push to repo-standards main with config/org_owner_drift_source.json pinned to an org commit holding this head's bound surface, and the organization ledger writer appends it. A repo-standards checkout or REPO_STANDARDS_ROOT in this job does not satisfy this input, and no credential is routed around."
   },
   "stegverse-sdk": {
    "check": {
