@@ -342,9 +342,13 @@ def run_group(gid):
     else:
         failed = [s for s in receipt["steps"] if s.get("exit_code") not in (None, 0) and not s.get("continue_on_error")]
         receipt["disposition"] = "DENY"
+        # catalog_additions groups carry no source workflow/job; a missing key must not turn a DENY into a crash
+        source = group.get("source") or {}
+        origin = (f"folded from {source.get('workflow')} job {source.get('job')}" if source.get("workflow")
+                  else "catalog addition, no folded source workflow")
         receipt["refusal"] = six(
             "CATALOG_CHECK_FAILED",
-            f"every step of group {gid} (folded from {group['source']['workflow']} job {group['source']['job']}) exits 0; failed: "
+            f"every step of group {gid} ({origin}) exits 0; failed: "
             + "; ".join(f"{s['n']}. {s['name']} -> {s['exit_code']}" for s in failed),
             "fix the code or data the failed step checks; the step body itself is pinned",
             nxt="push the repair; the dispatcher reruns this group on the next pull_request or push",
