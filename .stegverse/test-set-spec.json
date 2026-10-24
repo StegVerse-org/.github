@@ -38,15 +38,6 @@
    "owner": "StegVerse-org/.github#166 (P4 lane: wired in catalog group required-verification.full-suite)",
    "repair": "the job fetches the commit in .stegverse/test-suite-baseline/labs-tool-pin.json (resident-runtime/pinned_labs.py fetch) and sets STEGVERSE_LABS_ROOT"
   },
-  "ledger-store-step-b": {
-   "check": {
-    "kind": "unavailable",
-    "reason": "P1-FC-12 step (b) (readback and writers re-raising the remote-locator refusal in six fields) is deferred until StegVerse-org/.github#189 lands; the tests are @unittest.skip until then"
-   },
-   "finish_point": "#189 is on main and both tests run unskipped and pass at the exact head",
-   "owner": "Lane C/D (ledger store; StegVerse-org/.github#189, #162)",
-   "repair": "land StegVerse-org/.github#189, remove the @unittest.skip decorators and this input from the set"
-  },
   "organization-ledger-ref": {
    "check": {
     "kind": "git_ref",
@@ -258,17 +249,6 @@
    ],
    "tests": [
     "tests.test_task_registry_schema_conformance.OwnerDriftTests"
-   ]
-  },
-  {
-   "file": "tests/test_ledger_store_remote_locator_refused.py",
-   "id": "tests/test_ledger_store_remote_locator_refused.py[ledger-store-step-b]",
-   "inputs": [
-    "ledger-store-step-b"
-   ],
-   "tests": [
-    "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_readback_cli_refuses_and_writes_nothing",
-    "tests.test_ledger_store_remote_locator_refused.RemoteLocatorRefused.test_writers_refuse_a_remote_ledger_root_in_six_fields"
    ]
   }
  ],
