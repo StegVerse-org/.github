@@ -14,6 +14,9 @@ python3 resident-runtime/intr_path_transfer.py append --transfer-commit "$base" 
 test "$(git rev-parse "$DRY_RUN_REF")" = "$tip"
 python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert all(x.get("replayed") is True for x in r), r' "$RUNNER_TEMP/results/replay.json"
 # A previously ledgered path replays without moving the scratch tip.
-# The published ref must remain unchanged by this read-only dry run.
-test "$(git ls-remote origin "$LEDGER_REF" | cut -f1)" = "$(cat "$RUNNER_TEMP/published-tip")"
+# The ledger writer may append to the published ref while this runs (push to main): the guard requires
+# append-only growth from the copied tip and no scratch append on the published ref, not an unchanged tip.
+git fetch --no-tags origin "+$LEDGER_REF:refs/dry-run/published-now"
+python3 resident-runtime/ledger_publish_guard.py --copied-tip "$(cat "$RUNNER_TEMP/published-tip")" \
+  --published-now "$(git rev-parse refs/dry-run/published-now)" --scratch-tip "$(git rev-parse "$DRY_RUN_REF")"
 python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); print("INTR_PATH_DRY_RUN", json.dumps(r["counts"]))' "$RUNNER_TEMP/results/verify.json"
