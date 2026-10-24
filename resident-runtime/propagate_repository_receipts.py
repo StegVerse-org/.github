@@ -232,7 +232,7 @@ def main() -> int:
                         help="one declared repository; omit to sweep every declared repository")
     parser.add_argument("--repository-ledger-root", type=Path, default=None,
                         help="address of that repository's ledger; derived from the ledger home when absent")
-    parser.add_argument("--hb-epoch", default=None,
+    parser.add_argument("--hb-epoch", type=str, default=None,
                         help="heartbeat epoch, as supplied (ASCII digits >= 32); absent or invalid is "
                              "refused FAIL_CLOSED and nothing is propagated")
     parser.add_argument("--out", type=Path, default=None)

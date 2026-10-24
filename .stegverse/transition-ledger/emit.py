@@ -152,7 +152,7 @@ def cli_hb_epoch(text):
 def main():
  # An exact rerun returns the receipt recorded for this transition (F-POST-HEAD):
  # the same id with any other field is a ledger_receipt_collision, never a second receipt.
- p=argparse.ArgumentParser();p.add_argument("--transition-id",required=True);p.add_argument("--transition-class",required=True);p.add_argument("--predecessor-state-sha256",required=True);p.add_argument("--successor-state-sha256",required=True);p.add_argument("--evidence-json",default="{}");p.add_argument("--authority-effect",default="NONE");p.add_argument("--hb-epoch",default=None,help="heartbeat epoch, as supplied (ASCII digits >= 32); refused FAIL_CLOSED when absent, never derived from a clock");a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument("--transition-id",required=True);p.add_argument("--transition-class",required=True);p.add_argument("--predecessor-state-sha256",required=True);p.add_argument("--successor-state-sha256",required=True);p.add_argument("--evidence-json",default="{}");p.add_argument("--authority-effect",default="NONE");p.add_argument("--hb-epoch",type=str,default=None,help="heartbeat epoch, as supplied (ASCII digits >= 32); refused FAIL_CLOSED when absent, never derived from a clock");a=p.parse_args()
  hb_epoch,refused=cli_hb_epoch(a.hb_epoch)
  if refused is not None:
   print(json.dumps(refused,sort_keys=True));raise SystemExit(1)

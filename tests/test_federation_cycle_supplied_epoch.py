@@ -4,9 +4,9 @@ The cycle record was stamped with `kernel.hb_reference()` called with no epoch,
 which derives the reference from the host clock, and the executor stamped
 `datetime.now()` as `observed_at`. Both now take the epoch the materializer
 supplies (`--hb-epoch`), checked by the one shared supplied-epoch rule. Without
-a valid epoch the cycle record carries no reference and a six-field
-FAIL_CLOSED says why; the frames are still handled, because the reference
-stamps the record only.
+a valid epoch the cycle refuses with six fields before anything is read or
+written (B-P31, StegVerse-org/.github#207: the cycle's own epoch stamps every
+receipt it writes, so no frame is consumed without one -- §Q, F7).
 
 Source validation only. No authority effect is claimed.
 """
@@ -31,6 +31,20 @@ def _load(name, rel):
 
 
 FC = _load("federation_cycle_supplied_epoch", "resident-runtime/federation_cycle.py")
+
+
+def refused_cycle(**kwargs):
+    """Run a cycle that must refuse; return (refusal, consume mock, record mock)."""
+    with tempfile.TemporaryDirectory() as work, \
+            mock.patch.object(FC.K, "consume_and_respond", return_value=[]) as consume, \
+            mock.patch.object(FC.K, "record_federation_cycle", return_value=Path(work) / "cycle.json") as record, \
+            contextlib.redirect_stdout(io.StringIO()):
+        try:
+            FC.main(mesh_root=Path(work) / "mesh", node_state_root=Path(work) / "state",
+                    repo_ledger_root=Path(work) / "repo", org_ledger_root=Path(work) / "org", **kwargs)
+        except FC.PR.organization_ledger.OrgLedgerEpochRefused as exc:
+            return exc.refusal, consume, record
+        raise AssertionError("the cycle ran without a supplied epoch")
 
 
 def run_cycle(**kwargs):
@@ -58,30 +72,30 @@ class FederationCycleSuppliedEpochTests(unittest.TestCase):
         self.assertIs(reference["derived_from_clock"], False)
         self.assertNotIn("heartbeat_reference_refusal", receipt)
 
-    def test_no_epoch_records_no_reference_and_six_fields(self):
-        receipt = run_cycle()
-        self.assertIsNone(receipt["heartbeat_reference"])
-        refusal = receipt["heartbeat_reference_refusal"]
+    def test_no_epoch_is_refused_with_six_fields_and_nothing_consumed(self):
+        refusal, consume, record = refused_cycle()
         self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
         self.assertEqual(refusal["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
         self.assertEqual(refusal["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
         for field in SIX_FIELDS:
             with self.subTest(field=field):
                 self.assertTrue(refusal[field])
-        # The frames are still handled; the reference stamps this record only.
-        self.assertEqual(receipt["consumption"], {"disposition": "ALLOW"})
+        # Refused before anything is read or written: no frame, no cycle record.
+        consume.assert_not_called()
+        record.assert_not_called()
 
     def test_coerced_or_low_epochs_are_invalid(self):
         for value in ("+33", " 33", "3_3", "31", "33.0", ""):
             with self.subTest(value=value):
-                receipt = run_cycle(hb_epoch=value)
-                self.assertIsNone(receipt["heartbeat_reference"])
-                self.assertEqual(receipt["heartbeat_reference_refusal"]["failure_code"], "HB_EPOCH_INVALID")
+                refusal, consume, record = refused_cycle(hb_epoch=value)
+                self.assertEqual(refusal["failure_code"], "HB_EPOCH_INVALID")
+                consume.assert_not_called()
+                record.assert_not_called()
 
-    def test_the_supplied_epoch_reaches_propagation_unchanged(self):
-        # The raw epoch reaches the writer, which applies the same shared rule and
-        # refuses an absent or invalid one in six fields.
-        for supplied, expected in (("446655631", "446655631"), (None, None), ("+33", "+33")):
+    def test_the_supplied_epoch_reaches_propagation_as_admitted(self):
+        # Admitted by the shared rule as ASCII digits, the cycle's epoch reaches the
+        # writer as that value; an absent or invalid one never reaches it.
+        for supplied, expected in (("446655631", 446655631), ("0033", 33)):
             with self.subTest(supplied=supplied), tempfile.TemporaryDirectory() as work, \
                     mock.patch.object(FC.K, "consume_and_respond", return_value=[]), \
                     mock.patch.object(FC, "returns_for_consumed", return_value=[]), \

@@ -61,10 +61,10 @@ def function_lines(path, name):
 
 
 class SixFields:
-    def assertSixFieldRefusal(self, refusal, code):
+    def assertSixFieldRefusal(self, refusal, code, predicate=PREDICATE):
         self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
         self.assertEqual(refusal["failure_code"], code)
-        self.assertEqual(refusal["failed_predicate"], PREDICATE)
+        self.assertEqual(refusal["failed_predicate"], predicate)
         self.assertEqual(refusal["owning_existing_goal"], GOAL)
         for field in SIX_FIELDS:
             self.assertIsInstance(refusal[field], str, field)
@@ -151,16 +151,21 @@ class SourceEpochTests(SixFields, unittest.TestCase):
         # supplied one, so the organization append refuses it.
         derived = {"epoch": 478117838, "derived_from_clock": True, "sampled_unix_ns": 1}
         with tempfile.TemporaryDirectory() as root:
-            with self.assertRaises(org.OrgLedgerEpochRefused) as refused:
+            # B-P31 (StegVerse-org/.github#207, O-1): refused at source verification,
+            # before the epoch check, as SOURCE_RECEIPT_IS_CLOCK_PROVENANCE.
+            with self.assertRaises(org.SourceReceiptRefused) as refused:
                 self.append(root, self.source(derived), hb_epoch=478117838)
-            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_INVALID")
+            self.assertSixFieldRefusal(refused.exception.refusal, "SOURCE_RECEIPT_IS_CLOCK_PROVENANCE",
+                                       "SOURCE_RECEIPT_CARRIES_A_SUPPLIED_EPOCH")
             self.assertEqual(list(Path(root).iterdir()), [])
 
     def test_a_source_reference_that_is_not_an_object_is_refused(self):
         with tempfile.TemporaryDirectory() as root:
-            with self.assertRaises(org.OrgLedgerEpochRefused) as refused:
+            # B-P31 (#207, F5): a reference with no derived_from_clock marker is unmarked.
+            with self.assertRaises(org.SourceReceiptRefused) as refused:
                 self.append(root, self.source("HB:4128"))
-            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_INVALID")
+            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_PROVENANCE_UNMARKED",
+                                       "SOURCE_RECEIPT_CARRIES_A_SUPPLIED_EPOCH")
 
     def test_a_supplied_source_epoch_is_admitted(self):
         with tempfile.TemporaryDirectory() as root:
@@ -172,18 +177,23 @@ class SourceEpochTests(SixFields, unittest.TestCase):
             emit = _load("pr1c_emit", ".stegverse/transition-ledger/emit.py")
             env = {"STEGVERSE_REPO_LEDGER_ROOT": str(Path(work) / "repo"),
                    "STEGVERSE_ORG_LEDGER_ROOT": str(Path(work) / "org")}
+            # B-P31 (#207): the repository append itself refuses an absent epoch, so
+            # no clock-derived repository receipt exists to propagate.
             with patch.dict(os.environ, env):
-                repository_receipt = emit.append("PR1C-TWO-LEVEL", "DEMO", STATE_BEFORE, STATE_AFTER, {}, "NONE")
-                self.assertIs(repository_receipt["hb_reference"]["derived_from_clock"], True)
-                with self.assertRaises(org.OrgLedgerEpochRefused) as refused:
-                    org.append(repository_receipt, "REPO_STATE_PROPAGATION", org.GENESIS, STATE_AFTER,
-                               {}, "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"])
-            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_INVALID")
+                with self.assertRaises(emit.RepoLedgerEpochRefused) as refused:
+                    emit.append("PR1C-TWO-LEVEL", "DEMO", STATE_BEFORE, STATE_AFTER, {}, "NONE")
+            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_NOT_SUPPLIED")
+            self.assertFalse((Path(work) / "repo").exists())
             self.assertFalse((Path(work) / "org").exists())
 
 
 class FederationCyclePropagationTests(SixFields, unittest.TestCase):
-    """The cycle at main 40a5d235 (d6b117b6) supplies its epoch to propagation, or records the six-field refusal."""
+    """The cycle supplies its epoch to propagation; without a valid one it refuses before anything runs.
+
+    B-P31 (StegVerse-org/.github#207, §Q/F7): the cycle's own epoch stamps every
+    receipt it writes, so an absent or invalid epoch is the cycle's six-field
+    OrgLedgerEpochRefused, raised before any frame is consumed or anything written.
+    """
 
     def cycle(self, hb_epoch):
         work = Path(tempfile.mkdtemp())
@@ -193,7 +203,8 @@ class FederationCyclePropagationTests(SixFields, unittest.TestCase):
                 "transition_id": "NODE_INGRESS_ADMITTED:pr1c", "transition_class": "NODE_INGRESS_ADMITTED",
                 "predecessor_state_sha256": STATE_BEFORE, "successor_state_sha256": STATE_AFTER,
                 "evidence": {}, "authority_effect": "NONE",
-                "hb_reference": {"epoch": 32, "progression_dependency": "OSCILLATOR_ONLY"},
+                "hb_reference": {"epoch": 32, "derived_from_clock": False,
+                                 "progression_dependency": "OSCILLATOR_ONLY"},
                 "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY", "previous_receipt_sha256": None}
         digest = org.sha(body)
         receipts = work / "homes" / repository / "receipts"
@@ -207,18 +218,20 @@ class FederationCyclePropagationTests(SixFields, unittest.TestCase):
                 reported = cycle.main(mesh_root=work / "mesh", node_state_root=work / "node", hb_epoch=hb_epoch)
         return reported["repository_propagation"], work
 
-    def test_no_epoch_records_a_six_field_refusal_instead_of_stopping(self):
-        propagation, work = self.cycle(None)
-        self.assertSixFieldRefusal(propagation, "HB_EPOCH_NOT_SUPPLIED")
-        self.assertIs(propagation["consequence_committed"], False)
-        self.assertFalse((work / "org" / "HEAD.json").exists())
+    def refused(self, hb_epoch):
+        # The cycle loads its own copy of the organization writer, so its
+        # OrgLedgerEpochRefused is a different class object; both are SystemExit.
+        with self.assertRaises(SystemExit) as refused:
+            self.cycle(hb_epoch)
+        self.assertEqual(type(refused.exception).__name__, "OrgLedgerEpochRefused")
+        return refused.exception.refusal
 
-    def test_an_invalid_epoch_records_hb_epoch_invalid(self):
-        # At main 40a5d235 (c3f9fbee) the cycle hands the epoch to propagation as
-        # given, so the organization append's shared rule names it invalid.
-        propagation, _ = self.cycle("+33")
-        self.assertSixFieldRefusal(propagation, "HB_EPOCH_INVALID")
-        self.assertIs(propagation["consequence_committed"], False)
+    def test_no_epoch_is_refused_before_anything_is_written(self):
+        refusal = self.refused(None)
+        self.assertSixFieldRefusal(refusal, "HB_EPOCH_NOT_SUPPLIED")
+
+    def test_an_invalid_epoch_is_hb_epoch_invalid(self):
+        self.assertSixFieldRefusal(self.refused("+33"), "HB_EPOCH_INVALID")
 
     def test_a_supplied_epoch_carries_the_receipt(self):
         propagation, _ = self.cycle(4200)

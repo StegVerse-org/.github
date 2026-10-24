@@ -109,8 +109,8 @@ def main():
     state={
         "schema":"stegverse.organization-resident-executor/v2",
         "organization":"StegVerse-org",
-        # The cycle's supplied heartbeat reference, not a host-clock reading:
-        # an unmarked wall-clock observed_at used to be stamped here. A refused
+        # The cycle's supplied heartbeat reference, not a host-clock reading
+        # (an unmarked wall-clock timestamp used to be stamped here). A refused
         # cycle has none, and the record says so with null.
         "heartbeat_reference":(fed or {}).get("heartbeat_reference"),
         "materialization":"ONE_CYCLE_PER_INVOCATION",

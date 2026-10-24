@@ -652,6 +652,10 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
         "MESH_REF_PUBLISH_RACE": "SVORG-MESH-LOCATION-BINDING-001",
         "ORGANIZATION_LEDGER_PUBLISH_RACE": "LLMA-DECLARED-PATH-CONFORMANCE-368",
         "AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE": "LLMA-DECLARED-PATH-CONFORMANCE-368",
+        # B-P31 (StegVerse-org/.github#207): the dispatch epoch is gated by the
+        # organization writer's shared rule, whose refusal names its own goal.
+        "HB_EPOCH_NOT_SUPPLIED": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
+        "HB_EPOCH_INVALID": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
     }
 
     def text(self):
@@ -660,7 +664,15 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
     def script(self, name):
         import textwrap
         step = self.text().split("      - name: " + name + "\n")[1].split("      - name:")[0]
-        return textwrap.dedent(step.split("        run: |\n", 1)[1])
+        # Only the run block's own lines: a comment introducing the next step is
+        # indented less and would otherwise shift the dedent (and a heredoc's
+        # terminator) off the block's margin.
+        block = []
+        for line in step.split("        run: |\n", 1)[1].splitlines(keepends=True):
+            if line.strip() and not line.startswith("          "):
+                break
+            block.append(line)
+        return textwrap.dedent("".join(block))
 
     def assert_six(self, message):
         self.assertIn(message["disposition"], ("FAIL_CLOSED", "DENY"), message)
@@ -686,7 +698,7 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
             "ORGANIZATION_LEDGER_CONTRACT_OR_REQUEST_INVALID", "ORGANIZATION_LEDGER_REF_BINDING_FAILED",
             "DISPATCH_REQUEST_REQUIRED", "DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS",
             "DISPATCH_REQUEST_PATH_INVALID", "DISPATCH_REQUEST_CONTROL_CHARACTER",
-            "DISPATCH_REQUEST_NOT_COMMITTED", "DISPATCH_HB_EPOCH_INVALID", "SELF_CLOSURE_RESULT_ABSENT",
+            "DISPATCH_REQUEST_NOT_COMMITTED", "SELF_CLOSURE_RESULT_ABSENT",
             "MESH_REF_PUBLISH_RACE", "ORGANIZATION_LEDGER_PUBLISH_RACE",
             "AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE"})
         # No refusal is a bare "FAIL_CLOSED: CODE" line any more.
@@ -710,7 +722,11 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
                 window = "\n".join(lines[max(0, index - 12):index + 1])
                 self.assertTrue(
                     "owning_existing_goal" in window or 'echo "$resolved"; exit 1' in line
-                    or 'echo "$binding"; exit 1' in line or "print(json.dumps(resolved" in window,
+                    or 'echo "$binding"; exit 1' in line or "print(json.dumps(resolved" in window
+                    # The shared-rule epoch gate prints the writer's own six-field refusal.
+                    or "print(json.dumps({**refusal" in window
+                    # The request-epoch refusals, each a six-field record, printed as written.
+                    or 'cat "$RUNNER_TEMP"/epoch-refusals/*.json' in window,
                     "line %d: %s" % (index + 1, line.strip()))
         for name in ("Validate committed request and readback implementation before any append",
                      "Bind the designated organization ledger ref and the repository ledger subtree within it"):
@@ -728,8 +744,10 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
                               capture_output=True, text=True)
 
     def last_message(self, run):
-        lines = [line[line.index('{"disposition"'):] for line in (run.stdout + "\n" + run.stderr).splitlines()
-                 if '{"disposition"' in line]
+        # A literal echo puts disposition first; the shared-rule gate prints
+        # its refusal with sorted keys, so any JSON object line naming one counts.
+        lines = [line[line.index("{"):] for line in (run.stdout + "\n" + run.stderr).splitlines()
+                 if '{"disposition"' in line or ("{" in line and '"disposition": ' in line)]
         self.assertTrue(lines, run.stdout + run.stderr)
         return json.loads(lines[-1])
 
@@ -762,13 +780,18 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
             self.assertNotIn("failure_code", run.stdout + run.stderr)
 
         close = "Close an intr-destination diagnostic against this organization"
-        for writes, epoch, code in ((False, "", "DISPATCH_HB_EPOCH_INVALID"),
-                                    (False, "7x", "DISPATCH_HB_EPOCH_INVALID"),
-                                    (False, "7", "SELF_CLOSURE_RESULT_ABSENT"),
-                                    (True, "7", None)):
+        # The epoch is gated by the shared rule (ASCII digits >= 32), so "7" is
+        # below the anchor; the gate loads the real organization writer.
+        for writes, epoch, code in ((False, "", "HB_EPOCH_NOT_SUPPLIED"),
+                                    (False, "7x", "HB_EPOCH_INVALID"),
+                                    (False, "7", "HB_EPOCH_INVALID"),
+                                    (False, "33", "SELF_CLOSURE_RESULT_ABSENT"),
+                                    (True, "33", None)):
             with tempfile.TemporaryDirectory() as tmp:
                 runtime = Path(tmp, "resident-runtime")
                 runtime.mkdir()
+                (runtime / "aggregate_repo_transition.py").symlink_to(
+                    ROOT / "resident-runtime/aggregate_repo_transition.py")
                 body = ("import json, sys\nout = sys.argv[sys.argv.index('--out') + 1]\n"
                         "json.dump({'disposition': 'ALLOW', 'communication_id': 'c'}, open(out, 'w'))\n"
                         if writes else "raise SystemExit(1)\n")
