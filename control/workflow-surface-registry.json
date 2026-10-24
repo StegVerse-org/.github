@@ -906,6 +906,12 @@
         "workflow-surface-registry.validate"
       ],
       "reason": "G17: enforces the registry (replaces per-workflow existence and count pins)"
+    },
+    {
+      "catalog_groups": [
+        "intr-ingress-ledger-component-validation.package"
+      ],
+      "reason": "StegVerse-org/.github#210: the intr-ingress-ledger/v1 component package check, carried as a catalog group instead of the workflow file #210 added"
     }
   ]
 }
