@@ -24,6 +24,11 @@
       "repository": "StegVerse-org/.github",
       "commit": "907f4305ddd4f39b16d96638744304de9ef0b67d",
       "subject": "org-runtime/intr_protocol.py and data/intr-protocol/v1/protocol.json"
+    },
+    {
+      "repository": "StegVerse-org/.github",
+      "commit": "d8cff8fb9bc325592ff1ea1ee9ef50df1c5fee67",
+      "subject": "data/intr-protocol/v1/protocol.json re-vendored after #218 (d8cff8fb) reconciled it"
     }
   ],
   "template_variables": {
@@ -110,13 +115,13 @@
       "path": "data/intr-protocol/v1/protocol.json",
       "kind": "VENDORED",
       "component_file": "files/data/intr-protocol/v1/protocol.json",
-      "sha256": "sha256:6caef6d83b62adc3b680a103c4931d6b61f28287da0fe370e327ef97d0521a73",
+      "sha256": "sha256:2c5a44d01508284caab062629c70685bd1bcdf84a89573fbdbbfc45095b49fb7",
       "source": {
         "repository": "StegVerse-org/.github",
-        "commit": "907f4305ddd4f39b16d96638744304de9ef0b67d",
+        "commit": "d8cff8fb9bc325592ff1ea1ee9ef50df1c5fee67",
         "path": "data/intr-protocol/v1/protocol.json",
-        "git_blob": "318e97fb7dd2da1b788ebd1c79dfd555188ce173",
-        "sha256": "sha256:6caef6d83b62adc3b680a103c4931d6b61f28287da0fe370e327ef97d0521a73"
+        "git_blob": "606a345f576f2c2b6cb9abd9e80c9c8208015d40",
+        "sha256": "sha256:2c5a44d01508284caab062629c70685bd1bcdf84a89573fbdbbfc45095b49fb7"
       }
     },
     {
