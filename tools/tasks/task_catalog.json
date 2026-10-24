@@ -528,7 +528,7 @@
         {
           "name": "The writer's append on the scratch ref, linked to the last ledgered main merge",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-linked-to.sh",
-          "run_sha256": "cd95b6f2106d85cfebe9ea7e38e2895806fb3d41816b8395a4faef08dfbc86c0"
+          "run_sha256": "963d2eaae5b994750a981b030fac14839cd1d5bda289e0f3172ecef7fd211b8e"
         }
       ],
       "artifacts": [],
@@ -1186,7 +1186,7 @@
         {
           "name": "Copy the published ledger to a scratch ref",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/01-copy-the-published-ledger-to-a-scratch-ref.sh",
-          "run_sha256": "ead7f1adff7c08fc22142b1c70d7b328c3bd82a19684b2444bfe977f4e27d6b6"
+          "run_sha256": "e5214886176524699e81be48e23c210d8d8201cd864cc423615746223c6f4b92"
         },
         {
           "name": "Real state, read-only: each selected merge is VERIFIED or FAIL_CLOSED with six fields, never DENY",
@@ -1196,7 +1196,7 @@
         {
           "name": "The writer's append on the scratch ref, then VERIFIED, then an idempotent replay",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-then-veri.sh",
-          "run_sha256": "118319636e322c1fc36b2aa8d429f629987a11952eb24f3e63094bc5525173db"
+          "run_sha256": "7513c299fb395bea28383e0bb797f56978d677d3c3a0e21d564c0e3f54adc2ec"
         }
       ],
       "artifacts": [],
