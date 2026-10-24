@@ -1,0 +1,103 @@
+{
+  "schema": "stegverse.component-bindings/v1",
+  "services_entry": {
+    "document": "org-boundary/registry/services.json",
+    "list": "services",
+    "key": "service_id",
+    "entry": {
+      "service_id": "{{SLUG}}.intr-destination",
+      "repository": "{{REPOSITORY}}",
+      "boundary_role": "BOUNDARY_LOCAL_CAPABILITY_INGRESS",
+      "profile_status": "ACTIVE",
+      "capability_profile_id": "intr-destination",
+      "capability_binding_document": "org-runtime/interlock-intr.json",
+      "accepts": [
+        "ecosystem.communication",
+        "stegverse.org-intr-destination-diagnostic/v1"
+      ],
+      "runtime_required_for_consumption": true,
+      "admission_authority_constraint": "CONSTRAINT_VARIABLE",
+      "time_constraint": "CONSTRAINT_VARIABLE",
+      "disposition_role": "TRANSITION_EVIDENCE_ONLY",
+      "selects_processing_at_this_address": false
+    }
+  },
+  "interlock_ingress": {
+    "document": "org-runtime/interlock-intr.json",
+    "object": "ingress",
+    "set": {
+      "capability_endpoint_bindings": [
+        {
+          "profile_id": "intr-destination",
+          "profile_name": "InTr:Destination",
+          "operation": "DIAGNOSTIC_CROSSING",
+          "payload_schema": "stegverse.org-intr-destination-diagnostic/v1",
+          "submission_reader": "ECOSYSTEM_COMMUNICATION",
+          "capability_declaration_owner": "{{REPOSITORY}}",
+          "capability_binding_owner": "{{REPOSITORY}}",
+          "receiving_operation": {
+            "owner_repository": "{{REPOSITORY}}",
+            "operation_id": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+            "operation": "resident-runtime/intr_destination_ingress.py",
+            "addressed_service": "{{SLUG}}.intr-destination",
+            "addressed_service_boundary_role": "BOUNDARY_LOCAL_CAPABILITY_INGRESS",
+            "address_resolution": "org-boundary/runtime/capability_ingress.py::receive",
+            "address_is_resolvable_from_the_service_registry": true,
+            "selects_processing_at_the_capability_address": false,
+            "admission": "resident-runtime/intr_destination_ingress.py::receive",
+            "receipt_append": "resident-runtime/aggregate_repo_transition.py::append",
+            "emits": "stegverse.organization-transition-receipt/v1",
+            "transport": "INTERLOCK_INTR",
+            "address_form": "REPOSITORY_OWNED_OPERATION_NOT_HOST_OR_URL",
+            "host_required": false,
+            "environment_url_required": false,
+            "credential_authority": "TV/TVC",
+            "github_token_runtime_authority": "NONE",
+            "routing_authority_constraint": "CONSTRAINT_VARIABLE",
+            "admission_authority_constraint": "CONSTRAINT_VARIABLE",
+            "execution_authority_constraint": "CONSTRAINT_VARIABLE",
+            "time_constraint": "CONSTRAINT_VARIABLE",
+            "disposition_role": "TRANSITION_EVIDENCE_ONLY"
+          },
+          "binding_role": "ORGANIZATION_RECEIVING_OPERATION_RESOLUTION",
+          "authority_effect": "NONE_BINDING_ONLY",
+          "routing_authority_constraint": "CONSTRAINT_VARIABLE",
+          "admission_authority_constraint": "CONSTRAINT_VARIABLE",
+          "execution_authority_constraint": "CONSTRAINT_VARIABLE",
+          "time_constraint": "CONSTRAINT_VARIABLE",
+          "disposition_role": "TRANSITION_EVIDENCE_ONLY",
+          "environment_selected_ingress": false
+        }
+      ],
+      "capability_endpoint_binding_rule": "REGISTERED_CAPABILITY_RESOLVES_TO_ONE_ORGANIZATION_RECEIVING_OPERATION_OWNED_HERE",
+      "capability_address_rule": "A_BOUND_RECEIVING_OPERATION_IS_ADDRESSABLE_IN_THE_SERVICE_REGISTRY_OR_IT_IS_UNREACHABLE"
+    }
+  },
+  "interlock_egress": {
+    "document": "org-runtime/interlock-intr.json",
+    "object": "egress",
+    "set": {
+      "peer_capability_resolution": {
+        "address_form": "ORGANIZATION_SLUG_DOT_CAPABILITY_PROFILE_ID",
+        "derivation": "org-kernel/kernel.py::organization_slug",
+        "capability_must_be_declared_in_this_organizations_overlay": true,
+        "capability_profile_source": "ORGANIZATION_CAPABILITY_OVERLAY",
+        "derivation_is_the_same_one_this_organization_answers_at": true,
+        "proven_on_this_organization": "{{SLUG}}.intr-destination",
+        "peer_declares_its_capability_services_in_the_peer_directory": false,
+        "peer_serves_this_capability_is_proven_here": false,
+        "unserved_capability_address_is_observable_as_an_unclosed_crossing": true,
+        "default_without_a_declared_capability": "ORG_CONTROL_SERVICE"
+      }
+    }
+  },
+  "kernel": {
+    "document": "org-kernel/kernel.py",
+    "requires": "hb_reference(now_ns=None, *, epoch=None)",
+    "replace": {
+      "before": "def hb_reference(now_ns:int|None=None)->dict[str,Any]:\n    if now_ns is None:\n",
+      "after": "def hb_reference(now_ns:int|None=None, *, epoch:int|None=None)->dict[str,Any]:\n    # A supplied epoch (component intr-ingress-ledger/v1): no clock is read and the reference says so.\n    if epoch is not None:\n        if now_ns is not None: raise ValueError(\"supply_epoch_or_sample_not_both\")\n        if not isinstance(epoch,int) or isinstance(epoch,bool) or epoch<HB_ANCHOR_EPOCH:\n            raise ValueError(\"epoch_precedes_hb32_anchor\")\n        return {\"epoch\":epoch,\"generation\":epoch,\"heartbeat_id\":f\"HB:{epoch}\",\"phase_offset_ns\":0,\n                \"frequency_hz\":HB_HZ,\"progression_dependency\":\"OSCILLATOR_ONLY\",\"derived_from_clock\":False,\n                \"authority_effect\":\"NONE\"}\n    if now_ns is None:\n"
+    },
+    "already": "epoch:int|None=None"
+  }
+}

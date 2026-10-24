@@ -918,6 +918,12 @@
         "intr-protocol-copy-equality.validate"
       ],
       "reason": "StegVerse-org/.github#218: tests.test_intr_protocol_copy_equality, carried as a catalog group instead of an edit to the folded intr-destination-capability-validation step"
+    },
+    {
+      "catalog_groups": [
+        "intr-ingress-ledger-component-validation.package"
+      ],
+      "reason": "StegVerse-org/.github#210: the intr-ingress-ledger/v1 component package check, carried as a catalog group instead of the workflow file #210 added"
     }
   ]
 }

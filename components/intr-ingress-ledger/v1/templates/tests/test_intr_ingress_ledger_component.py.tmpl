@@ -1,0 +1,96 @@
+"""InTr destination ingress + organization ledger, as installed by StegVerse-org/.github
+components/intr-ingress-ledger/v1 (goal StegVerse-org/.github#162).
+
+Ledgers here are temporary directories: receipts written by these tests are NOT
+LEDGERED and NOT AUTHENTIC. The published ref refs/stegverse/organization-ledger
+is opened only by .github/workflows/organization-ledger-transition.yml.
+"""
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+ORGANIZATION = "{{ORGANIZATION}}"
+REPOSITORY = "{{REPOSITORY}}"
+ADDRESS = "{{SLUG}}.intr-destination"
+INSTALLED = json.loads((ROOT / ".stegverse/components/intr-ingress-ledger-v1.json").read_text())
+
+
+def load(name, relative):
+    spec = importlib.util.spec_from_file_location(name, ROOT / relative)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+class Installed(unittest.TestCase):
+    def test_every_installed_file_is_the_component_bytes(self):
+        for row in INSTALLED["files"]:
+            data = (ROOT / row["path"]).read_bytes()
+            self.assertEqual("sha256:" + hashlib.sha256(data).hexdigest(), row["sha256"], row["path"])
+
+    def test_the_destination_conforms_to_intr_protocol_v1(self):
+        intr = load("intr_protocol_component", "org-runtime/intr_protocol.py")
+        result = intr.conform_destination(
+            ORGANIZATION, json.loads((ROOT / "org-runtime/interlock-intr.json").read_text()),
+            json.loads((ROOT / "org-boundary/registry/services.json").read_text()))
+        self.assertEqual(result["disposition"], "ALLOW", result)
+        self.assertEqual(intr.destination_address(ORGANIZATION, intr.load_contract()), ADDRESS)
+
+    def test_the_ledger_ref_is_designated(self):
+        org = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_text())
+        repo = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").read_text())["repository_ledger_location"]
+        self.assertEqual((org["organization"], org["organization_ledger_repository"]), (ORGANIZATION, REPOSITORY))
+        self.assertEqual(org["organization_ledger_ref"], "refs/stegverse/organization-ledger")
+        self.assertEqual((repo["repository"], repo["ref"]), (REPOSITORY, org["organization_ledger_ref"]))
+        self.assertIs(org["propagation_gates_organization_runtime_reality"], False)
+
+
+class SelfClosure(unittest.TestCase):
+    def setUp(self):
+        self.work = tempfile.TemporaryDirectory()
+        self.saved = {k: os.environ.get(k) for k in ("STEGVERSE_REPO_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_ROOT")}
+        os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = self.work.name + "/repo"
+        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = self.work.name + "/org"
+        self.ingress = load("intr_destination_ingress_component", "resident-runtime/intr_destination_ingress.py")
+        self.registry = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
+
+    def tearDown(self):
+        for k, v in self.saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        self.work.cleanup()
+
+    def files(self):
+        return sorted(str(p) for p in Path(self.work.name).rglob("*") if p.is_file())
+
+    def test_a_self_closure_appends_both_levels_at_the_supplied_epoch(self):
+        result = self.ingress.self_close("component-diagnostic", registry=self.registry,
+                                         packet_id="component-packet", hb_epoch=32)
+        self.assertEqual(result["disposition"], "ALLOW", result)
+        self.assertTrue(result["repository_receipt_observed"] and result["organization_receipt_observed"])
+        written = self.files()
+        again = self.ingress.self_close("component-diagnostic", registry=self.registry,
+                                        packet_id="component-packet", hb_epoch=32)
+        self.assertEqual(again["organization_receipt_sha256"], result["organization_receipt_sha256"])
+        self.assertEqual(self.files(), written)
+
+    def test_a_payload_that_is_not_the_diagnostic_is_refused_and_recorded(self):
+        payload = dict(self.ingress.diagnostic_payload("component-refusal"))
+        payload["body"] = {"schema": "not-the-diagnostic/v1"}
+        result = self.ingress.receive(payload, registry=self.registry, packet_id="refused", hb_epoch=32)
+        self.assertNotEqual(result["disposition"], "ALLOW", result)
+
+
+if __name__ == "__main__":
+    unittest.main()

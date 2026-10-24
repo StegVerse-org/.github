@@ -438,6 +438,33 @@
       }
     },
     {
+      "id": "intr-ingress-ledger-component-validation.package",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#210 (Lane B, lane-b-91117956), stacked on #238",
+        "note": "Carries #210's .github/workflows/intr-ingress-ledger-component-validation.yml job package (pull_request + push, contents: read, read-only) as a catalog group (G17: a new check is a catalog group, never a workflow file).",
+        "name": "Validate InTr Ingress Ledger Component"
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "steps": [
+        {
+          "name": "Pinned bytes, install, installed tests, refusals",
+          "run_file": "tools/tasks/steps/intr-ingress-ledger-component-validation.package/01-pinned-bytes-install-installed-tests-refusals.sh",
+          "run_sha256": "c380d76dd653c6f6cf66789f72feb6282195279b2a3307e4509a283563de937c"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "1",
+        "persist_credentials": "false",
+        "timeout_minutes": 30
+      }
+    },
+    {
       "id": "intr-path-transfer-validation.unit",
       "source": {
         "workflow": ".github/workflows/intr-path-transfer-validation.yml",
