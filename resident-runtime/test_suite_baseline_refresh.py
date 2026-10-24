@@ -3,7 +3,7 @@
 
 Lowest supported operating mode: E0. Stdlib only; no clock, no network, no secret. Declared by
 ``resident-runtime/test-suite-baseline-refresh.transition.json`` and triggered only by a push to main
-(``.github/workflows/test-suite-baseline-refresh.yml``; no schedule, no dispatch, no polling). It forks nothing:
+(catalog group ``test-suite-baseline-refresh.refresh`` of ``.github/workflows/validation-dispatcher.yml``; no schedule, no dispatch, no polling). It forks nothing:
 
   1. the pinned StegVerse-Labs drift tool's ``detect`` receipts the main head (every set run once) through the
      B1 main-change receipt writer (``resident-runtime/main_change_receipt.py``, admitted only at its sha256);
@@ -29,7 +29,9 @@ from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 DECLARATION = "resident-runtime/test-suite-baseline-refresh.transition.json"
-WORKFLOW = ".github/workflows/test-suite-baseline-refresh.yml"
+WORKFLOW = ".github/workflows/validation-dispatcher.yml"  # G17 (#238): the refresh is a catalog group it runs
+CATALOG = "tools/tasks/task_catalog.json"
+CATALOG_GROUP = "test-suite-baseline-refresh.refresh"
 OPERATION = "TEST_SUITE_BASELINE_MAIN_RECEIPT_REFRESH"
 SCHEMA = "stegverse.test-suite-baseline-refresh-receipt/v1"
 DETECT_SCHEMA = "stegverse.test-suite-baseline-drift/v1"
@@ -37,7 +39,7 @@ DRIFT_SCHEMA = "stegverse.drift-transition-receipt/v1"
 SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
               "owning_existing_goal", "next_attempt")
 GOAL = "StegVerse-org/.github#162 (organization ledger) / StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001"
-ENTRYPOINT = f"resident-runtime/test_suite_baseline_refresh.py transition (per {DECLARATION}; on push to main: {WORKFLOW})"
+ENTRYPOINT = f"resident-runtime/test_suite_baseline_refresh.py transition (per {DECLARATION}; on push to main: {WORKFLOW} catalog group {CATALOG_GROUP})"
 FORBIDDEN_TRIGGERS = ("schedule", "workflow_dispatch", "repository_dispatch", "workflow_run", "pull_request_target")
 
 
@@ -96,12 +98,19 @@ def check_declaration(root: Path, declaration: Mapping[str, Any] | None) -> dict
         return bad("the declaration must claim no ledger, registry-generation or authority effect")
     trig = d.get("trigger", {})
     wf = root / str(trig.get("workflow"))
-    if trig.get("event") != "push" or trig.get("branches") != ["main"] or not wf.is_file():
-        return bad("the trigger must be a push to main through the declared workflow")
+    if (trig.get("event") != "push" or trig.get("branches") != ["main"] or trig.get("workflow") != WORKFLOW
+            or trig.get("catalog_group") != CATALOG_GROUP or not wf.is_file()):
+        return bad(f"the trigger must be a push to main through {WORKFLOW} catalog group {CATALOG_GROUP}")
     text = wf.read_text(encoding="utf-8")
     triggers = workflow_triggers(text)
-    if triggers != ["push"] or any(w in text for w in (*[f + ":" for f in FORBIDDEN_TRIGGERS], "cron")):
-        return bad(f"the workflow must trigger on push only (found {triggers})")
+    if ("push" not in triggers or "  push:\n    branches: [main]\n" not in text
+            or any(w in text for w in (*[f + ":" for f in FORBIDDEN_TRIGGERS], "cron"))):
+        return bad(f"the dispatcher must run on push to main with no forbidden trigger (found {triggers})")
+    catalog = load_json(root / CATALOG) or {}
+    group = next((g for g in catalog.get("groups", []) if g.get("id") == CATALOG_GROUP), None)
+    if group is None or group.get("events") != ["push"]:
+        return bad(f"{CATALOG} group {CATALOG_GROUP} must exist and run on push only "
+                   f"(found {None if group is None else group.get('events')})")
     return None
 
 
@@ -140,7 +149,7 @@ def transition(root: Path, declaration: Mapping[str, Any], detect: Any, appended
     adm = dict(declaration["admission"])
     body = {"schema": SCHEMA, "operation": OPERATION, "transition_declaration": DECLARATION,
             "lowest_supported_mode": "E0", "repository": detect.get("repository"), "head": head,
-            "trigger": {"event": "push", "branch": "main", "workflow": WORKFLOW},
+            "trigger": {"event": "push", "branch": "main", "workflow": WORKFLOW, "catalog_group": CATALOG_GROUP},
             "candidate_main_receipt": {"path": declaration["output"]["candidate"], "head": head,
                                        "receipt_sha256": detect["receipt_sha256"],
                                        "disposition": detect.get("disposition"),

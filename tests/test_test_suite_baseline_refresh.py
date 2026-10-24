@@ -18,7 +18,10 @@ sys.path.insert(0, str(ROOT / "resident-runtime"))
 import test_suite_baseline_refresh as refresh  # noqa: E402
 
 DECL = json.loads((ROOT / refresh.DECLARATION).read_text())
-WF = (ROOT / refresh.WORKFLOW).read_text()
+DISPATCHER = (ROOT / refresh.WORKFLOW).read_text()
+GROUP = next(g for g in json.loads((ROOT / refresh.CATALOG).read_text())["groups"] if g["id"] == refresh.CATALOG_GROUP)
+# G17 (#238): the refresh is a catalog group the dispatcher runs; its text is its step bodies and env
+WF = "\n".join((ROOT / s["run_file"]).read_text() for s in GROUP["steps"]) + json.dumps(GROUP, sort_keys=True)
 MAIN_RECEIPT = ROOT / ".stegverse/test-suite-baseline/main-receipt.json"
 ENV = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT_COMMITTER_NAME": "t",
        "GIT_COMMITTER_EMAIL": "t@example.invalid", "GIT_CONFIG_NOSYSTEM": "1"}
@@ -60,15 +63,25 @@ class DeclarationTests(unittest.TestCase):
 
 class WorkflowTests(unittest.TestCase):
     def test_the_workflow_triggers_on_push_to_main_only(self) -> None:
-        self.assertEqual(refresh.workflow_triggers(WF), ["push"])
-        self.assertIn("on:\n  push:\n    branches: [main]\n", WF)
-        for word in ("schedule:", "cron", "workflow_dispatch", "repository_dispatch", "workflow_run", "pull_request"):
+        self.assertFalse((ROOT / ".github/workflows/test-suite-baseline-refresh.yml").exists())
+        self.assertEqual(GROUP["events"], ["push"])
+        self.assertEqual(refresh.workflow_triggers(DISPATCHER), ["pull_request", "push"])
+        self.assertIn("on:\n  pull_request:\n  push:\n    branches: [main]\n", DISPATCHER)
+        for word in ("schedule:", "cron", "workflow_dispatch", "repository_dispatch", "workflow_run"):
+            self.assertNotIn(word, DISPATCHER)
             self.assertNotIn(word, WF)
-        self.assertEqual(refresh.workflow_triggers(WF.replace("  push:\n", "  push:\n  schedule:\n")),
-                         ["push", "schedule"])
+        self.assertEqual(refresh.workflow_triggers(DISPATCHER.replace("  push:\n", "  push:\n  schedule:\n")),
+                         ["pull_request", "push", "schedule"])
+        for mutate in (lambda d: d["trigger"].update(catalog_group="other.group"),
+                       lambda d: d["trigger"].update(workflow=".github/workflows/test-suite-baseline-refresh.yml")):
+            d = copy.deepcopy(DECL)
+            mutate(d)
+            self.assertIsNotNone(refresh.check_declaration(ROOT, d))
 
     def test_the_workflow_publishes_nothing_and_reuses_the_pinned_tools(self) -> None:
-        self.assertIn("permissions:\n  contents: read\n", WF)
+        self.assertIn("\npermissions: {}\n", DISPATCHER)
+        self.assertEqual(GROUP["source"]["permissions_before"], {"contents": "read"})
+        self.assertEqual(GROUP["runner"]["persist_credentials"], "false")
         for word in ("contents: write", "git push", "update-ref", "gh api", "gh pr", "GITHUB_TOKEN", "secrets."):
             self.assertNotIn(word, WF)
         for needle in ("resident-runtime/pinned_labs.py fetch", '"$LABS/scripts/test_set_selection.py" select',
@@ -76,7 +89,7 @@ class WorkflowTests(unittest.TestCase):
                        "--writer resident-runtime/main_change_receipt.py",
                        "resident-runtime/drift_receipt_appender.py dry-run",
                        "resident-runtime/test_suite_baseline_refresh.py transition",
-                       "resident-runtime/test_suite_baseline_refresh.py check", "persist-credentials: false"):
+                       "resident-runtime/test_suite_baseline_refresh.py check"):
             self.assertIn(needle, WF)
 
 

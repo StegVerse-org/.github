@@ -60,7 +60,8 @@ class Agreement(unittest.TestCase):
                                  ({"enum": [1]}, True)):
             self.assertFalse(oracle(schema, instance), (schema, instance))
             self.assertFalse(self.sjs.Validator(schema).is_valid(instance), (schema, instance))
-        wf = (ROOT / ".github/workflows/required-verification.yml").read_text(encoding="utf-8")
+        from tests.workflow_surface import catalog_group, step_bodies   # G17 (#238): a catalog group
+        wf = step_bodies(catalog_group("required-verification.full-suite"))
         self.assertIn('python -m pip install "jsonschema==%s"' % ORACLE_VERSION, wf)
 
     def test_the_corpus_is_the_pinned_one_and_names_its_validator(self) -> None:

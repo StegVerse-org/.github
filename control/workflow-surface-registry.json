@@ -892,13 +892,25 @@
       "retry_entrypoint": "tools/tasks/retired/intr-destination-hop.yml",
       "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
       "next_attempt": "Rigel decision on token handling (#166); the hop does not run until then"
+    },
+    {
+      "surface": "main-change-receipt.yml (P4 #222; reusable on: workflow_call only; job contents: write appends refs/stegverse/main-change-receipts fast-forward in the CALLING repository)",
+      "now": "retained verbatim as a non-executing record at tools/tasks/retired/main-change-receipt.yml; not a catalog group (a reusable workflow a caller pins by path cannot be a dispatcher matrix entry)",
+      "disposition": "FAIL_CLOSED",
+      "failure_code": "REUSABLE_WRITER_WORKFLOW_EXCEEDS_G17_SURFACE",
+      "failed_predicate": "MAIN_CHANGE_RECEIPT_WRITER_HAS_A_REGISTERED_G17_SURFACE",
+      "required_evidence_or_repair": "an owner decision on #238: either register .github/workflows/main-change-receipt.yml as a surfaces[] exception (status, technical_necessity, evidence, and a docs/WORKFLOW_SURFACE_MIRROR_HANDOFF.md row; it would be a 4th workflow over the ceiling of 3, so Rigel decides), or carry the writer as a writer job of .github/workflows/organization-ledger-writer.yml with callers reaching it without a path pin; no caller is installed today (B1 receipts FAIL_CLOSED pending genesis)",
+      "retry_entrypoint": "tools/tasks/retired/main-change-receipt.yml (restore to .github/workflows/ only with the decision); writer resident-runtime/main_change_receipt.py sha256 884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf unchanged",
+      "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+      "next_attempt": "#238 owner / Rigel decision recorded on StegVerse-org/.github#238 and #166; until then no main-change receipt is written"
     }
   ],
   "transfer_pending": [],
   "open_decisions": [
     "3rd-workflow exception: .github/workflows/organization-egress-boundary-validation.yml",
     "FEDERATION_HOP_TOKEN handling for the InTr hop",
-    "dispatch-only writer modes (self-closure, dispatched return locators)"
+    "dispatch-only writer modes (self-closure, dispatched return locators)",
+    "main-change-receipt.yml (P4 #222, workflow_call writer): surfaces[] exception (4th workflow) vs organization-ledger-writer.yml writer job"
   ],
   "catalog_additions": [
     {
@@ -906,6 +918,33 @@
         "workflow-surface-registry.validate"
       ],
       "reason": "G17: enforces the registry (replaces per-workflow existence and count pins)"
+    },
+    {
+      "catalog_groups": [
+        "drift-receipt-appender-validation.unit",
+        "drift-receipt-appender-validation.dry-run"
+      ],
+      "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/drift-receipt-appender-validation.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml; its needs-aggregator job 'required-verification' is replaced by the dispatcher matrix"
+    },
+    {
+      "catalog_groups": [
+        "main-change-receipt-validation.unit",
+        "main-change-receipt-validation.dry-run"
+      ],
+      "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/main-change-receipt-validation.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml; its needs-aggregator job 'required-verification' is replaced by the dispatcher matrix"
+    },
+    {
+      "catalog_groups": [
+        "required-verification.full-suite",
+        "required-verification.path-scope"
+      ],
+      "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/required-verification.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml; the aggregator's gate (sealed selection ran the core set, for this PR's exact commits) is the last step of required-verification.full-suite"
+    },
+    {
+      "catalog_groups": [
+        "test-suite-baseline-refresh.refresh"
+      ],
+      "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/test-suite-baseline-refresh.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml"
     }
   ]
 }
