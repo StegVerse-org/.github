@@ -1,0 +1,1 @@
+python -m unittest tests.test_git_ledger_store -v

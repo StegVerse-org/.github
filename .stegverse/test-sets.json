@@ -3,7 +3,7 @@
  "generated_from": {
   "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
   "spec": ".stegverse/test-set-spec.json",
-  "spec_sha256": "d2c2e6a09a2669c35f3abeaef2d49ea860f34173113b98aaf804b42891660c84"
+  "spec_sha256": "4e5f0eed53142807aaf07a3da0694f439092ff59009ab48178177d3ac5448506"
  },
  "inputs": {
   "jsonschema": {
@@ -21,7 +21,7 @@
     "kind": "env_path"
    },
    "finish_point": "STEGVERSE_LABS_ROOT names the pinned StegVerse-Labs checkout (sha256-checked) and the schema-conformance tests run and pass at the exact head",
-   "owner": "StegVerse-org/.github#166 (P4 lane: wired in required-verification.yml full-suite)",
+   "owner": "StegVerse-org/.github#166 (P4 lane: wired in catalog group required-verification.full-suite)",
    "repair": "the job fetches the commit in .stegverse/test-suite-baseline/labs-tool-pin.json (resident-runtime/pinned_labs.py fetch) and sets STEGVERSE_LABS_ROOT"
   },
   "ledger-store-step-b": {
@@ -56,9 +56,9 @@
     "kind": "python_module",
     "module": "stegverse"
    },
-   "finish_point": "required-verification.yml full-suite imports the pinned stegverse SDK and the set's tests run and pass at the exact head",
+   "finish_point": "catalog group required-verification.full-suite imports the pinned stegverse SDK and the set's tests run and pass at the exact head",
    "owner": "P1 (StegVerse-org/.github#163)",
-   "repair": "the pinned StegVerse SDK installed in required-verification.yml full-suite (8 workflows here already check out StegVerse-SDK and pip install -e it; P1 decides whether the full-suite job does the same)"
+   "repair": "the pinned StegVerse SDK installed in catalog group required-verification.full-suite (8 workflows here already check out StegVerse-SDK and pip install -e it; P1 decides whether the full-suite job does the same)"
   },
   "tvc": {
    "check": {
@@ -75,11 +75,12 @@
  "schema": "stegverse.test-sets/v1",
  "selects_all": [
   "*conftest.py",
-  ".github/workflows/required-verification.yml",
   ".stegverse/test-set-spec.json",
   ".stegverse/test-sets.json",
   ".stegverse/test-suite-baseline/labs-tool-pin.json",
-  "tests/*__init__.py"
+  "tests/*__init__.py",
+  "tools/tasks/steps/required-verification.full-suite/*",
+  "tools/tasks/task_catalog.json"
  ],
  "sets": [
   {
@@ -1911,6 +1912,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_run_catalog_deny_without_source.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_run_catalog_deny_without_source.py"
+   ],
+   "tests": [
+    "tests.test_run_catalog_deny_without_source"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_sdk_manifest_crossing.py",
    "inputs": [],
    "surfaces": [
@@ -2090,6 +2103,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_workflow_surface_registry.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_workflow_surface_registry.py"
+   ],
+   "tests": [
+    "tests.test_workflow_surface_registry"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_workspace_internal_endpoint_binding.py",
    "inputs": [
     "stegverse-sdk"
@@ -2099,6 +2124,18 @@
    ],
    "tests": [
     "tests.test_workspace_internal_endpoint_binding"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_writer_plan.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_writer_plan.py"
+   ],
+   "tests": [
+    "tests.test_writer_plan"
    ]
   }
  ],
@@ -2203,7 +2240,6 @@
    "org-runtime/interlock-intr.json"
   ],
   "resident-runtime/governance_return_acceptance.py": [
-   ".github/workflows/organization-governance-return.yml",
    "resident-runtime/organization_ledger_readback.py",
    "resident-runtime/peer_mesh_intake.py"
   ],
@@ -2222,7 +2258,6 @@
    "resident-runtime/organization_ledger_readback.py"
   ],
   "resident-runtime/intr_hop.py": [
-   ".github/workflows/intr-destination-hop.yml",
    ".stegverse/transition-ledger/emit.py",
    "org-boundary/registry/services.json",
    "org-boundary/runtime/capability_ingress.py",
@@ -2231,7 +2266,6 @@
    "resident-runtime/organization_egress_boundary.py"
   ],
   "resident-runtime/intr_path_ingress.py": [
-   ".github/workflows/intr-path-ingress.yml",
    ".stegverse/intr-path-transfer/**",
    ".stegverse/intr-path-transfer/inbound.json",
    "org-kernel/kernel.py",
@@ -2239,7 +2273,6 @@
    "resident-runtime/merge_transfer.py"
   ],
   "resident-runtime/intr_path_transfer.py": [
-   ".github/workflows/intr-path-transfer.yml",
    ".stegverse/intr-path-transfer/**",
    ".stegverse/intr-path-transfer/transfers.json",
    "org-runtime/intr_protocol.py",
@@ -2252,20 +2285,11 @@
   "resident-runtime/intr_path_tvc_read.py": [
    ".stegverse/intr-path-transfer/**"
   ],
-  "resident-runtime/main_change_receipt.py": [
-   ".github/workflows/main-change-receipt.yml"
-  ],
   "resident-runtime/main_change_receipt_census.py": [
    ".github/workflows/**",
-   ".github/workflows/main-change-receipt.yml",
    "resident-runtime/main_change_receipt.py"
   ],
-  "resident-runtime/manifest_directed_run_inputs.py": [
-   ".github/workflows/organization-governance-return.yml",
-   ".github/workflows/organization-ledger-transition.yml"
-  ],
   "resident-runtime/merge_transfer.py": [
-   ".github/workflows/organization-ledger-merge-transfer.yml",
    ".stegverse/merge-transfer/pending.json",
    "resident-runtime/intr_destination_ingress.py",
    "resident-runtime/ledger_store.py"
@@ -2274,7 +2298,6 @@
    "resident-runtime/merge_transfer.py"
   ],
   "resident-runtime/merge_transfer_gitstore.py": [
-   ".github/workflows/organization-ledger-merge-transfer.yml",
    ".stegverse/merge-transfer/pending.json",
    ".stegverse/transition-ledger/contract.json",
    ".stegverse/transition-ledger/emit.py",
@@ -2283,9 +2306,6 @@
   ],
   "resident-runtime/merge_transfer_range.py": [
    "resident-runtime/merge_transfer.py"
-  ],
-  "resident-runtime/mesh_locator_binding.py": [
-   ".github/workflows/organization-ledger-transition.yml"
   ],
   "resident-runtime/observation_window.py": [
    ".stegverse/transition-ledger/emit.py",
@@ -2323,7 +2343,6 @@
    "resident-runtime/submit_org_transition_to_master_records.py"
   ],
   "resident-runtime/peer_mesh_intake.py": [
-   ".github/workflows/organization-governance-return.yml",
    "org-kernel/kernel.py",
    "resident-runtime/mesh_locator_binding.py"
   ],
@@ -2389,8 +2408,9 @@
    "orchestration/task-registry.json"
   ],
   "resident-runtime/test_suite_baseline_refresh.py": [
-   ".github/workflows/test-suite-baseline-refresh.yml",
-   "resident-runtime/test-suite-baseline-refresh.transition.json"
+   ".github/workflows/validation-dispatcher.yml",
+   "resident-runtime/test-suite-baseline-refresh.transition.json",
+   "tools/tasks/task_catalog.json"
   ],
   "resident-runtime/transition_console.py": [
    "org-kernel/kernel.py",
@@ -2398,9 +2418,6 @@
    "resident-runtime/receipt_lineage_projection.py"
   ],
   "scripts/intr_post_genesis_replay.py": [
-   ".github/workflows/intr-path-ingress.yml",
-   ".github/workflows/intr-path-transfer.yml",
-   ".github/workflows/organization-ledger-transition.yml",
    ".stegverse/intr-post-genesis/**",
    ".stegverse/transition-ledger/**",
    ".stegverse/transition-ledger/contract.json",
@@ -2471,11 +2488,10 @@
    "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
   ],
   "tests/test_drift_receipt_appender.py": [
-   ".github/workflows/**",
-   ".github/workflows/drift-receipt-appender-validation.yml",
    "resident-runtime/drift_receipt_appender.py",
    "tests/fixtures/**",
-   "tests/fixtures/drift-receipt-appender/**"
+   "tests/fixtures/drift-receipt-appender/**",
+   "tests/workflow_surface.py"
   ],
   "tests/test_ecosystem_ai_reuse.py": [
    "orchestration/ecosystem_ai_reuse.py"
@@ -2526,8 +2542,6 @@
    ".stegverse/transition-requests/**"
   ],
   "tests/test_governance_return_peer_mesh.py": [
-   ".github/workflows/**",
-   ".github/workflows/organization-governance-return.yml",
    ".stegverse/transition-ledger/contract.json",
    "org-boundary/registry/services.json",
    "resident-runtime/governance_return_acceptance.py",
@@ -2538,7 +2552,8 @@
    "resident-runtime/organization_manifest_ingress.py",
    "resident-runtime/peer_mesh_intake.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json",
+   "tests/workflow_surface.py"
   ],
   "tests/test_governed_ingress_census.py": [
    ".stegverse/transition-ledger/**",
@@ -2589,7 +2604,7 @@
    "org-kernel/kernel.py"
   ],
   "tests/test_intr_destination_capability.py": [
-   ".github/workflows/organization-ledger-transition.yml",
+   ".github/workflows/organization-ledger-writer.yml",
    "org-boundary/registry/federation.json",
    "org-boundary/registry/services.json",
    "org-boundary/runtime/capability_ingress.py",
@@ -2598,15 +2613,16 @@
    "org-runtime/runtime_boundary.py",
    "resident-runtime/intr_destination_ingress.py",
    "resident-runtime/organization_egress_boundary.py",
-   "tests/fixtures/crossing-standing-genesis.json"
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/workflow_surface.py"
   ],
   "tests/test_intr_hop.py": [
-   ".github/workflows/intr-destination-hop.yml",
    ".stegverse/transition-ledger/contract.json",
    ".stegverse/transition-ledger/org-contract.json",
    "org-boundary/registry/services.json",
    "org-runtime/interlock-intr.json",
-   "resident-runtime/intr_hop.py"
+   "resident-runtime/intr_hop.py",
+   "tools/tasks/retired/intr-destination-hop.yml"
   ],
   "tests/test_intr_org_crossing.py": [
    "org-boundary/registry/services.json",
@@ -2651,7 +2667,6 @@
    "tests/fixtures/intr-protocol/destinations/manifest.json"
   ],
   "tests/test_intr_protocol_conformance_merge_transfer.py": [
-   ".github/workflows/organization-ledger-merge-transfer.yml",
    "org-runtime/intr_protocol.py",
    "resident-runtime/merge_transfer.py",
    "tests/fixtures/**",
@@ -2715,8 +2730,9 @@
    "tests/test_llm_org_foundation.py"
   ],
   "tests/test_main_change_receipt.py": [
-   ".github/workflows/main-change-receipt.yml",
-   "resident-runtime/main_change_receipt.py"
+   "control/workflow-surface-registry.json",
+   "resident-runtime/main_change_receipt.py",
+   "tools/tasks/retired/main-change-receipt.yml"
   ],
   "tests/test_main_change_receipt_census.py": [
    "resident-runtime/main_change_receipt_census.py"
@@ -2732,22 +2748,20 @@
    "tests/test_organization_manifest_ingress.py"
   ],
   "tests/test_merge_transfer.py": [
-   ".github/workflows/organization-ledger-merge-transfer-validation.yml",
-   ".github/workflows/organization-ledger-merge-transfer.yml",
    ".stegverse/merge-transfer/pending.json",
    "resident-runtime/merge_transfer.py",
-   "tests/fixtures/merge-transfer/**"
+   "tests/fixtures/merge-transfer/**",
+   "tests/workflow_surface.py"
   ],
   "tests/test_merge_transfer_dry_run_check.py": [
    "resident-runtime/merge_transfer.py",
    "resident-runtime/merge_transfer_dry_run_check.py"
   ],
   "tests/test_merge_transfer_gitstore.py": [
-   ".github/workflows/merge-transfer-gitstore-validation.yml",
-   ".github/workflows/organization-ledger-merge-transfer.yml",
    ".stegverse/merge-transfer/pending.json",
    "resident-runtime/merge_transfer_gitstore.py",
-   "tests/fixtures/merge-transfer-gitstore/**"
+   "tests/fixtures/merge-transfer-gitstore/**",
+   "tests/workflow_surface.py"
   ],
   "tests/test_merge_transfer_gitstore_parity.py": [
    "data/intr-protocol/v1/protocol.json",
@@ -2755,19 +2769,19 @@
    "tests/test_merge_transfer_gitstore.py"
   ],
   "tests/test_merge_transfer_range.py": [
-   ".github/workflows/**",
    ".stegverse/merge-transfer/pending.json",
    "resident-runtime/merge_transfer_range.py",
    "tests/fixtures/merge-transfer/f160ac7d.json",
    "tests/fixtures/merge-transfer/f40ad7dd.json",
-   "tests/test_merge_transfer.py"
+   "tests/test_merge_transfer.py",
+   "tests/workflow_surface.py"
   ],
   "tests/test_mesh_locator_binding.py": [
-   ".github/workflows/organization-governance-return.yml",
-   ".github/workflows/organization-ledger-transition.yml",
+   ".github/workflows/organization-ledger-writer.yml",
    "org-kernel/kernel.py",
    "resident-runtime/manifest_directed_run_inputs.py",
-   "resident-runtime/mesh_locator_binding.py"
+   "resident-runtime/mesh_locator_binding.py",
+   "tests/workflow_surface.py"
   ],
   "tests/test_no_hosted_gateway_route.py": [
    "resident-runtime/activation-manifest.json",
@@ -2889,10 +2903,11 @@
    "resident-runtime/submit_org_transition_to_master_records.py"
   ],
   "tests/test_pinned_labs.py": [
-   ".github/workflows/**",
    ".stegverse/test-set-spec.json",
    "resident-runtime/pinned_labs.py",
-   "tests/test_stdlib_json_schema_agreement.py"
+   "resident-runtime/required_verification.py",
+   "tests/test_stdlib_json_schema_agreement.py",
+   "tests/workflow_surface.py"
   ],
   "tests/test_pr1b_direct_entrypoint_epoch.py": [
    "org-boundary/registry/services.json",
@@ -2944,13 +2959,13 @@
    "tests/fixtures/sdk-manifests/unadmitted-capability-to-llm-adapter.json"
   ],
   "tests/test_repo_ledger_durable_in_sovereign_ref.py": [
-   ".github/workflows/organization-ledger-transition.yml",
    ".stegverse/transition-ledger/contract.json",
    ".stegverse/transition-ledger/emit.py",
    ".stegverse/transition-ledger/org-contract.json",
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
-   "resident-runtime/organization_ledger_readback.py"
+   "resident-runtime/organization_ledger_readback.py",
+   "tests/workflow_surface.py"
   ],
   "tests/test_repo_ledger_exact_retry.py": [
    ".stegverse/transition-ledger/emit.py"
@@ -2961,12 +2976,13 @@
   ],
   "tests/test_required_verification.py": [
    ".github/workflows/**",
-   ".github/workflows/required-verification.yml",
    ".stegverse/test-set-spec.json",
    ".stegverse/test-sets.json",
    ".stegverse/test-suite-baseline/labs-tool-pin.json",
    "resident-runtime/required_verification.py",
-   "tests/test_main_change_receipt_census.py"
+   "tests/test_main_change_receipt_census.py",
+   "tests/workflow_surface.py",
+   "tools/tasks/task_catalog.json"
   ],
   "tests/test_resident_materialization.py": [
    "resident-runtime/activation-manifest.json",
@@ -2975,12 +2991,12 @@
    "tests/test_sdk_self_characterization_egress.py"
   ],
   "tests/test_resident_runtime_convergence.py": [
-   ".github/workflows/resident-runtime-convergence-validation.yml",
    ".stegverse/transition-ledger/contract.json",
    ".stegverse/transition-ledger/emit.py",
    "org-runtime/interlock-intr.json",
    "org-runtime/runtime_boundary.py",
-   "resident-runtime/resident_runtime_convergence.py"
+   "resident-runtime/resident_runtime_convergence.py",
+   "tests/workflow_surface.py"
   ],
   "tests/test_reviewer_prompt_conformance.py": [
    "control/task-vector-index.json",
@@ -2993,6 +3009,10 @@
    "tests/test_organization_role_runtime_reality_deployment.py",
    "tests/test_task_registry.py",
    "tests/test_task_registry_schema_conformance.py"
+  ],
+  "tests/test_run_catalog_deny_without_source.py": [
+   "tools/tasks/run_catalog.py",
+   "tools/tasks/task_catalog.json"
   ],
   "tests/test_sdk_manifest_crossing.py": [
    "org-boundary/registry/services.json",
@@ -3028,10 +3048,10 @@
    "tests/peer_organization.py"
   ],
   "tests/test_stdlib_json_schema_agreement.py": [
-   ".github/workflows/required-verification.yml",
    "orchestration/schemas/task-registry.schema.json",
    "orchestration/task-registry.json",
-   "resident-runtime/pinned_labs.py"
+   "resident-runtime/pinned_labs.py",
+   "tests/workflow_surface.py"
   ],
   "tests/test_task_registry.py": [
    "control/task-vector-index.json",
@@ -3069,10 +3089,38 @@
   "tests/test_workflow_action_pins.py": [
    ".github/workflows/**"
   ],
+  "tests/test_workflow_surface_registry.py": [
+   ".github/workflows/**",
+   "control/workflow-surface-registry.json",
+   "docs/WORKFLOW_SURFACE_MIRROR_HANDOFF.md",
+   "tools/tasks/run_catalog.py",
+   "tools/tasks/task_catalog.json"
+  ],
   "tests/test_workspace_internal_endpoint_binding.py": [
    "org-boundary/registry/services.json",
    "org-boundary/runtime/process_boundary.py",
    "resident-runtime/workspace_resource_consumer_adapter.py"
+  ],
+  "tests/test_writer_plan.py": [
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/transition-requests/**",
+   "README.md",
+   "control/workflow-surface-registry.json",
+   "tools/tasks/**",
+   "tools/tasks/writer_plan.py"
+  ],
+  "tests/workflow_surface.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".github/workflows/validation-dispatcher.yml",
+   "control/workflow-surface-registry.json",
+   "tools/tasks/task_catalog.json"
+  ],
+  "tools/tasks/run_catalog.py": [
+   "tools/tasks/task_catalog.json"
+  ],
+  "tools/tasks/writer_plan.py": [
+   "control/workflow-surface-registry.json"
   ]
  },
  "surface_rule": "a set verifies its surfaces and everything they reach in surface_graph (a file's direct repository references: string-literal paths, path chains, local imports)"

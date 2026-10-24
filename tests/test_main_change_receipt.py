@@ -134,7 +134,16 @@ class MainChangeReceiptTest(unittest.TestCase):
         self.assertEqual(imports, {"__future__", "argparse", "hashlib", "json", "os", "re", "subprocess", "sys", "tempfile", "pathlib", "typing"})
 
     def test_the_reusable_workflow_is_call_only_pinned_and_binds_the_writer_bytes(self):
-        text = (ROOT / ".github/workflows/main-change-receipt.yml").read_text()
+        # G17 (#238): retained as a non-executing record until the registry decision (fail_closed_pending)
+        self.assertFalse((ROOT / ".github/workflows/main-change-receipt.yml").exists())
+        reg = json.loads((ROOT / "control/workflow-surface-registry.json").read_text())
+        row = next(r for r in reg["fail_closed_pending"] if r["surface"].startswith("main-change-receipt.yml"))
+        self.assertEqual((row["disposition"], row["failure_code"]),
+                         ("FAIL_CLOSED", "REUSABLE_WRITER_WORKFLOW_EXCEEDS_G17_SURFACE"))
+        for key in ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
+                    "owning_existing_goal", "next_attempt"):
+            self.assertTrue(row[key], key)
+        text = (ROOT / "tools/tasks/retired/main-change-receipt.yml").read_text()
         body = "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("#"))
         self.assertIn("workflow_call:", body)
         for word in ("workflow_dispatch", "schedule:", "cron", "repository_dispatch", "self-hosted"):
