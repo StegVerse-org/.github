@@ -21,10 +21,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.workflow_surface import assert_read_only_validation, step_bodies, writer_job
+
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = sorted((ROOT / "tests/fixtures/merge-transfer").glob("*.json"))
-WRITER = ROOT / ".github/workflows/organization-ledger-merge-transfer.yml"
-VALIDATION = ROOT / ".github/workflows/organization-ledger-merge-transfer-validation.yml"
+# G17: the writer is job merge-transfer of the organization ledger writer; the
+# validation workflow is catalog groups run by the stable validator dispatcher.
+VALIDATION = "organization-ledger-merge-transfer-validation.yml"
 PENDING = ROOT / ".stegverse/merge-transfer/pending.json"
 
 
@@ -348,7 +351,7 @@ class WorkflowShape(unittest.TestCase):
     """A merge on main triggers the append; nothing else does, and nothing on a PR writes."""
 
     def test_the_writer_runs_only_on_push_to_main(self):
-        text = WRITER.read_text()
+        text = writer_job("merge-transfer")
         on = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
         self.assertEqual(on.strip(), "push:\n    branches: [main]")
         for word in ("workflow_dispatch", "schedule", "cron", "repository_dispatch", "workflow_run",
@@ -363,16 +366,8 @@ class WorkflowShape(unittest.TestCase):
         self.assertIn("merge_transfer.py verify", text)
 
     def test_the_validation_workflow_is_read_only_and_never_pushes(self):
-        text = VALIDATION.read_text()
-        on = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
-        self.assertTrue(on.lstrip().startswith("pull_request:"))
-        for word in ("push:", "workflow_dispatch", "schedule", "repository_dispatch"):
-            self.assertNotIn(word, on)
-        self.assertIn("\npermissions:\n  contents: read\n", text)
-        self.assertNotIn("contents: write", text)
-        self.assertNotIn("git push", text)
-        self.assertNotIn("secrets.", text)
-        self.assertNotIn("if:", text)  # every job and step runs; nothing is conditionally skipped
+        # every folded step runs; nothing is conditionally skipped, nothing writes
+        assert_read_only_validation(self, VALIDATION)
 
 
 if __name__ == "__main__":

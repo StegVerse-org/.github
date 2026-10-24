@@ -1,0 +1,968 @@
+{
+  "schema": "stegverse.workflow-surface-registry/v1",
+  "goal_id": "G17-WORKFLOW-SURFACE-MINIMIZATION",
+  "repository": "StegVerse-org/.github",
+  "policy_issue": "StegVerse-Labs/.github#167, #168",
+  "authority": "Rigel 2026-10-24: retroactive G17 enforcement (StegVerse-org/.github#166)",
+  "standard": "ACTION_BY_MANIFEST; every transition ends ALLOW, DENY or FAIL_CLOSED; no new external machines or dependencies",
+  "credential_authority": "TV/TVC only; no non-TV/TVC secret or token is introduced or moved",
+  "preferred_repository_workflow_count_max": 2,
+  "exception_repository_workflow_count_max": 3,
+  "above_two_rule": "KEEP_STANDALONE_EXCEPTION_REQUIRES_DOCUMENTED_TECHNICAL_NECESSITY_AND_EVIDENCE",
+  "invariants": [
+    "Every repository-authored workflow file must be explicitly registered in surfaces[] before merge/push. Unregistered workflow proliferation fails closed (tests/test_workflow_surface_registry.py).",
+    "A new check is a group in tools/tasks/task_catalog.json run by the stable validator dispatcher, never a new workflow file.",
+    "Registered triggers and permissions equal the workflow file's own; a drift fails closed.",
+    "No surface carries workflow_dispatch, schedule, repository_dispatch, issues or workflow_run unless its registered exception names it."
+  ],
+  "unregistered_workflow_outcome": {
+    "disposition": "FAIL_CLOSED",
+    "failure_code": "UNREGISTERED_WORKFLOW_SURFACE",
+    "failed_predicate": "EVERY_WORKFLOW_FILE_IS_REGISTERED",
+    "required_evidence_or_repair": "register the file in control/workflow-surface-registry.json surfaces[] with a classification, or fold it into tools/tasks/task_catalog.json",
+    "retry_entrypoint": "tests/test_workflow_surface_registry.py",
+    "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+    "next_attempt": "the next pull request touching .github/workflows/"
+  },
+  "surfaces": [
+    {
+      "path": ".github/workflows/validation-dispatcher.yml",
+      "classification": "KEEP_STABLE_DISPATCHER",
+      "triggers": [
+        "pull_request",
+        "push"
+      ],
+      "permissions": {
+        "workflow": {},
+        "jobs": {
+          "plan": {
+            "contents": "read"
+          },
+          "check": {
+            "contents": "read"
+          }
+        }
+      },
+      "lifecycle": "validation: every pull_request and every push to main; read-only; runs tools/tasks/task_catalog.json",
+      "catalog": "tools/tasks/task_catalog.json"
+    },
+    {
+      "path": ".github/workflows/organization-ledger-writer.yml",
+      "classification": "KEEP_STABLE_DISPATCHER",
+      "triggers": [
+        "push"
+      ],
+      "permissions": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {
+          "plan": {
+            "contents": "read"
+          },
+          "merge-transfer": {
+            "contents": "write"
+          },
+          "path-transfer": {
+            "contents": "write"
+          },
+          "path-ingress": {
+            "contents": "write"
+          },
+          "ledger-transition": {
+            "contents": "write"
+          },
+          "governance-return": {
+            "contents": "write"
+          }
+        }
+      },
+      "lifecycle": "writer: push to main only; contents: write on refs/stegverse/organization-ledger; one appender (concurrency organization-ledger); jobs chained by state transition",
+      "writer_plan": "tools/tasks/writer_plan.py"
+    },
+    {
+      "path": ".github/workflows/organization-egress-boundary-validation.yml",
+      "classification": "KEEP_STANDALONE_EXCEPTION",
+      "triggers": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "lifecycle": "convergence-distributed artifact: its bytes are pinned by sha256 in the resident-runtime convergence baseline and carried to peer organizations",
+      "exception": {
+        "status": "EXCEPTION_PENDING_OWNER_APPROVAL",
+        "technical_necessity": "resident-runtime/resident-runtime-convergence-manifest.json pins this file (sha256 914bc594..., L23-28) as the workflow member of the organization-egress-boundary convergence unit and templates its source_repository line for each peer .github; folding or editing it changes the baseline every peer convergence patch is measured against.",
+        "evidence": [
+          "resident-runtime/resident-runtime-convergence-manifest.json:23-28",
+          "resident-runtime/resident-runtime-convergence-manifest.json:43-47"
+        ],
+        "retained_triggers_needing_decision": [
+          "workflow_dispatch"
+        ],
+        "decision_owner": "Rigel"
+      }
+    }
+  ],
+  "writer_jobs": [
+    {
+      "job": "merge-transfer",
+      "source_workflow": ".github/workflows/organization-ledger-merge-transfer.yml",
+      "paths": null,
+      "after": [],
+      "state_transition": "a push lands on main"
+    },
+    {
+      "job": "path-transfer",
+      "source_workflow": ".github/workflows/intr-path-transfer.yml",
+      "paths": null,
+      "after": [
+        "merge-transfer"
+      ],
+      "state_transition": "merge-transfer succeeded for this push (was workflow_run on 'Organization Ledger Main Merge Transfer')"
+    },
+    {
+      "job": "path-ingress",
+      "source_workflow": ".github/workflows/intr-path-ingress.yml",
+      "paths": null,
+      "after": [
+        "merge-transfer"
+      ],
+      "state_transition": "merge-transfer succeeded for this push (was workflow_run on 'Organization Ledger Main Merge Transfer')"
+    },
+    {
+      "job": "ledger-transition",
+      "source_workflow": ".github/workflows/organization-ledger-transition.yml",
+      "paths": [
+        ".stegverse/transition-requests/**"
+      ],
+      "after": [],
+      "state_transition": "a committed transition request changed"
+    },
+    {
+      "job": "governance-return",
+      "source_workflow": ".github/workflows/organization-governance-return.yml",
+      "paths": [
+        ".stegverse/governance-return-requests/**"
+      ],
+      "after": [],
+      "state_transition": "a committed governance return request changed"
+    }
+  ],
+  "folded": [
+    {
+      "workflow": ".github/workflows/admission-predicate-selftest.yml",
+      "name": "Admission Predicate Selftest",
+      "triggers_before": [
+        "workflow_dispatch",
+        "pull_request"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "admission-predicate-selftest.selftest"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/boundary-processing-selection-validation.yml",
+      "name": "Boundary Processing Selection Validation",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {},
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "boundary-processing-selection-validation.validate"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/capability-demonstration-projection-validation.yml",
+      "name": "Validate Capability Demonstration Projection",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "capability-demonstration-projection-validation.validate-capability-demonstration"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/capability-ingress-address-validation.yml",
+      "name": "Validate Capability Ingress Address",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "capability-ingress-address-validation.validate-capability-address"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/governance-inter-org-route-validation.yml",
+      "name": "Validate Governance Inter-Organization Route",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "governance-inter-org-route-validation.validate-governance-route"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/internal-endpoint-dispatch-validation.yml",
+      "name": "Internal Endpoint Dispatch Validation",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {},
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "internal-endpoint-dispatch-validation.validate"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/intr-destination-capability-validation.yml",
+      "name": "Validate InTr Destination Capability",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "intr-destination-capability-validation.validate-intr-destination"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/intr-destination-hop.yml",
+      "name": "InTr Destination Hop",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {
+          "hop": {
+            "contents": "write"
+          }
+        }
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "intr-destination-hop.validate"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/intr-path-ingress.yml",
+      "name": "InTr Mesh Path Ingress",
+      "triggers_before": [
+        "workflow_run"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {
+          "append": {
+            "contents": "write"
+          }
+        }
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/organization-ledger-writer.yml",
+      "writer_job": "path-ingress"
+    },
+    {
+      "workflow": ".github/workflows/intr-path-transfer-validation.yml",
+      "name": "Validate InTr Mesh Path Transfer",
+      "triggers_before": [
+        "pull_request",
+        "push"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "intr-path-transfer-validation.unit",
+        "intr-path-transfer-validation.dry-run"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/intr-path-transfer.yml",
+      "name": "InTr Mesh Path Transfer",
+      "triggers_before": [
+        "workflow_run"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {
+          "append": {
+            "contents": "write"
+          }
+        }
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/organization-ledger-writer.yml",
+      "writer_job": "path-transfer"
+    },
+    {
+      "workflow": ".github/workflows/llm-org-foundation-validation.yml",
+      "name": "Validate LLM Org Foundation Sandbox",
+      "triggers_before": [
+        "pull_request",
+        "push"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "llm-org-foundation-validation.validate-foundation-sandbox"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/merge-transfer-gitstore-validation.yml",
+      "name": "Validate Main Merge Transfer (git store)",
+      "triggers_before": [
+        "pull_request"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "merge-transfer-gitstore-validation.unit",
+        "merge-transfer-gitstore-validation.dry-run"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/node-standing-ingress-validation.yml",
+      "name": "Node Standing Ingress Validation",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {},
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "node-standing-ingress-validation.validate"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/observation-window-validation.yml",
+      "name": "Validate Observation Window",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "observation-window-validation.validate-observation-window"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/org-emp-kv-projection-schema-validation.yml",
+      "name": "Org-Emp-KV Projection Schema Validation",
+      "triggers_before": [
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "org-emp-kv-projection-schema-validation.validate-schema"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/org-runtime-boundary.yml",
+      "name": "Validate Organization Resident Runtime and Interlock-InTr Boundary",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "org-runtime-boundary.validate"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/organization-governance-return.yml",
+      "name": "Organization Governance Decision Return",
+      "triggers_before": [
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "write"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/organization-ledger-writer.yml",
+      "writer_job": "governance-return"
+    },
+    {
+      "workflow": ".github/workflows/organization-ingress-capability-binding-validation.yml",
+      "name": "Validate Organization Ingress Capability Binding",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "organization-ingress-capability-binding-validation.validate-capability-binding"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/organization-ledger-merge-transfer-validation.yml",
+      "name": "Validate Main Merge Transfer",
+      "triggers_before": [
+        "pull_request"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "organization-ledger-merge-transfer-validation.unit",
+        "organization-ledger-merge-transfer-validation.dry-run"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/organization-ledger-merge-transfer.yml",
+      "name": "Organization Ledger Main Merge Transfer",
+      "triggers_before": [
+        "push"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {
+          "append": {
+            "contents": "write"
+          }
+        }
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/organization-ledger-writer.yml",
+      "writer_job": "merge-transfer"
+    },
+    {
+      "workflow": ".github/workflows/organization-ledger-transition.yml",
+      "name": "Organization Ledger Transition",
+      "triggers_before": [
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "write"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/organization-ledger-writer.yml",
+      "writer_job": "ledger-transition"
+    },
+    {
+      "workflow": ".github/workflows/organization-manifest-ingress-validation.yml",
+      "name": "Validate Organization Manifest Ingress",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "organization-manifest-ingress-validation.validate-manifest-ingress"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/organization-repository-propagation-validation.yml",
+      "name": "Validate Organization Repository Propagation",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "organization-repository-propagation-validation.validate-repository-propagation"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/origin-attestation-validation.yml",
+      "name": "Validate Origin Attestation",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "origin-attestation-validation.validate-origin-attestation"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/peer-migration-artifacts.yml",
+      "name": "Validate Peer Migration Artifacts",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "peer-migration-artifacts.validate-peer-migration-artifacts"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/receipt-disorder-measurement-validation.yml",
+      "name": "Validate Receipt Disorder Measurement",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "receipt-disorder-measurement-validation.validate-disorder-measurement"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/receipt-lineage-projection-validation.yml",
+      "name": "Validate Receipt Lineage Projection",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "receipt-lineage-projection-validation.validate-lineage-projection"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/resident-runtime-convergence-validation.yml",
+      "name": "Validate Resident Runtime Convergence",
+      "triggers_before": [
+        "workflow_dispatch",
+        "pull_request"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "resident-runtime-convergence-validation.selftests"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/reviewer-prompt-conformance.yml",
+      "name": "Validate Reviewer Prompt Conformance",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "reviewer-prompt-conformance.validate-reviewer-prompts"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/sdk-manifest-crossing-validation.yml",
+      "name": "Validate SDK Manifest Crossing of the Organization Boundary",
+      "triggers_before": [
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "sdk-manifest-crossing-validation.validate-sdk-manifest-crossing"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/session-continuity-validation.yml",
+      "name": "Validate Node Session Continuity",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "session-continuity-validation.validate-session-continuity"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/task-registry-validation.yml",
+      "name": "Validate Organization Task Registry",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "task-registry-validation.validate-task-registry"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/transition-console-validation.yml",
+      "name": "Validate Transition Console",
+      "triggers_before": [
+        "pull_request",
+        "push",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "transition-console-validation.validate-transition-console"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/validate-git-mesh.yml",
+      "name": "Validate Git-ref Federation Mesh",
+      "triggers_before": [
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "validate-git-mesh.git-mesh"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/workspace-internal-endpoint-binding-validation.yml",
+      "name": "WorkSpace Internal Endpoint Binding Validation",
+      "triggers_before": [
+        "pull_request",
+        "workflow_dispatch"
+      ],
+      "permissions_before": {
+        "workflow": {
+          "contents": "read"
+        },
+        "jobs": {}
+      },
+      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
+      "into": ".github/workflows/validation-dispatcher.yml",
+      "catalog_groups": [
+        "workspace-internal-endpoint-binding-validation.validate-workspace-binding"
+      ]
+    }
+  ],
+  "fail_closed_pending": [
+    {
+      "surface": "organization-ledger-transition.yml workflow_dispatch mode=self-closure (inputs mode/request/mesh_root/communication_id/hb_epoch/packet_id)",
+      "now": ".github/workflows/organization-ledger-writer.yml job ledger-transition (steps retained, unreachable on push)",
+      "disposition": "FAIL_CLOSED",
+      "failure_code": "DISPATCH_TRIGGER_REMOVED_BY_G17",
+      "failed_predicate": "SELF_CLOSURE_IS_A_COMMITTED_TRANSITION_REQUEST",
+      "required_evidence_or_repair": "carry self-closure as a committed request under .stegverse/transition-requests/ (manifest) so the push path selects it; the dispatch inputs no longer exist",
+      "retry_entrypoint": ".github/workflows/organization-ledger-writer.yml (job ledger-transition)",
+      "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+      "next_attempt": "owner decision on #166; until then self-closure does not run"
+    },
+    {
+      "surface": "organization-governance-return.yml workflow_dispatch locators (mesh_root, peer_mesh, sdk_ref, deciding_ledger)",
+      "now": ".github/workflows/organization-ledger-writer.yml job governance-return (dispatch branch retained, unreachable on push)",
+      "disposition": "FAIL_CLOSED",
+      "failure_code": "DISPATCH_TRIGGER_REMOVED_BY_G17",
+      "failed_predicate": "RETURN_LOCATORS_ARE_COMMITTED_IN_A_RETURN_REQUEST",
+      "required_evidence_or_repair": "commit the locators in a .stegverse/governance-return-requests/ request; the push path already reads them",
+      "retry_entrypoint": ".github/workflows/organization-ledger-writer.yml (job governance-return)",
+      "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+      "next_attempt": "owner decision on #166"
+    },
+    {
+      "surface": "intr-destination-hop.yml job hop (workflow_dispatch phases send/receive/close; secrets.FEDERATION_HOP_TOKEN)",
+      "now": "retained verbatim as a non-executing record at tools/tasks/retired/intr-destination-hop.yml; its validate job is catalog group intr-destination-hop.validate",
+      "disposition": "FAIL_CLOSED",
+      "failure_code": "FEDERATION_HOP_REQUIRES_NON_TV_TVC_TOKEN_AND_DISPATCH",
+      "failed_predicate": "HOP_RUNS_BY_MANIFEST_WITH_TV_TVC_CREDENTIAL_AUTHORITY",
+      "required_evidence_or_repair": "a TV/TVC-issued credential path and a manifest-driven (committed request) hop phase; no secret is added or moved by this change",
+      "retry_entrypoint": "tools/tasks/retired/intr-destination-hop.yml",
+      "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+      "next_attempt": "Rigel decision on token handling (#166); the hop does not run until then"
+    },
+    {
+      "surface": "main-change-receipt.yml (P4 #222; reusable on: workflow_call only; job contents: write appends refs/stegverse/main-change-receipts fast-forward in the CALLING repository)",
+      "now": "retained verbatim as a non-executing record at tools/tasks/retired/main-change-receipt.yml; the default placement is catalog group main-change-receipt.receipt (validation-dispatcher.yml, push to main, read-only) producing the sealed receipts on a scratch copy, with the append a manifest-directed transition (resident-runtime/main-change-receipt.transition.json) carried by organization-ledger-writer.yml once admitted; no 4th workflow",
+      "disposition": "FAIL_CLOSED",
+      "failure_code": "MAIN_CHANGE_RECEIPT_ADMISSION_PENDING_GENESIS",
+      "failed_predicate": "MAIN_CHANGE_RECEIPT_TRANSITION_IS_ADMITTED_FROM_ORGANIZATION_LEDGER_GENESIS",
+      "required_evidence_or_repair": "the organization ledger declares its genesis and admits MAIN_CHANGE_RECEIPT_APPEND (resident-runtime/main-change-receipt.transition.json); organization-ledger-writer.yml then appends the receipts catalog group main-change-receipt.receipt retains. Other repositories adopt the same group in their own catalog (no path-pinned reusable workflow). Proposed as the default on StegVerse-org/.github#238",
+      "retry_entrypoint": "tools/tasks/task_catalog.json group main-change-receipt.receipt (validation-dispatcher.yml, push to main); writer resident-runtime/main_change_receipt.py sha256 884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf unchanged",
+      "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+      "next_attempt": "#238 owner (G17 lane) accepts or amends the default on StegVerse-org/.github#238; the receipts are produced and retained on every push to main from now on, and appended after genesis"
+    }
+  ],
+  "transfer_pending": [],
+  "open_decisions": [
+    "3rd-workflow exception: .github/workflows/organization-egress-boundary-validation.yml",
+    "FEDERATION_HOP_TOKEN handling for the InTr hop",
+    "dispatch-only writer modes (self-closure, dispatched return locators)",
+    "main-change-receipt.yml (P4 #222): default proposed on #238 = catalog group main-change-receipt.receipt + manifest-directed append by organization-ledger-writer.yml (no 4th workflow); #238 owner accepts or amends"
+  ],
+  "catalog_additions": [
+    {
+      "catalog_groups": [
+        "workflow-surface-registry.validate"
+      ],
+      "reason": "G17: enforces the registry (replaces per-workflow existence and count pins)"
+    },
+    {
+      "catalog_groups": [
+        "drift-receipt-appender-validation.unit",
+        "drift-receipt-appender-validation.dry-run"
+      ],
+      "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/drift-receipt-appender-validation.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml; its needs-aggregator job 'required-verification' is replaced by the dispatcher matrix"
+    },
+    {
+      "catalog_groups": [
+        "main-change-receipt-validation.unit",
+        "main-change-receipt-validation.dry-run"
+      ],
+      "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/main-change-receipt-validation.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml; its needs-aggregator job 'required-verification' is replaced by the dispatcher matrix"
+    },
+    {
+      "catalog_groups": [
+        "required-verification.full-suite",
+        "required-verification.path-scope"
+      ],
+      "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/required-verification.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml; the aggregator's gate (sealed selection ran the core set, for this PR's exact commits) is the last step of required-verification.full-suite"
+    },
+    {
+      "catalog_groups": [
+        "test-suite-baseline-refresh.refresh"
+      ],
+      "reason": "P4 #222 (StegVerse-org/.github#166) ported onto G17 #238: .github/workflows/test-suite-baseline-refresh.yml was a workflow file #222 added; its jobs are catalog groups run by validation-dispatcher.yml"
+    },
+    {
+      "catalog_groups": [
+        "main-change-receipt.receipt"
+      ],
+      "reason": "P4 #222 writer placement default (StegVerse-org/.github#238): the retired workflow_call writer's receipt computation runs read-only on push to main; the append is a manifest-directed transition carried by organization-ledger-writer.yml once admitted (resident-runtime/main-change-receipt.transition.json)"
+    },
+    {
+      "catalog_groups": [
+        "intr-path-public-ledger-read.validate"
+      ],
+      "reason": "StegVerse-org/.github#224: the cross-org read's public-ledger route (E0, no credential) and its scratch-ref dry run, carried as a catalog group instead of a step in the folded intr-path-transfer-validation.yml"
+    },
+    {
+      "catalog_groups": [
+        "intr-protocol-copy-equality.validate"
+      ],
+      "reason": "StegVerse-org/.github#218: tests.test_intr_protocol_copy_equality, carried as a catalog group instead of an edit to the folded intr-destination-capability-validation step"
+    }
+  ]
+}

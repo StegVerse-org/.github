@@ -16,6 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TOOL = ROOT / "resident-runtime" / "required_verification.py"
 sys.path.insert(0, str(TOOL.parent))
+if str(ROOT) not in sys.path:  # tests.workflow_surface (G17 #238) when run with --start tests
+    sys.path.append(str(ROOT))
 import required_verification as rv  # noqa: E402
 
 SIX = rv.SIX_FIELDS
@@ -220,9 +222,17 @@ class RequiredVerificationTests(unittest.TestCase):
             self.assertEqual(self.assert_rvs(code, record, "SELECTION_NOT_FOR_THIS_HEAD")["test"], "full-suite")
 
     def test_the_full_suite_runs_only_the_selected_sets_with_the_pinned_labs_tool(self) -> None:
-        wf = (ROOT / ".github/workflows/required-verification.yml").read_text()
+        from tests.workflow_surface import catalog_group, catalog_groups, step_bodies
+        # G17 (#238): the workflow's jobs are catalog groups run by validation-dispatcher.yml; the aggregator's gate
+        # is the last step of required-verification.full-suite and path-scope is its own group (its own check)
+        self.assertEqual([g["id"] for g in catalog_groups("required-verification.yml")],
+                         ["required-verification.full-suite", "required-verification.path-scope"])
+        full = catalog_group("required-verification.full-suite")
+        wf = step_bodies(full) + json.dumps(full["env"])
+        self.assertEqual(full["steps"][-1]["run_file"].rsplit("/", 1)[1], "08-the-sealed-selection-ran-the-core-set-gate.sh")
+        self.assertNotIn("if", full["steps"][-1])        # the gate runs only when every earlier step succeeded
         for needle in ('test_set_selection.py" select', "--selection", "--baseline-receipt", "labs-tool-pin.json",
-                       "required_verification.py gate", "--require full-suite --require path-scope",
+                       "required_verification.py gate", "--require full-suite",
                        '--pr-head "$HEAD_SHA"', '--base-sha "$BASE_SHA"', "STEGVERSE_LABS_ROOT", '"head_sha"'):
             self.assertIn(needle, wf)
         self.assertNotIn("run --pattern", wf)            # no whole-suite run beside the selected sets
@@ -234,7 +244,8 @@ class RequiredVerificationTests(unittest.TestCase):
             self.assertRegex(digest, r"^[0-9a-f]{64}$")
         spec = json.loads((ROOT / ".stegverse/test-set-spec.json").read_text())
         self.assertEqual(spec["core"]["tests"], ["tests/test_required_verification.py"])
-        for path in (".github/workflows/required-verification.yml", ".stegverse/test-suite-baseline/labs-tool-pin.json"):
+        for path in ("tools/tasks/steps/required-verification.full-suite/*", "tools/tasks/task_catalog.json",
+                     ".stegverse/test-suite-baseline/labs-tool-pin.json"):
             self.assertIn(path, spec["selects_all"])
         for name, decl in spec["inputs"].items():
             for key in ("owner", "repair", "finish_point", "check"):
@@ -248,14 +259,20 @@ class RequiredVerificationTests(unittest.TestCase):
                             rel in spec["core"]["tests"], rel)
 
     def test_the_workflows_of_this_pull_request_use_the_strict_runner(self) -> None:
+        from tests.workflow_surface import DISPATCHER, catalog_groups, step_bodies
         for name in ("drift-receipt-appender-validation.yml", "main-change-receipt-validation.yml",
                      "required-verification.yml"):
-            text = (ROOT / ".github" / "workflows" / name).read_text()
+            self.assertFalse((ROOT / ".github" / "workflows" / name).exists(), name)   # G17: catalog groups only
+            groups = catalog_groups(name)
+            self.assertTrue(groups, name)
+            text = "\n".join(step_bodies(g) + json.dumps(g["env"]) for g in groups)
             self.assertIn("resident-runtime/required_verification.py", text, name)
             self.assertNotIn("unittest discover", text, name)
-            for word in ("workflow_dispatch", "schedule:", "cron", "contents: write"):
+            for word in ("workflow_dispatch", "schedule:", "cron", "contents: write", "git push"):
                 self.assertNotIn(word, text, name)
-        on_pr, paths, _ = rv.workflow_pr_filter((ROOT / ".github/workflows/required-verification.yml").read_text())
+            for g in groups:
+                self.assertEqual(g["events"], ["pull_request"], g["id"])
+        on_pr, paths, _ = rv.workflow_pr_filter(DISPATCHER.read_text())
         self.assertTrue(on_pr)
         self.assertIsNone(paths)          # the full suite and the path-scope check run on every pull request
 

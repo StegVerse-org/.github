@@ -11,14 +11,14 @@ Lowest supported operating mode: E0. Stdlib only; no clock, no network, no secre
               load (loader _FailedTest, setUpClass / setUpModule error or skip), a run of 0 tests, and (with
               --base) a test present at the base commit and absent at the head are each FAIL_CLOSED
               REQUIRED_VERIFICATION_SKIPPED with six fields. A failing test is FAIL_CLOSED REQUIRED_TEST_FAILED:
-              `run` holds no baseline. (The required-verification.yml full-suite job instead runs the selected
+              `run` holds no baseline. (The required-verification.full-suite catalog group instead runs the selected
               test sets and adjudicates them against the receipted main baseline with the pinned
               StegVerse-Labs tool; see .stegverse/test-set-spec.json.)
   path-scope  for every path-filtered pull_request workflow at the head, a change that edits a file the
               workflow runs but that its filter does not match leaves a required job unrun ->
               REQUIRED_JOB_PATH_FILTERED_OUT; a pull_request job present at the base and absent at the head
               -> REQUIRED_JOB_MISSING. Both are REQUIRED_VERIFICATION_SKIPPED. (Transitive imports are not
-              followed; the unfiltered required-verification.yml full-suite job covers them.)
+              followed; the unfiltered required-verification.full-suite catalog group covers them.)
   gate        every required job completed and succeeded, and the full-suite job showed a sealed test-set
               selection whose seal verified and which selected the always-run core set. Otherwise FAIL_CLOSED
               REQUIRED_VERIFICATION_SKIPPED (REQUIRED_JOB_NOT_SUCCESSFUL, REQUIRED_JOB_MISSING or

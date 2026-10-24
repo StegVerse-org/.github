@@ -12,7 +12,9 @@
     "branches": [
       "main"
     ],
-    "workflow": ".github/workflows/test-suite-baseline-refresh.yml",
+    "workflow": ".github/workflows/validation-dispatcher.yml",
+    "catalog_group": "test-suite-baseline-refresh.refresh",
+    "catalog": "tools/tasks/task_catalog.json",
     "forbidden": [
       "schedule",
       "cron",
@@ -62,7 +64,7 @@
     "publish": "NONE until admission: the candidate and the refresh record are retained as workflow artifacts; nothing is committed, pushed or appended",
     "scratch_ref": "refs/stegverse/test-suite-baseline-drift (dry run on a scratch repository only)"
   },
-  "retry_entrypoint": "resident-runtime/test_suite_baseline_refresh.py transition (per resident-runtime/test-suite-baseline-refresh.transition.json; on push to main: .github/workflows/test-suite-baseline-refresh.yml)",
+  "retry_entrypoint": "resident-runtime/test_suite_baseline_refresh.py transition (per resident-runtime/test-suite-baseline-refresh.transition.json; on push to main: .github/workflows/validation-dispatcher.yml catalog group test-suite-baseline-refresh.refresh)",
   "verifier": {
     "path": "resident-runtime/test_suite_baseline_refresh.py",
     "command": "python3 resident-runtime/test_suite_baseline_refresh.py transition --detect-receipt <DETECT receipt.json> --appender-result <APPENDER OUT> --previous .stegverse/test-suite-baseline/main-receipt.json --out <OUT>",
@@ -73,7 +75,7 @@
     "failure_code": "TEST_SUITE_BASELINE_REFRESH_ADMISSION_PENDING_GENESIS",
     "failed_predicate": "REFRESH_TRANSITION_IS_ADMITTED_FROM_ORGANIZATION_LEDGER_GENESIS",
     "required_evidence_or_repair": "the organization ledger declares its genesis (ORG_LEDGER_GENESIS_NOT_DECLARED in aggregate_repo_transition) and admits operation TEST_SUITE_BASELINE_MAIN_RECEIPT_REFRESH from it; until then each push to main produces and retains the candidate main receipt and its refresh record, and the committed main-receipt.json is replaced only through a reviewed change",
-    "retry_entrypoint": "resident-runtime/test_suite_baseline_refresh.py transition (per resident-runtime/test-suite-baseline-refresh.transition.json; on push to main: .github/workflows/test-suite-baseline-refresh.yml)",
+    "retry_entrypoint": "resident-runtime/test_suite_baseline_refresh.py transition (per resident-runtime/test-suite-baseline-refresh.transition.json; on push to main: .github/workflows/validation-dispatcher.yml catalog group test-suite-baseline-refresh.refresh)",
     "owning_existing_goal": "StegVerse-org/.github#162 (organization ledger) / StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
     "next_attempt": "the first push to main after genesis admits TEST_SUITE_BASELINE_MAIN_RECEIPT_REFRESH"
   },

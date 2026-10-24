@@ -14,6 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "resident-runtime"
 sys.path.insert(0, str(RUNTIME))
+if str(ROOT) not in sys.path:  # tests.workflow_surface (G17 #238) when run with --start tests
+    sys.path.append(str(ROOT))
 import drift_receipt_appender as appender  # noqa: E402
 
 WRITER = RUNTIME / "main_change_receipt.py"
@@ -170,8 +172,12 @@ class AppenderTests(unittest.TestCase):
             self.assertEqual(doc["admission"][k], appender.ADMISSION_PENDING_GENESIS[k])
         self.assertEqual(doc["organization_ledger_effect"], "NONE")
         self.assertEqual(doc["registry_generation_effect"], "NONE")
-        workflow = (ROOT / ".github" / "workflows" / "drift-receipt-appender-validation.yml").read_text()
-        for word in ("workflow_dispatch", "schedule", "cron", "contents: write"):
+        from tests.workflow_surface import catalog_groups, step_bodies   # G17 (#238): catalog groups
+        groups = catalog_groups("drift-receipt-appender-validation.yml")
+        self.assertEqual([g["id"] for g in groups], ["drift-receipt-appender-validation.unit",
+                                                     "drift-receipt-appender-validation.dry-run"])
+        workflow = "\n".join(step_bodies(g) + json.dumps(g) for g in groups)
+        for word in ("workflow_dispatch", "schedule", "cron", "contents: write", "git push origin"):
             self.assertNotIn(word, workflow)
 
     def test_payload_without_verification_accounting_is_required_verification_skipped(self) -> None:

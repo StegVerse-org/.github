@@ -587,17 +587,23 @@ class LedgerWriterSelfClosureModeTests(unittest.TestCase):
     """
 
     def text(self):
-        return (ROOT / ".github/workflows/organization-ledger-transition.yml").read_text(
-            encoding="utf-8")
+        # G17: the transition writer is job ledger-transition of the organization ledger writer.
+        from tests.workflow_surface import writer_job
+        return writer_job("ledger-transition")
 
     def step(self, name):
         return self.text().split("      - name: " + name + "\n")[1].split("      - name:")[0]
 
     def test_the_self_closure_mode_matches_the_other_writers(self):
         text = self.text()
-        self.assertIn("workflow_dispatch:", text)
-        for name in ("mode:", "communication_id:", "hb_epoch:", "- self-closure"):
-            self.assertIn(name, text)
+        # G17 removed workflow_dispatch: the self-closure mode is recorded FAIL_CLOSED
+        # pending (six fields) in the registry; its steps stay, unreachable on push.
+        from tests.workflow_surface import registry
+        self.assertNotIn("workflow_dispatch:", text.split("\njobs:\n", 1)[0])
+        pending = [r for r in registry()["fail_closed_pending"] if "self-closure" in r["surface"]]
+        self.assertEqual(len(pending), 1)
+        self.assertEqual(pending[0]["disposition"], "FAIL_CLOSED")
+        self.assertIn("MODE: ${{ github.event.inputs.mode || 'request' }}", text)
         self.assertIn("group: organization-ledger", text)
         self.assertIn("cancel-in-progress: false", text)
         self.assertIn("contents: write", text)
@@ -646,7 +652,7 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
     SIX = ("failure_code", "failed_predicate", "required_evidence_or_repair",
            "retry_entrypoint", "owning_existing_goal", "next_attempt")
     GOAL = "StegVerse-org/.github#162 P0-runtime-and-custody"
-    RETRY = ".github/workflows/organization-ledger-transition.yml"
+    RETRY = ".github/workflows/organization-ledger-writer.yml"
     # Messages that already carried all six fields keep their own owning goal.
     EARLIER_GOALS = {
         "MESH_REF_PUBLISH_RACE": "SVORG-MESH-LOCATION-BINDING-001",
@@ -655,7 +661,8 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
     }
 
     def text(self):
-        return (ROOT / ".github/workflows/organization-ledger-transition.yml").read_text(encoding="utf-8")
+        from tests.workflow_surface import writer_job
+        return writer_job("ledger-transition")
 
     def script(self, name):
         import textwrap
