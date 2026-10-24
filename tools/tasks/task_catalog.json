@@ -363,7 +363,7 @@
         {
           "name": "Validate InTr protocol v1 conformance across the mesh snapshot",
           "run_file": "tools/tasks/steps/intr-destination-capability-validation.validate-intr-destination/03-validate-intr-protocol-v1-conformance-across-the.sh",
-          "run_sha256": "48ffd1d4df25edbbea5a90b986b731b51350745026917c050388f871c4a27756"
+          "run_sha256": "3d3b2979144583b5d25b0cbfef846b7f3c71fc58a62faad54d44d3175d5013d2"
         }
       ],
       "artifacts": [],

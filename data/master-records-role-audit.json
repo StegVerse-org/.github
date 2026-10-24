@@ -1554,8 +1554,8 @@
     },
     {
       "file": "tests/test_intr_protocol_conformance.py",
-      "line": 23,
-      "text": "\"Infrastructure-Continuity-Ventures\", \"Triad-Test\", \"formalism-tests\", \"master-records\"]",
+      "line": 25,
+      "text": "UNINSTALLED = [\"Infrastructure-Continuity-Ventures\", \"formalism-tests\", \"master-records\"]",
       "classification": "NAMING_ONLY",
       "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
     },
