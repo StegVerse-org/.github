@@ -1184,7 +1184,11 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
         self.assertEqual(boundary["process_boundary_sha256"], __import__("hashlib").sha256(
             (ROOT / "org-boundary/runtime/process_boundary.py").read_bytes()).hexdigest())
         pending, = [r for r in binding["open_records"] if r["failure_code"] == "MERGE_TRANSFER_PROVENANCE_PENDING_206"]
-        self.assertEqual((pending["state"], pending["owning_existing_goal"]), ("OPEN", "StegVerse-org/.github#206"))
+        # #206 merged without changing merge_transfer.py; it stays pinned by protocol v1.
+        self.assertEqual((pending["state"], pending["owning_existing_goal"]), ("OPEN", "StegVerse-org/.github#162"))
+        self.assertIn("sha256:" + __import__("hashlib").sha256(
+            (ROOT / "resident-runtime/merge_transfer.py").read_bytes()).hexdigest(),
+            (ROOT / "data/intr-protocol/v1/protocol.json").read_text(encoding="utf-8"))
         for field in SIX_FIELDS:
             self.assertTrue(pending[field], field)
         dispatcher = ROOT / binding["dispatcher"]
