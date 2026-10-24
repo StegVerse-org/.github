@@ -96,10 +96,10 @@ class ConsumeTests(unittest.TestCase):
         self.assertEqual(row["failure_code"], "REQUIRED_VERIFICATION_INPUT_UNAVAILABLE")
         self.assertEqual(row["failed_predicate"], predicate)
 
-    def test_not_selected_requires_nothing(self):
+    def test_a_change_selecting_no_tvc_set_is_still_evaluated_never_waived(self):
         record = mod.consume(self.contract, str(self.ledger / "absent"), self.head, NOT_SELECTED)
-        self.assertEqual(record["disposition"], "NOT_SELECTED")
-        self.assertEqual(record["refusals"], [])
+        self.assertEqual(record["disposition"], "FAIL_CLOSED")
+        self.assertTrue(record["refusals"])
 
     def test_matching_receipt_on_the_chain_is_bound_with_the_ledger_head_epoch(self):
         record = self.consume([{"schema": "other/v1", "n": 1}, self.receipt()])

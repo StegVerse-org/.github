@@ -131,9 +131,8 @@ def consume(contract: dict, ledger: str, head_root: Path, selection: dict | None
     record = {"schema": SCHEMA, "authority_effect": "NONE", "derived_from_clock": False,
               "lowest_supported_mode": "E0", "predicates": PREDICATES, "ledger": str(ledger),
               "tvc_sets_selected": sets, "writes": False}
-    if selection is not None and not sets:
-        return record | {"disposition": "NOT_SELECTED", "refusals": [],
-                         "note": "this change selects no [tvc] set; no TVC receipt is required"}
+    # org's disposition vocabulary is ALLOW / DENY / FAIL_CLOSED only: a change that selects no [tvc] set
+    # is still evaluated against the ledger (the selector only runs this consumer for a selected set).
     try:
         chain = readback_module.readback(ledger)
         store = open_store(parse_locator(ledger))
@@ -201,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             selection = json.loads(a.selection.read_text(encoding="utf-8"))
         except (OSError, ValueError):
-            selection = None  # unreadable selection: evaluate as if selected, never NOT_SELECTED
+            selection = None  # unreadable selection: evaluate as if selected
     record = consume(contract, a.ledger, a.head_root, selection)
     if a.out is not None:
         a.out.write_text(json.dumps(record, indent=1, sort_keys=True) + "\n", encoding="utf-8")
@@ -211,7 +210,7 @@ def main(argv: list[str] | None = None) -> int:
           f"epoch={record.get('epoch_from_ledger_head', 'UNKNOWN_NOT_AUTHENTICALLY_OBSERVED')}")
     for row in record["refusals"]:
         print("FAIL_CLOSED " + " ".join(f"{k}={row[k]!r}" for k in SIX))
-    return 0 if record["disposition"] in ("ALLOW", "NOT_SELECTED") else 1
+    return 0 if record["disposition"] == "ALLOW" else 1
 
 
 if __name__ == "__main__":
