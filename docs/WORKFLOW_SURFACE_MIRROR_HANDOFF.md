@@ -32,7 +32,8 @@ under Rigel's 2026-10-24 direction (StegVerse-org/.github#166).
 
 ## FAIL_CLOSED pending (six fields in the registry `fail_closed_pending[]`)
 
-- ledger-transition self-closure mode (was a `workflow_dispatch` mode).
+- ledger-transition self-closure mode (was a `workflow_dispatch` mode): retired, not pending. It was an InTr hop inside one
+  organization (Rigel's rule, 2026-10-25); its writer steps are removed (Lane B, as in SV-LLM/.github#62).
 - governance-return dispatched locators (was `workflow_dispatch` inputs).
 - InTr destination hop `hop` job (`workflow_dispatch` + `secrets.FEDERATION_HOP_TOKEN`); retained verbatim at
   `tools/tasks/retired/intr-destination-hop.yml`, not executed. No secret added or moved.
