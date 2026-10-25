@@ -5,7 +5,7 @@
     "direction": "SOUTH",
     "egress": {
       "far_side_transition_required": true,
-      "final_stegverse_transition_surface": "LLM_ADAPTER",
+      "final_stegverse_transition_surface": "TASK_REGISTRY_DISCLOSURE",
       "transport": "INTERLOCK_INTR"
     },
     "initiator": {

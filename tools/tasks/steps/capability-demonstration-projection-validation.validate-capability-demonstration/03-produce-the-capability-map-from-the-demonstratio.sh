@@ -61,7 +61,7 @@ assert closure["closed"] is True, closure.get("closure_findings")
 # Demonstration 2: inbound, a peer's manifest submitted at this
 # organization's own capability address.
 manifest = json.loads(Path(
-    "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json").read_text())
+    "tests/fixtures/sdk-manifests/task-registry-disclosure.json").read_text())
 standing = {k: v for k, v in json.loads(Path(
     "tests/fixtures/crossing-standing-genesis.json").read_text()).items()
     if not k.startswith("_")}
@@ -69,7 +69,7 @@ packet = kernel.build_packet(
     origin_org=PEER, origin_service="stegverse-labs." + CAPABILITY,
     destination_org="StegVerse-org", destination_service="stegverse-org." + CAPABILITY,
     payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
-             "declared_transition_surface": "LLM_ADAPTER",
+             "declared_transition_surface": "TASK_REGISTRY_DISCLOSURE",
              "manifest_sha256": kernel.sha(manifest), "manifest": manifest},
     standing=standing, transition_reference="intr:transition:ci-capability-map",
     authority_effect="NONE", packet_id="ci-capability-map-inbound")

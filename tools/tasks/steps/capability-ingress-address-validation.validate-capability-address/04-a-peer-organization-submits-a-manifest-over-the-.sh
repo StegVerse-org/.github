@@ -12,7 +12,7 @@ def module(name, relative):
 
 kernel = module("kernel", "org-kernel/kernel.py")
 manifest = json.loads(Path(
-    "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json").read_text())
+    "tests/fixtures/sdk-manifests/task-registry-disclosure.json").read_text())
 standing = {k: v for k, v in json.loads(Path(
     "tests/fixtures/crossing-standing-genesis.json").read_text()).items()
     if not k.startswith("_")}
@@ -27,7 +27,7 @@ packet = kernel.build_packet(
     destination_org="StegVerse-org",
     destination_service=address,
     payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
-             "declared_transition_surface": "LLM_ADAPTER",
+             "declared_transition_surface": "TASK_REGISTRY_DISCLOSURE",
              "manifest_sha256": kernel.sha(manifest),
              "manifest": manifest},
     standing=standing,
@@ -58,7 +58,7 @@ assert application["addressability_grants_admission_authority"] is False
 operation = application["receiving_operation_result"]
 assert operation["disposition"] == "ALLOW", operation.get("detail")
 assert operation["received"] is True
-assert operation["resolved_service_id"] == "stegverse-org.llm-adapter"
+assert operation["resolved_service_id"] == "stegverse-org.task-registry-disclosure"
 assert operation["intr_admission_observed"] is True
 assert operation["far_side_transition_observed"] is True
 assert operation["organization_receipt_observed"] is True

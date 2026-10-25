@@ -1904,7 +1904,7 @@
    "resident-runtime/organization_egress_boundary.py",
    "resident-runtime/organization_manifest_ingress.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json",
    "tests/peer_organization.py"
   ],
   "tests/test_capability_ingress_address.py": [
@@ -1917,7 +1917,7 @@
    "org-runtime/interlock-intr.json",
    "resident-runtime/organization_egress_boundary.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
   ],
   "tests/test_drift_receipt_appender.py": [
    "resident-runtime/drift_receipt_appender.py",
@@ -1959,7 +1959,7 @@
    "resident-runtime/governance_endpoint.py",
    "resident-runtime/organization_manifest_ingress.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json"
   ],
   "tests/test_governance_mesh_locator_readback.py": [
    ".stegverse/transition-ledger/contract.json",
@@ -1968,7 +1968,7 @@
    "resident-runtime/organization_ledger_readback.py",
    "resident-runtime/organization_manifest_ingress.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json"
   ],
   "tests/test_governance_request_vocabulary.py": [
    ".stegverse/transition-requests/**"
@@ -1984,7 +1984,7 @@
    "resident-runtime/organization_manifest_ingress.py",
    "resident-runtime/peer_mesh_intake.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json",
+   "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json",
    "tests/workflow_surface.py"
   ],
   "tests/test_governed_ingress_census.py": [
@@ -2289,7 +2289,7 @@
    "resident-runtime/submit_org_transition_to_master_records.py",
    "tests/fixtures/crossing-standing-genesis.json",
    "tests/fixtures/sdk-manifest-build-spec.json",
-   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
   ],
   "tests/test_organization_repository_propagation.py": [
    "org-boundary/registry/services.json",
@@ -2337,7 +2337,7 @@
    "resident-runtime/organization_ledger_readback.py",
    "resident-runtime/organization_manifest_ingress.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
   ],
   "tests/test_peer_migration_artifacts.py": [
    "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
@@ -2363,7 +2363,7 @@
    "resident-runtime/intr_destination_ingress.py",
    "resident-runtime/organization_manifest_ingress.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
   ],
   "tests/test_pr1c_clock_fallbacks.py": [
    ".stegverse/transition-ledger/emit.py",
@@ -2404,7 +2404,7 @@
    "resident-runtime/governance_return_cycle.py",
    "resident-runtime/organization_manifest_ingress.py",
    "tests/fixtures/crossing-standing-genesis.json",
-   "tests/fixtures/sdk-manifests/unadmitted-capability-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/unadmitted-capability-to-task-registry-disclosure.json"
   ],
   "tests/test_repo_ledger_durable_in_sovereign_ref.py": [
    ".stegverse/transition-ledger/contract.json",
@@ -2533,7 +2533,7 @@
    "org-boundary/registry/services.json",
    "resident-runtime/sdk_manifest_crossing.py",
    "resident-runtime/task_registry_disclosure_endpoint.py",
-   "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
   ],
   "tests/test_task_registry_schema_conformance.py": [
    "orchestration/schemas/PROVENANCE.json",
