@@ -39,13 +39,16 @@ pt = _load("intr_path_transfer_under_intra_org_test", "resident-runtime/intr_pat
 
 
 class Ledger:
-    """A temporary copy of the pinned ledger tip tree (git archive); never the published ref."""
+    """A temporary copy of the pinned append-base tree (git archive); never the published ref.
+
+    append_base_tip is the fixture's documented base for fresh appends: at ledger_tip (21648778) the
+    fixture's unledgered_commit already carries a main-merge transfer receipt."""
 
     def __init__(self):
         self.dir = tempfile.TemporaryDirectory()
         self.root = Path(self.dir.name) / "ledger"
         self.root.mkdir()
-        subprocess.run("git -C '%s' archive %s | tar -x -C '%s'" % (ROOT, EXPECTED["ledger_tip"], self.root),
+        subprocess.run("git -C '%s' archive %s | tar -x -C '%s'" % (ROOT, EXPECTED["append_base_tip"], self.root),
                        shell=True, check=True)
         self.saved = {k: os.environ.get(k) for k in ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_REPO_LEDGER_ROOT")}
         os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = str(self.root)
