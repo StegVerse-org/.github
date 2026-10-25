@@ -34,13 +34,21 @@ Public-ledger route (E0, no credential, least privilege): when the other
 organization's .github repository is public, its ledger ref is readable with no
 credential at all. tools/tasks/intr_public_ledgers.sh (run by catalog group
 intr-path-public-ledger-read.validate, and by the ledger writer's path-ingress
-job once its owner adds that step under G17) fetches it anonymously, before any
-verifier runs, into
+job before ``consume``) fetches it anonymously, before any verifier runs, into
 $STEGVERSE_INTR_PUBLIC_LEDGERS/<Organization>.git; the verifiers here only read
 that local copy (no network, no clock). A ledger the anonymous fetch could not
 read is simply absent, and the predicate falls back to the TV/TVC route above,
 which stays FAIL_CLOSED with the six fields until a TVC read receipt verifies.
 Every outcome is terminal at E0: ALLOW, DENY, or FAIL_CLOSED with the six fields.
+
+Rigel's standing invariant: every organization's .github is public, so verifying
+a ledger receipt never needs a credential or a TVC read receipt. ``consume``
+therefore appends a destination receipt only with an observed source inclusion;
+when the anonymous read fails it writes nothing for the row and answers
+FAIL_CLOSED with the six fields. A path whose newest receipt recorded the
+inclusion as unobserved gets one successor receipt (packet suffix
+#source-inclusion) that records it, and ``verify`` refuses a newest receipt
+that does not record an observed inclusion.
 """
 from __future__ import annotations
 
@@ -96,6 +104,7 @@ LINK_UNVERIFIED = "INTR_PATH_DESTINATION_RECEIPT_LINK_UNVERIFIED"
 CREDENTIAL_NOT_ISSUED = "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"
 SOURCE_NOT_LEDGERED = "INTR_PATH_RECEIPT_NOT_LEDGERED"
 SOURCE_LINK_UNVERIFIED = "INTR_PATH_RECEIPT_LINK_UNVERIFIED"
+INCLUSION_UNOBSERVED = "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"
 PUBLIC_LEDGERS_ENV = "STEGVERSE_INTR_PUBLIC_LEDGERS"
 LEDGER_REF = "refs/stegverse/organization-ledger"
 PUBLIC_STATE = "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ"
@@ -350,6 +359,28 @@ def ingress_evidence(checked: Mapping[str, Any], inclusion: Mapping[str, Any] | 
             "communication_id": checked["communication_id"]}
 
 
+SOURCE_INCLUSION_PACKET_SUFFIX = "#source-inclusion"
+OBSERVED_STATES = (PUBLIC_STATE, TVC_STATE)
+
+
+def recorded_inclusion(repo_receipt: Any) -> str | None:
+    """None when the receipt's evidence records an observed source inclusion (an anonymous public-ledger read or a
+    verified TVC read receipt, with the 40-hex source ledger tip it was read at); else why it does not. Reads only
+    the recorded evidence: no network, no clock."""
+    evidence = repo_receipt.get("evidence") if isinstance(repo_receipt, Mapping) else None
+    inc = evidence.get("source_inclusion") if isinstance(evidence, Mapping) else None
+    if not isinstance(inc, Mapping):
+        return "source_inclusion is recorded as " + repr(inc)
+    tip = inc.get("source_ledger_tip")
+    if inc.get("state") not in OBSERVED_STATES:
+        return "source_inclusion.state is " + repr(inc.get("state"))
+    if not (isinstance(tip, str) and len(tip) == 40 and all(c in "0123456789abcdef" for c in tip)):
+        return "source_inclusion.source_ledger_tip is " + repr(tip)
+    if (inc.get("state") == TVC_STATE) != bool(inc.get("tvc_read_receipt")):
+        return "source_inclusion.tvc_read_receipt does not match its state"
+    return None
+
+
 def find_destination(path_id: str, communication_id: str, organization_store: Any = None,
                      repository_store: Any = None) -> tuple[Any, Any, str | None]:
     organization_store = organization_store if organization_store is not None else mt.org_store()
@@ -377,19 +408,32 @@ def consume(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
             out.append(checked)
             continue
         existing, existing_repo, _ = find_destination(pid, cid)
+        packet = pid + "@" + cid
         if existing is not None:
             ok = verify_destination_pair(existing, existing_repo, checked)
-            out.append({**ok, "replayed": True} if ok["disposition"] == ALLOW else ok)
-            continue
+            if ok["disposition"] != ALLOW or recorded_inclusion(existing_repo) is None:
+                out.append({**ok, "replayed": True} if ok["disposition"] == ALLOW else ok)
+                continue
+            # The newest receipt for this path records source inclusion as unobserved (written before the
+            # writer read the source's public ledger). Every organization's .github is public, so the
+            # inclusion is observable without a credential: observe it and append one successor receipt that
+            # records it. Readers walk from the ledger head, so the successor is the path's receipt from here on.
+            packet = packet + SOURCE_INCLUSION_PACKET_SUFFIX
         epoch, failed = mt.head_epoch(mt.org_store())   # read only when a row is to be appended
         if failed is not None:
             out.append({**failed, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
             continue
         inclusion = source_inclusion(checked)
+        if inclusion.get("disposition") != ALLOW:
+            # No receipt without an observed inclusion: the read failed, so nothing is written for this row.
+            out.append({**inclusion, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid,
+                        "half": "destination", "appended": False,
+                        "existing_organization_receipt_sha256": existing.get("receipt_sha256") if existing else None})
+            continue
         evidence = ingress_evidence(checked, inclusion)
         try:
             appended, replayed = ingress._append(
-                TRANSITION_CLASS, pid + "@" + cid, evidence, epoch, operation=OPERATION, profile_id=ingress.PROFILE_ID,
+                TRANSITION_CLASS, packet, evidence, epoch, operation=OPERATION, profile_id=ingress.PROFILE_ID,
                 boundary_extra={"path_id": pid, "source_repository": checked["source_repository"],
                                 "source_organization_receipt_sha256": checked["source_organization_receipt_sha256"],
                                 "source_repository_receipt_sha256": checked["source_repository_receipt_sha256"]})
@@ -419,6 +463,14 @@ def verify_inbound(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
             continue
         found, found_repo, broken = find_destination(pid, cid)
         result = verify_destination_pair(found, found_repo, checked)
+        unobserved = recorded_inclusion(found_repo) if result["disposition"] == ALLOW else None
+        if unobserved is not None:
+            result = refusal(FAIL_CLOSED, INCLUSION_UNOBSERVED, "DESTINATION_RECEIPT_RECORDS_AN_OBSERVED_SOURCE_INCLUSION",
+                             "the newest destination receipt for " + str(pid) + " must record the source receipts' "
+                             "inclusion read from the source organization's public ledger (" + unobserved + ")",
+                             "the next push-triggered writer run reads the source ledger anonymously and appends the "
+                             "successor receipt; then re-verify", path_id=pid, communication_id=cid, half="destination",
+                             organization_receipt_sha256=found.get("receipt_sha256"))
         out.append({**result, "detail": broken} if broken else result)
     return out
 
