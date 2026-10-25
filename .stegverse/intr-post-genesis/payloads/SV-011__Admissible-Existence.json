@@ -16,19 +16,11 @@
  "destination": "Admissible-Existence",
  "e0_terminal": true,
  "expected_at_genesis": "FAIL_CLOSED",
- "ledger_head_epoch": {
-  "Admissible-Existence": {
-   "epoch": 469411996,
-   "head_receipt_sha256": "sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327",
-   "organization": "Admissible-Existence",
-   "supplied": false
-  }
- },
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "SV-011->Admissible-Existence:intr-destination",
  "payload": null,
- "record_sha256": "sha256:aa35f30a7fd51bf1710bdec1cecfc350441c4c139605ddb3591793699c494644",
+ "record_sha256": "sha256:f9614164ff8b21bb8f3a5ea2202432acf7c5bb9a289234ab69e8ee3776d10529",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "SV-011",
  "source_receipts": null,

@@ -7,7 +7,7 @@
    "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "the inbound row in SV-LLM/.github#50 (head 7c64558a) admitted to SV-LLM/.github main and consumed by intr-path-ingress.yml",
+   "required_evidence_or_repair": "the inbound row in SV-LLM/.github#50 (head c0444fbc) admitted to SV-LLM/.github main and consumed by intr-path-ingress.yml",
    "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the admission push)"
   }
  ],
@@ -16,7 +16,7 @@
  "destination": "SV-LLM",
  "e0_terminal": true,
  "expected_at_genesis": "ALLOW",
- "genesis_head": "7c64558a8d07eec1c61760aeac32c6495d853735",
+ "genesis_head": "c0444fbcd6793d09c2b8e46311b57225408b81ae",
  "genesis_pr": "SV-LLM/.github#50",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
@@ -37,11 +37,11 @@
    },
    "message_sha256": "sha256:04b9ede7403cac1f5fe5384458636f9232e01f82cdcb307b90e0315ad7d58e5f",
    "path_id": "StegVerse-org->SV-LLM:intr-destination",
-   "payload_sha256": "sha256:b55ee094a257c00b5b4f3ebe31bf5288f18fc11a859c9b37dcbc94f7099b2b56",
+   "payload_sha256": "sha256:1a894a1eaa6030f85377feb7881c8a67e7c4586a6adf63ff4d2d1ab9d2c6a5df",
    "repository": "SV-LLM/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "216487782daa161b886e608e64256877c14ca86f",
+    "source_ledger_tip": "c170db45153eafa5fa568da2079e86caa3e74026",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -75,7 +75,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:2aa3c5302a56c1ff228dd7259c92882c15fafec2efc592b6ba8a7380bde3aadd",
+ "record_sha256": "sha256:acb2d3b01baaddba9f719b6144a9ef76287fc4735c1d557871e6edcaa1aa08f2",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegVerse-org",
  "source_receipts": {
@@ -162,14 +162,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->SV-LLM:intr-destination@intr-path-v1:StegVerse-org->SV-LLM"
   },
-  "source_ledger_tip_observed": "216487782daa161b886e608e64256877c14ca86f"
+  "source_ledger_tip_observed": "c170db45153eafa5fa568da2079e86caa3e74026"
  },
  "status": {
   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "the inbound row in SV-LLM/.github#50 (head 7c64558a) admitted to SV-LLM/.github main and consumed by intr-path-ingress.yml",
+  "required_evidence_or_repair": "the inbound row in SV-LLM/.github#50 (head c0444fbc) admitted to SV-LLM/.github main and consumed by intr-path-ingress.yml",
   "retry_entrypoint": "SV-LLM/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the admission push)"
  }
 }

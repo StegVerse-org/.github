@@ -23,7 +23,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 GENESIS = json.loads((ROOT / "tests/fixtures/crossing-standing-genesis.json").read_text())
-FIXTURE = ROOT / "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+FIXTURE = ROOT / "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json"
 LEDGER_REF = "refs/stegverse/organization-ledger"
 MESH_REF = "refs/test/federation-mesh"
 DECIDER = "StegVerse-Labs"

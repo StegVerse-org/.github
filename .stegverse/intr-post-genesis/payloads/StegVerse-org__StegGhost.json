@@ -3,22 +3,6 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
-   "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
-   "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
-   "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
-   "required_evidence_or_repair": "StegGhost/.github's ledger is not anonymously readable, so the destination_readback read for StegVerse-org->StegGhost:intr-destination needs a TV/TVC read receipt (scope StegVerse-org->StegGhost:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
-   "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
-  },
-  {
-   "failed_predicate": "DESTINATION_HAS_INTR_PATH_INGRESS",
-   "failure_code": "INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN",
-   "next_attempt": "re-run seal and replay after the port is admitted",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on StegGhost/.github main",
-   "retry_entrypoint": "a Lane B port draft to StegGhost/.github (laneb/ branch)"
-  },
-  {
    "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
    "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
    "next_attempt": "seal, then replay after the row lands",
@@ -27,7 +11,7 @@
    "retry_entrypoint": "StegGhost/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
   }
  ],
- "cls": "TVC_PRIVATE_DESTINATION_READ",
+ "cls": "DESTINATION_INBOUND_ROW_ABSENT",
  "communication_id": "intr-path-v1:StegVerse-org->StegGhost",
  "destination": "StegGhost",
  "e0_terminal": true,
@@ -51,11 +35,11 @@
    },
    "message_sha256": "sha256:6c72165f8d5652d0566fb793a4c9de3cabf16c03a4fdf98b54afd9c251f9c3cf",
    "path_id": "StegVerse-org->StegGhost:intr-destination",
-   "payload_sha256": "sha256:65b94980a4d07443c08fcf7bcd687d72b14a345be130f64f95b3d011c9d09963",
+   "payload_sha256": "sha256:263ba940691fdf2397c2a2520ed7f2afb83524b314811c2ca90ebd402d8e17a7",
    "repository": "StegGhost/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "216487782daa161b886e608e64256877c14ca86f",
+    "source_ledger_tip": "c170db45153eafa5fa568da2079e86caa3e74026",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -89,7 +73,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:74682291635ac6d9ce0e8f89992f5455dbfa032c5ba09221cc970a10141774ae",
+ "record_sha256": "sha256:8879754522bea46b30161612d3eba5d8bb8ae862d151d74e90d0a5ac1403c2ac",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegVerse-org",
  "source_receipts": {
@@ -176,14 +160,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->StegGhost:intr-destination@intr-path-v1:StegVerse-org->StegGhost"
   },
-  "source_ledger_tip_observed": "216487782daa161b886e608e64256877c14ca86f"
+  "source_ledger_tip_observed": "c170db45153eafa5fa568da2079e86caa3e74026"
  },
  "status": {
-  "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
-  "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
-  "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
-  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
-  "required_evidence_or_repair": "StegGhost/.github's ledger is not anonymously readable, so the destination_readback read for StegVerse-org->StegGhost:intr-destination needs a TV/TVC read receipt (scope StegVerse-org->StegGhost:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
-  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+  "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "seal, then replay after the row lands",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "an inbound row for StegVerse-org->StegGhost:intr-destination on StegGhost/.github main carrying the source receipt pair",
+  "retry_entrypoint": "StegGhost/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
  }
 }

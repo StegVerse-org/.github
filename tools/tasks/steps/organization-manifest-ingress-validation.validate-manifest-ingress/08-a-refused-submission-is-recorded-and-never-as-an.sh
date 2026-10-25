@@ -19,7 +19,7 @@ def receipts(variable, schema, transition_class=None):
 # A capability no organization service admits. Governance is admitted
 # now, so a governance manifest no longer exercises the refusal.
 unadmitted = json.loads(Path("tests/fixtures/sdk-manifest-build-spec.json")
-                        .read_text())["manifests"]["unadmitted-capability-to-llm-adapter"]
+                        .read_text())["manifests"]["unadmitted-capability-to-task-registry-disclosure"]
 
 def governed(output_id):
     return build_manifest(
@@ -57,7 +57,7 @@ build = json.loads(Path("tests/fixtures/sdk-manifest-build-spec.json").read_text
 def admitted(output_id):
     return build_manifest(**{"data": build["data"], "processor_request": build["processor_request"],
                              **build["common"],
-                             **build["manifests"]["task-registry-disclosure-to-llm-adapter"],
+                             **build["manifests"]["task-registry-disclosure"],
                              "source_output_id": output_id})
 raised = ingress.receive(admitted("no-declared-standing-ci"), registry=registry,
                          packet_id="ci-no-standing", hb_epoch=32, standing=None)

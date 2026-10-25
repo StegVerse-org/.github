@@ -1,0 +1,173 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "seal, then replay after the row lands",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an inbound row for SV-LLM->Triad-Test:intr-destination on Triad-Test/.github main carrying the source receipt pair",
+   "retry_entrypoint": "Triad-Test/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+  }
+ ],
+ "cls": "DESTINATION_INBOUND_ROW_ABSENT",
+ "communication_id": "intr-path-v1:SV-LLM->Triad-Test",
+ "destination": "Triad-Test",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "SV-LLM->Triad-Test:intr-destination",
+ "payload": {
+  "evidence_at_observed_source_tip": {
+   "addressed_service": "triad-test.intr-destination",
+   "communication_id": "intr-path-v1:SV-LLM->Triad-Test",
+   "disposition": "ALLOW",
+   "message": {
+    "body": {
+     "path_id": "SV-LLM->Triad-Test:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "792b5a3b3d4d5c0724f9ec847b995c1efe2213c8"
+    },
+    "communication_id": "intr-path-v1:SV-LLM->Triad-Test",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:10d5fe50f0f0fcf7d4ea17c265b1029999296badc3b458fa5a56d534a9b9089c",
+   "path_id": "SV-LLM->Triad-Test:intr-destination",
+   "payload_sha256": "sha256:840ac12b0269d83e9b6fe79811100c861470470397fbcb39fa6f16e2a08ded4b",
+   "repository": "Triad-Test/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_inclusion": {
+    "source_ledger_tip": "35fa61f7a49eef56621d7f872fd87a64640fff51",
+    "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+    "tvc_read_receipt": null
+   },
+   "source_organization_receipt_sha256": "sha256:7f2c9008776f6d9104ad318b45d0307f691c6c47b4c305d6e1c8cedd000d5bb2",
+   "source_repository": "SV-LLM/.github",
+   "source_repository_receipt_sha256": "sha256:03b8d66c3277b6a4ea77e709797e4bccbd5ed2d9d5917e04dedad920ab54e5fa"
+  },
+  "evidence_invariant": {
+   "addressed_service": "triad-test.intr-destination",
+   "message": {
+    "body": {
+     "path_id": "SV-LLM->Triad-Test:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "792b5a3b3d4d5c0724f9ec847b995c1efe2213c8"
+    },
+    "communication_id": "intr-path-v1:SV-LLM->Triad-Test",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:10d5fe50f0f0fcf7d4ea17c265b1029999296badc3b458fa5a56d534a9b9089c",
+   "path_id": "SV-LLM->Triad-Test:intr-destination",
+   "repository": "Triad-Test/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_organization_receipt_sha256": "sha256:7f2c9008776f6d9104ad318b45d0307f691c6c47b4c305d6e1c8cedd000d5bb2",
+   "source_repository": "SV-LLM/.github",
+   "source_repository_receipt_sha256": "sha256:03b8d66c3277b6a4ea77e709797e4bccbd5ed2d9d5917e04dedad920ab54e5fa"
+  },
+  "evidence_invariant_sha256": "sha256:36dabc269dde7a06d8f515131b91aaa2b069bd8fc726f6764bad6e4aa53ac2a2",
+  "source_inclusion_rule": {
+   "source_ledger_tip": "the source ledger tip read at consume time; its chain must include source_organization_receipt_sha256",
+   "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+   "tvc_read_receipt": null
+  }
+ },
+ "record_sha256": "sha256:670e90c08f8434524dff62caff012e587b216749d1568dcda1948c7d4f6bcbdf",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "SV-LLM",
+ "source_receipts": {
+  "organization_receipt": {
+   "authority_effect": "NONE",
+   "boundary_evidence": {
+    "communication_id": "intr-path-v1:SV-LLM->Triad-Test",
+    "destination_organization": "Triad-Test",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "SV-LLM->Triad-Test:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "SV-LLM/.github",
+    "transfer_commit": "792b5a3b3d4d5c0724f9ec847b995c1efe2213c8"
+   },
+   "canonical_state_transition_receipt_sha256": null,
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 473555685,
+    "frequency_hz": 100,
+    "generation": 473555685,
+    "heartbeat_id": "HB:473555685",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "org_transition_class": "REPO_STATE_PROPAGATION",
+   "organization": "SV-LLM",
+   "predecessor_org_state_sha256": "sha256:46b54561c5fbe64229f5540d227424932634c2834599c8f025c5dcae35658e9f",
+   "previous_receipt_sha256": "sha256:0c4b20a987c5acb6b1c7f5dfd49822847d0d3be5bc477dd519da6a2db316af73",
+   "receipt_sha256": "sha256:7f2c9008776f6d9104ad318b45d0307f691c6c47b4c305d6e1c8cedd000d5bb2",
+   "repo_receipt_sha256": "sha256:03b8d66c3277b6a4ea77e709797e4bccbd5ed2d9d5917e04dedad920ab54e5fa",
+   "repo_transition_id": "INTR_MESH_PATH_TRANSFER:SV-LLM->Triad-Test:intr-destination@intr-path-v1:SV-LLM->Triad-Test",
+   "schema": "stegverse.organization-transition-receipt/v1",
+   "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+   "source_repository": "SV-LLM/.github",
+   "source_transition_id": "INTR_MESH_PATH_TRANSFER:SV-LLM->Triad-Test:intr-destination@intr-path-v1:SV-LLM->Triad-Test",
+   "source_transition_sha256": "sha256:03b8d66c3277b6a4ea77e709797e4bccbd5ed2d9d5917e04dedad920ab54e5fa",
+   "subject_or_correlation_id": null,
+   "successor_org_state_sha256": "sha256:d0de8b32a249b60ca6670db91369f4488cf784b357681bbd25a1c6590bd3a987"
+  },
+  "repository_receipt": {
+   "authority_effect": "NONE",
+   "evidence": {
+    "capability": "intr-destination",
+    "communication_id": "intr-path-v1:SV-LLM->Triad-Test",
+    "destination_address": "triad-test.intr-destination",
+    "destination_organization": "Triad-Test",
+    "disposition": "ALLOW",
+    "merge_transfer_organization_receipt_sha256": "sha256:283b320e2b692473ea5cb28834b0450f95a0c054604c08b2ea5e0495335652c2",
+    "message": {
+     "body": {
+      "path_id": "SV-LLM->Triad-Test:intr-destination",
+      "schema": "stegverse.org-intr-destination-diagnostic/v1",
+      "transfer_commit": "792b5a3b3d4d5c0724f9ec847b995c1efe2213c8"
+     },
+     "communication_id": "intr-path-v1:SV-LLM->Triad-Test",
+     "message_class": "ecosystem.communication"
+    },
+    "message_sha256": "sha256:10d5fe50f0f0fcf7d4ea17c265b1029999296badc3b458fa5a56d534a9b9089c",
+    "path_id": "SV-LLM->Triad-Test:intr-destination",
+    "payload_sha256": "sha256:46b54561c5fbe64229f5540d227424932634c2834599c8f025c5dcae35658e9f",
+    "repository": "SV-LLM/.github",
+    "schema": "stegverse.intr-path-transfer-evidence/v1",
+    "source_organization": "SV-LLM",
+    "transfer_commit": "792b5a3b3d4d5c0724f9ec847b995c1efe2213c8"
+   },
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 473555685,
+    "frequency_hz": 100,
+    "generation": 473555685,
+    "heartbeat_id": "HB:473555685",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "predecessor_state_sha256": "sha256:46b54561c5fbe64229f5540d227424932634c2834599c8f025c5dcae35658e9f",
+   "previous_receipt_sha256": "sha256:8b22ae64b9a1cf06694d2cbff7f8bbda9cdc680e01ec0f3e80e6db0a612c1907",
+   "receipt_sha256": "sha256:03b8d66c3277b6a4ea77e709797e4bccbd5ed2d9d5917e04dedad920ab54e5fa",
+   "repository": "SV-LLM/.github",
+   "schema": "stegverse.repo-transition-receipt/v1",
+   "successor_state_sha256": "sha256:d0de8b32a249b60ca6670db91369f4488cf784b357681bbd25a1c6590bd3a987",
+   "transition_class": "INTR_MESH_PATH_TRANSFER",
+   "transition_id": "INTR_MESH_PATH_TRANSFER:SV-LLM->Triad-Test:intr-destination@intr-path-v1:SV-LLM->Triad-Test"
+  },
+  "source_ledger_tip_observed": "35fa61f7a49eef56621d7f872fd87a64640fff51"
+ },
+ "status": {
+  "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "seal, then replay after the row lands",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "an inbound row for SV-LLM->Triad-Test:intr-destination on Triad-Test/.github main carrying the source receipt pair",
+  "retry_entrypoint": "Triad-Test/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+ }
+}

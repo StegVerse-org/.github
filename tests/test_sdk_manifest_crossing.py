@@ -15,10 +15,12 @@ SDK installed: the bridge consumes an artifact, never the SDK itself, and the
 two repositories stay decoupled.
 
 Both outcomes are asserted, because both are real. A surface with an installed
-endpoint crosses completely. `LLM_ADAPTER` -- what the SDK's own default
-manifest declares -- resolves correctly and then stops at a named, reported
-disposition, because `stegverse-org.llm-adapter` carries no `endpoint_adapter`.
-A bridge that reported that as success would be worse than no bridge.
+endpoint crosses completely; a surface the organization does not expose fails
+closed. `LLM_ADAPTER` -- the SDK's default requester return adapter -- is never
+an organization routing target: no organization repository routes to
+StegVerse-org/LLM-adapter. Its only InTr use is that an external machine that
+has established itself as a healthy node may become an InTr endpoint.
+A bridge that reported a refusal as success would be worse than no bridge.
 
 Source validation only. No authority effect is claimed.
 """
@@ -65,9 +67,20 @@ class FixtureTests(unittest.TestCase):
             self.assertTrue(egress["final_stegverse_transition_surface"], path.name)
 
     def test_the_llm_adapter_fixture_carries_the_sdk_default_surface(self):
-        """If the SDK's default stops being LLM_ADAPTER, the gap case is stale."""
-        egress = manifest("governance-to-llm-adapter")["completion"]["egress"]
-        self.assertEqual(egress["final_stegverse_transition_surface"], "LLM_ADAPTER")
+        """Name kept from the base so required verification stays continuous.
+
+        The `governance-to-llm-adapter` fixture is withdrawn. No organization
+        repository routes to StegVerse-org/LLM-adapter, so no fixture carries
+        the SDK's default `LLM_ADAPTER` surface, and the former fixture is absent.
+        """
+        self.assertFalse((FIXTURES / "governance-to-llm-adapter.json").exists())
+        self.assertFalse(any("llm-adapter" in path.name for path in FIXTURES.glob("*.json")))
+
+    def test_no_fixture_routes_to_llm_adapter(self):
+        """No organization repository routes to StegVerse-org/LLM-adapter."""
+        for path in sorted(FIXTURES.glob("*.json")):
+            egress = json.loads(path.read_text())["completion"]["egress"]
+            self.assertNotEqual(egress["final_stegverse_transition_surface"], "LLM_ADAPTER", path.name)
 
 
 class DeclaredDestinationTests(unittest.TestCase):
@@ -117,8 +130,16 @@ class SurfaceResolutionTests(unittest.TestCase):
             bridge.resolve_surface("BOUNDARY_DIAGNOSTIC", REGISTRY)["service_id"],
             "stegverse-org.boundary-diagnostic")
         self.assertEqual(
-            bridge.resolve_surface("LLM_ADAPTER", REGISTRY)["service_id"],
-            "stegverse-org.llm-adapter")
+            bridge.resolve_surface("TASK_REGISTRY_DISCLOSURE", REGISTRY)["service_id"],
+            "stegverse-org.task-registry-disclosure")
+
+    def test_the_organization_exposes_no_llm_adapter_surface(self):
+        """LLM-adapter is never an org-internal destination; the registry holds no row for it."""
+        with self.assertRaises(SystemExit) as raised:
+            bridge.resolve_surface("LLM_ADAPTER", REGISTRY)
+        self.assertIn("ORG_EXPOSES_NO_SUCH_TRANSITION_SURFACE", str(raised.exception))
+        self.assertNotIn("StegVerse-org/LLM-adapter",
+                         {service["repository"] for service in REGISTRY["services"]})
 
     def test_an_unexposed_surface_fails_closed(self):
         with self.assertRaises(SystemExit) as raised:
@@ -127,9 +148,9 @@ class SurfaceResolutionTests(unittest.TestCase):
 
     def test_an_ambiguous_registry_fails_closed_rather_than_guessing(self):
         duplicated = {"organization": "StegVerse-org", "services": [
-            {"service_id": "a.llm-adapter"}, {"service_id": "b.llm-adapter"}]}
+            {"service_id": "a.duplicated"}, {"service_id": "b.duplicated"}]}
         with self.assertRaises(SystemExit) as raised:
-            bridge.resolve_surface("LLM_ADAPTER", duplicated)
+            bridge.resolve_surface("DUPLICATED", duplicated)
         self.assertIn("TRANSITION_SURFACE_AMBIGUOUS_IN_REGISTRY", str(raised.exception))
 
 
@@ -208,23 +229,22 @@ class CompleteCrossingTests(unittest.TestCase):
 
 
 class GovernanceReturningOverTheTransportTests(unittest.TestCase):
-    """A governance manifest whose result returns over LLM-adapter is processed, not refused.
+    """A governance manifest addressed to the disclosure surface is processed, not refused.
 
-    `completion.egress` names the return path. LLM-adapter is the transport
-    between an LLM and the SDK, so addressing it for processing handed a
-    governance manifest to a service that admits only `ecosystem_diagnostic`, and
-    every such run was refused. Processing is selected by the declared
-    capability and route, so the governance processor decides it and the return
-    surface stays what the manifest declared.
+    `completion.egress` names a surface. Addressing it for processing would hand
+    a governance manifest to a service that admits only `ecosystem_diagnostic`.
+    Processing is selected by the declared capability and route, so the
+    governance processor decides it and the declared surface stays what the
+    manifest declared.
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.result = bridge.cross(manifest("governance-to-llm-adapter"), registry=REGISTRY, standing=GENESIS,
+        cls.result = bridge.cross(manifest("governance-to-task-registry-disclosure"), registry=REGISTRY, standing=GENESIS,
                                   packet_id="sdk-manifest-crossing-gap")
 
     def test_the_return_surface_is_kept_and_the_governance_processor_decides(self):
-        self.assertEqual(self.result["declared_transition_surface"], "LLM_ADAPTER")
+        self.assertEqual(self.result["declared_transition_surface"], "TASK_REGISTRY_DISCLOSURE")
         self.assertEqual(self.result["resolved_service_id"], "stegverse-org.governance")
         self.assertIs(self.result["crossing_completed"], True)
         self.assertEqual(self.result["processing_selection"], "MANIFEST_DECLARED")
@@ -241,15 +261,15 @@ class GovernanceReturningOverTheTransportTests(unittest.TestCase):
         self.assertEqual(request["authority_effect"], "NONE_DECISION_REQUEST_ONLY")
 
     def test_the_registry_admits_one_pair_and_this_fixture_is_not_it(self):
-        llm = service("stegverse-org.llm-adapter")
-        self.assertEqual(llm["repository"], "StegVerse-org/LLM-adapter")
-        self.assertEqual(llm["admits_processing"],
+        row = service("stegverse-org.task-registry-disclosure")
+        self.assertEqual(row["repository"], "StegVerse-org/.github")
+        self.assertEqual(row["admits_processing"],
                          [{"capability": "ecosystem_diagnostic",
                            "route_id": "stegverse.route.ecosystem-diagnostic.v1"}])
-        declared = manifest("governance-to-llm-adapter")["processing"]
+        declared = manifest("governance-to-task-registry-disclosure")["processing"]
         self.assertNotIn({"capability": declared["capability"],
                           "route_id": declared["route_id"]},
-                         llm["admits_processing"])
+                         row["admits_processing"])
 
 
 if __name__ == "__main__":

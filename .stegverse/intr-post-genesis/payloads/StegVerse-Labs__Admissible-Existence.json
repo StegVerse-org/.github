@@ -3,30 +3,19 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
-   "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
-   "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
-   "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162",
-   "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
-   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows"
+   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "seal, then replay after the row lands",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an inbound row for StegVerse-Labs->Admissible-Existence:intr-destination on Admissible-Existence/.github main carrying the source receipt pair",
+   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
   }
  ],
- "cls": "LEDGER_HEAD_EPOCH_UNOBSERVED",
+ "cls": "DESTINATION_INBOUND_ROW_ABSENT",
  "communication_id": "intr-path-v1:StegVerse-Labs->Admissible-Existence",
  "destination": "Admissible-Existence",
  "e0_terminal": true,
- "expected_after_supplied_epoch": "ALLOW",
  "expected_at_genesis": "FAIL_CLOSED",
- "genesis_head": "0a9a8a8e0cf7bddc92e635cebe7032f1e9727723",
- "genesis_pr": "Admissible-Existence/.github#99",
- "ledger_head_epoch": {
-  "Admissible-Existence": {
-   "epoch": 469411996,
-   "head_receipt_sha256": "sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327",
-   "organization": "Admissible-Existence",
-   "supplied": false
-  }
- },
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
@@ -46,11 +35,11 @@
    },
    "message_sha256": "sha256:f976076cd90043f1c44aa47d96380c1ba00f4ca2bda50e3e2f6c3369fa5cc460",
    "path_id": "StegVerse-Labs->Admissible-Existence:intr-destination",
-   "payload_sha256": "sha256:d6033876eec18742d86a661e75a7f09f0c1b636fa657095c4a1e6adb2cfb0ff8",
+   "payload_sha256": "sha256:4a3b7dee1d432f78ee42631def63e79eddfabdaeee4caff8364559ca827a58ab",
    "repository": "Admissible-Existence/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "9a407561062757a30f90818ec6c8105b04331a39",
+    "source_ledger_tip": "96ff141cabe940d9e338f8c153835f25f08fd18a",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -84,8 +73,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:935ece6239d6a54382df315bec797e4f00ed7d811d2db5560e052ec8cb5470ff",
- "reseal_on_supplied_epoch": true,
+ "record_sha256": "sha256:d9feb826f971a8a21e2a257efb530ccc8b11e2a1b971e8cb06b2c1e5e50ad1e0",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegVerse-Labs",
  "source_receipts": {
@@ -175,14 +163,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-Labs->Admissible-Existence:intr-destination@intr-path-v1:StegVerse-Labs->Admissible-Existence"
   },
-  "source_ledger_tip_observed": "9a407561062757a30f90818ec6c8105b04331a39"
+  "source_ledger_tip_observed": "96ff141cabe940d9e338f8c153835f25f08fd18a"
  },
  "status": {
-  "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
-  "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
-  "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
-  "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162",
-  "required_evidence_or_repair": "Admissible-Existence/.github's organization ledger head receipt sha256:caacc196fb11507476e6a2860f6a30066813ae0f02164cbc4c45f4f84c84a327 carries epoch 469411996 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
-  "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows"
+  "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "seal, then replay after the row lands",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "an inbound row for StegVerse-Labs->Admissible-Existence:intr-destination on Admissible-Existence/.github main carrying the source receipt pair",
+  "retry_entrypoint": "Admissible-Existence/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
  }
 }

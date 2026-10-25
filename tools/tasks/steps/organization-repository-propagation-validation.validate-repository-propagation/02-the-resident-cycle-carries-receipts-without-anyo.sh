@@ -9,7 +9,7 @@ def load(name, relative):
     return module
 
 ledger = load("aggregate_repo_transition", "resident-runtime/aggregate_repo_transition.py")
-repository = "StegVerse-org/LLM-adapter"
+repository = "StegVerse-org/StegVerse-SDK"
 
 # A repository receipt of the shape a repository emitter writes.
 body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": repository,

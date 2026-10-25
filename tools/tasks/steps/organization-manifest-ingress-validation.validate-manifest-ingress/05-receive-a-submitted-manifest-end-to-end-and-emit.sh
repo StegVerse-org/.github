@@ -1,6 +1,6 @@
 python resident-runtime/organization_manifest_ingress.py \
   --registry org-boundary/registry/services.json \
-  --manifest tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json \
+  --manifest tests/fixtures/sdk-manifests/task-registry-disclosure.json \
   --standing tests/fixtures/crossing-standing-genesis.json \
   --packet-id ci-organization-manifest-ingress --hb-epoch 32 \
   --out "$RUNNER_TEMP/org-ingress.json"

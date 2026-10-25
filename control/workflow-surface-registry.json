@@ -981,6 +981,12 @@
         "intr-protocol-copy-equality.validate"
       ],
       "reason": "StegVerse-org/.github#218: tests.test_intr_protocol_copy_equality, carried as a catalog group instead of an edit to the folded intr-destination-capability-validation step"
+    },
+    {
+      "catalog_groups": [
+        "test-suite-selected.selected"
+      ],
+      "reason": "Lane B #231 (StegVerse-org/.github#162) ported onto G17 #238 via #239: .github/workflows/test-suite-selected.yml was a workflow file #231 added; its one job is this catalog group run by validation-dispatcher.yml"
     }
   ]
 }

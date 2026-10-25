@@ -5,19 +5,17 @@
   {
    "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
    "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay",
+   "next_attempt": "seal, then replay after the row lands",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "the inbound row in StegVerse-Labs/.github#3312 (head 94ba7ebb) admitted to StegVerse-Labs/.github main and consumed by intr-path-ingress.yml",
-   "retry_entrypoint": "StegVerse-Labs/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the admission push)"
+   "required_evidence_or_repair": "an inbound row for StegVerse-org->StegVerse-Labs:intr-destination on StegVerse-Labs/.github main carrying the source receipt pair",
+   "retry_entrypoint": "StegVerse-Labs/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
   }
  ],
- "cls": "GENESIS_READY",
+ "cls": "DESTINATION_INBOUND_ROW_ABSENT",
  "communication_id": "intr-path-v1:StegVerse-org->StegVerse-Labs",
  "destination": "StegVerse-Labs",
  "e0_terminal": true,
- "expected_at_genesis": "ALLOW",
- "genesis_head": "94ba7ebbe2f6970062ba18a11c672d5063842c44",
- "genesis_pr": "StegVerse-Labs/.github#3312",
+ "expected_at_genesis": "FAIL_CLOSED",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
@@ -37,11 +35,11 @@
    },
    "message_sha256": "sha256:436b4bf860b0e3d1b92234cea05029f48a66239e60e7298a1b8841379375f9bf",
    "path_id": "StegVerse-org->StegVerse-Labs:intr-destination",
-   "payload_sha256": "sha256:a4aebd9710c3d91e21e8d17ff8cc312378a8f6c94b750cfea015f12f5e69251c",
+   "payload_sha256": "sha256:65effee271864750ca8c26f62f0403345ea606ade1e08128c5772d323a068035",
    "repository": "StegVerse-Labs/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "216487782daa161b886e608e64256877c14ca86f",
+    "source_ledger_tip": "c170db45153eafa5fa568da2079e86caa3e74026",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -75,7 +73,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:30540a0f2882b88e4f6868316147ae60ed9369ecf68ded56a89a1302fa56ac2a",
+ "record_sha256": "sha256:ccfd21c98547de85ca29ab8f5555012ee521a76cf60d80691abe34554d519d7a",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegVerse-org",
  "source_receipts": {
@@ -162,14 +160,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-org->StegVerse-Labs:intr-destination@intr-path-v1:StegVerse-org->StegVerse-Labs"
   },
-  "source_ledger_tip_observed": "216487782daa161b886e608e64256877c14ca86f"
+  "source_ledger_tip_observed": "c170db45153eafa5fa568da2079e86caa3e74026"
  },
  "status": {
   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay",
+  "next_attempt": "seal, then replay after the row lands",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "the inbound row in StegVerse-Labs/.github#3312 (head 94ba7ebb) admitted to StegVerse-Labs/.github main and consumed by intr-path-ingress.yml",
-  "retry_entrypoint": "StegVerse-Labs/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the admission push)"
+  "required_evidence_or_repair": "an inbound row for StegVerse-org->StegVerse-Labs:intr-destination on StegVerse-Labs/.github main carrying the source receipt pair",
+  "retry_entrypoint": "StegVerse-Labs/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
  }
 }

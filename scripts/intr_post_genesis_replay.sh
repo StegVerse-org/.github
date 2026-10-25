@@ -13,7 +13,7 @@ set -euo pipefail
 out="${1:?usage: $0 <out-dir> [--require-genesis-allow]}"; shift || true
 ref=refs/stegverse/organization-ledger
 pub="$out/public-ledgers"; mkdir -p "$pub"
-for org in StegVerse-org StegVerse-Labs SV-011 GCAT-BCAT-Engine Admissible-Existence StegGhost StegVerse-002 SV-LLM; do
+for org in $(python3 scripts/intr_post_genesis_replay.py orgs); do
   rm -rf "$pub/$org.git"; git init -q --bare "$pub/$org.git"
   if ! GIT_TERMINAL_PROMPT=0 GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git --git-dir="$pub/$org.git" \
       -c credential.helper= -c http.https://github.com/.extraheader= \

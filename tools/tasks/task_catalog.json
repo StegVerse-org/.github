@@ -122,7 +122,7 @@
         {
           "name": "Produce the capability map from the demonstrations this run performs",
           "run_file": "tools/tasks/steps/capability-demonstration-projection-validation.validate-capability-demonstration/03-produce-the-capability-map-from-the-demonstratio.sh",
-          "run_sha256": "861a42b6957ed3efa28032f0f847539b3308173d37720ccf4d14770316c86a67",
+          "run_sha256": "028f0cb417d0ac7282a42858758c0f337444887ffb24b5e09f84a4bca9f0a048",
           "env": {
             "STEGVERSE_REPO_LEDGER_ROOT": "${{ runner.temp }}/demo-repo-ledger",
             "STEGVERSE_ORG_LEDGER_ROOT": "${{ runner.temp }}/demo-org-ledger"
@@ -195,7 +195,7 @@
         {
           "name": "A peer organization submits a manifest over the mesh, end to end",
           "run_file": "tools/tasks/steps/capability-ingress-address-validation.validate-capability-address/04-a-peer-organization-submits-a-manifest-over-the-.sh",
-          "run_sha256": "4ee8104203cc5d5a5bf8afca22e2bd13d5a307e744528c1b670d248aac0e102d",
+          "run_sha256": "539ff889580a6a68b83b07cfe2f4e09f7950718086dbe641d2de06fe83a02888",
           "env": {
             "STEGVERSE_REPO_LEDGER_ROOT": "${{ runner.temp }}/e2e-repo-ledger",
             "STEGVERSE_ORG_LEDGER_ROOT": "${{ runner.temp }}/e2e-org-ledger"
@@ -912,12 +912,12 @@
         {
           "name": "An unadmitted pair the crossing carries alone is refused with the six fields",
           "run_file": "tools/tasks/steps/org-runtime-boundary.validate/14-an-unadmitted-pair-the-crossing-carries-alone-is.sh",
-          "run_sha256": "ab63b53c8568d21cbabbda9412d6887ef6ef496c4a1565bff8b975367f449b6e"
+          "run_sha256": "f767175ee89df655006187018b4a625ab2ee61955e6404af93bb141dce61864c"
         },
         {
           "name": "A far side that does not complete answers with the six fields (D6)",
           "run_file": "tools/tasks/steps/org-runtime-boundary.validate/15-a-far-side-that-does-not-complete-answers-with-t.sh",
-          "run_sha256": "b1a78f360edf812d4d0cfdeb443163f61d0bf821a13ad3bf87a61f31bada8aee"
+          "run_sha256": "e8903283852823650219018923ad5c44c1c895718e6445b21590a35990ab54dc"
         },
         {
           "name": "Every non-ALLOW crossing result carries the six fields (D6)",
@@ -927,7 +927,7 @@
         {
           "name": "The declared capability is served at the far side",
           "run_file": "tools/tasks/steps/org-runtime-boundary.validate/17-the-declared-capability-is-served-at-the-far-sid.sh",
-          "run_sha256": "751087cf2594d3c77e146b79cca686638242d2b022698957791cff81e6e0e180"
+          "run_sha256": "7626332cd96145fc776c1210b49db2c255b970cd76425869f8a8582a3b3e05f6"
         },
         {
           "name": "Test the ledgers are written only where supplied, never under the host home",
@@ -1296,7 +1296,7 @@
         {
           "name": "Receive a submitted manifest end-to-end and emit the organization receipt",
           "run_file": "tools/tasks/steps/organization-manifest-ingress-validation.validate-manifest-ingress/05-receive-a-submitted-manifest-end-to-end-and-emit.sh",
-          "run_sha256": "00f44abef2b9ee75f279220162b63772860bb0bcfe7ecbba65fb641e740fb694",
+          "run_sha256": "1c2a6301c34077ffd2abd4003572fe6cd881f20e6826fedc5505506655b9b719",
           "env": {
             "STEGVERSE_REPO_LEDGER_ROOT": "${{ runner.temp }}/repo-ledger",
             "STEGVERSE_ORG_LEDGER_ROOT": "${{ runner.temp }}/org-ledger"
@@ -1314,12 +1314,12 @@
         {
           "name": "The repository chain survives across materializations in the designated ref",
           "run_file": "tools/tasks/steps/organization-manifest-ingress-validation.validate-manifest-ingress/07-the-repository-chain-survives-across-materializa.sh",
-          "run_sha256": "aefddb42072ba2e77fabe6738bb7508bc7d61636fefc138db32df9742e6599c4"
+          "run_sha256": "6b0be72079d3d8143ec2123d11445343a32104d3739f1a3ff4d860db21eb3b4c"
         },
         {
           "name": "A refused submission is recorded, and never as an admission",
           "run_file": "tools/tasks/steps/organization-manifest-ingress-validation.validate-manifest-ingress/08-a-refused-submission-is-recorded-and-never-as-an.sh",
-          "run_sha256": "50779a350aedca9662e2b84331438b2792031afc9273a5c9f1d1f89f79e459c4",
+          "run_sha256": "509266fe5509e2c9e8ff5aa5be172274928fcd43ba76f01d5aee7e1ee7e7a1f3",
           "env": {
             "STEGVERSE_REPO_LEDGER_ROOT": "${{ runner.temp }}/refusal-repo-ledger",
             "STEGVERSE_ORG_LEDGER_ROOT": "${{ runner.temp }}/refusal-org-ledger"
@@ -1409,7 +1409,7 @@
         {
           "name": "The resident cycle carries receipts without anyone naming them",
           "run_file": "tools/tasks/steps/organization-repository-propagation-validation.validate-repository-propagation/02-the-resident-cycle-carries-receipts-without-anyo.sh",
-          "run_sha256": "c078c01654926e3eebac666afcab1864982d10085c96f8c670fc268781f6ce34",
+          "run_sha256": "86bc7701123f711c8b4a03cda40ea9cbcc555c828351aba697d4e60fb06cb28d",
           "env": {
             "STEGVERSE_REPO_LEDGER_HOME": "${{ runner.temp }}/cycle-repo-ledgers",
             "STEGVERSE_ORG_LEDGER_ROOT": "${{ runner.temp }}/cycle-org-ledger",
@@ -1805,12 +1805,12 @@
         {
           "name": "An unadmitted pair the crossing carries alone is refused with the six fields",
           "run_file": "tools/tasks/steps/sdk-manifest-crossing-validation.validate-sdk-manifest-crossing/07-an-unadmitted-pair-the-crossing-carries-alone-is.sh",
-          "run_sha256": "96a1f5dfc4e1bf86d87dcbc35fe41e61bfbdf22bff5628e94f03c14e1ba507d5"
+          "run_sha256": "9cf8f6b046e3c0e633e521fece161fe26b37fc7ec6ab35c152037d33d48f2f34"
         },
         {
           "name": "A far side that does not complete answers with the six fields (D6)",
           "run_file": "tools/tasks/steps/sdk-manifest-crossing-validation.validate-sdk-manifest-crossing/08-a-far-side-that-does-not-complete-answers-with-t.sh",
-          "run_sha256": "b5e9149087d4bc36a8a72a508baf1a0c0858647656e2ad76cae8b77347b19394"
+          "run_sha256": "825e837c9ea73d2f96e05ee7d19560f3f034fb62461923f6a8c2f9f3eec1db78"
         },
         {
           "name": "Every non-ALLOW crossing result carries the six fields (D6)",
@@ -1820,7 +1820,7 @@
         {
           "name": "The declared capability is served, with a reconstructable chain",
           "run_file": "tools/tasks/steps/sdk-manifest-crossing-validation.validate-sdk-manifest-crossing/10-the-declared-capability-is-served-with-a-reconst.sh",
-          "run_sha256": "f4fabb61ffc02b8efaa704a386a66511e7603ff664e8b18d89b9431c974a5fb3"
+          "run_sha256": "e7a6b21404099f44173334faf00e0a6f74b2c6d3359ada1f4d2b8a21e40f7463"
         }
       ],
       "artifacts": [],
@@ -2518,6 +2518,93 @@
         "timeout_minutes": 360,
         "artifact_name": "test-suite-baseline-refresh",
         "artifact_if_no_files_found": "warn"
+      }
+    },
+    {
+      "id": "test-suite-selected.selected",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#231 (Lane B, lane-b-91117956), on #239 (P4 #222 port) over G17 #238",
+        "note": "Carries #231's .github/workflows/test-suite-selected.yml job selected-tests as a catalog group (G17: a new check is a catalog group, never a workflow file). Run bodies byte for byte from b2f9fad2 except: step 01 replaces actions/checkout ref and the job env expressions (|| is not a dispatcher expression), and step 08 --retry-entrypoint names this group.",
+        "name": "Selected Tests Skip Receipt",
+        "folded_from_commit": "b2f9fad29e7f7d39201f1bc9af8ce7fe0da97da3",
+        "triggers_before": [
+          "pull_request",
+          "push"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "env": {
+        "PR_HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
+        "PR_BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "PUSH_SHA": "${{ github.sha }}",
+        "PUSH_BEFORE": "${{ github.event.before }}"
+      },
+      "steps": [
+        {
+          "name": "Check out the exact head the folded job checked out (pull request head, or the pushed commit)",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/01-check-out-the-exact-head-the-folded-job-checked.sh",
+          "run_sha256": "8d203696a3a3d63dac7e814bd34509ea16051c20184e0094a7ad778817fa3540"
+        },
+        {
+          "name": "Fetch the organization ledger ref read-only",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/02-fetch-the-organization-ledger-ref-read-only.sh",
+          "run_sha256": "eba852b2baecf94802930ba13b75b7489a5009b6c7aae27c20a272748650384a"
+        },
+        {
+          "name": "The pinned StegVerse SDK and this repository's existing jsonschema dependency",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/03-the-pinned-stegverse-sdk-and-this-repository-s-e.sh",
+          "run_sha256": "070fc1d83208d2777cbf08378c9c0a4b801f3bea049aa00b4b61fc53039cdd4c"
+        },
+        {
+          "name": "The pinned StegVerse-Labs tool (anonymous fetch, sha256-checked)",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/04-the-pinned-stegverse-labs-tool-anonymous-fetch-s.sh",
+          "run_sha256": "442d4046bd353d9a274251d79cdae630013f0433365d6e627ff9e5f5da7db442"
+        },
+        {
+          "name": "Select the tests this change needs (data/test-selection-map.json)",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/05-select-the-tests-this-change-needs-data-test-sel.sh",
+          "run_sha256": "88b85f7134b35769037cbeefab9afabc2131960961eedec48bb933888b8bb1f3"
+        },
+        {
+          "name": "Run the selected tests on the exact head",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/06-run-the-selected-tests-on-the-exact-head.sh",
+          "run_sha256": "30d3e512cb7c8637fd518f20e0db0fb63a8ca20e97ccd0d247688b2c3f834048"
+        },
+        {
+          "name": "Run the same selected tests on the base",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/07-run-the-same-selected-tests-on-the-base.sh",
+          "run_sha256": "3757c59fe2fcd114fbda122ddc98157fc445e7178d01f1937f7a17f3ffcd7a98",
+          "if": "env.DIFF_BASE != ''"
+        },
+        {
+          "name": "Receipt the selected set; a skip in it, or a new failure, fails closed",
+          "run_file": "tools/tasks/steps/test-suite-selected.selected/08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh",
+          "run_sha256": "65827c508f617343ce2e6b5c472f91827963e413165a87b6eacc887edc45071c",
+          "if": "${{ !cancelled() }}"
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "test-suite-skip-receipt",
+          "path": "${{ runner.temp }}/test-suite-skip-receipt.json",
+          "if_no_files_found": "error",
+          "if": "always()"
+        }
+      ],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360,
+        "artifact_name": "test-suite-skip-receipt",
+        "artifact_if_no_files_found": "error"
       }
     }
   ]
