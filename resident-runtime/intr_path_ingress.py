@@ -272,7 +272,7 @@ def public_readback(path_id: str, communication_id: str, other_repository: str,
         if not isinstance(receipt, Mapping):
             break
         chain.append(receipt)
-        b = receipt.get("boundary_evidence") if isinstance(receipt.get("boundary_evidence"), Mapping) else {}
+        b = mt._boundary(receipt)  # either receipt generation: boundary_evidence, or evidence (SV-011)
         if b.get("operation") == operation and b.get("path_id") == path_id \
                 and b.get("communication_id") == communication_id:
             found = receipt
