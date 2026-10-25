@@ -1708,9 +1708,9 @@
       "env": {},
       "steps": [
         {
-          "name": "Install the one dependency a documented command needs",
-          "run_file": "tools/tasks/steps/reviewer-prompt-conformance.validate-reviewer-prompts/01-install-the-one-dependency-a-documented-command-.sh",
-          "run_sha256": "1a4b349c3c1c499f07ff905c287c9246260343d9ea9f620ee9f335a377578f44"
+          "name": "Fetch the pinned stdlib schema validator a documented command needs",
+          "run_file": "tools/tasks/steps/reviewer-prompt-conformance.validate-reviewer-prompts/01-fetch-the-pinned-stdlib-schema-validator-a-docum.sh",
+          "run_sha256": "7d63aacfe03990db7d76ae19f07e9cce693785866ca0b3761bc70e460ccb8b41"
         },
         {
           "name": "Every documented command still runs",
@@ -1741,7 +1741,15 @@
         "fetch_depth": "1",
         "persist_credentials": "false",
         "timeout_minutes": 360
-      }
+      },
+      "carried_pull_requests": [
+        {
+          "pull_request": "StegVerse-org/.github#222",
+          "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+          "step": 1,
+          "change": "pip install jsonschema -> resident-runtime/pinned_labs.py fetch (pinned StegVerse-Labs stdlib validator, sha256-checked; STEGVERSE_LABS_ROOT via $GITHUB_ENV)"
+        }
+      ]
     },
     {
       "id": "sdk-manifest-crossing-validation.validate-sdk-manifest-crossing",
@@ -1910,9 +1918,9 @@
           "run_sha256": "e8370c6740fb38f589b2bee0147d15027e8e28e9ebeeac736016c6172138a49d"
         },
         {
-          "name": "Install the schema validator",
-          "run_file": "tools/tasks/steps/task-registry-validation.validate-task-registry/02-install-the-schema-validator.sh",
-          "run_sha256": "0dfcddf3359d12906b7a8aae69a223e51d234b001017b3730598a1638a5954a0"
+          "name": "Fetch the pinned stdlib schema validator (anonymous, sha256-checked)",
+          "run_file": "tools/tasks/steps/task-registry-validation.validate-task-registry/02-fetch-the-pinned-stdlib-schema-validator-anonymo.sh",
+          "run_sha256": "7d63aacfe03990db7d76ae19f07e9cce693785866ca0b3761bc70e460ccb8b41"
         },
         {
           "name": "Conform to the schema, and hold the copy to its recorded digest",
@@ -1930,7 +1938,15 @@
         "fetch_depth": "1",
         "persist_credentials": "false",
         "timeout_minutes": 360
-      }
+      },
+      "carried_pull_requests": [
+        {
+          "pull_request": "StegVerse-org/.github#222",
+          "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+          "step": 2,
+          "change": "pip install jsonschema -> resident-runtime/pinned_labs.py fetch (pinned StegVerse-Labs stdlib validator, sha256-checked; STEGVERSE_LABS_ROOT via $GITHUB_ENV)"
+        }
+      ]
     },
     {
       "id": "transition-console-validation.validate-transition-console",
@@ -2094,6 +2110,415 @@
           "run_sha256": "8cbb935889183200c1eeace944a53fbdf3f3922156106d15a40eec038dc49dde"
         }
       ]
+    },
+    {
+      "id": "drift-receipt-appender-validation.unit",
+      "source": {
+        "workflow": ".github/workflows/drift-receipt-appender-validation.yml",
+        "workflow_name": "Validate Drift Receipt Appender",
+        "job": "unit",
+        "job_name": null,
+        "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+        "pull_request": "StegVerse-org/.github#222",
+        "triggers_before": [
+          "pull_request"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request"
+      ],
+      "env": {
+        "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
+        "WORKFLOW_REF": "tools/tasks/task_catalog.json group drift-receipt-appender-validation.unit (validation-dispatcher.yml)"
+      },
+      "steps": [
+        {
+          "name": "Appender unit tests (strict, 0 skipped, exact head)",
+          "run_file": "tools/tasks/steps/drift-receipt-appender-validation.unit/01-appender-unit-tests-strict-0-skipped-exact-head.sh",
+          "run_sha256": "2bacce198432372ff2d7867d20deaf38e8258bad16850f0327847e2b375e6f5a"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360
+      }
+    },
+    {
+      "id": "drift-receipt-appender-validation.dry-run",
+      "source": {
+        "workflow": ".github/workflows/drift-receipt-appender-validation.yml",
+        "workflow_name": "Validate Drift Receipt Appender",
+        "job": "dry-run",
+        "job_name": null,
+        "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+        "pull_request": "StegVerse-org/.github#222",
+        "triggers_before": [
+          "pull_request"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request"
+      ],
+      "env": {
+        "LABS_HEAD": "86382e60da984fa02892fecfac2b9bdec0e64a5f",
+        "PAYLOAD": "tests/fixtures/drift-receipt-appender/labs-86382e60-detect.json",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha }}"
+      },
+      "steps": [
+        {
+          "name": "Appender on a scratch copy: Labs drift receipt through the B1 writer, replay idempotent, fresh-fetch readback",
+          "run_file": "tools/tasks/steps/drift-receipt-appender-validation.dry-run/01-appender-on-a-scratch-copy-labs-drift-receipt-th.sh",
+          "run_sha256": "9d8023bffbc3d83a5a058c5f73ca41001be72d8a08797bc1422fd818765b28ee"
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "drift-receipt-appender-dry-run",
+          "path": "${{ runner.temp }}/results",
+          "if_no_files_found": "warn",
+          "if": "always()"
+        }
+      ],
+      "runner": {
+        "fetch_depth": "1",
+        "persist_credentials": "false",
+        "timeout_minutes": 360,
+        "artifact_name": "drift-receipt-appender-dry-run",
+        "artifact_if_no_files_found": "warn"
+      }
+    },
+    {
+      "id": "main-change-receipt-validation.unit",
+      "source": {
+        "workflow": ".github/workflows/main-change-receipt-validation.yml",
+        "workflow_name": "Validate Main Change Receipt Writer and Session Binder",
+        "job": "unit",
+        "job_name": null,
+        "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+        "pull_request": "StegVerse-org/.github#222",
+        "triggers_before": [
+          "pull_request"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request"
+      ],
+      "env": {
+        "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
+        "WORKFLOW_REF": "tools/tasks/task_catalog.json group main-change-receipt-validation.unit (validation-dispatcher.yml)"
+      },
+      "steps": [
+        {
+          "name": "Writer, census and binder unit tests (strict, 0 skipped, exact head)",
+          "run_file": "tools/tasks/steps/main-change-receipt-validation.unit/01-writer-census-and-binder-unit-tests-strict-0-ski.sh",
+          "run_sha256": "319f6f722e11732a90f0217d26bc5eedb4863b6140a05fa2e4b722c8526094a8"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360
+      }
+    },
+    {
+      "id": "main-change-receipt-validation.dry-run",
+      "source": {
+        "workflow": ".github/workflows/main-change-receipt-validation.yml",
+        "workflow_name": "Validate Main Change Receipt Writer and Session Binder",
+        "job": "dry-run",
+        "job_name": null,
+        "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+        "pull_request": "StegVerse-org/.github#222",
+        "triggers_before": [
+          "pull_request"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request"
+      ],
+      "env": {
+        "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
+        "HEAD_REF": "${{ github.event.pull_request.head.ref }}"
+      },
+      "steps": [
+        {
+          "name": "Writer on a scratch copy: receipt this PR's base..head, verify from a fresh fetch, replay is idempotent",
+          "run_file": "tools/tasks/steps/main-change-receipt-validation.dry-run/01-writer-on-a-scratch-copy-receipt-this-pr-s-base-.sh",
+          "run_sha256": "e21829acfc56a82a9ae54767ec5c9592e8b2ab96a08ac4132b4899edfb626bb8"
+        },
+        {
+          "name": "Binder over the published organization ledger (read only): ALLOW or six-field FAIL_CLOSED, never an error",
+          "run_file": "tools/tasks/steps/main-change-receipt-validation.dry-run/02-binder-over-the-published-organization-ledger-re.sh",
+          "run_sha256": "72a0959449286f7b15d4d71a176796b4452fd3e8ada31130eae760ae0b3f5a0f"
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "main-change-receipt-dry-run",
+          "path": "${{ runner.temp }}/results",
+          "if_no_files_found": "warn",
+          "if": "always()"
+        }
+      ],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360,
+        "artifact_name": "main-change-receipt-dry-run",
+        "artifact_if_no_files_found": "warn"
+      }
+    },
+    {
+      "id": "main-change-receipt.receipt",
+      "source": {
+        "added_by": "P4 #222 writer placement default (StegVerse-org/.github#238)",
+        "note": "the retired workflow_call writer's receipt computation, read-only on push to main; the append is a manifest-directed transition (resident-runtime/main-change-receipt.transition.json) carried by organization-ledger-writer.yml once admitted",
+        "name": "Main change receipt"
+      },
+      "events": [
+        "push"
+      ],
+      "env": {
+        "BEFORE_SHA": "${{ github.event.before }}",
+        "AFTER_SHA": "${{ github.event.after }}",
+        "WRITER_SHA256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+      },
+      "steps": [
+        {
+          "name": "Receipt the pushed main range on a scratch copy, verify from a fresh fetch, retain the candidate (admission FAIL_CLOSED pending genesis; nothing published)",
+          "run_file": "tools/tasks/steps/main-change-receipt.receipt/01-receipt-the-pushed-main-range-on-a-scratch-copy-retain-the-candidate.sh",
+          "run_sha256": "c3c479b2e5b878e6f1ccf67fbbd1979ae8fe4cca07549d7c45e291ae79d7007a"
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "main-change-receipt",
+          "path": "${{ runner.temp }}/results",
+          "if_no_files_found": "warn",
+          "if": "always()"
+        }
+      ],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360,
+        "artifact_name": "main-change-receipt",
+        "artifact_if_no_files_found": "warn"
+      }
+    },
+    {
+      "id": "required-verification.full-suite",
+      "source": {
+        "workflow": ".github/workflows/required-verification.yml",
+        "workflow_name": "Required Verification",
+        "job": "full-suite",
+        "job_name": null,
+        "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+        "pull_request": "StegVerse-org/.github#222",
+        "triggers_before": [
+          "pull_request"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request"
+      ],
+      "env": {
+        "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
+        "WORKFLOW_REF": "tools/tasks/task_catalog.json group required-verification.full-suite (validation-dispatcher.yml)"
+      },
+      "steps": [
+        {
+          "name": "Exact head and the pinned StegVerse-Labs tool (anonymous fetch, sha256-checked)",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/01-exact-head-and-the-pinned-stegverse-labs-tool-an.sh",
+          "run_sha256": "38075a619a178c68d96a8d79fa5269d35e6bc9b604589d5788cc248eb36073db"
+        },
+        {
+          "name": "Declared inputs this repository already supplies (read-only)",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/02-declared-inputs-this-repository-already-supplies.sh",
+          "run_sha256": "4f25a06c1d7c98ff23b814c8b98fab2057269fcdc4e3051e47ea4812700d930c"
+        },
+        {
+          "name": "Pinned SDK verification inputs (exact commits, sha256-checked, read-only; anonymous fetch)",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/02b-pinned-sdk-verification-inputs-exact-commits-s.sh",
+          "run_sha256": "7ed4e336a8452d0ac607a16b43882a8062994ca1cb2cf58a9348262ce0156e87"
+        },
+        {
+          "name": "Select the test sets this change requires",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/03-select-the-test-sets-this-change-requires.sh",
+          "run_sha256": "75f2c72ff73f22126e75719e68bcf9b235e86c6aa90ab450e6197c1a5b066a97"
+        },
+        {
+          "name": "Run the selected sets once (exact head)",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/04-run-the-selected-sets-once-exact-head.sh",
+          "run_sha256": "7cca93ed8d3dd07bf13d707d85c2f7c88b02d0fda15d2a535dc74f75b21481c3"
+        },
+        {
+          "name": "Module-level test functions of the selected sets",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/05-module-level-test-functions-of-the-selected-sets.sh",
+          "run_sha256": "da1248c5302550b3c1903ff7fee4780703b0bc1b47bb2485decc1830e5c6dfd3"
+        },
+        {
+          "name": "Adjudicate (receipted pre-existing failures non-blocking; skips, collection errors, unavailable inputs and introduced failures block)",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/06-adjudicate-receipted-pre-existing-failures-non-b.sh",
+          "run_sha256": "c384db0541c9e103760a429ead2e286b02a487151264eb1644a9b34ac12a2a12",
+          "if": "always()"
+        },
+        {
+          "name": "Selection summary for the gate",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/07-selection-summary-for-the-gate.sh",
+          "run_sha256": "c14b11a54ac12ea10889f8f26e592c739d2b40a1a1250eb10951770921eb0033",
+          "if": "always()"
+        },
+        {
+          "name": "The sealed selection ran the core set for this pull request's exact commits (gate)",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/08-the-sealed-selection-ran-the-core-set-gate.sh",
+          "run_sha256": "dcc1c577222ebab22bec5c7df41d95c56837fb040abada3627e37553ed78d214"
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "required-verification-full-suite",
+          "path": "${{ runner.temp }}/results",
+          "if_no_files_found": "warn",
+          "if": "always()"
+        }
+      ],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360,
+        "artifact_name": "required-verification-full-suite",
+        "artifact_if_no_files_found": "warn"
+      }
+    },
+    {
+      "id": "required-verification.path-scope",
+      "source": {
+        "workflow": ".github/workflows/required-verification.yml",
+        "workflow_name": "Required Verification",
+        "job": "path-scope",
+        "job_name": null,
+        "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+        "pull_request": "StegVerse-org/.github#222",
+        "triggers_before": [
+          "pull_request"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request"
+      ],
+      "env": {
+        "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "HEAD_SHA": "${{ github.event.pull_request.head.sha }}"
+      },
+      "steps": [
+        {
+          "name": "No required job is path-filtered out or missing",
+          "run_file": "tools/tasks/steps/required-verification.path-scope/01-no-required-job-is-path-filtered-out-or-missing.sh",
+          "run_sha256": "87baa83277bd47e2b86b6620b754ea410f2dd4147ee2dff7136d16db1ae5d337"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360
+      }
+    },
+    {
+      "id": "test-suite-baseline-refresh.refresh",
+      "source": {
+        "workflow": ".github/workflows/test-suite-baseline-refresh.yml",
+        "workflow_name": "Test Suite Baseline Refresh",
+        "job": "refresh",
+        "job_name": null,
+        "commit": "c3f2dabfc788aed6962c5c7533858e55d9a6c2a3",
+        "pull_request": "StegVerse-org/.github#222",
+        "triggers_before": [
+          "push"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "push"
+      ],
+      "env": {
+        "WORKFLOW_REF": "tools/tasks/task_catalog.json group test-suite-baseline-refresh.refresh (validation-dispatcher.yml)",
+        "GOAL": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+        "WRITER_SHA256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf"
+      },
+      "steps": [
+        {
+          "name": "The declaration, the pinned StegVerse-Labs tool and the declared inputs (anonymous, read-only)",
+          "run_file": "tools/tasks/steps/test-suite-baseline-refresh.refresh/01-the-declaration-the-pinned-stegverse-labs-tool-a.sh",
+          "run_sha256": "c3e539795a18defba34cbdf071e6aaf22d6881d893a5a0c474af29c21cea498a"
+        },
+        {
+          "name": "Every test set (a push to main selects all)",
+          "run_file": "tools/tasks/steps/test-suite-baseline-refresh.refresh/02-every-test-set-a-push-to-main-selects-all.sh",
+          "run_sha256": "053b021bbc4df6540f883bcc2f6f7af5b2afb989b6c6a5b703c4c9921c89a4ae"
+        },
+        {
+          "name": "Run the selected sets once (pushed head)",
+          "run_file": "tools/tasks/steps/test-suite-baseline-refresh.refresh/03-run-the-selected-sets-once-pushed-head.sh",
+          "run_sha256": "373bbba352029f4d4a75e216c245aea914aa473a4d777344a1859e9c4e1874fc"
+        },
+        {
+          "name": "Receipt the main head (pinned drift tool detect through the B1 writer)",
+          "run_file": "tools/tasks/steps/test-suite-baseline-refresh.refresh/04-receipt-the-main-head-pinned-drift-tool-detect-t.sh",
+          "run_sha256": "21f0f09bd82f81f9d548c91cb5a2a8a3ce5424074047625f79539ae89b0c62a1"
+        },
+        {
+          "name": "Manifest transition: drift transition receipt (scratch only), refresh record, admission FAIL_CLOSED pending genesis",
+          "run_file": "tools/tasks/steps/test-suite-baseline-refresh.refresh/05-manifest-transition-drift-transition-receipt-scr.sh",
+          "run_sha256": "c7557aae2640b631aaa3fbbedac07bfd7cf144a29d42663da2c2cc39bfd91fa4",
+          "env": {
+            "HEAD_SHA": "${{ github.sha }}"
+          }
+        }
+      ],
+      "artifacts": [
+        {
+          "name": "test-suite-baseline-refresh",
+          "path": "${{ runner.temp }}/results",
+          "if_no_files_found": "warn",
+          "if": "always()"
+        }
+      ],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "false",
+        "timeout_minutes": 360,
+        "artifact_name": "test-suite-baseline-refresh",
+        "artifact_if_no_files_found": "warn"
+      }
     }
   ]
 }
