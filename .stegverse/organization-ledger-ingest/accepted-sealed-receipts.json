@@ -11,6 +11,14 @@
    "repository": "StegVerse-Labs/TVC",
    "producer": "StegVerse-Labs/TVC .github/workflows/merge-admitted-pull-request-validation.yml job conformance-receipt (StegVerse-Labs/TVC#539)",
    "consumer": ".stegverse/verification-inputs/tvc-conformance-receipt.json (resident-runtime/tvc_conformance_receipt.py, StegVerse-org/.github#245)"
+  },
+  {
+   "schema": "stegverse.test-suite-skip-receipt/v1",
+   "receipt_kind": "REPO_STANDARDS_ORG_OWNER_DRIFT_TEST_RECEIPT",
+   "suite": "REPO_STANDARDS_ORG_OWNER_DRIFT",
+   "repository": "StegVerse-Labs/repo-standards",
+   "producer": "StegVerse-Labs/repo-standards .github/workflows/test-suite.yml job owner-drift-receipt (StegVerse-Labs/repo-standards#83)",
+   "consumer": "resident-runtime/repo_standards_owner_drift_receipt.py (StegVerse-org/.github#222)"
   }
  ]
 }

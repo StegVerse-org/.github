@@ -2,66 +2,80 @@
  "schema": "stegverse.organization-ledger-ingest-request/v1",
  "operation": "sealed_test_receipt",
  "provenance": {
-  "repository": "StegVerse-Labs/TVC",
-  "run_id": 40137248073,
-  "head_sha": "8c8ec5185e22f6ccdfd05c1215c6302488c20fec",
-  "workflow": ".github/workflows/merge-admitted-pull-request-validation.yml",
-  "job": "conformance-receipt",
-  "log_block": "TVC_ORG_CONFORMANCE_RECEIPT_JSON_BEGIN..TVC_ORG_CONFORMANCE_RECEIPT_JSON_END",
+  "repository": "StegVerse-Labs/repo-standards",
+  "run_id": 40145286437,
+  "head_sha": "cdfc04895b783146f6c323b65e8ad374f35379cc",
+  "workflow": ".github/workflows/test-suite.yml",
+  "job": "owner-drift-receipt",
+  "job_id": 121025191126,
+  "log_block": "REPO_STANDARDS_ORG_OWNER_DRIFT_RECEIPT_JSON_BEGIN..REPO_STANDARDS_ORG_OWNER_DRIFT_RECEIPT_JSON_END",
   "seal_rechecked": "receipt_sha256 equals the sha256 of the canonical body as printed by that run (Authoring-Session: lane-b-91117956)"
  },
  "receipt": {
   "authority_effect": "NONE",
   "changed_paths": [],
   "consumed_source": {
-   "commit": "ea88b1cbf2651224303135ac4bd9e268fe1cda5d",
-   "observed_commit": "ea88b1cbf2651224303135ac4bd9e268fe1cda5d",
+   "commit": "4033813e896332f34822aedd5eda7fbd725fb4f6",
+   "observed_commit": "4033813e896332f34822aedd5eda7fbd725fb4f6",
    "observed_surface": {
-    "org-boundary/runtime/origin_attestation.py": "sha256:d736f10892c6b1666fd525879eebda48d194adc51b33e3357bfe7d2a04533647",
-    "org-kernel/kernel.py": "sha256:ccc5692ea513eaccdbc62b781b793b7c4ef9d2b8bd8f6c4f88a0553cc0349eaf",
-    "org-kernel/node_store.py": "sha256:fb125119a6b8783fcc810f79719e989702565aacfd027308aeeece2e29367874",
-    "tests/test_origin_attestation_tvc_conformance.py": "sha256:4f53d363062dcef3e8137b833e978e27c7448cf280db99fc8ce51f665290141f"
+    "orchestration/schemas/PROVENANCE.json": "sha256:b6607db991d921fd177ac1149e074c33b674b37fb757884680759347c50d309d",
+    "orchestration/schemas/task-registry.schema.json": "sha256:d3a6460b45e1fb24ce946dfc23efbeb83efe9b0523739d20aa45939d762976ec",
+    "tests/test_task_registry_schema_conformance.py": "sha256:8469d8761874ec0f784b79810218cd1e01136954df9a7d36aa6e5ad8430b059a"
    },
-   "observed_surface_sha256": "sha256:2267423962a2d66017dae2214df7bffdff949fc4104e711b503c1b903939d65d",
+   "observed_surface_sha256": "sha256:f79f33f5c33f18c9dab8a89b1fb32ffbf86515663f7837c57dca335db54311fb",
+   "other_opened_files": [
+    "orchestration/task-registry.json",
+    "resident-runtime/pinned_labs.py"
+   ],
    "repository": "StegVerse-org/.github"
   },
   "counts": {
    "errors": 0,
    "failed": 0,
-   "passed": 8,
+   "passed": 4,
    "skipped": 0,
-   "tests": 8,
+   "tests": 4,
    "xfailed": 0
   },
   "disposition": "ALLOW",
   "event": "push",
   "failing_on_head": [],
-  "head_sha": "8c8ec5185e22f6ccdfd05c1215c6302488c20fec",
+  "head_sha": "cdfc04895b783146f6c323b65e8ad374f35379cc",
   "ledger_candidate": {
    "appended_by": "the organization ledger writer only; this repository's CI never appends",
    "appended_by_this_job": false,
    "candidate": true,
    "retained_as": "source-receipts/<receipt_sha256>.json, consumed by an organization transition receipt",
    "target": "git+https://github.com/StegVerse-org/.github#refs/stegverse/organization-ledger",
-   "why": "a passing run on TVC main"
+   "why": "a passing run on a push to main"
   },
   "not_selected_are_not_run_for_this_verdict_and_not_reported_as_passing": true,
   "not_selected_for_this_change": [],
+  "owner_commit": "cdfc04895b783146f6c323b65e8ad374f35379cc",
+  "owner_surface": {
+   "schemas/task-registry.schema.json": "sha256:d3a6460b45e1fb24ce946dfc23efbeb83efe9b0523739d20aa45939d762976ec"
+  },
+  "owner_surface_sha256": "sha256:e2c2fdabedaf17b1b687a223f7c5e0828ca2d5682671e0373e6275dacae7a056",
   "predicates": [
    {
-    "degraded_form": "E0: pytest's own JUnit XML of this run; no XML, no test in a file, or any skip is FAIL_CLOSED, never ALLOW",
+    "degraded_form": "E0: the JUnit XML of this run; no XML, no test, or any skip (including a class-level skip) is FAIL_CLOSED, never ALLOW",
     "lowest_mode": "E0",
-    "predicate": "BOTH_LABS_TVC_CONFORMANCE_TESTS_RAN_ON_THIS_HEAD_ZERO_SKIPPED"
+    "predicate": "ORG_OWNER_DRIFT_TESTS_RAN_ON_THIS_HEAD_ZERO_SKIPPED"
    },
    {
-    "degraded_form": "E0: git rev-parse of the anonymously fetched tree equals the pinned commit; an unfetchable or different tree is FAIL_CLOSED",
+    "degraded_form": "E0: git rev-parse of the anonymously fetched org tree equals the pinned commit",
     "lowest_mode": "E0",
-    "predicate": "LABS_SOURCE_IS_THE_PINNED_COMMIT"
+    "predicate": "ORG_SOURCE_IS_THE_PINNED_COMMIT"
    },
    {
-    "degraded_form": "E0: the audit-hook trace shows both TVC files opened by this run; absent is FAIL_CLOSED (the tests would have skipped)",
+    "degraded_form": "E0: the audit-hook trace shows this repository's schema opened by the run",
     "lowest_mode": "E0",
-    "predicate": "TVC_SIGNER_AND_VERIFIER_WERE_EXERCISED"
+    "predicate": "OWNER_SCHEMA_WAS_EXERCISED"
+   },
+   {
+    "degraded_form": "E0: every configured binding path in the org tree was opened by the run",
+    "lowest_mode": "E0",
+    "predicate": "BINDING_SURFACE_WAS_OPENED"
    },
    {
     "degraded_form": "E0: receipt_sha256 re-derived from the canonical JSON body by any reader; a seal proves integrity of the body, not who produced it",
@@ -69,50 +83,41 @@
     "predicate": "RECEIPT_BODY_IS_SEALED"
    },
    {
-    "degraded_form": "E0 residual: an unsigned sealed body can be forged by anyone; provenance is established only when the organization ledger writer reads it from this repository's own run and appends it. Until then a consumer treats it as unavailable, never ALLOW",
+    "degraded_form": "E0 residual: provenance is established only when the organization ledger writer reads the receipt from this repository's own run and appends it",
     "lowest_mode": "E1",
-    "predicate": "RECEIPT_PROVENANCE_IS_THIS_TVC_CI_RUN"
+    "predicate": "RECEIPT_PROVENANCE_IS_THIS_REPOSITORY_CI_RUN"
    }
   ],
-  "receipt_kind": "TVC_ORG_CONFORMANCE_TEST_RECEIPT",
+  "receipt_kind": "REPO_STANDARDS_ORG_OWNER_DRIFT_TEST_RECEIPT",
   "receipt_schema_source": {
    "commit": "8fac1facb9c875f1fc0c66e97dc7c20ef909e35c",
    "path": "scripts/test_suite_skip_receipt.py",
-   "ported_byte_identical_to": "scripts/test_suite_skip_receipt.py",
+   "ported_byte_identical_to": "tools/test_suite_skip_receipt.py",
    "pull_request": 3320,
    "repository": "StegVerse-Labs/.github",
    "sha256": "2e7c79a550d8379ddcbd7764b6a75ea13b63d2019729b84351af379afe5ad53d"
   },
-  "receipt_sha256": "sha256:2c39c6088e92988d722e139e3b5085f377478b0711b0e3c2a14ce3079d23f8a6",
+  "receipt_sha256": "sha256:6feec3f5634e2bea4a586cb427d4f1ff9c1a08f4386834e60ff0cc379bc4f60b",
   "ref": "refs/heads/main",
   "refusals": [],
-  "repository": "StegVerse-Labs/TVC",
+  "repository": "StegVerse-Labs/repo-standards",
   "schema": "stegverse.test-suite-skip-receipt/v1",
   "selected_because": {
-   "tests/test_origin_attestation_tvc_conformance.py": "TVC_ORG_CONFORMANCE suite member"
+   "tests/test_task_registry_schema_conformance.py": "REPO_STANDARDS_ORG_OWNER_DRIFT suite member"
   },
   "selected_tests": [
-   "tests/test_origin_attestation_tvc_conformance.py"
+   "tests/test_task_registry_schema_conformance.py"
   ],
   "skipped": [],
   "skips_are_never_converted_or_deselected": true,
-  "suite": "TVC_ORG_CONFORMANCE",
+  "suite": "REPO_STANDARDS_ORG_OWNER_DRIFT",
   "test_ids": [
-   "tests.test_origin_attestation_tvc_conformance.ConformanceIsReportedTests::test_the_authority_source_this_boundary_declares_is_the_one_run_here",
-   "tests.test_origin_attestation_tvc_conformance.ConformanceIsReportedTests::test_the_skip_reason_says_a_skipped_run_is_unproven",
-   "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests::test_the_authority_exposes_no_key_material_in_its_receipts",
-   "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests::test_the_authority_fails_closed_on_an_empty_key_or_payload",
-   "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests::test_the_authority_refuses_a_statement_it_did_not_sign",
-   "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests::test_the_authority_signs_and_verifies_this_boundarys_statement",
-   "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests::test_this_boundarys_signature_serialization_is_the_authoritys",
-   "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests::test_without_the_key_the_signature_does_not_verify"
+   "tests.test_task_registry_schema_conformance.OwnerDriftTests::test_the_copy_is_byte_identical_to_the_owners_schema",
+   "tests.test_task_registry_schema_conformance.OwnerDriftTests::test_the_recorded_commit_is_on_the_owners_default_branch",
+   "tests.test_task_registry_schema_conformance.OwnerDriftTests::test_the_recorded_commit_really_carries_the_recorded_digest",
+   "tests.test_task_registry_schema_conformance.OwnerDriftTests::test_the_recorded_digest_is_the_owners_current_digest"
   ],
-  "tested_commit": "8c8ec5185e22f6ccdfd05c1215c6302488c20fec",
-  "tvc_surface": {
-   "scripts/tv_credential_sign_export_resident.py": "sha256:b6cf28d0032b5a9c6cd1da3ecb899c0b408749069a607c4e1e32219a5985ebff",
-   "scripts/tv_credential_verify_export_resident.py": "sha256:c78806f20430d61537eba4f6d22351610cf92770cd1aebf2c80811c506a3e4b7"
-  },
-  "tvc_surface_sha256": "sha256:896fed6a67e02f22a83ae3f01fb646295d23f8556cd5172ac001327c2dda70ad",
+  "tested_commit": "cdfc04895b783146f6c323b65e8ad374f35379cc",
   "unmapped_changed_paths": [],
   "xfailed": []
  }
