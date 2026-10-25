@@ -363,7 +363,7 @@
         {
           "name": "Validate InTr protocol v1 conformance across the mesh snapshot",
           "run_file": "tools/tasks/steps/intr-destination-capability-validation.validate-intr-destination/03-validate-intr-protocol-v1-conformance-across-the.sh",
-          "run_sha256": "48ffd1d4df25edbbea5a90b986b731b51350745026917c050388f871c4a27756"
+          "run_sha256": "3d3b2979144583b5d25b0cbfef846b7f3c71fc58a62faad54d44d3175d5013d2"
         }
       ],
       "artifacts": [],
@@ -371,6 +371,33 @@
         "fetch_depth": "1",
         "persist_credentials": "false",
         "timeout_minutes": 360
+      }
+    },
+    {
+      "id": "intr-protocol-copy-equality.validate",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#218 (Lane B, lane-b-91117956), stacked on #238",
+        "note": "Carries the test module #218 added to intr-destination-capability-validation.yml step 'Validate InTr protocol v1 conformance across the mesh snapshot' as its own catalog group, so the folded group's pinned step bodies stay byte for byte.",
+        "name": "InTr protocol v1 copy equality"
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "steps": [
+        {
+          "name": "The InTr protocol copies are byte-equal",
+          "run_file": "tools/tasks/steps/intr-protocol-copy-equality.validate/01-intr-protocol-copies-are-byte-equal.sh",
+          "run_sha256": "3633432669e7e4e3cd9daa058c88582832ef53df06f722fcdb5ab49be8c4eccf"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "1",
+        "persist_credentials": "false",
+        "timeout_minutes": 30
       }
     },
     {
@@ -501,7 +528,7 @@
         {
           "name": "The writer's append on the scratch ref, linked to the last ledgered main merge",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-linked-to.sh",
-          "run_sha256": "cd95b6f2106d85cfebe9ea7e38e2895806fb3d41816b8395a4faef08dfbc86c0"
+          "run_sha256": "963d2eaae5b994750a981b030fac14839cd1d5bda289e0f3172ecef7fd211b8e"
         }
       ],
       "artifacts": [],
@@ -509,6 +536,41 @@
         "fetch_depth": "0",
         "persist_credentials": "true",
         "timeout_minutes": 360
+      }
+    },
+    {
+      "id": "intr-path-public-ledger-read.validate",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#224 (Lane B, lane-b-91117956), stacked on #238",
+        "note": "Carries #224's intr-path-transfer-validation.yml unit step 'Public-ledger route of the cross-org read' as a catalog group (G17: a new check is a catalog group, never a workflow file).",
+        "name": "InTr public-ledger route of the cross-organization read"
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "env": {
+        "LEDGER_REF": "refs/stegverse/organization-ledger"
+      },
+      "steps": [
+        {
+          "name": "Fetch the ledger ref read-only",
+          "run_file": "tools/tasks/steps/intr-path-public-ledger-read.validate/01-fetch-the-ledger-ref-read-only.sh",
+          "run_sha256": "23d3ba4d4667391d4c731e9630fbf7fda623b69e7164369665c88cf283b947cc"
+        },
+        {
+          "name": "Public-ledger route of the cross-org read (E0, no credential); inbound rows dry-run end to end on a scratch ref",
+          "run_file": "tools/tasks/steps/intr-path-public-ledger-read.validate/02-public-ledger-route-of-the-cross-org-read-dry-run.sh",
+          "run_sha256": "9ab6113e3586ce46a63cc42dd1dfc92d2dd52a8e137d38fbc600f20b4df77d59"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "true",
+        "timeout_minutes": 30
       }
     },
     {
@@ -1124,7 +1186,7 @@
         {
           "name": "Copy the published ledger to a scratch ref",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/01-copy-the-published-ledger-to-a-scratch-ref.sh",
-          "run_sha256": "ead7f1adff7c08fc22142b1c70d7b328c3bd82a19684b2444bfe977f4e27d6b6"
+          "run_sha256": "e5214886176524699e81be48e23c210d8d8201cd864cc423615746223c6f4b92"
         },
         {
           "name": "Real state, read-only: each selected merge is VERIFIED or FAIL_CLOSED with six fields, never DENY",
@@ -1134,7 +1196,7 @@
         {
           "name": "The writer's append on the scratch ref, then VERIFIED, then an idempotent replay",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-then-veri.sh",
-          "run_sha256": "118319636e322c1fc36b2aa8d429f629987a11952eb24f3e63094bc5525173db"
+          "run_sha256": "7513c299fb395bea28383e0bb797f56978d677d3c3a0e21d564c0e3f54adc2ec"
         }
       ],
       "artifacts": [],
@@ -1142,6 +1204,38 @@
         "fetch_depth": "0",
         "persist_credentials": "true",
         "timeout_minutes": 360
+      }
+    },
+    {
+      "id": "organization-ledger-ingest-validation.unit",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#162 (Lane B, lane-b-91117956)",
+        "note": "The PR check for the writer's ledger-ingest job (resident-runtime/organization_ledger_ingest.py): unit tests at 0 skipped, then the committed request admitted, appended and read back on a scratch copy of the published ledger. A catalog group, not a workflow file (G17).",
+        "name": "Organization ledger ingest"
+      },
+      "events": [
+        "pull_request",
+        "push"
+      ],
+      "steps": [
+        {
+          "name": "Ingest unit tests (strict 0 skipped, exact head)",
+          "run_file": "tools/tasks/steps/organization-ledger-ingest-validation.unit/01-ingest-unit-tests-strict-0-skipped.sh",
+          "run_sha256": "d992edd28913bdc0785e3922326de7760e77c7288d491c5d1d3742a9f5bd9de7"
+        },
+        {
+          "name": "The committed request on a scratch copy of the published ledger",
+          "run_file": "tools/tasks/steps/organization-ledger-ingest-validation.unit/02-the-committed-request-on-a-scratch-copy-of-the-published-ledger.sh",
+          "run_sha256": "547c2161f14595f1f6a5d70c7ca5bde5394bcb17028e124575d2fd1d9ca8f6dd"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "1",
+        "persist_credentials": "false",
+        "timeout_minutes": 30
       }
     },
     {
@@ -2266,6 +2360,11 @@
           "run_sha256": "4f25a06c1d7c98ff23b814c8b98fab2057269fcdc4e3051e47ea4812700d930c"
         },
         {
+          "name": "Pinned SDK verification inputs (exact commits, sha256-checked, read-only; anonymous fetch)",
+          "run_file": "tools/tasks/steps/required-verification.full-suite/02b-pinned-sdk-verification-inputs-exact-commits-s.sh",
+          "run_sha256": "7ed4e336a8452d0ac607a16b43882a8062994ca1cb2cf58a9348262ce0156e87"
+        },
+        {
           "name": "Select the test sets this change requires",
           "run_file": "tools/tasks/steps/required-verification.full-suite/03-select-the-test-sets-this-change-requires.sh",
           "run_sha256": "75f2c72ff73f22126e75719e68bcf9b235e86c6aa90ab450e6197c1a5b066a97"
@@ -2273,12 +2372,12 @@
         {
           "name": "Run the selected sets once (exact head)",
           "run_file": "tools/tasks/steps/required-verification.full-suite/04-run-the-selected-sets-once-exact-head.sh",
-          "run_sha256": "649182abcbc09d307fd11fd152028b1b7f11ab957bd77d17b6bccfe645ecbdfc"
+          "run_sha256": "7cca93ed8d3dd07bf13d707d85c2f7c88b02d0fda15d2a535dc74f75b21481c3"
         },
         {
           "name": "Module-level test functions of the selected sets",
           "run_file": "tools/tasks/steps/required-verification.full-suite/05-module-level-test-functions-of-the-selected-sets.sh",
-          "run_sha256": "9d51f2a776830423cb777362eddb7626bc95a58814a54203a58834e5bf13aff0"
+          "run_sha256": "da1248c5302550b3c1903ff7fee4780703b0bc1b47bb2485decc1830e5c6dfd3"
         },
         {
           "name": "Adjudicate (receipted pre-existing failures non-blocking; skips, collection errors, unavailable inputs and introduced failures block)",

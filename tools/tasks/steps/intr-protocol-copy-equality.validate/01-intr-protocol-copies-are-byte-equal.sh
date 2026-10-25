@@ -1,0 +1,1 @@
+python -m unittest tests.test_intr_protocol_copy_equality -v

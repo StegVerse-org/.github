@@ -15,15 +15,19 @@ class WriterPlanTests(unittest.TestCase):
 
     def test_transition_request_selects_ledger_transition_only(self):
         got = writer_plan.select([".stegverse/transition-requests/a/b.json"], self.jobs)
-        self.assertEqual(got, {"ledger-transition": True, "governance-return": False})
+        self.assertEqual(got, {"ledger-transition": True, "governance-return": False, "ledger-ingest": False})
 
     def test_return_request_selects_governance_return_only(self):
         got = writer_plan.select([".stegverse/governance-return-requests/x.json"], self.jobs)
-        self.assertEqual(got, {"ledger-transition": False, "governance-return": True})
+        self.assertEqual(got, {"ledger-transition": False, "governance-return": True, "ledger-ingest": False})
 
     def test_other_paths_select_neither(self):
         got = writer_plan.select(["README.md", ".stegverse/transition-requests"], self.jobs)
-        self.assertEqual(got, {"ledger-transition": False, "governance-return": False})
+        self.assertEqual(got, {"ledger-transition": False, "governance-return": False, "ledger-ingest": False})
+
+    def test_ingest_request_selects_ledger_ingest_only(self):
+        got = writer_plan.select([".stegverse/organization-ledger-ingest/request.json"], self.jobs)
+        self.assertEqual(got, {"ledger-transition": False, "governance-return": False, "ledger-ingest": True})
 
     def test_every_writer_job_is_a_job_of_the_writer_workflow(self):
         text = (ROOT / ".github/workflows/organization-ledger-writer.yml").read_text()

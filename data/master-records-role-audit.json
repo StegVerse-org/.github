@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 175,
+      "PROPER": 176,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
-      "HISTORICAL_EVIDENCE": 35,
-      "NAMING_ONLY": 30,
-      "total": 240
+      "HISTORICAL_EVIDENCE": 37,
+      "NAMING_ONLY": 39,
+      "total": 252
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -447,7 +447,7 @@
     {
       "file": "docs/ORG_TO_MASTER_RECORDS_TRANSITION_HANDOFF.md",
       "line": 19,
-      "text": "Master Records is the **recorder of released organization batch receipts** \u2014 downstream evidence preservation only (`docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md`, \"master-records restated\"). It cannot create, admit, authorize, infe",
+      "text": "Master Records is the **recorder of released organization batch receipts** — downstream evidence preservation only (`docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md`, \"master-records restated\"). It cannot create, admit, authorize, infe",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -530,31 +530,59 @@
     },
     {
       "file": "orchestration/task-registry.json",
-      "line": 269,
+      "line": 663,
       "text": "\"LLM-adapter #373 merged as 1cd1aca (VA claims turn closes on its transition receipt; Master Records reconstruction no longer gates the turn)\",",
       "classification": "HISTORICAL_EVIDENCE",
       "reason": "Merge record of prior remediation (MR no longer gates); never edited."
     },
     {
       "file": "orchestration/task-registry.json",
-      "line": 270,
+      "line": 664,
       "text": "\"LLM-adapter #374 merged as 1b58b1f (activation verifiers read the provider usage record and transition receipt; no Master Records predicate)\",",
       "classification": "HISTORICAL_EVIDENCE",
       "reason": "Merge record of prior remediation (MR no longer gates); never edited."
     },
     {
       "file": "orchestration/task-registry.json",
-      "line": 274,
+      "line": 668,
       "text": "\"no execution or completion path is gated on Master Records\",",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
     {
       "file": "orchestration/task-registry.json",
-      "line": 514,
+      "line": 1209,
       "text": "\"activation_condition\": \"met at CI_VALIDATED class per SV-LLM/.github#30; recorded under existing task MASTER-RECORDS-BULK-SEMANTIC-REMEDIATION-002 (linked, not duplicated)\",",
       "classification": "PROPER",
       "reason": "Links the W8 continuation of SVORG-LLM-ORG-FOUNDATION-001 to the existing remediation task by identifier; consistent with the canonical downstream, non-gating recorder role."
+    },
+    {
+      "file": "orchestration/task-registry.json",
+      "line": 715,
+      "text": "\"LLM-adapter #373 merged as 1cd1aca (VA claims turn closes on its transition receipt; Master Records reconstruction no longer gates the turn)\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Verbatim copy of the task's required_evidence line into its cosv.evidence_refs, made by StegVerse-Labs/repo-standards tools/derive_task_registry_cosv.py (evidence_refs = outputs + required_evidence); classified as the line it copies: Merge record of prior remediation (MR no longer gates); never edited."
+    },
+    {
+      "file": "orchestration/task-registry.json",
+      "line": 716,
+      "text": "\"LLM-adapter #374 merged as 1b58b1f (activation verifiers read the provider usage record and transition receipt; no Master Records predicate)\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Verbatim copy of the task's required_evidence line into its cosv.evidence_refs, made by StegVerse-Labs/repo-standards tools/derive_task_registry_cosv.py (evidence_refs = outputs + required_evidence); classified as the line it copies: Merge record of prior remediation (MR no longer gates); never edited."
+    },
+    {
+      "file": "orchestration/task-registry.json",
+      "line": 728,
+      "text": "\"no execution or completion path is gated on Master Records\",",
+      "classification": "PROPER",
+      "reason": "Verbatim copy of the task's required_evidence line into its cosv.evidence_refs, made by StegVerse-Labs/repo-standards tools/derive_task_registry_cosv.py (evidence_refs = outputs + required_evidence); classified as the line it copies: Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "orchestration/schemas/task-registry.schema.json",
+      "line": 275,
+      "text": "\"MASTER_RECORDS_RECONSTRUCTED\",",
+      "classification": "NAMING_ONLY",
+      "reason": "completion_evidence.evidence_class enum in the vendored StegVerse-Labs/repo-standards task-registry schema @e46a8a5a (copied byte-for-byte; owner's vocabulary). Registry-wide completion evidence class. docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md explicitly defers renaming it: a completion evidence class rename is a registry-wide vocabulary migration requiring its own registration. Classified, not renamed."
     },
     {
       "file": "org-boundary/registry/federation.json",
@@ -1126,7 +1154,7 @@
     {
       "file": "README.md",
       "line": 174,
-      "text": "External LLM ingress stays on the declared `healthy node \u2192 LLM-adapter \u2192 SDK \u2192 StegVerse-org/.github \u2192 Interlock/InTr \u2192 Organization Ledger` path. HCB is optional and never a required hop; already-admitted internal Sandbox work does not re-",
+      "text": "External LLM ingress stays on the declared `healthy node → LLM-adapter → SDK → StegVerse-org/.github → Interlock/InTr → Organization Ledger` path. HCB is optional and never a required hop; already-admitted internal Sandbox work does not re-",
       "classification": "PROPER",
       "reason": "States Master Records is downstream and non-gating on the declared external ingress path."
     },
@@ -1554,8 +1582,8 @@
     },
     {
       "file": "tests/test_intr_protocol_conformance.py",
-      "line": 23,
-      "text": "\"Infrastructure-Continuity-Ventures\", \"Triad-Test\", \"formalism-tests\", \"master-records\"]",
+      "line": 25,
+      "text": "UNINSTALLED = [\"Infrastructure-Continuity-Ventures\", \"formalism-tests\", \"master-records\"]",
       "classification": "NAMING_ONLY",
       "reason": "Names the organization master-records as one of the 16 organizations of the federation directory (org-boundary/registry/federation.json) in the InTr protocol v1 conformance snapshot or its test; an organization identifier, not a role statement."
     },
@@ -1747,6 +1775,62 @@
       "text": "\"tests/test_canonical_master_records_local_adapter_repair.py::CanonicalMasterRecordsLocalAdapterRepairTests::test_calls_existing_state_transition_authority_without_schema_relabel\"",
       "classification": "HISTORICAL_EVIDENCE",
       "reason": "Retained drift-receipt fixture (StegVerse-org/.github#166): quotes a StegVerse-Labs test id as it appeared in a receipted run; evidence, not a role statement."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 142,
+      "text": "\"stegverse/master_records_custody.py\": \"ce46bd5069517ccb71310529f96e6cc550817b5086c90c98449fc6c3ae496c78\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 143,
+      "text": "\"stegverse/master_records_http.py\": \"9396d268519d64c92ec322c876a756202c0761eec2d2ad2c679594d33b266e6c\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 414,
+      "text": "\"stegverse/master_records_custody.py\": \"22a3332f70218a8d9352f0af05dd189dcdbe306a2db3971f3c25214ab01f4bd5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 415,
+      "text": "\"stegverse/master_records_http.py\": \"a1f49710396a33c3796ba3e496c87a3835a8e5270c8962643b74c6752b1ab9af\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 416,
+      "text": "\"stegverse/master_records_organization_record.py\": \"5b81f2459b078386f37db0df4ae848b111ce09e7677e1789287907298ab411f5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 675,
+      "text": "\"stegverse/master_records_custody.py\": \"22a3332f70218a8d9352f0af05dd189dcdbe306a2db3971f3c25214ab01f4bd5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 676,
+      "text": "\"stegverse/master_records_http.py\": \"a1f49710396a33c3796ba3e496c87a3835a8e5270c8962643b74c6752b1ab9af\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": ".stegverse/verification-inputs/stegverse-sdk.json",
+      "line": 677,
+      "text": "\"stegverse/master_records_organization_record.py\": \"5b81f2459b078386f37db0df4ae848b111ce09e7677e1789287907298ab411f5\",",
+      "classification": "NAMING_ONLY",
+      "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
     }
   ],
   "remeasured": [
@@ -1757,6 +1841,10 @@
     {
       "by": "P4 #222 ported onto G17 #238 (StegVerse-org/.github#166)",
       "change": "#222's own measured lines (.stegverse/test-sets.json, regenerated, and its drift-receipt-appender fixtures) carried with #222's classifications; none of #222's workflow lines matched the pattern; 0 stale entries, 10 entries added"
+    },
+    {
+      "by": "P4 repo-standards re-vendor and ST021 registry migration, stacked on #222 (StegVerse-org/.github#166)",
+      "change": "the re-vendored schema's completion_evidence enum line (1, NAMING_ONLY) and the 3 required_evidence lines copied verbatim into cosv.evidence_refs by the owner's derivation tool (classified as the lines they copy); orchestration/task-registry.json line numbers re-measured; 0 stale entries, 4 entries added"
     }
   ]
 }

@@ -1,17 +1,18 @@
 {
  "authority_effect": "NONE",
- "commit": "5eba73992b4d9944c7d96cc4c756447279fe1a00",
+ "commit": "902485a13108e2a63ab3c0ee3682cdb43ab4bb00",
  "files": {
   "scripts/check_test_suite_ratchet.py": "be878783a70fcad1ccb0ad44b52d92595936f7885172123e064a1ff3defcba89",
   "scripts/evaluate_admission_job_observation.py": "0e962613328ef4acd09973062844d2bf5d46230714abd2b35b110342d6660a0d",
   "scripts/evaluate_ecosystem_continuity.py": "58d1c47ed54839d1f3c5af58433e674e8836430e620a6f53904d485f01c2386d",
+  "scripts/pinned_source_input.py": "6e0141294f4cb5e03ac40717c3d4a37a04860a26dc52f45be24aa67fe2740b79",
   "scripts/registry_gate_findings.py": "834a78209dba15b689e0ac2ef393b472596a67779f7232e334ff021049b71155",
-  "scripts/stdlib_json_schema.py": "3ea2a445cae74dfef81f98b923b04d930ff1b1c8a7ac817f4e14c49716c4b058",
-  "scripts/test_set_selection.py": "409b29637ce40a7b838023b336553774403d8c83e41c5a0d594270783d799d8a",
-  "scripts/test_suite_baseline_drift.py": "13aea44cf8e970706e0468244529be9bdee7c7dfd565239679f8a0fa6fe71cab",
-  "tests/fixtures/stdlib-json-schema/agreement-corpus.json": "9af80eaf8c82491f321634b172d78a38ddb6578a45ad752d5b4f0dc32a538f1c"
+  "scripts/stdlib_json_schema.py": "654fd867e9996b5cb37aa3689c1ddcf14747215b9fafca0fdab287ae33bf3944",
+  "scripts/test_set_selection.py": "2d8ab2b9372d284627a66ac96de80cce8c561866d5025cf9481206630e85050c",
+  "scripts/test_suite_baseline_drift.py": "297e794aee95b977f3fc46343f4da8271d987b8879283a26c949ecba9377f587",
+  "tests/fixtures/stdlib-json-schema/agreement-corpus.json": "a9f962f84151e2b1d243cf71996ccb724f5549a3036a0e6cb0dc485bef0094fb"
  },
- "re_pin": "the commit is the head of StegVerse-Labs/.github#3317 (unmerged); pin its merge commit once it lands on main",
+ "re_pin": "the commit is StegVerse-Labs/.github main merge commit of #3345 (902485a1: minProperties in scripts/stdlib_json_schema.py and its agreement corpus case on main 46ee93f7); re-pin when a pinned file changes on main",
  "repository": "StegVerse-Labs/.github",
  "schema": "stegverse.labs-tool-pin/v1",
  "url": "https://github.com/StegVerse-Labs/.github",
