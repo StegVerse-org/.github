@@ -1,0 +1,35 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "SOURCE_INCLUSION_IS_READ_FROM_THE_SOURCE_LEDGER",
+   "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+   "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
+   "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
+   "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the source_inclusion read for SV-011->AaCT-E:intr-destination needs a TV/TVC read receipt (scope SV-011->AaCT-E:intr-destination#source_inclusion) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
+   "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+  }
+ ],
+ "cls": "TVC_PRIVATE_SOURCE_READ",
+ "communication_id": "intr-path-v1:SV-011->AaCT-E",
+ "destination": "AaCT-E",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "SV-011->AaCT-E:intr-destination",
+ "payload": null,
+ "record_sha256": "sha256:add2525a0948f553eff5b581d55881c982d10f98f6d79c47870a1605610e87a3",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "SV-011",
+ "source_receipts": null,
+ "status": {
+  "failed_predicate": "SOURCE_INCLUSION_IS_READ_FROM_THE_SOURCE_LEDGER",
+  "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+  "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
+  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
+  "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the source_inclusion read for SV-011->AaCT-E:intr-destination needs a TV/TVC read receipt (scope SV-011->AaCT-E:intr-destination#source_inclusion) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
+  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+ }
+}

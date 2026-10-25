@@ -1,0 +1,189 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
+   "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+   "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
+   "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
+   "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the destination_readback read for StegGhost->SV-011:intr-destination needs a TV/TVC read receipt (scope StegGhost->SV-011:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
+   "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+  },
+  {
+   "failed_predicate": "DESTINATION_INGRESS_HAS_THE_PUBLIC_LEDGER_ROUTE",
+   "failure_code": "INTR_PATH_DESTINATION_PUBLIC_ROUTE_NOT_ON_MAIN",
+   "next_attempt": "re-run seal and replay after the port is admitted",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "the public-ledger route of resident-runtime/intr_path_ingress.py (as in StegVerse-org/.github#224 and StegVerse-Labs/.github#3312) on SV-011/.github main",
+   "retry_entrypoint": "a Lane B public-route port draft to SV-011/.github (laneb/ branch)"
+  },
+  {
+   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "seal, then replay after the row lands",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an inbound row for StegGhost->SV-011:intr-destination on SV-011/.github main carrying the source receipt pair",
+   "retry_entrypoint": "SV-011/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+  }
+ ],
+ "cls": "TVC_PRIVATE_DESTINATION_READ",
+ "communication_id": "intr-path-v1:StegGhost->SV-011",
+ "destination": "SV-011",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "StegGhost->SV-011:intr-destination",
+ "payload": {
+  "evidence_at_observed_source_tip": {
+   "addressed_service": "sv-011.intr-destination",
+   "communication_id": "intr-path-v1:StegGhost->SV-011",
+   "disposition": "ALLOW",
+   "message": {
+    "body": {
+     "path_id": "StegGhost->SV-011:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "79a0ea88a3054244a9f3cbcfb4a13a6ce9f9971d"
+    },
+    "communication_id": "intr-path-v1:StegGhost->SV-011",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:e1e1ae90d89de7c75dc7d737db4b4b4f4a0e31cb28434b97b5adc01b1659cb20",
+   "path_id": "StegGhost->SV-011:intr-destination",
+   "payload_sha256": "sha256:fb65ea76bd1d086496d7a600be40b2d06ca6b5a9b94b8aefd206aba8a11715fb",
+   "repository": "SV-011/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_inclusion": {
+    "source_ledger_tip": "174479421d120697105930c5309041ba5e756947",
+    "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+    "tvc_read_receipt": null
+   },
+   "source_organization_receipt_sha256": "sha256:de94ba2b3c33175ee5bf26b8267b6dfb63aa504f7ad194d3a571defc0d426006",
+   "source_repository": "StegGhost/.github",
+   "source_repository_receipt_sha256": "sha256:a3ac82e9862cb2c9411425b8c7cad20863d25c39a752222948c516a2d640f26f"
+  },
+  "evidence_invariant": {
+   "addressed_service": "sv-011.intr-destination",
+   "message": {
+    "body": {
+     "path_id": "StegGhost->SV-011:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "79a0ea88a3054244a9f3cbcfb4a13a6ce9f9971d"
+    },
+    "communication_id": "intr-path-v1:StegGhost->SV-011",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:e1e1ae90d89de7c75dc7d737db4b4b4f4a0e31cb28434b97b5adc01b1659cb20",
+   "path_id": "StegGhost->SV-011:intr-destination",
+   "repository": "SV-011/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_organization_receipt_sha256": "sha256:de94ba2b3c33175ee5bf26b8267b6dfb63aa504f7ad194d3a571defc0d426006",
+   "source_repository": "StegGhost/.github",
+   "source_repository_receipt_sha256": "sha256:a3ac82e9862cb2c9411425b8c7cad20863d25c39a752222948c516a2d640f26f"
+  },
+  "evidence_invariant_sha256": "sha256:9e37caede2c341a9e960b0f9b5a1d6eea506358ba0a6f037b4161c9706af189d",
+  "source_inclusion_rule": {
+   "source_ledger_tip": "the source ledger tip read at consume time; its chain must include source_organization_receipt_sha256",
+   "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+   "tvc_read_receipt": null
+  }
+ },
+ "record_sha256": "sha256:84fe441a4cc0380974ddf4bc046bea11d0520d040da234664849c289c6cc53b5",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "StegGhost",
+ "source_receipts": {
+  "organization_receipt": {
+   "authority_effect": "NONE",
+   "boundary_evidence": {
+    "communication_id": "intr-path-v1:StegGhost->SV-011",
+    "destination_organization": "SV-011",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "StegGhost->SV-011:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "StegGhost/.github",
+    "transfer_commit": "79a0ea88a3054244a9f3cbcfb4a13a6ce9f9971d"
+   },
+   "canonical_state_transition_receipt_sha256": null,
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469436465,
+    "frequency_hz": 100,
+    "generation": 469436465,
+    "heartbeat_id": "HB:469436465",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "org_transition_class": "REPO_STATE_PROPAGATION",
+   "organization": "StegGhost",
+   "predecessor_org_state_sha256": "sha256:a60b452093fa3f5fe3432dd39291d39600b7db1799fe3f1eb9a5c0398eb2aaf8",
+   "previous_receipt_sha256": "sha256:3a56f1316fd7818c2188b0b819d5f62700abd7ba3b6f10b25beb96d5be633b04",
+   "receipt_sha256": "sha256:de94ba2b3c33175ee5bf26b8267b6dfb63aa504f7ad194d3a571defc0d426006",
+   "repo_receipt_sha256": "sha256:a3ac82e9862cb2c9411425b8c7cad20863d25c39a752222948c516a2d640f26f",
+   "repo_transition_id": "INTR_MESH_PATH_TRANSFER:StegGhost->SV-011:intr-destination@intr-path-v1:StegGhost->SV-011",
+   "schema": "stegverse.organization-transition-receipt/v1",
+   "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+   "source_repository": "StegGhost/.github",
+   "source_transition_id": "INTR_MESH_PATH_TRANSFER:StegGhost->SV-011:intr-destination@intr-path-v1:StegGhost->SV-011",
+   "source_transition_sha256": "sha256:a3ac82e9862cb2c9411425b8c7cad20863d25c39a752222948c516a2d640f26f",
+   "subject_or_correlation_id": null,
+   "successor_org_state_sha256": "sha256:b1d30afd90a1d2a3581a5040bbae7d756d072c21663d7508c3baa7adf3ced11b"
+  },
+  "repository_receipt": {
+   "authority_effect": "NONE",
+   "evidence": {
+    "capability": "intr-destination",
+    "communication_id": "intr-path-v1:StegGhost->SV-011",
+    "destination_address": "sv-011.intr-destination",
+    "destination_organization": "SV-011",
+    "disposition": "ALLOW",
+    "merge_transfer_organization_receipt_sha256": "sha256:49c678359bd06b699f4d6a32323444749d7c3b3853b6d4621f3b3ed4303bb63a",
+    "message": {
+     "body": {
+      "path_id": "StegGhost->SV-011:intr-destination",
+      "schema": "stegverse.org-intr-destination-diagnostic/v1",
+      "transfer_commit": "79a0ea88a3054244a9f3cbcfb4a13a6ce9f9971d"
+     },
+     "communication_id": "intr-path-v1:StegGhost->SV-011",
+     "message_class": "ecosystem.communication"
+    },
+    "message_sha256": "sha256:e1e1ae90d89de7c75dc7d737db4b4b4f4a0e31cb28434b97b5adc01b1659cb20",
+    "path_id": "StegGhost->SV-011:intr-destination",
+    "payload_sha256": "sha256:a60b452093fa3f5fe3432dd39291d39600b7db1799fe3f1eb9a5c0398eb2aaf8",
+    "repository": "StegGhost/.github",
+    "schema": "stegverse.intr-path-transfer-evidence/v1",
+    "source_organization": "StegGhost",
+    "transfer_commit": "79a0ea88a3054244a9f3cbcfb4a13a6ce9f9971d"
+   },
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469436465,
+    "frequency_hz": 100,
+    "generation": 469436465,
+    "heartbeat_id": "HB:469436465",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "predecessor_state_sha256": "sha256:a60b452093fa3f5fe3432dd39291d39600b7db1799fe3f1eb9a5c0398eb2aaf8",
+   "previous_receipt_sha256": "sha256:0d14c9d04b7cd2fea285cf1423a1317beeefd1a630778e2e4623e1f3643cfa59",
+   "receipt_sha256": "sha256:a3ac82e9862cb2c9411425b8c7cad20863d25c39a752222948c516a2d640f26f",
+   "repository": "StegGhost/.github",
+   "schema": "stegverse.repo-transition-receipt/v1",
+   "successor_state_sha256": "sha256:b1d30afd90a1d2a3581a5040bbae7d756d072c21663d7508c3baa7adf3ced11b",
+   "transition_class": "INTR_MESH_PATH_TRANSFER",
+   "transition_id": "INTR_MESH_PATH_TRANSFER:StegGhost->SV-011:intr-destination@intr-path-v1:StegGhost->SV-011"
+  },
+  "source_ledger_tip_observed": "174479421d120697105930c5309041ba5e756947"
+ },
+ "status": {
+  "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
+  "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+  "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
+  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
+  "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the destination_readback read for StegGhost->SV-011:intr-destination needs a TV/TVC read receipt (scope StegGhost->SV-011:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
+  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+ }
+}

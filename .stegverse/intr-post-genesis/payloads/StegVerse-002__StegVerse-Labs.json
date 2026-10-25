@@ -1,0 +1,51 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination StegVerse-Labs",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for StegVerse-002->StegVerse-Labs:intr-destination on StegVerse-002/.github's ledger (read anonymously at 296d438e4e7b152e2bf4e04e21f08a272c9f881c: none)",
+   "retry_entrypoint": "StegVerse-002/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+  },
+  {
+   "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
+   "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
+   "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "StegVerse-002/.github's organization ledger head receipt sha256:33a009047b2a83cd1de065d2d41c6aada55e13916b88d6a3531ff94ae24e7546 carries epoch None without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; its writer must take a supplied epoch and its ledger head must be re-appended with one",
+   "retry_entrypoint": "StegVerse-002/.github .github/workflows/organization-ledger-transition.yml (a supplied hb_epoch)"
+  }
+ ],
+ "cls": "SOURCE_RECEIPT_NOT_LEDGERED",
+ "communication_id": "intr-path-v1:StegVerse-002->StegVerse-Labs",
+ "destination": "StegVerse-Labs",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledger_head_epoch": {
+  "StegVerse-002": {
+   "epoch": null,
+   "head_receipt_sha256": "sha256:33a009047b2a83cd1de065d2d41c6aada55e13916b88d6a3531ff94ae24e7546",
+   "organization": "StegVerse-002",
+   "supplied": false
+  }
+ },
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "StegVerse-002->StegVerse-Labs:intr-destination",
+ "payload": null,
+ "record_sha256": "sha256:084ff180ac4ac1584ce86c2b2fde794a6e9bd5dbf8e89c07c746d4a2bf4c3dcd",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "StegVerse-002",
+ "source_receipts": null,
+ "status": {
+  "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination StegVerse-Labs",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for StegVerse-002->StegVerse-Labs:intr-destination on StegVerse-002/.github's ledger (read anonymously at 296d438e4e7b152e2bf4e04e21f08a272c9f881c: none)",
+  "retry_entrypoint": "StegVerse-002/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+ }
+}
