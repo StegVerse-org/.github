@@ -64,9 +64,8 @@ class IntrPostGenesisKitTests(unittest.TestCase):
             self.assertEqual((record["cls"], record["expected_at_genesis"]), (kit.DESTINATION_LEDGERED, "ALLOW"), pid)
             self.assertIn(pid, MANIFEST["ledgered_allow"])
         self.assertEqual(sum(MANIFEST["class_counts"].values()), 156)
-        self.assertEqual(MANIFEST["class_counts"], {kit.DESTINATION_LEDGERED: 110, kit.TVC_SOURCE: 12,
-                                                    kit.TVC_DESTINATION: 11, kit.SOURCE_NOT_LEDGERED: 12,
-                                                    kit.INGRESS_NOT_ON_MAIN: 11})
+        self.assertEqual(MANIFEST["class_counts"], {kit.DESTINATION_LEDGERED: 132, kit.TVC_SOURCE: 12,
+                                                    kit.TVC_DESTINATION: 12})
 
     def test_carry_set_and_the_allow_ready_count(self):
         # SV-LLM/.github#50's writer has landed and both carried rows were consumed: the former carry paths are
@@ -76,8 +75,8 @@ class IntrPostGenesisKitTests(unittest.TestCase):
             record = kit.load_record(pid)
             self.assertEqual((record["cls"], record["expected_at_genesis"]), (kit.DESTINATION_LEDGERED, "ALLOW"))
             self.assertNotIn("expected_after_carry", record)
-        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 110)
-        self.assertEqual(len(MANIFEST["ledgered_allow"]), 110)
+        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 132)
+        self.assertEqual(len(MANIFEST["ledgered_allow"]), 132)
         for pid in MANIFEST["ledgered_allow"]:
             record = kit.load_record(pid)
             self.assertEqual(record["cls"], kit.DESTINATION_LEDGERED)
@@ -95,19 +94,13 @@ class IntrPostGenesisKitTests(unittest.TestCase):
         for p in kit.paths():
             record = kit.load_record(p["path_id"])
             if p["source"] in public and p["destination"] in public:
-                if "StegVerse-002" in (p["source"], p["destination"]):
-                    # StegVerse-002 has no destination ingress on main and has written no source receipt
-                    self.assertIs(inputs["destination_ingress_on_main"]["StegVerse-002"], False)
-                    want = kit.SOURCE_NOT_LEDGERED if p["source"] == "StegVerse-002" else kit.INGRESS_NOT_ON_MAIN
-                    self.assertEqual(record["cls"], want, p["path_id"])
-                    self.assertEqual(record["expected_at_genesis"], "FAIL_CLOSED")
-                    continue
+                # StegVerse-002 joined the mesh (StegVerse-002/.github#52 and its eleven inbound rows): every path
+                # between two public organizations is ledgered or epoch-blocked; none is held on StegVerse-002.
+                self.assertIs(inputs["destination_ingress_on_main"][p["destination"]], True, p["path_id"])
                 self.assertIn(record["cls"], kit.ALLOW_READY + (kit.EPOCH_UNOBSERVED,), p["path_id"])
                 if record["cls"] == kit.EPOCH_UNOBSERVED:
                     self.assertEqual(record["expected_after_supplied_epoch"], "ALLOW")
                     self.assertIs(record["reseal_on_supplied_epoch"], True)
-            elif p["source"] == "StegVerse-002":
-                self.assertEqual(record["cls"], kit.SOURCE_NOT_LEDGERED, p["path_id"])
             else:
                 self.assertIn(record["cls"], (kit.TVC_SOURCE, kit.TVC_DESTINATION), p["path_id"])
                 self.assertIn("TVC#535", record["status"]["retry_entrypoint"])
@@ -143,8 +136,8 @@ class IntrPostGenesisKitTests(unittest.TestCase):
         resealed = kit.seal(bad)
         self.assertIn("payload invariant does not recompute", kit.check_record(resealed))
         rule = "only genesis-ready and destination-ledgered paths expect ALLOW"
-        for pid in ("SV-011->StegVerse-org:intr-destination", "StegVerse-002->StegVerse-org:intr-destination",
-                    "StegVerse-org->StegVerse-002:intr-destination", "StegVerse-org->SV-011:intr-destination"):
+        for pid in ("SV-011->StegVerse-org:intr-destination", "StegVerse-002->SV-011:intr-destination",
+                    "SV-011->StegVerse-002:intr-destination", "StegVerse-org->SV-011:intr-destination"):
             promoted = kit.seal({**kit.load_record(pid), "expected_at_genesis": "ALLOW"})
             self.assertIn(rule, kit.check_record(promoted), pid)
         demoted = kit.seal({**record, "expected_at_genesis": "FAIL_CLOSED"})
@@ -155,7 +148,7 @@ class IntrPostGenesisKitTests(unittest.TestCase):
                                                               "destination_organization_receipt_sha256": "sha256:x"}})
         self.assertIn("destination_receipts must name the observed tip and the destination receipt",
                       kit.check_record(forged))
-        stray = kit.load_record("StegVerse-002->StegVerse-org:intr-destination")
+        stray = kit.load_record("SV-011->StegVerse-org:intr-destination")
         self.assertIn("exactly the destination-ledgered paths carry destination_receipts",
                       kit.check_record(kit.seal({**stray, "destination_receipts": record["destination_receipts"]})))
         unpaid = kit.seal({**record, "payload": None, "source_receipts": None})
@@ -200,7 +193,7 @@ class IntrPostGenesisKitTests(unittest.TestCase):
     def test_the_sealed_payload_is_what_this_repositorys_writer_appends(self):
         here = kit.ingress.organization()
         mine = [pid for pid in MANIFEST["ledgered_allow"] if kit.load_record(pid)["destination"] == here]
-        self.assertEqual(len(mine), 10)
+        self.assertEqual(len(mine), 11)
         for pid in mine:
             record = kit.load_record(pid)
             src = record["source_receipts"]
