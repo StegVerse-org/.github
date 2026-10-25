@@ -1,7 +1,7 @@
 {
  "schema": "stegverse.intr-post-genesis-inputs/v1",
  "owning_existing_goal": "StegVerse-org/.github#162",
- "observed": "2026-10-25 by Lane B (91117956) against StegVerse-org/.github main 3e9485e7 (156 declared paths, 13 organizations); anonymous fetches with HOME=/tmp/anonhome, credential.helper= and no auth header; committed facts, not read by any verifier from a clock or the network",
+ "observed": "2026-10-25 by Lane B (91117956) against StegVerse-org/.github main b843d132 (156 declared paths, 13 organizations), after StegVerse-002/.github#52 (6b1a1b9f) and the eleven StegVerse-002 inbound rows landed; anonymous fetches with HOME=/tmp/anonhome, credential.helper= and no auth header; committed facts, not read by any verifier from a clock or the network",
  "genesis": {
   "SV-LLM": {
    "pr": "SV-LLM/.github#50",
@@ -22,7 +22,7 @@
   "SV-011": "PRESENT_WITHOUT_PUBLIC_ROUTE",
   "SV-LLM": true,
   "StegGhost": true,
-  "StegVerse-002": false,
+  "StegVerse-002": true,
   "StegVerse-Labs": true,
   "StegVerse-org": true,
   "Triad-Test": true
@@ -37,25 +37,25 @@
   "SV-011": "main not anonymously readable on 2026-10-25; carried from the 2026-10-23 observation (ingress present, public-ledger route not ported, 56-path table D1)",
   "SV-LLM": "main c9602709: resident-runtime/intr_path_ingress.py blob 1206b377 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
   "StegGhost": "main 68e3a95c: resident-runtime/intr_path_ingress.py blob 1206b377 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
-  "StegVerse-002": "main 9d9a8ae6: resident-runtime/intr_path_ingress.py and the ingress workflow both absent",
+  "StegVerse-002": "main 6b1a1b9f: resident-runtime/intr_path_ingress.py blob 1206b377 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer); head epoch supplied by the committed .stegverse/organization-ledger/epoch-packet.json",
   "StegVerse-Labs": "main a2dc600b: resident-runtime/intr_path_ingress.py blob 20554076 with the public-ledger route; invoked from .github/workflows/intr-path-ingress.yml",
   "StegVerse-org": "main 89558cd3: resident-runtime/intr_path_ingress.py blob bfdebb8e with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
   "Triad-Test": "main eae41665: resident-runtime/intr_path_ingress.py blob 1206b377 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)"
  },
  "anonymous_ledger_read": {
-  "AaCT-E": "c90c967d0b954ae91d3b9916f820f2d75805271c",
-  "Admissible-Existence": "a2ef2f0e2f13d7f682b7b6f80b099e95260c0f7b",
-  "AdmittedCode": "bb0d2e576ca3eed416070f6e7b93ce9615205f62",
-  "Data-Continuation": "9c13d00d5d33548da5e876f61e4e16f8cc266831",
-  "ECAT-ICAT-Formal": "22f7f391d41bb55a49bd08e612e6bf267c87a806",
-  "GCAT-BCAT-Engine": "827ef13b35612d5bfd1d761f823f10b8f4a7f9d3",
+  "AaCT-E": "ebfe0595b8b3223ea3a757ab40cdd8b30a8c7f32",
+  "Admissible-Existence": "bb4a6ed8ffadb551d150bdfda6f5e9043ee6a12d",
+  "AdmittedCode": "9c2d0b16a46ef7f93e9dccc5549175e47ed6a09b",
+  "Data-Continuation": "5dc66c28bf34ffaea0280ce4142ef95eaae81ecb",
+  "ECAT-ICAT-Formal": "41184de60fafb0d180852d341ae6981a0fd629e1",
+  "GCAT-BCAT-Engine": "b8ee6e38d2101190979ddcf2a59aa4e56cd1bf9c",
   "SV-011": "NOT_ANONYMOUSLY_READABLE",
-  "SV-LLM": "35fa61f7a49eef56621d7f872fd87a64640fff51",
-  "StegGhost": "174479421d120697105930c5309041ba5e756947",
-  "StegVerse-002": "296d438e4e7b152e2bf4e04e21f08a272c9f881c",
-  "StegVerse-Labs": "89067f0d8da1e6b1aef33ab79074743cce1b743f",
-  "StegVerse-org": "a195bc908ed051545704fe521a77e85cd0f37109",
-  "Triad-Test": "3ae26b03927a66141260ac084ac9bc3086049c07"
+  "SV-LLM": "6d9065d84ee91d1d13ca7a74cd24e944bc52f738",
+  "StegGhost": "54674defa458304d663b32dc9f6a9c69d0bf8008",
+  "StegVerse-002": "05077db142dd47a1d661469a2840c0c420d00c51",
+  "StegVerse-Labs": "b48dc83929d9ce011c8137e4b5aff021b2cb8f2d",
+  "StegVerse-org": "f4cb4321af37a957fb2e036b3deadb5ff67479cf",
+  "Triad-Test": "3f95625b3fc416de7fb06f14054d996264a0cde6"
  },
  "tvc": {
   "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host",
