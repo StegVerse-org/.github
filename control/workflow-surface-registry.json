@@ -74,6 +74,9 @@
           },
           "governance-return": {
             "contents": "write"
+          },
+          "ledger-ingest": {
+            "contents": "write"
           }
         }
       },
@@ -152,6 +155,15 @@
       ],
       "after": [],
       "state_transition": "a committed governance return request changed"
+    },
+    {
+      "job": "ledger-ingest",
+      "source_workflow": null,
+      "paths": [
+        ".stegverse/organization-ledger-ingest/**"
+      ],
+      "after": [],
+      "state_transition": "a committed organization ledger ingest request changed (a sealed test receipt naming this ledger; resident-runtime/organization_ledger_ingest.py, the route StegVerse-Labs/.github runs)"
     }
   ],
   "folded": [
@@ -915,6 +927,12 @@
   "catalog_additions": [
     {
       "catalog_groups": [
+        "organization-ledger-ingest-validation.unit"
+      ],
+      "reason": "StegVerse-org/.github#162: the PR check for the writer's ledger-ingest job (a committed .stegverse/organization-ledger-ingest/request.json appended on push), carried as a catalog group instead of a workflow file"
+    },
+    {
+      "catalog_groups": [
         "workflow-surface-registry.validate"
       ],
       "reason": "G17: enforces the registry (replaces per-workflow existence and count pins)"
@@ -957,6 +975,12 @@
         "intr-path-public-ledger-read.validate"
       ],
       "reason": "StegVerse-org/.github#224: the cross-org read's public-ledger route (E0, no credential) and its scratch-ref dry run, carried as a catalog group instead of a step in the folded intr-path-transfer-validation.yml"
+    },
+    {
+      "catalog_groups": [
+        "intr-protocol-copy-equality.validate"
+      ],
+      "reason": "StegVerse-org/.github#218: tests.test_intr_protocol_copy_equality, carried as a catalog group instead of an edit to the folded intr-destination-capability-validation step"
     }
   ]
 }
