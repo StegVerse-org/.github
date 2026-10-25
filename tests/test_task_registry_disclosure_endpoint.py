@@ -84,6 +84,15 @@ class CrossingServesTheRegistryTests(unittest.TestCase):
         self.assertEqual(self.result["declared_capability"], CAPABILITY)
         self.assertEqual(self.result["declared_route_id"], ROUTE_ID)
 
+    def test_it_reached_the_llm_adapter_surface(self):
+        """Name kept from the base so required verification stays continuous.
+
+        The crossing no longer reaches an LLM-adapter surface. No organization
+        repository routes to StegVerse-org/LLM-adapter.
+        """
+        self.assertNotEqual(self.result["declared_transition_surface"], "LLM_ADAPTER")
+        self.assertNotEqual(self.result["resolved_service_id"], "stegverse-org.llm-adapter")
+
     def test_it_reached_the_task_registry_disclosure_surface(self):
         self.assertEqual(self.result["declared_transition_surface"], "TASK_REGISTRY_DISCLOSURE")
         self.assertEqual(self.result["resolved_service_id"], "stegverse-org.task-registry-disclosure")

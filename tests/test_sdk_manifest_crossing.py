@@ -66,6 +66,16 @@ class FixtureTests(unittest.TestCase):
             self.assertIs(egress["far_side_transition_required"], True, path.name)
             self.assertTrue(egress["final_stegverse_transition_surface"], path.name)
 
+    def test_the_llm_adapter_fixture_carries_the_sdk_default_surface(self):
+        """Name kept from the base so required verification stays continuous.
+
+        The `governance-to-llm-adapter` fixture is withdrawn. No organization
+        repository routes to StegVerse-org/LLM-adapter, so no fixture carries
+        the SDK's default `LLM_ADAPTER` surface, and the former fixture is absent.
+        """
+        self.assertFalse((FIXTURES / "governance-to-llm-adapter.json").exists())
+        self.assertFalse(any("llm-adapter" in path.name for path in FIXTURES.glob("*.json")))
+
     def test_no_fixture_routes_to_llm_adapter(self):
         """No organization repository routes to StegVerse-org/LLM-adapter."""
         for path in sorted(FIXTURES.glob("*.json")):
@@ -218,7 +228,7 @@ class CompleteCrossingTests(unittest.TestCase):
         self.assertEqual(again["manifest_sha256"], self.result["manifest_sha256"])
 
 
-class GovernanceAddressedToAnotherSurfaceTests(unittest.TestCase):
+class GovernanceReturningOverTheTransportTests(unittest.TestCase):
     """A governance manifest addressed to the disclosure surface is processed, not refused.
 
     `completion.egress` names a surface. Addressing it for processing would hand
