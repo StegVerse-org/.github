@@ -27,6 +27,8 @@ NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").rea
     "repository_ledger_location"]["namespace"]
 TRANSFER = EXPECTED["verified_transfer_commit"]   # main-merge transfer VERIFIED at the pinned tip
 UNLEDGERED = EXPECTED["unledgered_commit"]        # no main-merge transfer receipt at the pinned tip
+APPEND_BASE = EXPECTED["append_base_tip"]          # last tip before the path receipts: fresh appends are tested here
+LEDGERED_TRANSFER = EXPECTED["ledgered_transfer_commit"]   # the transfer commit of the 7 path receipts at LEDGER_TIP
 
 
 def load(name, relative):
@@ -41,10 +43,10 @@ pt = load("intr_path_transfer_under_test", "resident-runtime/intr_path_transfer.
 
 
 class Ledger:
-    def __init__(self):
+    def __init__(self, tip=LEDGER_TIP):
         self.dir = tempfile.TemporaryDirectory()
         self.root = Path(self.dir.name)
-        subprocess.run("git -C '%s' archive %s | tar -x -C '%s'" % (ROOT, LEDGER_TIP, self.root), shell=True, check=True)
+        subprocess.run("git -C '%s' archive %s | tar -x -C '%s'" % (ROOT, tip, self.root), shell=True, check=True)
         self.saved = {k: os.environ.get(k) for k in ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_REPO_LEDGER_ROOT")}
         os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = str(self.root)
         os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = str(self.root / NAMESPACE)
@@ -82,7 +84,7 @@ class DeclaredPaths(unittest.TestCase):
     def test_paths_are_ordered_pairs_of_conformant_organizations(self):
         paths = pt.declared_paths()
         orgs = sorted({p["source"] for p in paths})
-        self.assertEqual(len(orgs), 8)
+        self.assertEqual(len(orgs), 13)
         self.assertEqual(len(paths), len(orgs) * (len(orgs) - 1))
         self.assertEqual(len({p["path_id"] for p in paths}), len(paths))
         for p in paths:
@@ -108,14 +110,40 @@ class RealState(unittest.TestCase):
             state = pt.real_state()
         finally:
             ledger.close()
-        self.assertEqual(state["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 56})
+        self.assertEqual(state["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 156})
         self.assertEqual(state["paths"], EXPECTED["paths"])
         self.assertEqual(state["counts"], EXPECTED["counts"])
+
+    def test_paths_sourced_here_are_answered_from_the_ledger_at_the_pinned_tip(self):
+        ledger = Ledger()
+        try:
+            before = ledger.files()
+            ledgered = set(EXPECTED["ledgered_path_ids"])
+            results = pt.append_transfers(TRANSFER)
+            got = {r["path_id"]: (r["disposition"], bool(r.get("replayed"))) for r in results}
+            # the 7 paths ledgered at the pinned tip are answered from the ledger; a row added after it appends
+            # fresh on this temporary copy (NOT LEDGERED, NOT AUTHENTIC), and no pre-existing file changes
+            self.assertEqual(got, {p["path_id"]: ("ALLOW", p["path_id"] in ledgered) for p in mine()}, results)
+            self.assertEqual(len(ledgered), 7)
+            after = ledger.files()
+            for name, data in before.items():
+                if not name.endswith("HEAD.json"):
+                    self.assertEqual(after[name], data, name)
+            for p in mine():
+                source = pt.verify_source(p, cid(p))
+                self.assertEqual((source["disposition"], source["transfer_commit"]),
+                                 ("ALLOW", LEDGERED_TRANSFER if p["path_id"] in ledgered else TRANSFER))
+                whole = pt.verify_path(p, cid(p))
+                self.assertEqual(whole["halves"], {"source": "ALLOW", "destination": "FAIL_CLOSED"})
+                for field in pt.SIX_FIELDS:
+                    self.assertTrue(whole[field], field)
+        finally:
+            ledger.close()
 
 
 class Append(unittest.TestCase):
     def setUp(self):
-        self.ledger = Ledger()
+        self.ledger = Ledger(APPEND_BASE)
 
     def tearDown(self):
         self.ledger.close()
@@ -123,7 +151,7 @@ class Append(unittest.TestCase):
     def test_append_links_the_transfer_and_the_source_half_verifies(self):
         before = self.ledger.files()
         results = pt.append_transfers(TRANSFER)
-        self.assertEqual([r["disposition"] for r in results], ["ALLOW"] * 7, results)
+        self.assertEqual([r["disposition"] for r in results], ["ALLOW"] * len(mine()), results)
         after = self.ledger.files()
         for name, data in before.items():
             if not name.endswith("HEAD.json"):
@@ -203,8 +231,8 @@ class Append(unittest.TestCase):
 
     def test_contradicted_path_receipts_are_denied(self):
         cases = {
-            "path": lambda e: e.update(destination_organization="AaCT-E"),
-            "address": lambda e: e.update(destination_address="aact-e.intr-destination"),
+            "path": lambda e: e.update(destination_organization="Infrastructure-Continuity-Ventures"),
+            "address": lambda e: e.update(destination_address="infrastructure-continuity-ventures.intr-destination"),
             "transfer": lambda e: e.update(transfer_commit=UNLEDGERED),
             "message": lambda e: e["message"].update(communication_id="other"),
         }
@@ -267,6 +295,73 @@ class DestinationHalf(unittest.TestCase):
                          ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED", "A"))
         for field in pt.SIX_FIELDS:
             self.assertTrue(absent[field], field)
+
+
+class DocumentedDefaults(unittest.TestCase):
+    """Main's default, pinned (StegVerse-org/.github#162, Lane B). No definition is changed here.
+
+    Lines quoted at main 907f4305.
+    - data/intr-protocol/v1/protocol.json:172 "declared_paths": "every ordered pair of distinct organizations ..."
+      and resident-runtime/federation_cycle.py:14-15 "It is intra-organization: no boundary is crossed and no InTr is
+      involved.": a row naming a repository of this organization as the destination is undeclared and writes nothing.
+    - docs/INTR_PATH_TRANSFER_V1.md:42 "carried pair's inclusion in the source ledger | FAIL_CLOSED
+      INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED": with no TVC read receipt, the production writer's consume
+      (.github/workflows/organization-ledger-writer.yml path-ingress, which neither fetches an anonymous copy nor sets
+      STEGVERSE_INTR_PUBLIC_LEDGERS) stays FAIL_CLOSED; the public-ledger route is reached only through its explicit
+      flag (--public-ledgers / STEGVERSE_INTR_PUBLIC_LEDGERS) and stays a proposal.
+    """
+
+    def test_an_intra_organization_repository_destination_is_undeclared_and_writes_nothing(self):
+        org = pt.organization()
+        pid = org + "/.github->" + org + "/LLM-adapter:intr-destination"
+        self.assertNotIn(pid, {p["path_id"] for p in pt.declared_paths()})
+        for p in pt.declared_paths():
+            self.assertNotIn("/", p["source"] + p["destination"], p["path_id"])
+        ledger = Ledger()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                declaration = Path(tmp) / "transfers.json"
+                declaration.write_text(json.dumps({
+                    "schema": pt.DECLARATION_SCHEMA, "source_repository": pt.repository(),
+                    "transfers": [{"path_id": pid, "communication_id": "intr-path-v1:" + pid.split(":")[0]}]}))
+                before = ledger.files()
+                (result,) = pt.append_transfers(TRANSFER, declaration=declaration)
+                self.assertEqual(ledger.files(), before)
+        finally:
+            ledger.close()
+        self.assertEqual((result["disposition"], result["failure_code"], result["failed_predicate"]),
+                         ("FAIL_CLOSED", "INTR_PATH_UNDECLARED", "TRANSFER_NAMES_A_DECLARED_PATH_FROM_THIS_ORGANIZATION"))
+        for field in pt.SIX_FIELDS:
+            self.assertTrue(result[field], field)
+
+    def test_the_production_writer_does_not_opt_into_the_anonymous_read(self):
+        writer = (ROOT / ".github" / "workflows" / "organization-ledger-writer.yml").read_text(encoding="utf-8")
+        for opt_in in ("STEGVERSE_INTR_PUBLIC_LEDGERS", "intr_public_ledgers", "--public-ledgers"):
+            self.assertNotIn(opt_in, writer, opt_in)
+
+    def test_source_inclusion_without_the_flag_is_fail_closed_credential_not_issued(self):
+        pi = load("intr_path_ingress_documented_default", "resident-runtime/intr_path_ingress.py")
+        row = json.loads((ROOT / ".stegverse/intr-path-transfer/inbound.json").read_text(encoding="utf-8"))["transfers"][0]
+        carried = row["carried"]
+        checked = {"path_id": row["path_id"], "communication_id": row["communication_id"],
+                   "source_repository": carried["source_organization_receipt"]["source_repository"],
+                   "source_organization_receipt_sha256": carried["source_organization_receipt"]["receipt_sha256"],
+                   "source_repository_receipt_sha256": carried["source_repository_receipt"]["receipt_sha256"]}
+        saved = os.environ.pop(pi.PUBLIC_LEDGERS_ENV, None)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                (Path(tmp) / (checked["source_repository"].split("/")[0] + ".git")).mkdir()   # a copy no flag names
+                self.assertIsNone(pi.public_ledger_dir(checked["source_repository"]))
+                got = pi.source_inclusion(checked, Path(tmp) / "no-tvc-read-receipts")
+        finally:
+            if saved is not None:
+                os.environ[pi.PUBLIC_LEDGERS_ENV] = saved
+        self.assertEqual((got["disposition"], got["failure_code"], got["failed_predicate"]),
+                         ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
+                          "OTHER_ORGANIZATION_LEDGER_IS_READ_THROUGH_TV_TVC"))
+        self.assertIn("StegVerse-Labs/TVC", got["retry_entrypoint"])
+        for field in pt.SIX_FIELDS:
+            self.assertTrue(got[field], field)
 
 
 # The intra-organization crossing (resident-runtime/intr_intra_org_destination.py) rides the same writer, so its
