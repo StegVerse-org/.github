@@ -23,8 +23,8 @@
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 37,
-      "NAMING_ONLY": 39,
-      "total": 252
+      "NAMING_ONLY": 40,
+      "total": 253
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1831,6 +1831,13 @@
       "text": "\"stegverse/master_records_organization_record.py\": \"5b81f2459b078386f37db0df4ae848b111ce09e7677e1789287907298ab411f5\",",
       "classification": "NAMING_ONLY",
       "reason": "A file path inside the pinned StegVerse SDK source tree with its sha256, recorded in the pinned verification-input manifest (StegVerse-org/.github#163). It names the SDK's own module file so the materialized tree can be re-hashed; it asserts no role and is not code here."
+    },
+    {
+      "file": "docs/INTR_POST_GENESIS_REPLAY.md",
+      "line": 55,
+      "text": "- The three still-internal organizations (Infrastructure-Continuity-Ventures, formalism-tests, master-records) are not conformant, so no path to or from them is declared. Any path to them stays FAIL_CLOSED with the six fields on #162.",
+      "classification": "NAMING_ONLY",
+      "reason": "Names the master-records organization only as one of the three still-internal, non-conformant organizations to which no InTr path is declared (StegVerse-org/.github#162, Lane B 13-org reseal). It asserts no role."
     }
   ],
   "remeasured": [
@@ -1845,6 +1852,10 @@
     {
       "by": "P4 repo-standards re-vendor and ST021 registry migration, stacked on #222 (StegVerse-org/.github#166)",
       "change": "the re-vendored schema's completion_evidence enum line (1, NAMING_ONLY) and the 3 required_evidence lines copied verbatim into cosv.evidence_refs by the owner's derivation tool (classified as the lines they copy); orchestration/task-registry.json line numbers re-measured; 0 stale entries, 4 entries added"
+    },
+    {
+      "by": "Lane B 13-org post-genesis reseal (StegVerse-org/.github#162)",
+      "change": "docs/INTR_POST_GENESIS_REPLAY.md current-seal section names the master-records organization among the three still-internal organizations (1, NAMING_ONLY); 0 stale entries, 1 entry added"
     }
   ]
 }

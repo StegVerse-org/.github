@@ -3984,7 +3984,9 @@
    ".stegverse/intr-path-transfer/inbound.json",
    ".stegverse/intr-post-genesis/**",
    "scripts/intr_post_genesis_replay.py",
-   "scripts/intr_post_genesis_replay.sh"
+   "scripts/intr_post_genesis_replay.sh",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-post-genesis/tvc-class-records/**"
   ],
   "tests/test_intr_protocol_conformance.py": [
    "org-boundary/registry/**",
