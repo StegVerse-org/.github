@@ -51,11 +51,11 @@
    },
    "message_sha256": "sha256:6d814b4d6631f3d808bbc229b05fb42ec6bca1038f60ca7f80c615137edffffa",
    "path_id": "Triad-Test->SV-011:intr-destination",
-   "payload_sha256": "sha256:3886052492cc2ef4df43bf39466d458c6e9a07155d8b4bb14e8d70fb456cc6c3",
+   "payload_sha256": "sha256:a97dca7562d1103bf31b1d165a2ec7ec9698d2092e19a363f2f235759a556e1c",
    "repository": "SV-011/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "3ae26b03927a66141260ac084ac9bc3086049c07",
+    "source_ledger_tip": "3f95625b3fc416de7fb06f14054d996264a0cde6",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -89,7 +89,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:5a0f978588ad32887ff2ac359598d20a0c4c6ff43a472e9f7af344b07dbe8c76",
+ "record_sha256": "sha256:ce5669a67cc18de95bb102de4d28b965a6ce69dbcbe118c09f2065db5e822085",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Triad-Test",
  "source_receipts": {
@@ -176,7 +176,7 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->SV-011:intr-destination@intr-path-v1:Triad-Test->SV-011"
   },
-  "source_ledger_tip_observed": "3ae26b03927a66141260ac084ac9bc3086049c07"
+  "source_ledger_tip_observed": "3f95625b3fc416de7fb06f14054d996264a0cde6"
  },
  "status": {
   "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",

@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: Triad-Test/.github's ledger (read anonymously at 3ae26b03927a66141260ac084ac9bc3086049c07) holds destination receipt sha256:54873a62a1a01aac35ac996a2e91ed1d6db15346ef513c99cf45a4a6e62917f7; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: Triad-Test/.github's ledger (read anonymously at 3f95625b3fc416de7fb06f14054d996264a0cde6) holds destination receipt sha256:54873a62a1a01aac35ac996a2e91ed1d6db15346ef513c99cf45a4a6e62917f7; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:Admissible-Existence->Triad-Test",
  "destination": "Triad-Test",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "3ae26b03927a66141260ac084ac9bc3086049c07",
+  "destination_ledger_tip_observed": "3f95625b3fc416de7fb06f14054d996264a0cde6",
   "destination_organization_receipt_sha256": "sha256:54873a62a1a01aac35ac996a2e91ed1d6db15346ef513c99cf45a4a6e62917f7"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:1ab91cfea5a722d7cb401a66dae765b08e3722ee7ad05244b9b369816e222321",
    "path_id": "Admissible-Existence->Triad-Test:intr-destination",
-   "payload_sha256": "sha256:396657808dfc818a7af02a2240e88fb45125a6bced1e184d1efd858d3155951a",
+   "payload_sha256": "sha256:0eb12fd3aa5e9321745efbdbfcf3419f11bf56b6e644e94ef43d61189633863a",
    "repository": "Triad-Test/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "a2ef2f0e2f13d7f682b7b6f80b099e95260c0f7b",
+    "source_ledger_tip": "bb4a6ed8ffadb551d150bdfda6f5e9043ee6a12d",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:a2e62c84b5db303bf49695c57947783936d507f2def548c238cbd035a061bca2",
+ "record_sha256": "sha256:b33263247f870e5c38d16e6ff01bf5a2391a43d928dc90755e93760fb60984ca",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Admissible-Existence",
  "source_receipts": {
@@ -162,14 +162,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Admissible-Existence->Triad-Test:intr-destination@intr-path-v1:Admissible-Existence->Triad-Test"
   },
-  "source_ledger_tip_observed": "a2ef2f0e2f13d7f682b7b6f80b099e95260c0f7b"
+  "source_ledger_tip_observed": "bb4a6ed8ffadb551d150bdfda6f5e9043ee6a12d"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: Triad-Test/.github's ledger (read anonymously at 3ae26b03927a66141260ac084ac9bc3086049c07) holds destination receipt sha256:54873a62a1a01aac35ac996a2e91ed1d6db15346ef513c99cf45a4a6e62917f7; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: Triad-Test/.github's ledger (read anonymously at 3f95625b3fc416de7fb06f14054d996264a0cde6) holds destination receipt sha256:54873a62a1a01aac35ac996a2e91ed1d6db15346ef513c99cf45a4a6e62917f7; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

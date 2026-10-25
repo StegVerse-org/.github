@@ -51,11 +51,11 @@
    },
    "message_sha256": "sha256:fc2890205bd0d55572ca8050bcdc5b65a8294ed3512bbde0ffa137ee8a324305",
    "path_id": "Data-Continuation->SV-011:intr-destination",
-   "payload_sha256": "sha256:6764ad41d69b45c8c5141d258d841b5639ba6037cde3cd98eae2c6e6b0fef05a",
+   "payload_sha256": "sha256:57087f0e83ab80ed2b6a15a32743cf018eddeefb4ee45bee71c7b9935b98c38b",
    "repository": "SV-011/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "9c13d00d5d33548da5e876f61e4e16f8cc266831",
+    "source_ledger_tip": "5dc66c28bf34ffaea0280ce4142ef95eaae81ecb",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -89,7 +89,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:97e9ff06e4e273f56f382cbef3f22609e078f6de8984abf1215bb61307aad421",
+ "record_sha256": "sha256:b3da8db4a656b3a504b62a6f68ebfca5b9230838f4b16be26031ffdfb3e029f8",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Data-Continuation",
  "source_receipts": {
@@ -176,7 +176,7 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Data-Continuation->SV-011:intr-destination@intr-path-v1:Data-Continuation->SV-011"
   },
-  "source_ledger_tip_observed": "9c13d00d5d33548da5e876f61e4e16f8cc266831"
+  "source_ledger_tip_observed": "5dc66c28bf34ffaea0280ce4142ef95eaae81ecb"
  },
  "status": {
   "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
