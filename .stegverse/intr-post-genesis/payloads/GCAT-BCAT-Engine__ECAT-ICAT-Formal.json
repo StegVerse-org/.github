@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at 41184de60fafb0d180852d341ae6981a0fd629e1) holds destination receipt sha256:237f59114aa9970d8f72dae1b4d1ea30b96e9110914d8322737349228e35df8d; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at 9eadd046f44951373d82a79c287aa1f2bed04c30) holds destination receipt sha256:237f59114aa9970d8f72dae1b4d1ea30b96e9110914d8322737349228e35df8d; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:GCAT-BCAT-Engine->ECAT-ICAT-Formal",
  "destination": "ECAT-ICAT-Formal",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "41184de60fafb0d180852d341ae6981a0fd629e1",
+  "destination_ledger_tip_observed": "9eadd046f44951373d82a79c287aa1f2bed04c30",
   "destination_organization_receipt_sha256": "sha256:237f59114aa9970d8f72dae1b4d1ea30b96e9110914d8322737349228e35df8d"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:73338acd1b4f144da4632108723113a2eb577567db8a91cc5d1655c82c27eb8c",
    "path_id": "GCAT-BCAT-Engine->ECAT-ICAT-Formal:intr-destination",
-   "payload_sha256": "sha256:d05bc06a6931c392543487fbf6426041ba07677962a207b36ee09aa036004c2f",
+   "payload_sha256": "sha256:6406b9a6454fe4d36110946d73d8b34adb2cd1264f8603300d7023cdf89e0aff",
    "repository": "ECAT-ICAT-Formal/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "b8ee6e38d2101190979ddcf2a59aa4e56cd1bf9c",
+    "source_ledger_tip": "295bd916f45c1221dbb2c3e46ff2a6e6a586f3b1",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:1af0feb106956b3c1cd46c388bd86b0c2503b11787fe088e13054168217d8f37",
+ "record_sha256": "sha256:172ad19cbd665e4fb99768fe78ea90af9f946bd58f14ef1f758f068dd4ab4190",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "GCAT-BCAT-Engine",
  "source_receipts": {
@@ -164,14 +164,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:GCAT-BCAT-Engine->ECAT-ICAT-Formal:intr-destination@intr-path-v1:GCAT-BCAT-Engine->ECAT-ICAT-Formal"
   },
-  "source_ledger_tip_observed": "b8ee6e38d2101190979ddcf2a59aa4e56cd1bf9c"
+  "source_ledger_tip_observed": "295bd916f45c1221dbb2c3e46ff2a6e6a586f3b1"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at 41184de60fafb0d180852d341ae6981a0fd629e1) holds destination receipt sha256:237f59114aa9970d8f72dae1b4d1ea30b96e9110914d8322737349228e35df8d; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at 9eadd046f44951373d82a79c287aa1f2bed04c30) holds destination receipt sha256:237f59114aa9970d8f72dae1b4d1ea30b96e9110914d8322737349228e35df8d; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

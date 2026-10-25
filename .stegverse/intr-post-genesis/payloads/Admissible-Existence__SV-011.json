@@ -3,35 +3,23 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
-   "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
-   "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
-   "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
-   "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the destination_readback read for Admissible-Existence->SV-011:intr-destination needs a TV/TVC read receipt (scope Admissible-Existence->SV-011:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
-   "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
-  },
-  {
-   "failed_predicate": "DESTINATION_INGRESS_HAS_THE_PUBLIC_LEDGER_ROUTE",
-   "failure_code": "INTR_PATH_DESTINATION_PUBLIC_ROUTE_NOT_ON_MAIN",
-   "next_attempt": "re-run seal and replay after the port is admitted",
+   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "the public-ledger route of resident-runtime/intr_path_ingress.py (as in StegVerse-org/.github#224 and StegVerse-Labs/.github#3312) on SV-011/.github main",
-   "retry_entrypoint": "a Lane B public-route port draft to SV-011/.github (laneb/ branch)"
-  },
-  {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for Admissible-Existence->SV-011:intr-destination on SV-011/.github main carrying the source receipt pair",
-   "retry_entrypoint": "SV-011/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+   "required_evidence_or_repair": "nothing to write: SV-011/.github's ledger (read anonymously at bdef7a2b474dcca55fb829814a779a45dc1d8a74) holds destination receipt sha256:990477b88a032946545637f8cc76d47d8393d04712d8d4e948e2e9cf2388804f; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
- "cls": "TVC_PRIVATE_DESTINATION_READ",
+ "cls": "DESTINATION_RECEIPT_LEDGERED",
  "communication_id": "intr-path-v1:Admissible-Existence->SV-011",
  "destination": "SV-011",
+ "destination_receipts": {
+  "destination_ledger_tip_observed": "bdef7a2b474dcca55fb829814a779a45dc1d8a74",
+  "destination_organization_receipt_sha256": "sha256:990477b88a032946545637f8cc76d47d8393d04712d8d4e948e2e9cf2388804f"
+ },
  "e0_terminal": true,
- "expected_at_genesis": "FAIL_CLOSED",
+ "expected_at_genesis": "ALLOW",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "Admissible-Existence->SV-011:intr-destination",
@@ -51,11 +39,11 @@
    },
    "message_sha256": "sha256:fa422d36a5ab84aeb4d5bb2924b4ad7e240b6f746f0e7743c155ea14e7001e5c",
    "path_id": "Admissible-Existence->SV-011:intr-destination",
-   "payload_sha256": "sha256:2668d2b4ceab9b622816aa199b333b67d3fe5d24b897ea95ec80f3bec78494a5",
+   "payload_sha256": "sha256:e9987cb8e4fc4ede527c29fa2c8ed8799ad0446c76167aee9710ddf51eb852d5",
    "repository": "SV-011/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "bb4a6ed8ffadb551d150bdfda6f5e9043ee6a12d",
+    "source_ledger_tip": "f4fe48e878fa363c54941ea703c331c3e949298b",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -89,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:7cc72656bff3cc3c73862c01197146152002bc74bf812c34ea2e35a2f4e45f7d",
+ "record_sha256": "sha256:742ecebefc96316afdfbc91a10b76f0448a2ff5409173e0eb107f4208de372f0",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Admissible-Existence",
  "source_receipts": {
@@ -174,14 +162,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Admissible-Existence->SV-011:intr-destination@intr-path-v1:Admissible-Existence->SV-011"
   },
-  "source_ledger_tip_observed": "bb4a6ed8ffadb551d150bdfda6f5e9043ee6a12d"
+  "source_ledger_tip_observed": "f4fe48e878fa363c54941ea703c331c3e949298b"
  },
  "status": {
-  "failed_predicate": "DESTINATION_READBACK_IS_READ_FROM_THE_DESTINATION_LEDGER",
-  "failure_code": "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED",
-  "next_attempt": "after TVC#532 and TVC#535 are admitted and the read receipt lands, re-run this replay",
-  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162",
-  "required_evidence_or_repair": "SV-011/.github's ledger is not anonymously readable, so the destination_readback read for Admissible-Existence->SV-011:intr-destination needs a TV/TVC read receipt (scope Admissible-Existence->SV-011:intr-destination#destination_readback) landed at .stegverse/intr-path-transfer/tvc-read-receipts/; no bot holds a credential",
-  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host"
+  "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+  "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "nothing to write: SV-011/.github's ledger (read anonymously at bdef7a2b474dcca55fb829814a779a45dc1d8a74) holds destination receipt sha256:990477b88a032946545637f8cc76d47d8393d04712d8d4e948e2e9cf2388804f; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

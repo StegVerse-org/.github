@@ -46,6 +46,14 @@ That gives 4 ALLOW at genesis and 6 after carry. All 12 public↔public paths ar
 
 Every path is terminal at E0: ALLOW, DENY, or FAIL_CLOSED with all six fields. No step waits on an LLM, the owner or a host.
 
+## Current seal (2026-10-25, 13 organizations, 156 paths)
+
+The table above is the 2026-10-23 genesis seal, kept as history. After SV-011 went public and joined the mesh, every declared path is `DESTINATION_RECEIPT_LEDGERED` and expects **ALLOW**: 156 of 156, with 24 of 24 SV-011 paths. SV-011 joined through SV-011/.github#26 and the twelve SV-011 inbound rows, one per peer.
+
+- SV-011's receipts use the older field names (`evidence`, `authority_constraint`). `public_readback` in every organization now reads the boundary as `boundary_evidence` or `evidence`, the same rule as `merge_transfer._boundary`. Nothing else in the verifier changed, and it stays clock-free and network-free.
+- No live record is TVC-class any more. The class rules are still exercised against four sealed TVC-class examples in `tests/fixtures/intr-post-genesis/tvc-class-records/`.
+- The three still-internal organizations (Infrastructure-Continuity-Ventures, formalism-tests, master-records) are not conformant, so no path to or from them is declared. Any path to them stays FAIL_CLOSED with the six fields on #162.
+
 ## Post-genesis replay
 
 ```
