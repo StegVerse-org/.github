@@ -182,6 +182,21 @@ class IntrPostGenesisKitTests(unittest.TestCase):
         moved["payload"]["evidence_known_before_source"]["addressed_service"] = "sv-011.intr-destination"
         self.assertIn("known-before-source payload does not recompute", kit.check_record(kit.seal(moved)))
 
+    def test_the_replay_script_fetches_every_declared_organization_anonymously(self):
+        # Rigel's invariant: every organization's .github is public, so the ledger reads need no credential.
+        script = (ROOT / "scripts" / "intr_post_genesis_replay.sh").read_text(encoding="utf-8")
+        self.assertIn("for org in $(python3 scripts/intr_post_genesis_replay.py orgs); do", script)
+        self.assertIn("-c credential.helper= -c http.https://github.com/.extraheader=", script)
+        self.assertIn("GIT_TERMINAL_PROMPT=0", script)
+        self.assertIn("ref=refs/stegverse/organization-ledger", script)
+        for forbidden in ("secrets.", "GH_TOKEN", "GITHUB_TOKEN", "FEDERATION_", "workflow_dispatch", "gh workflow run",
+                          "git push", "Authorization"):
+            self.assertNotIn(forbidden, script)
+        self.assertIn("scripts/intr_post_genesis_replay.py check", script)
+        self.assertIn("scripts/intr_post_genesis_replay.py replay --public-ledgers", script)
+        self.assertEqual(kit.organizations(), sorted({p["source"] for p in kit.paths()} | {p["destination"] for p in kit.paths()}))
+        self.assertEqual(len(kit.organizations()), 13)
+
     def test_the_sealed_payload_is_what_this_repositorys_writer_appends(self):
         here = kit.ingress.organization()
         mine = [pid for pid in MANIFEST["ledgered_allow"] if kit.load_record(pid)["destination"] == here]
