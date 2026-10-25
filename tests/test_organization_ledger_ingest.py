@@ -1,7 +1,8 @@
 """The committed organization ledger ingest request, appended by the governed writer on push.
 
 resident-runtime/organization_ledger_ingest.py admits a test receipt sealed by
-its producer's CI (StegVerse-Labs/TVC's conformance receipt) and appends it
+its producer's CI (StegVerse-Labs/TVC's conformance receipt, then StegVerse-Labs/repo-standards'
+org owner-drift receipt) and appends it
 through aggregate_repo_transition.append, at the epoch the ledger head carries,
 retaining the receipt unchanged; the writer's ledger-ingest job runs it when
 .stegverse/organization-ledger-ingest/** changes on main. These tests run
@@ -22,7 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUEST = ROOT / ".stegverse/organization-ledger-ingest/request.json"
 WRITER = ROOT / ".github/workflows/organization-ledger-writer.yml"
 REF = "refs/stegverse/organization-ledger"
-DIGEST = "sha256:2c39c6088e92988d722e139e3b5085f377478b0711b0e3c2a14ce3079d23f8a6"
+DIGEST = "sha256:6feec3f5634e2bea4a586cb427d4f1ff9c1a08f4386834e60ff0cc379bc4f60b"
+TVC_DIGEST = "sha256:2c39c6088e92988d722e139e3b5085f377478b0711b0e3c2a14ce3079d23f8a6"  # appended by #246, ledger tip 9fc1406c
 SIX = ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
        "owning_existing_goal", "next_attempt")
 EPOCH = 4400
@@ -72,14 +74,15 @@ class Admission(unittest.TestCase):
             self.assertTrue(result.get(field), field)
         self.assertIs(result["consequence_committed"], False)
 
-    def test_the_committed_request_is_the_tvc_org_receipt_of_run_40137248073(self):
+    def test_the_committed_request_is_the_repo_standards_owner_drift_receipt_of_run_40145286437(self):
         read = ing.read_request(REQUEST)
         self.assertEqual(read["disposition"], "ALLOW")
         self.assertEqual(self.receipt["receipt_sha256"], DIGEST)
         self.assertTrue(ing.seal_verifies(self.receipt))
-        self.assertEqual(self.provenance["run_id"], 40137248073)
+        self.assertEqual(self.provenance["run_id"], 40145286437)
+        self.assertEqual(self.receipt["receipt_kind"], "REPO_STANDARDS_ORG_OWNER_DRIFT_TEST_RECEIPT")
         self.assertEqual(self.receipt["consumed_source"]["repository"], "StegVerse-org/.github")
-        self.assertEqual(self.receipt["consumed_source"]["commit"][:8], "ea88b1cb")
+        self.assertEqual(self.receipt["consumed_source"]["commit"][:8], "4033813e")
         self.assertIsNone(ing.admit_sealed(self.receipt, self.provenance, ledger_repository="StegVerse-org/.github"))
 
     def test_another_organizations_ledger_is_refused(self):
@@ -98,7 +101,7 @@ class Admission(unittest.TestCase):
         denied = seal({**self.receipt, "disposition": "DENY"})
         self.refused(ing.admit_sealed(denied, self.provenance, ledger_repository="StegVerse-org/.github"),
                      "SEALED_RECEIPT_NOT_ALLOW")
-        self.refused(ing.admit_sealed(self.receipt, {**self.provenance, "run_id": "40137248073"},
+        self.refused(ing.admit_sealed(self.receipt, {**self.provenance, "run_id": "40145286437"},
                                       ledger_repository="StegVerse-org/.github"), "SEALED_RECEIPT_PROVENANCE_MISMATCH")
         self.refused(ing.admit_sealed(self.receipt, self.provenance, ledger_repository="StegVerse-org/.github",
                                       accepted=ing.load_accepted(ROOT / "absent.json")),
@@ -166,7 +169,7 @@ class SealedAppend(unittest.TestCase):
         row = store.get(ledger_store.receipt_key(out["organization_receipt_sha256"]))
         self.assertEqual(row["previous_receipt_sha256"], genesis["receipt_sha256"])
         self.assertEqual(row["org_transition_class"], ing.SEALED_CLASS)
-        self.assertEqual(row["boundary_evidence"]["producer_run_id"], 40137248073)
+        self.assertEqual(row["boundary_evidence"]["producer_run_id"], 40145286437)
         back = ing.readback_sealed(self.location, self.request["receipt"])
         self.assertEqual(back["disposition"], "ALLOW", back)
         self.assertEqual(back["chain_length"], 2)
