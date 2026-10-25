@@ -3,19 +3,23 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
+   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for AaCT-E->Triad-Test:intr-destination on Triad-Test/.github main carrying the source receipt pair",
-   "retry_entrypoint": "Triad-Test/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+   "required_evidence_or_repair": "nothing to write: Triad-Test/.github's ledger (read anonymously at 3ae26b03927a66141260ac084ac9bc3086049c07) holds destination receipt sha256:085dfa02d2216504b384b897517cb7abc7c9bd9a639d31a6ffd53fa45f5bf5e6; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
- "cls": "DESTINATION_INBOUND_ROW_ABSENT",
+ "cls": "DESTINATION_RECEIPT_LEDGERED",
  "communication_id": "intr-path-v1:AaCT-E->Triad-Test",
  "destination": "Triad-Test",
+ "destination_receipts": {
+  "destination_ledger_tip_observed": "3ae26b03927a66141260ac084ac9bc3086049c07",
+  "destination_organization_receipt_sha256": "sha256:085dfa02d2216504b384b897517cb7abc7c9bd9a639d31a6ffd53fa45f5bf5e6"
+ },
  "e0_terminal": true,
- "expected_at_genesis": "FAIL_CLOSED",
+ "expected_at_genesis": "ALLOW",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "AaCT-E->Triad-Test:intr-destination",
@@ -73,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:ff1b7b585a857a2aec68860e0641d7a9ce5a89abbe73070316ea57fbfa35fcce",
+ "record_sha256": "sha256:889a1ffeaa6f4a7d99952aeddc146262d1b19e40ac2e84e53306abb0d2d4604e",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "AaCT-E",
  "source_receipts": {
@@ -163,11 +167,11 @@
   "source_ledger_tip_observed": "c90c967d0b954ae91d3b9916f820f2d75805271c"
  },
  "status": {
-  "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-  "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-  "next_attempt": "seal, then replay after the row lands",
+  "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+  "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "an inbound row for AaCT-E->Triad-Test:intr-destination on Triad-Test/.github main carrying the source receipt pair",
-  "retry_entrypoint": "Triad-Test/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+  "required_evidence_or_repair": "nothing to write: Triad-Test/.github's ledger (read anonymously at 3ae26b03927a66141260ac084ac9bc3086049c07) holds destination receipt sha256:085dfa02d2216504b384b897517cb7abc7c9bd9a639d31a6ffd53fa45f5bf5e6; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

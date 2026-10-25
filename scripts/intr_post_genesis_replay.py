@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """InTr post-genesis kit: sealed destination payloads, per-path checks and the replay after admission genesis.
 
-StegVerse-org/.github#162 (Lane B). Next blocker: INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED. It clears when the
-inbound rows in StegVerse-org/.github#224 and StegVerse-Labs/.github#3312 land on main and each destination's
-.github/workflows/intr-path-ingress.yml appends an ORGANIZATION_INTR_DESTINATION_INGRESS receipt (workflow_run after
-the main-merge transfer; no dispatch). This kit does everything up to that event and nothing at it:
+StegVerse-org/.github#162 (Lane B). Genesis is admitted (StegVerse-org/.github#224 merged 575c520d, StegVerse-Labs/.github
+#3312 merged 149f16e8), and the StegVerse-org writer observes source inclusion by an anonymous read of each source's
+public ledger (StegVerse-org/.github#250 merged 3e9485e7). Rigel's standing invariant: every organization's .github is
+public, so verification reads of ledger receipts never need a credential or a TVC read receipt. A path whose
+destination receipt is already on the destination's public ledger, and which verifies end to end exactly as `replay`
+verifies it, is sealed DESTINATION_RECEIPT_LEDGERED and expects ALLOW now; every other path carries its six fields.
 
-  seal    for every declared path (156 over 13 organizations at main 89558cd3), compute the destination ingress evidence the writer will append
+  seal    for every declared path (156 over 13 organizations at main 3e9485e7), compute the destination ingress evidence the writer will append
           (resident-runtime/intr_path_ingress.py ingress_evidence, field for field) from the source receipts read
           back from anonymously fetched public ledger copies, and write one sealed record per path plus a sha256
           manifest under .stegverse/intr-post-genesis/. A path whose payload cannot be computed at E0 carries the
@@ -762,6 +764,7 @@ def main(argv: list[str] | None = None) -> int:
         digest_hex = write_sealed(out)
         print(json.dumps({"manifest_sha256": digest_hex, "class_counts": out["manifest"]["class_counts"],
                           "genesis_allow": out["manifest"]["genesis_allow"], "carry_allow": out["manifest"]["carry_allow"],
+                          "ledgered_allow": out["manifest"]["ledgered_allow"],
                           "allow_ready_after_genesis": out["manifest"]["allow_ready_after_genesis"],
                           "epoch_reseal_allow": out["manifest"]["epoch_reseal_allow"],
                           "allow_ready_after_supplied_epoch": out["manifest"]["allow_ready_after_supplied_epoch"]},

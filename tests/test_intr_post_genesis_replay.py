@@ -41,7 +41,9 @@ class IntrPostGenesisKitTests(unittest.TestCase):
     def test_manifest_seal_files_and_every_record_verify(self):
         result = kit.check_all()
         self.assertTrue(result["verified"], result["problems"])
-        self.assertEqual(result["paths"], 56)
+        self.assertEqual(result["paths"], 156)
+        self.assertEqual(result["paths"], len(kit.paths()))
+        self.assertEqual(MANIFEST["paths_total"], 156)
 
     def test_sha256sums_cover_the_manifest_and_every_file(self):
         sums = dict(reversed(line.split("  ", 1)) for line in (KIT_DIR / "SHA256SUMS").read_text().splitlines())
@@ -50,39 +52,68 @@ class IntrPostGenesisKitTests(unittest.TestCase):
         self.assertEqual(set(sums), set(MANIFEST["files_sha256"]) | {"manifest.json"})
 
     def test_genesis_allow_set_is_exactly_the_four_sealable_public_rows(self):
-        self.assertEqual(MANIFEST["genesis_allow"], ["StegVerse-Labs->SV-LLM:intr-destination",
-                                                     "StegVerse-Labs->StegVerse-org:intr-destination",
-                                                     "StegVerse-org->SV-LLM:intr-destination",
-                                                     "StegVerse-org->StegVerse-Labs:intr-destination"])
-        self.assertEqual(sum(MANIFEST["class_counts"].values()), 56)
-        self.assertEqual(MANIFEST["class_counts"].get(kit.GENESIS_READY), 4)
+        # Both genesis PRs are admitted (StegVerse-org/.github#224, StegVerse-Labs/.github#3312): the four rows that
+        # were sealable at genesis now have their destination receipts on the public ledgers, so they are sealed as
+        # DESTINATION_RECEIPT_LEDGERED (expect ALLOW now) and no path is still waiting on a genesis admission.
+        four = ["StegVerse-Labs->SV-LLM:intr-destination", "StegVerse-Labs->StegVerse-org:intr-destination",
+                "StegVerse-org->SV-LLM:intr-destination", "StegVerse-org->StegVerse-Labs:intr-destination"]
+        self.assertEqual(MANIFEST["genesis_allow"], [])
+        self.assertIsNone(MANIFEST["class_counts"].get(kit.GENESIS_READY))
+        for pid in four:
+            record = kit.load_record(pid)
+            self.assertEqual((record["cls"], record["expected_at_genesis"]), (kit.DESTINATION_LEDGERED, "ALLOW"), pid)
+            self.assertIn(pid, MANIFEST["ledgered_allow"])
+        self.assertEqual(sum(MANIFEST["class_counts"].values()), 156)
+        self.assertEqual(MANIFEST["class_counts"], {kit.DESTINATION_LEDGERED: 110, kit.TVC_SOURCE: 12,
+                                                    kit.TVC_DESTINATION: 11, kit.SOURCE_NOT_LEDGERED: 12,
+                                                    kit.INGRESS_NOT_ON_MAIN: 11})
 
     def test_carry_set_and_the_allow_ready_count(self):
-        self.assertEqual(MANIFEST["carry_allow"], ["SV-LLM->StegVerse-Labs:intr-destination",
-                                                   "SV-LLM->StegVerse-org:intr-destination"])
-        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 6)
-        for pid in MANIFEST["carry_allow"]:
+        # SV-LLM/.github#50's writer has landed and both carried rows were consumed: the former carry paths are
+        # ledgered, nothing remains to carry, and the ALLOW-ready count is exactly the ledgered set.
+        self.assertEqual(MANIFEST["carry_allow"], [])
+        for pid in ("SV-LLM->StegVerse-Labs:intr-destination", "SV-LLM->StegVerse-org:intr-destination"):
             record = kit.load_record(pid)
-            self.assertEqual((record["expected_at_genesis"], record["expected_after_carry"]), ("FAIL_CLOSED", "ALLOW"))
-            self.assertEqual(record["source_writer_pr"], "SV-LLM/.github#50")
+            self.assertEqual((record["cls"], record["expected_at_genesis"]), (kit.DESTINATION_LEDGERED, "ALLOW"))
+            self.assertNotIn("expected_after_carry", record)
+        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 110)
+        self.assertEqual(len(MANIFEST["ledgered_allow"]), 110)
+        for pid in MANIFEST["ledgered_allow"]:
+            record = kit.load_record(pid)
+            self.assertEqual(record["cls"], kit.DESTINATION_LEDGERED)
+            self.assertIn("evidence_invariant", record["payload"])
+            self.assertEqual(record["payload"]["evidence_at_observed_source_tip"]["source_inclusion"]["state"],
+                             kit.ingress.PUBLIC_STATE)
+            self.assertRegex(record["destination_receipts"]["destination_organization_receipt_sha256"],
+                             r"^sha256:[0-9a-f]{64}$")
 
     def test_every_public_path_is_allow_ready_or_epoch_blocked_and_private_ends_stay_tvc(self):
-        public = {"StegVerse-org", "StegVerse-Labs", "Admissible-Existence", "SV-LLM"}
+        inputs = kit.load_inputs()
+        public = {o for o, tip in inputs["anonymous_ledger_read"].items() if tip != "NOT_ANONYMOUSLY_READABLE"}
+        self.assertEqual(len(public), 12)
+        self.assertNotIn("SV-011", public)   # SV-011 stays out until its flip
         for p in kit.paths():
             record = kit.load_record(p["path_id"])
             if p["source"] in public and p["destination"] in public:
+                if "StegVerse-002" in (p["source"], p["destination"]):
+                    # StegVerse-002 has no destination ingress on main and has written no source receipt
+                    self.assertIs(inputs["destination_ingress_on_main"]["StegVerse-002"], False)
+                    want = kit.SOURCE_NOT_LEDGERED if p["source"] == "StegVerse-002" else kit.INGRESS_NOT_ON_MAIN
+                    self.assertEqual(record["cls"], want, p["path_id"])
+                    self.assertEqual(record["expected_at_genesis"], "FAIL_CLOSED")
+                    continue
                 self.assertIn(record["cls"], kit.ALLOW_READY + (kit.EPOCH_UNOBSERVED,), p["path_id"])
                 if record["cls"] == kit.EPOCH_UNOBSERVED:
-                    self.assertIn("Admissible-Existence", (p["source"], p["destination"]))
-                    self.assertIn("Admissible-Existence/.github#100", record["status"]["owning_existing_goal"])
                     self.assertEqual(record["expected_after_supplied_epoch"], "ALLOW")
                     self.assertIs(record["reseal_on_supplied_epoch"], True)
+            elif p["source"] == "StegVerse-002":
+                self.assertEqual(record["cls"], kit.SOURCE_NOT_LEDGERED, p["path_id"])
             else:
                 self.assertIn(record["cls"], (kit.TVC_SOURCE, kit.TVC_DESTINATION), p["path_id"])
                 self.assertIn("TVC#535", record["status"]["retry_entrypoint"])
-        self.assertEqual(MANIFEST["class_counts"].get(kit.EPOCH_UNOBSERVED), 6)
-        self.assertEqual(len(MANIFEST["epoch_reseal_allow"]), 6)
-        self.assertEqual(MANIFEST["allow_ready_after_supplied_epoch"], 12)
+        self.assertEqual(MANIFEST["class_counts"].get(kit.EPOCH_UNOBSERVED, 0), len(MANIFEST["epoch_reseal_allow"]))
+        self.assertEqual(MANIFEST["allow_ready_after_supplied_epoch"],
+                         MANIFEST["allow_ready_after_genesis"] + len(MANIFEST["epoch_reseal_allow"]))
 
     def test_carry_document_reproduces_this_repositorys_inbound_rows_and_refuses_with_six_fields(self):
         here = kit.ingress.organization()
@@ -98,38 +129,65 @@ class IntrPostGenesisKitTests(unittest.TestCase):
             first, second = kit.replay_all(empty), kit.replay_all(empty)
         self.assertEqual(first, second)
         self.assertTrue(first["e0_terminal"])
-        self.assertEqual(first["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 56})
+        self.assertEqual(first["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 156})
+        self.assertEqual(sorted(first["ledgered_not_allow"]), MANIFEST["ledgered_allow"])
         for r in first["results"]:
             self.assertTrue(kit.has_six(r), r)
 
     def test_a_tampered_record_or_payload_is_refused(self):
         record = kit.load_record("StegVerse-org->StegVerse-Labs:intr-destination")
+        self.assertEqual(kit.check_record(record), [])
         bad = copy.deepcopy(record)
         bad["payload"]["evidence_invariant"]["addressed_service"] = "stegverse-002.intr-destination"
         self.assertIn("record seal or schema", kit.check_record(bad))
         resealed = kit.seal(bad)
         self.assertIn("payload invariant does not recompute", kit.check_record(resealed))
-        promoted = kit.seal({**kit.load_record("SV-011->StegVerse-org:intr-destination"), "expected_at_genesis": "ALLOW"})
-        self.assertIn("only genesis-ready paths expect ALLOW", kit.check_record(promoted))
-        carry = kit.load_record("SV-LLM->StegVerse-org:intr-destination")
+        rule = "only genesis-ready and destination-ledgered paths expect ALLOW"
+        for pid in ("SV-011->StegVerse-org:intr-destination", "StegVerse-002->StegVerse-org:intr-destination",
+                    "StegVerse-org->StegVerse-002:intr-destination", "StegVerse-org->SV-011:intr-destination"):
+            promoted = kit.seal({**kit.load_record(pid), "expected_at_genesis": "ALLOW"})
+            self.assertIn(rule, kit.check_record(promoted), pid)
+        demoted = kit.seal({**record, "expected_at_genesis": "FAIL_CLOSED"})
+        self.assertIn("a destination-ledgered path must expect ALLOW", kit.check_record(demoted))
+        bare = kit.seal({k: v for k, v in record.items() if k != "destination_receipts"})
+        self.assertIn("exactly the destination-ledgered paths carry destination_receipts", kit.check_record(bare))
+        forged = kit.seal({**record, "destination_receipts": {**record["destination_receipts"],
+                                                              "destination_organization_receipt_sha256": "sha256:x"}})
+        self.assertIn("destination_receipts must name the observed tip and the destination receipt",
+                      kit.check_record(forged))
+        stray = kit.load_record("StegVerse-002->StegVerse-org:intr-destination")
+        self.assertIn("exactly the destination-ledgered paths carry destination_receipts",
+                      kit.check_record(kit.seal({**stray, "destination_receipts": record["destination_receipts"]})))
+        unpaid = kit.seal({**record, "payload": None, "source_receipts": None})
+        self.assertIn("class " + kit.DESTINATION_LEDGERED + " needs a payload", kit.check_record(unpaid))
+        # the carry and epoch rules still bind, on a well-formed carry/epoch record built from a sealed one
+        core = {"schema": kit.ingress.EVIDENCE_SCHEMA, "repository": stray["destination"] + "/.github",
+                "path_id": stray["path_id"], "source_repository": stray["source"] + "/.github",
+                "addressed_service": kit.destination_address(stray["destination"])}
+        known = {"evidence_known_before_source": core, "evidence_known_before_source_sha256": kit.digest(core)}
+        carry = kit.seal({**stray, "cls": kit.CARRY_AFTER_GENESIS, "expected_after_carry": "ALLOW", "payload": known})
+        self.assertEqual(kit.check_record(carry), [])
         moved = copy.deepcopy(carry)
         moved["payload"]["evidence_known_before_source"]["addressed_service"] = "sv-011.intr-destination"
         self.assertIn("known-before-source payload does not recompute", kit.check_record(kit.seal(moved)))
-        epoch = kit.load_record("Admissible-Existence->StegVerse-org:intr-destination")
+        dropped = kit.seal({**carry, "expected_after_carry": None})
+        self.assertIn("exactly the carry paths expect ALLOW after carry", kit.check_record(dropped))
+        epoch_status = {**stray["status"], "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED"}
+        epoch = kit.seal({**stray, "cls": kit.EPOCH_UNOBSERVED, "status": epoch_status, "payload": known,
+                          "expected_after_supplied_epoch": "ALLOW", "reseal_on_supplied_epoch": True})
+        self.assertEqual(kit.check_record(epoch), [])
         unflagged = kit.seal({**epoch, "reseal_on_supplied_epoch": False})
         self.assertIn("an epoch path expecting ALLOW after a supplied epoch re-seals on it", kit.check_record(unflagged))
         moved = copy.deepcopy(epoch)
         moved["payload"]["evidence_known_before_source"]["addressed_service"] = "sv-011.intr-destination"
         self.assertIn("known-before-source payload does not recompute", kit.check_record(kit.seal(moved)))
-        dropped = kit.seal({**carry, "expected_after_carry": None})
-        self.assertIn("exactly the carry paths expect ALLOW after carry", kit.check_record(dropped))
 
     def test_the_sealed_payload_is_what_this_repositorys_writer_appends(self):
         here = kit.ingress.organization()
-        for pid in MANIFEST["genesis_allow"]:
+        mine = [pid for pid in MANIFEST["ledgered_allow"] if kit.load_record(pid)["destination"] == here]
+        self.assertEqual(len(mine), 10)
+        for pid in mine:
             record = kit.load_record(pid)
-            if record["destination"] != here:
-                continue
             src = record["source_receipts"]
             checked = kit.ingress.check_source_pair(src["organization_receipt"], src["repository_receipt"], pid,
                                                     record["communication_id"], here)
@@ -145,7 +203,10 @@ class IntrPostGenesisPathTests(unittest.TestCase):
         self.assertEqual(kit.check_record(record, MANIFEST), [])
         self.assertTrue(record["e0_terminal"])
         self.assertTrue(kit.has_six(record["status"]))
-        if record["cls"] == kit.GENESIS_READY:
+        if record["cls"] == kit.DESTINATION_LEDGERED:
+            self.assertEqual(record["expected_at_genesis"], "ALLOW")
+            self.assertIn(path_id, MANIFEST["ledgered_allow"])
+        if record["cls"] in kit.EXPECT_ALLOW:
             self.assertEqual(record["expected_at_genesis"], "ALLOW")
             if record["destination"] == kit.ingress.organization():
                 rows = json.loads(INBOUND.read_text(encoding="utf-8"))["transfers"]

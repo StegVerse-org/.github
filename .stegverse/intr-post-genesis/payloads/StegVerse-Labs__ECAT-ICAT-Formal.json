@@ -3,19 +3,23 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
+   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for StegVerse-Labs->ECAT-ICAT-Formal:intr-destination on ECAT-ICAT-Formal/.github main carrying the source receipt pair",
-   "retry_entrypoint": "ECAT-ICAT-Formal/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+   "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at 22f7f391d41bb55a49bd08e612e6bf267c87a806) holds destination receipt sha256:41a5115da67cc08b105b6003acd419822b1c94fb8d5a7964bf3f988bf25f6a6f; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
- "cls": "DESTINATION_INBOUND_ROW_ABSENT",
+ "cls": "DESTINATION_RECEIPT_LEDGERED",
  "communication_id": "intr-path-v1:StegVerse-Labs->ECAT-ICAT-Formal",
  "destination": "ECAT-ICAT-Formal",
+ "destination_receipts": {
+  "destination_ledger_tip_observed": "22f7f391d41bb55a49bd08e612e6bf267c87a806",
+  "destination_organization_receipt_sha256": "sha256:41a5115da67cc08b105b6003acd419822b1c94fb8d5a7964bf3f988bf25f6a6f"
+ },
  "e0_terminal": true,
- "expected_at_genesis": "FAIL_CLOSED",
+ "expected_at_genesis": "ALLOW",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "StegVerse-Labs->ECAT-ICAT-Formal:intr-destination",
@@ -35,11 +39,11 @@
    },
    "message_sha256": "sha256:996270499b312f5693c62796a153eac029e43b616d73ac09f875b43185d20a79",
    "path_id": "StegVerse-Labs->ECAT-ICAT-Formal:intr-destination",
-   "payload_sha256": "sha256:27aa39285af9f8e903a6022a4b17f6417fda6cc22e2fcd3453807c0dfece2084",
+   "payload_sha256": "sha256:d4c8c6e0377918e9b2ceba1cd965faac819316a9d21bd648d054fe1898e6dbf1",
    "repository": "ECAT-ICAT-Formal/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "96ff141cabe940d9e338f8c153835f25f08fd18a",
+    "source_ledger_tip": "89067f0d8da1e6b1aef33ab79074743cce1b743f",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -73,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:9540c644a941b91112b0898719ea2c61f50d93dfe40258d4b9e26e89764664f2",
+ "record_sha256": "sha256:8b139838d032e6ac651271ab49769cb0e11312f0d543e121003d5806d97eea63",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegVerse-Labs",
  "source_receipts": {
@@ -163,14 +167,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-Labs->ECAT-ICAT-Formal:intr-destination@intr-path-v1:StegVerse-Labs->ECAT-ICAT-Formal"
   },
-  "source_ledger_tip_observed": "96ff141cabe940d9e338f8c153835f25f08fd18a"
+  "source_ledger_tip_observed": "89067f0d8da1e6b1aef33ab79074743cce1b743f"
  },
  "status": {
-  "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-  "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-  "next_attempt": "seal, then replay after the row lands",
+  "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+  "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "an inbound row for StegVerse-Labs->ECAT-ICAT-Formal:intr-destination on ECAT-ICAT-Formal/.github main carrying the source receipt pair",
-  "retry_entrypoint": "ECAT-ICAT-Formal/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+  "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at 22f7f391d41bb55a49bd08e612e6bf267c87a806) holds destination receipt sha256:41a5115da67cc08b105b6003acd419822b1c94fb8d5a7964bf3f988bf25f6a6f; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

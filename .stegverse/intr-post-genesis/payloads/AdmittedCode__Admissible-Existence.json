@@ -3,19 +3,23 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
+   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for AdmittedCode->Admissible-Existence:intr-destination on Admissible-Existence/.github main carrying the source receipt pair",
-   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+   "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at a2ef2f0e2f13d7f682b7b6f80b099e95260c0f7b) holds destination receipt sha256:165f8fbc5ff3ef44d16ccc3cf7722ebe11daf7e4512d900f39630c85b240cc55; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
- "cls": "DESTINATION_INBOUND_ROW_ABSENT",
+ "cls": "DESTINATION_RECEIPT_LEDGERED",
  "communication_id": "intr-path-v1:AdmittedCode->Admissible-Existence",
  "destination": "Admissible-Existence",
+ "destination_receipts": {
+  "destination_ledger_tip_observed": "a2ef2f0e2f13d7f682b7b6f80b099e95260c0f7b",
+  "destination_organization_receipt_sha256": "sha256:165f8fbc5ff3ef44d16ccc3cf7722ebe11daf7e4512d900f39630c85b240cc55"
+ },
  "e0_terminal": true,
- "expected_at_genesis": "FAIL_CLOSED",
+ "expected_at_genesis": "ALLOW",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "AdmittedCode->Admissible-Existence:intr-destination",
@@ -73,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:bfe7c219cc8c45f72e6ed7f900da9fa6cb4de02b4323ac9166584f4b579382d9",
+ "record_sha256": "sha256:f497b922f8785bf9fc2537d8bd913b1109720d0dd052f28bd781be2bdda5f686",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "AdmittedCode",
  "source_receipts": {
@@ -163,11 +167,11 @@
   "source_ledger_tip_observed": "bb0d2e576ca3eed416070f6e7b93ce9615205f62"
  },
  "status": {
-  "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-  "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-  "next_attempt": "seal, then replay after the row lands",
+  "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+  "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "an inbound row for AdmittedCode->Admissible-Existence:intr-destination on Admissible-Existence/.github main carrying the source receipt pair",
-  "retry_entrypoint": "Admissible-Existence/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+  "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at a2ef2f0e2f13d7f682b7b6f80b099e95260c0f7b) holds destination receipt sha256:165f8fbc5ff3ef44d16ccc3cf7722ebe11daf7e4512d900f39630c85b240cc55; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

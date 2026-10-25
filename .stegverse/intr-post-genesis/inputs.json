@@ -1,7 +1,7 @@
 {
  "schema": "stegverse.intr-post-genesis-inputs/v1",
  "owning_existing_goal": "StegVerse-org/.github#162",
- "observed": "2026-10-25 by Lane B (91117956) against StegVerse-org/.github main 89558cd3 (156 declared paths, 13 organizations); anonymous fetches with HOME=/tmp/anonhome, credential.helper= and no auth header; committed facts, not read by any verifier from a clock or the network",
+ "observed": "2026-10-25 by Lane B (91117956) against StegVerse-org/.github main 3e9485e7 (156 declared paths, 13 organizations); anonymous fetches with HOME=/tmp/anonhome, credential.helper= and no auth header; committed facts, not read by any verifier from a clock or the network",
  "genesis": {
   "SV-LLM": {
    "pr": "SV-LLM/.github#50",
@@ -53,8 +53,8 @@
   "SV-LLM": "35fa61f7a49eef56621d7f872fd87a64640fff51",
   "StegGhost": "174479421d120697105930c5309041ba5e756947",
   "StegVerse-002": "296d438e4e7b152e2bf4e04e21f08a272c9f881c",
-  "StegVerse-Labs": "96ff141cabe940d9e338f8c153835f25f08fd18a",
-  "StegVerse-org": "c170db45153eafa5fa568da2079e86caa3e74026",
+  "StegVerse-Labs": "89067f0d8da1e6b1aef33ab79074743cce1b743f",
+  "StegVerse-org": "a195bc908ed051545704fe521a77e85cd0f37109",
   "Triad-Test": "3ae26b03927a66141260ac084ac9bc3086049c07"
  },
  "tvc": {
