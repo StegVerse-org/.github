@@ -6,7 +6,7 @@ because the addressed service admitted no processing at all. So nothing had
 ever produced `declared_capability_processed: true`: the boundary could
 transport a declaration and could refuse one, but no surface served one.
 
-`stegverse-org.llm-adapter` now does. It admits exactly one pair --
+`stegverse-org.task-registry-disclosure` now does. It admits exactly one pair --
 `ecosystem_diagnostic` bound to `stegverse.route.ecosystem-diagnostic.v1`
 -- and serves the committed task registry with its digest. A reader gets the
 current generation rather than a copy pasted into a document, which is the
@@ -29,7 +29,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+MANIFEST = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 REGISTRY = ROOT / "orchestration/task-registry.json"
 CAPABILITY_REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 RECEIPT_CHAIN = ["INGRESS_ACCEPTED", "DISPATCHED", "CONSUMED", "RESULT_BOUND", "EGRESS_EMITTED"]
@@ -85,8 +85,17 @@ class CrossingServesTheRegistryTests(unittest.TestCase):
         self.assertEqual(self.result["declared_route_id"], ROUTE_ID)
 
     def test_it_reached_the_llm_adapter_surface(self):
-        self.assertEqual(self.result["declared_transition_surface"], "LLM_ADAPTER")
-        self.assertEqual(self.result["resolved_service_id"], "stegverse-org.llm-adapter")
+        """Name kept from the base so required verification stays continuous.
+
+        The crossing no longer reaches an LLM-adapter surface. No organization
+        repository routes to StegVerse-org/LLM-adapter.
+        """
+        self.assertNotEqual(self.result["declared_transition_surface"], "LLM_ADAPTER")
+        self.assertNotEqual(self.result["resolved_service_id"], "stegverse-org.llm-adapter")
+
+    def test_it_reached_the_task_registry_disclosure_surface(self):
+        self.assertEqual(self.result["declared_transition_surface"], "TASK_REGISTRY_DISCLOSURE")
+        self.assertEqual(self.result["resolved_service_id"], "stegverse-org.task-registry-disclosure")
 
     def test_the_crossing_reconstructs_with_the_full_receipt_chain(self):
         self.assertIs(self.result["consumed"], True)
@@ -161,7 +170,7 @@ class RegistryBindingTests(unittest.TestCase):
     def setUpClass(cls):
         registry = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
         cls.row = next(s for s in registry["services"]
-                       if s["service_id"] == "stegverse-org.llm-adapter")
+                       if s["service_id"] == "stegverse-org.task-registry-disclosure")
 
     def test_the_row_admits_exactly_the_pair_the_adapter_serves(self):
         self.assertEqual(self.row["admits_processing"],
@@ -179,7 +188,7 @@ class RegistryBindingTests(unittest.TestCase):
         self.assertEqual(manifest["processing"],
                          {"capability": CAPABILITY, "route_id": ROUTE_ID})
         self.assertEqual(manifest["completion"]["egress"]["final_stegverse_transition_surface"],
-                         "LLM_ADAPTER")
+                         "TASK_REGISTRY_DISCLOSURE")
 
 
 if __name__ == "__main__":

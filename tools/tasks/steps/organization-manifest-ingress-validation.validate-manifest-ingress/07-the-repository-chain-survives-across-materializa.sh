@@ -7,7 +7,7 @@ for n in 1 2; do
   python - "$n" <<'PY'
 import json, sys
 from pathlib import Path
-fixture = json.loads(Path("tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json").read_text())
+fixture = json.loads(Path("tests/fixtures/sdk-manifests/task-registry-disclosure.json").read_text())
 fixture["source_output_id"] = fixture["source_output_id"] + "-durable-" + sys.argv[1]
 Path("/tmp/durable-manifest-" + sys.argv[1] + ".json").write_text(json.dumps(fixture))
 PY

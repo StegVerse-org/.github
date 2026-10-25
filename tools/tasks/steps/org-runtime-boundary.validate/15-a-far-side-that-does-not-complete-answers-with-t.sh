@@ -2,7 +2,7 @@ for case in receiver-unavailable installed-adapter-refuses; do
   python tests/fixtures/d6_far_side_registry.py --case "$case" --out "/tmp/sdk-crossing-d6-registry-$case.json"
   python resident-runtime/sdk_manifest_crossing.py \
     --registry "/tmp/sdk-crossing-d6-registry-$case.json" \
-    --manifest tests/fixtures/sdk-manifests/unadmitted-capability-to-llm-adapter.json \
+    --manifest tests/fixtures/sdk-manifests/unadmitted-capability-to-task-registry-disclosure.json \
     --standing tests/fixtures/crossing-standing-genesis.json \
     --packet-id "ci-sdk-crossing-d6-$case" --out "/tmp/sdk-crossing-d6-$case.json" || true
 done

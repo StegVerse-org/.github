@@ -118,7 +118,7 @@
     {
       "file": "README.md",
       "line": 56,
-      "text": "None of this is a crossing. `StegVerse-org/LLM-adapter` and `StegVerse-org/.github` are both inside `StegVerse-org`, so no organization boundary is between them and no Interlock/InTr is involved; the receipts record that explicitly. The hop",
+      "text": "None of this is a crossing. Every repository in scope and `StegVerse-org/.github` are inside `StegVerse-org`, so no organization boundary is between them and no Interlock/InTr is involved. No organization repository routes to, or writes a l",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
@@ -307,7 +307,7 @@
     {
       "file": "docs/ORGANIZATION_REPOSITORY_PROPAGATION_MIRROR_HANDOFF.md",
       "line": 16,
-      "text": "This was mis-stated earlier in the work and is worth recording plainly: `StegVerse-org/LLM-adapter` and `StegVerse-org/.github` are both inside `StegVerse-org`. There is no organization boundary between them. Interlock/InTr is the *inter-or",
+      "text": "A repository declared in `org-boundary/registry/services.json` and `StegVerse-org/.github` are both inside `StegVerse-org`. There is no organization boundary between them. No organization repository routes to, or writes a ledger for, `StegV",
       "classification": "PROPER",
       "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
     },
