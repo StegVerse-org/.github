@@ -139,8 +139,8 @@ class WorkflowBinding(unittest.TestCase):
         self.workflow = _job("ledger-transition")
 
     def test_mesh_root_is_a_request_mode_dispatch_input_and_never_inferred(self):
-        # mode=self-closure does not leave this organization, so mesh_root is
-        # an input of the committed-request mode. That mode takes it from the
+        # mesh_root is an input of the committed-request mode (the self-closure
+        # mode is retired by Rigel's rule, 2026-10-25: no InTr hop inside one organization). That mode takes it from the
         # dispatch or from the committed request, never from the runner.
         # G17 removed workflow_dispatch: a dispatched mesh_root is FAIL_CLOSED
         # pending in the registry; the committed request supplies it on push.

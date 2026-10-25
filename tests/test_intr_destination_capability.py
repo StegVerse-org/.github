@@ -595,41 +595,38 @@ class LedgerWriterSelfClosureModeTests(unittest.TestCase):
         return self.text().split("      - name: " + name + "\n")[1].split("      - name:")[0]
 
     def test_the_self_closure_mode_matches_the_other_writers(self):
+        # Re-purposed (base id kept) under Rigel's rule (2026-10-25): InTr paths exist only between
+        # distinct organizations, so the self-closure (an InTr hop inside this organization) is retired.
+        # Its two steps are removed, as in SV-LLM/.github#62; the registry row records it retired,
+        # never to be selected. The request mode keeps the writer's lock, permissions and one publish.
         text = self.text()
-        # G17 removed workflow_dispatch: the self-closure mode is recorded FAIL_CLOSED
-        # pending (six fields) in the registry; its steps stay, unreachable on push.
         from tests.workflow_surface import registry
         self.assertNotIn("workflow_dispatch:", text.split("\njobs:\n", 1)[0])
         pending = [r for r in registry()["fail_closed_pending"] if "self-closure" in r["surface"]]
         self.assertEqual(len(pending), 1)
         self.assertEqual(pending[0]["disposition"], "FAIL_CLOSED")
+        self.assertEqual(pending[0]["failed_predicate"], "INTR_HOP_IS_BETWEEN_DISTINCT_ORGANIZATIONS")
+        self.assertIn("retired_by_owner_rule", pending[0])
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint",
+                      "owning_existing_goal", "next_attempt"):
+            self.assertTrue(pending[0][field], field)
+        self.assertNotIn("Close an intr-destination diagnostic against this organization", text)
+        self.assertNotIn("Read the intr-destination self-closure back from a fresh fetch", text)
+        self.assertNotIn("--self-close", text)
+        self.assertNotIn("--verify-self-closure", text)
+        self.assertNotIn("if: env.MODE == 'self-closure'", text)
         self.assertIn("MODE: ${{ github.event.inputs.mode || 'request' }}", text)
         self.assertIn("group: organization-ledger", text)
         self.assertIn("cancel-in-progress: false", text)
         self.assertIn("contents: write", text)
-        self.assertIn("HB_EPOCH: ${{ github.event.inputs.hb_epoch }}", text)
-        close = self.step("Close an intr-destination diagnostic against this organization")
-        self.assertIn("if: env.MODE == 'self-closure'", close)
-        self.assertIn("DISPATCH_HB_EPOCH_INVALID", close)
-        self.assertIn('--hb-epoch "$HB_EPOCH"', close)
-        self.assertIn("--self-close", close)
-        self.assertNotIn("federation.json", close)
-        self.assertNotIn("capability_destination_bindings", close)
-        readback = self.step("Read the intr-destination self-closure back from a fresh fetch")
-        self.assertIn("if: env.MODE == 'self-closure'", readback)
-        self.assertIn("--verify-self-closure", readback)
         for name in ("Select committed transition requests",
                      "Receive each request and append to the repository and organization ledgers",
                      "Publish the designated mesh ref (fast-forward only)",
                      "Read the organization and repository ledgers back from a fresh fetch"):
             self.assertIn("if: env.MODE != 'self-closure'", self.step(name), name)
-        # One fast-forward push publishes the ledger ref in either mode.
+        # One fast-forward push publishes the ledger ref.
         self.assertEqual(text.count('git push origin "$LEDGER_REF:$LEDGER_REF"'), 1)
         self.assertNotIn("if:", self.step("Publish the ledger ref (fast-forward only)").split("run:")[0])
-        self.assertLess(text.index("Close an intr-destination diagnostic against this organization"),
-                        text.index("- name: Publish the ledger ref (fast-forward only)"))
-        self.assertLess(text.index("- name: Publish the ledger ref (fast-forward only)"),
-                        text.index("Read the intr-destination self-closure back from a fresh fetch"))
         self.assertNotIn("--force", text)
         prohibited = "gr" + "ant"
         self.assertNotIn(prohibited, text.lower())
@@ -693,7 +690,7 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
             "ORGANIZATION_LEDGER_CONTRACT_OR_REQUEST_INVALID", "ORGANIZATION_LEDGER_REF_BINDING_FAILED",
             "DISPATCH_REQUEST_REQUIRED", "DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS",
             "DISPATCH_REQUEST_PATH_INVALID", "DISPATCH_REQUEST_CONTROL_CHARACTER",
-            "DISPATCH_REQUEST_NOT_COMMITTED", "DISPATCH_HB_EPOCH_INVALID", "SELF_CLOSURE_RESULT_ABSENT",
+            "DISPATCH_REQUEST_NOT_COMMITTED",
             "MESH_REF_PUBLISH_RACE", "ORGANIZATION_LEDGER_PUBLISH_RACE",
             "AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE"})
         # No refusal is a bare "FAIL_CLOSED: CODE" line any more.
@@ -768,30 +765,9 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
             self.assertEqual(run.returncode, 0, run.stderr)
             self.assertNotIn("failure_code", run.stdout + run.stderr)
 
-        close = "Close an intr-destination diagnostic against this organization"
-        for writes, epoch, code in ((False, "", "DISPATCH_HB_EPOCH_INVALID"),
-                                    (False, "7x", "DISPATCH_HB_EPOCH_INVALID"),
-                                    (False, "7", "SELF_CLOSURE_RESULT_ABSENT"),
-                                    (True, "7", None)):
-            with tempfile.TemporaryDirectory() as tmp:
-                runtime = Path(tmp, "resident-runtime")
-                runtime.mkdir()
-                body = ("import json, sys\nout = sys.argv[sys.argv.index('--out') + 1]\n"
-                        "json.dump({'disposition': 'ALLOW', 'communication_id': 'c'}, open(out, 'w'))\n"
-                        if writes else "raise SystemExit(1)\n")
-                (runtime / "intr_destination_ingress.py").write_text(body, encoding="utf-8")
-                run = self.run_step(close, tmp, {"HB_EPOCH": epoch, "INPUT_COMMUNICATION_ID": "c",
-                                                 "INPUT_PACKET_ID": "p", "GITHUB_RUN_ID": "1",
-                                                 "LEDGER_REF": "refs/stegverse/organization-ledger",
-                                                 "REPO_LEDGER_NAMESPACE": "n", "GITHUB_WORKSPACE": tmp})
-                if code is None:
-                    self.assertEqual(run.returncode, 0, run.stderr)
-                    self.assertNotIn("failure_code", run.stdout + run.stderr)
-                    continue
-                self.assertEqual(run.returncode, 1, (epoch, run.stderr))
-                message = self.last_message(run)
-                self.assertEqual(message["failure_code"], code)
-                self.assert_six(message)
+        # The self-closure step is removed (Rigel's rule, 2026-10-25: no InTr hop inside one organization);
+        # it has no refusals left to resolve.
+        self.assertNotIn("      - name: Close an intr-destination diagnostic against this organization\n", self.text())
 
         with tempfile.TemporaryDirectory() as tmp:
             for name, code in (("Validate committed request and readback implementation before any append",

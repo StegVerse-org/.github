@@ -874,14 +874,15 @@
   "fail_closed_pending": [
     {
       "surface": "organization-ledger-transition.yml workflow_dispatch mode=self-closure (inputs mode/request/mesh_root/communication_id/hb_epoch/packet_id)",
-      "now": ".github/workflows/organization-ledger-writer.yml job ledger-transition (steps retained, unreachable on push)",
+      "now": ".github/workflows/organization-ledger-writer.yml job ledger-transition (steps removed by the InTr path owner, Lane B; same removal as SV-LLM/.github#62)",
       "disposition": "FAIL_CLOSED",
       "failure_code": "DISPATCH_TRIGGER_REMOVED_BY_G17",
-      "failed_predicate": "SELF_CLOSURE_IS_A_COMMITTED_TRANSITION_REQUEST",
-      "required_evidence_or_repair": "carry self-closure as a committed request under .stegverse/transition-requests/ (manifest) so the push path selects it; the dispatch inputs no longer exist",
+      "failed_predicate": "INTR_HOP_IS_BETWEEN_DISTINCT_ORGANIZATIONS",
+      "required_evidence_or_repair": "none that re-enables it: an intr-destination self-closure addresses this organization's own InTr destination, an InTr hop inside one organization, which Rigel's rule (2026-10-25, relayed by Coordination): InTr paths exist only between distinct organizations; there is never an InTr hop inside one organization. LLM-adapter is not an InTr destination; its only InTr use is that an external machine that has established itself as a healthy node may become an InTr endpoint. The writer steps are removed by the InTr path owner (Lane B, StegVerse-org/.github#162); they are never carried as a committed request.",
       "retry_entrypoint": ".github/workflows/organization-ledger-writer.yml (job ledger-transition)",
       "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
-      "next_attempt": "owner decision on #166; until then self-closure does not run"
+      "next_attempt": "none: retired by Rigel's rule (2026-10-25); unreachable on push and never to be selected",
+      "retired_by_owner_rule": "Rigel's rule (2026-10-25, relayed by Coordination): InTr paths exist only between distinct organizations; there is never an InTr hop inside one organization. LLM-adapter is not an InTr destination; its only InTr use is that an external machine that has established itself as a healthy node may become an InTr endpoint."
     },
     {
       "surface": "organization-governance-return.yml workflow_dispatch locators (mesh_root, peer_mesh, sdk_ref, deciding_ledger)",
@@ -921,7 +922,7 @@
   "open_decisions": [
     "3rd-workflow exception: .github/workflows/organization-egress-boundary-validation.yml",
     "FEDERATION_HOP_TOKEN handling for the InTr hop",
-    "dispatch-only writer modes (self-closure, dispatched return locators)",
+    "dispatch-only writer modes (dispatched return locators; the self-closure is retired by Rigel's rule of 2026-10-25, not an open decision)",
     "main-change-receipt.yml (P4 #222): default proposed on #238 = catalog group main-change-receipt.receipt + manifest-directed append by organization-ledger-writer.yml (no 4th workflow); #238 owner accepts or amends"
   ],
   "catalog_additions": [
