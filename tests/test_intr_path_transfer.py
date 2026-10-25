@@ -364,11 +364,5 @@ class DocumentedDefaults(unittest.TestCase):
             self.assertTrue(got[field], field)
 
 
-# The intra-organization crossing (resident-runtime/intr_intra_org_destination.py) rides the same writer, so its
-# tests run in this module's job.
-sys.path.insert(0, str(ROOT / "tests"))
-from test_intr_intra_org_destination import IntraOrgDestination  # noqa: E402,F401
-
-
 if __name__ == "__main__":
     unittest.main()
