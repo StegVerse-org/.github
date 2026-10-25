@@ -335,9 +335,23 @@ class DocumentedDefaults(unittest.TestCase):
             self.assertTrue(result[field], field)
 
     def test_the_production_writer_does_not_opt_into_the_anonymous_read(self):
+        # Re-purposed (base id kept) under Rigel's standing invariant, 2026-10-25: every organization's .github is
+        # public, so the writer's path-ingress job observes source inclusion through the anonymous read, exactly
+        # once, before consume, with no token. The writer's other jobs still do not opt in.
         writer = (ROOT / ".github" / "workflows" / "organization-ledger-writer.yml").read_text(encoding="utf-8")
+        start = writer.index("\n  # Folded from .github/workflows/intr-path-ingress.yml")
+        end = writer.index("\n  # Folded from", start + 1)
+        job, rest = writer[start:end], writer[:start] + writer[end:]
         for opt_in in ("STEGVERSE_INTR_PUBLIC_LEDGERS", "intr_public_ledgers", "--public-ledgers"):
-            self.assertNotIn(opt_in, writer, opt_in)
+            self.assertNotIn(opt_in, rest, opt_in)
+        self.assertEqual(job.count('bash tools/tasks/intr_public_ledgers.sh "$RUNNER_TEMP/public-ledgers"'), 1)
+        self.assertEqual(job.count('export STEGVERSE_INTR_PUBLIC_LEDGERS="$RUNNER_TEMP/public-ledgers"'), 1)
+        self.assertLess(job.index("intr_public_ledgers.sh"), job.index("intr_path_ingress.py consume"))
+        self.assertLess(job.index("STEGVERSE_INTR_PUBLIC_LEDGERS"), job.index("intr_path_ingress.py consume"))
+        for token in ("secrets.", "FEDERATION_HOP_TOKEN", "FEDERATION_READ_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"):
+            self.assertNotIn(token, job, token)
+        reader = (ROOT / "tools" / "tasks" / "intr_public_ledgers.sh").read_text(encoding="utf-8")
+        self.assertIn("-c credential.helper= -c http.https://github.com/.extraheader=", reader)
 
     def test_source_inclusion_without_the_flag_is_fail_closed_credential_not_issued(self):
         pi = load("intr_path_ingress_documented_default", "resident-runtime/intr_path_ingress.py")
