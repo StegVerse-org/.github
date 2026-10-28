@@ -341,6 +341,51 @@ class Consume(unittest.TestCase):
                 self.assertEqual(refused["organization_receipt_sha256"], d_org["receipt_sha256"])
                 self.six(refused)
 
+    def _successor(self, org, repo, suffix, evidence):
+        checked = pi.check_source_pair(org, repo, PID, CID, DESTINATION)
+        epoch, failed = pi.mt.head_epoch(pi.mt.org_store())
+        self.assertIsNone(failed)
+        appended, _ = pi.ingress._append(
+            pi.TRANSITION_CLASS, PID + "@" + CID + suffix, evidence(checked), epoch, operation=pi.OPERATION,
+            profile_id=pi.ingress.PROFILE_ID,
+            boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
+                            "source_organization_receipt_sha256": org["receipt_sha256"],
+                            "source_repository_receipt_sha256": repo["receipt_sha256"]})
+        return appended["organization_receipt"]["receipt_sha256"]
+
+    def test_readback_carries_an_undeclared_successor_refusal_to_end_to_end(self):
+        # #258 review finding 2: the local half of the end-to-end check holds this ledger's own destination
+        # receipts to the same two transition ids as verify_inbound.
+        org, repo = synthetic_source()
+        self.public.publish(org, repo)
+        pi.consume(self.ledger.write_inbound([row(org, repo)]))
+        forged = self._successor(org, repo, "#forged-claim", lambda checked: pi.ingress_evidence(checked, {
+            "disposition": "ALLOW", "state": pi.PUBLIC_STATE, "source_ledger_tip": "c" * 40, "tvc_read_receipt": None}))
+        destination = pi.readback(PID, CID, pi.OPERATION, "temp")
+        self.assertEqual(destination["organization_receipt"]["receipt_sha256"], forged)
+        whole = pi.verify_end_to_end(PID, CID, source_readback(org, repo), destination)
+        self.assertEqual((whole["disposition"], whole["failure_code"], whole["path"]),
+                         ("FAIL_CLOSED", "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED", "UNVERIFIED"), whole)
+        self.assertEqual(whole["organization_receipt_sha256"], forged)
+        self.six(whole)
+
+    def test_a_source_inclusion_successor_over_an_observed_predecessor_is_refused(self):
+        # #258 review finding 3 (c71f23c): the #source-inclusion successor exists only to record an inclusion its
+        # predecessor recorded as unobserved. Over an already-observed predecessor it is refused.
+        org, repo = synthetic_source()
+        self.public.publish(org, repo)
+        inbound = self.ledger.write_inbound([row(org, repo)])
+        (observed,) = pi.consume(inbound)
+        self.assertEqual((observed["disposition"], observed["source_inclusion"]["state"]), ("ALLOW", pi.PUBLIC_STATE))
+        successor = self._successor(org, repo, pi.SOURCE_INCLUSION_PACKET_SUFFIX, lambda checked: pi.ingress_evidence(
+            checked, {"disposition": "ALLOW", "state": pi.PUBLIC_STATE, "source_ledger_tip": "c" * 40,
+                      "tvc_read_receipt": None}))
+        (refused,) = pi.verify_inbound(inbound)
+        self.assertEqual((refused["disposition"], refused["failure_code"]),
+                         ("FAIL_CLOSED", "INTR_PATH_DESTINATION_SUCCESSOR_PREDECESSOR_OBSERVED"), refused)
+        self.assertEqual(refused["organization_receipt_sha256"], successor)
+        self.six(refused)
+
 
 if __name__ == "__main__":
     unittest.main()
