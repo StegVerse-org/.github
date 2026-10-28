@@ -60,7 +60,7 @@ def tree(repository_path, ref=REF):
 
 
 def source_receipt(number):
-    body = {"schema": "stegverse.repo-transition-receipt/v1",
+    body = {"schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
             "repository": "StegVerse-org/StegVerse-SDK",
             "transition_id": "git-store-" + str(number)}
     return {**body, "receipt_sha256": organization.sha(body)}

@@ -129,6 +129,20 @@ class EgressBoundaryTests(EgressHarness):
         self.assertEqual(len(self.frames()), 1)
         self.assertEqual(len(self.repo_receipts(egress.EMITTED_CLASS)), 1)
 
+    def test_a_replay_at_another_epoch_is_refused_before_publishing_and_leaves_no_orphan_frame(self):
+        """F3b: it used to publish a second frame and then raise ledger_receipt_collision."""
+        first = self.emit()
+        repo_before, org_before = self.repo_receipts(), self.org_receipts()
+        replayed = self.emit(hb_epoch=33)
+        self.assertEqual(first["disposition"], "ALLOW")
+        self.assertEqual((replayed["disposition"], replayed["failure_code"], replayed["emitted"]),
+                         ("FAIL_CLOSED", "EMISSION_REPLAY_COLLISION", False))
+        for field in ("failure_code", "failed_predicate", "required_evidence_or_repair",
+                      "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+            self.assertTrue(replayed[field], field)
+        self.assertEqual(len(self.frames()), 1)
+        self.assertEqual((self.repo_receipts(), self.org_receipts()), (repo_before, org_before))
+
     def test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing(self):
         """The shared epoch rule: no clock-derived frame, so nothing published or appended."""
         refused = self.emit(hb_epoch=None)

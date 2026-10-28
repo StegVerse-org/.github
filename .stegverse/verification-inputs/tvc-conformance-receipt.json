@@ -1,0 +1,39 @@
+{
+ "schema": "stegverse.verification-input.tvc-conformance-receipt/v1",
+ "authority_effect": "NONE",
+ "owning_existing_goal": "StegVerse-org/.github#164 (GITHUB-UNIVERSAL-GOVERNANCE-PRODUCT-001)",
+ "ruling": "Coordination class D, option (2), ported from StegVerse-Labs/.github#3332: TVC's own CI runs the conformance test and seals a test receipt; this repository consumes that receipt from its organization ledger chain and never reads TVC source",
+ "input": "tvc",
+ "producer": {
+  "repository": "StegVerse-Labs/TVC",
+  "run_block": "tools/tasks/task_catalog.json group tvc-conformance-receipt (hosted by .github/workflows/merge-admitted-pull-request-validation.yml job conformance-receipt; G17: no workflow file of its own)",
+  "script": "scripts/tvc_labs_conformance_receipt.py --config config/org_conformance_source.json",
+  "introduced_by": "StegVerse-Labs/TVC#539"
+ },
+ "receipt": {
+  "schema": "stegverse.test-suite-skip-receipt/v1",
+  "receipt_kind": "TVC_ORG_CONFORMANCE_TEST_RECEIPT",
+  "suite": "TVC_ORG_CONFORMANCE",
+  "repository": "StegVerse-Labs/TVC",
+  "seal": "receipt_sha256 = sha256 of the canonical JSON body (organization_ledger_readback.self_verifies)"
+ },
+ "ledger": {
+  "ref": "refs/stegverse/organization-ledger",
+  "retained_as": "source-receipts/<receipt_sha256>.json consumed by an organization transition receipt",
+  "appended_by": "this organization's ledger writer only; neither TVC CI nor the full-suite job appends"
+ },
+ "tests": [
+  "tests/test_origin_attestation_tvc_conformance.py"
+ ],
+ "surface_paths": [
+  "org-boundary/runtime/origin_attestation.py",
+  "org-kernel/kernel.py",
+  "org-kernel/node_store.py",
+  "tests/test_origin_attestation_tvc_conformance.py"
+ ],
+ "surface_paths_observed_at": {
+  "org_commit": "ea88b1cbf2651224303135ac4bd9e268fe1cda5d",
+  "tvc_commit": "4a65a5a06a6776bd0f7cd2fc649519fdf30866d2",
+  "method": "audit-hook trace of every git-tracked, non-bytecode file the test file opens (TVC scripts/tvc_labs_conformance_receipt.py run)"
+ }
+}

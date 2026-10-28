@@ -12,9 +12,8 @@ of being read as an empty local ledger.
 These are the component's four `RemoteLocatorRefused` tests, with only paths
 and imports adjusted for this repository. The readback and writer tests
 exercise step (b) of the port (the readback and the writers re-raising the
-refusal in their own six fields). That step is deferred until
-StegVerse-org/.github#189 lands, so those two are skipped here and name
-what un-skips them.
+refusal in their own six fields), which landed after StegVerse-org/.github#189
+(merged c3f9fbee); both run unskipped.
 
 Source validation only. Nothing is read from or written to any organization
 ledger, and no authority effect is claimed.
@@ -34,8 +33,6 @@ SIX = ("failure_code", "failed_predicate", "required_evidence_or_repair",
        "retry_entrypoint", "owning_existing_goal", "next_attempt")
 LEDGER_REF = "refs/stegverse/organization-ledger"
 NS = "repository-ledger/formalism-tests/.github"
-STEP_B_DEFERRED = ("P1-FC-12 step (b), the readback and writers re-raising the locator refusal in six fields, "
-                   "is deferred until StegVerse-org/.github#189 lands (StegVerse-org/.github#162)")
 
 
 def _load_store():
@@ -85,7 +82,6 @@ class RemoteLocatorRefused(unittest.TestCase):
             self.assertEqual((loc.repository, loc.ref, loc.namespace), (Path(tmp).resolve(), LEDGER_REF, NS))
             self.assertEqual(store.parse_locator("git+./rel#" + LEDGER_REF).repository, Path("rel").resolve())
 
-    @unittest.skip(STEP_B_DEFERRED)
     def test_readback_cli_refuses_and_writes_nothing(self):
         with tempfile.TemporaryDirectory() as tmp:
             for locator in REMOTE_LOCATORS:
@@ -97,7 +93,6 @@ class RemoteLocatorRefused(unittest.TestCase):
                 self.assertEqual(r["failed_predicate"], "LEDGER_LOCATOR_NAMES_A_STORE_ON_THIS_NODE")
             self.assertEqual(os.listdir(tmp), [], "nothing is created for a remote locator")
 
-    @unittest.skip(STEP_B_DEFERRED)
     def test_writers_refuse_a_remote_ledger_root_in_six_fields(self):
         env = dict(os.environ,
                    STEGVERSE_ORG_LEDGER_ROOT="https://github.com/StegVerse-org/.github",

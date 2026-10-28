@@ -63,7 +63,8 @@ class NoHostedGatewayRouteTests(unittest.TestCase):
             env = {"STEGVERSE_ORG_LEDGER_ROOT": str(Path(work) / "org-ledger"),
                    "STEGVERSE_REPO_LEDGER_ROOT": str(Path(work) / "repo-ledger")}
             completed = _run("resident-runtime/federation_cycle.py", "--mesh-root", str(mesh),
-                             "--node-state-root", str(state), env_extra=env, home=work)
+                             "--node-state-root", str(state), "--hb-epoch", "4096",
+                             env_extra=env, home=work)
             self.assertEqual(completed.returncode, 0, completed.stderr[-800:])
             receipt = json.loads(completed.stdout.strip().splitlines()[-1])
             self.assertEqual(receipt["transport"], "INTERLOCK_INTR_SUPPLIED_MESH")

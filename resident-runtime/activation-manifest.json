@@ -40,5 +40,116 @@
     "state_location": "SUPPLIED_NODE_STATE_ROOT",
     "receiver_unavailable": "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION",
     "github_actions_runtime_authority": "NONE"
+  },
+  "epoch_binding": {
+    "rule": "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+    "hb_epoch": "SUPPLIED_BY_DISPATCH",
+    "clock_fallback": "NONE",
+    "entrypoints": [
+      "resident-runtime/resident_executor.py",
+      "resident-runtime/federation_cycle.py"
+    ],
+    "dispatcher": "resident-runtime/resident_dispatch.py",
+    "dispatcher_implementation": "resident-runtime/resident_dispatch.py",
+    "dispatcher_triggers": [],
+    "gate_precedes_invocation": true,
+    "dispatcher_is_runtime_authority": false,
+    "accepts_carried_crossings": false,
+    "runtime_dispatcher": {
+      "status": "PENDING_SUBSTRATE",
+      "line": "RUNTIME_DISPATCHER_PENDING_SUBSTRATE",
+      "blocking": false,
+      "record": {
+        "state": "OPEN",
+        "failure_code": "MANIFEST_DISPATCHER_PROHIBITED_ON_HOSTED",
+        "failed_predicate": "DISPATCHER_IS_THE_RESIDENT_RUNTIME_AUTHORITY",
+        "detail": "github_actions_is_runtime_authority is false and resident_executor.py refuses a hosted runtime (HOSTED, resident_executor.py:21, :91-93); the in-tree dispatch gates and hands the supplied epoch over",
+        "required_evidence_or_repair": "a resident substrate materializes the node and runs the handed invocations, each with the supplied --hb-epoch",
+        "retry_entrypoint": "resident-runtime/resident_executor.py --hb-epoch",
+        "owning_existing_goal": "WU-B13 activation (StegVerse-Labs/.github#3183)",
+        "next_attempt": "the canonical runtime substrate dispatcher"
+      }
+    },
+    "carried_sources": {
+      "CARRIED:SEGMENT_HEAD": {
+        "durable_ledger_state": "the organization ledger chain (.stegverse/transition-ledger/org-contract.json organization_ledger_ref)",
+        "verified_by": "resident-runtime/submit_org_transition_to_master_records.py::verified_in_ledger",
+        "verification": "member of the chain walked from HEAD, byte-identical, recomputing; need not be the tip",
+        "unverified": "CARRIED_PROVENANCE_UNVERIFIED"
+      }
+    },
+    "open_records": [
+      {
+        "state": "OPEN",
+        "failure_code": "RESIDENT_DISPATCH_WORKFLOW_REMOVED_BY_G17",
+        "failed_predicate": "NO_SURFACE_CARRIES_WORKFLOW_DISPATCH_UNLESS_ITS_REGISTERED_EXCEPTION_NAMES_IT",
+        "detail": "#207 carried .github/workflows/resident-runtime-dispatch.yml (workflow_dispatch only). Main's G17 registry (control/workflow-surface-registry.json) refuses an unregistered workflow and any workflow_dispatch surface without a registered exception, and caps the repository at three workflows; the file was removed when main was merged in. The gate and hand-over stay in resident-runtime/resident_dispatch.py, which the resident substrate invokes with --hb-epoch",
+        "required_evidence_or_repair": "an owner decision on #166 admitting a dispatch surface for the resident cycle (a registered exception or a manifest-directed committed request carrying hb_epoch); until then nothing hosted dispatches the resident entrypoints",
+        "retry_entrypoint": "resident-runtime/resident_dispatch.py --hb-epoch",
+        "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+        "next_attempt": "owner decision on #166; Grok Lane B may RATIFY or REVERT this removal on #207"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "MERGE_TRANSFER_PROVENANCE_PENDING_206",
+        "failed_predicate": "MERGE_TRANSFER_RECEIPTS_RECORD_SOURCE_AND_HEAD_RECEIPT_SHA",
+        "detail": "resident-runtime/merge_transfer.py stamps the ORGANIZATION_MAIN_MERGE_TRANSFER receipts with the head receipt's supplied epoch (admissible under the 08:49Z route) but records neither source nor head_receipt_sha, and its CLI does not yet return six fields on a write fault. StegVerse-org/.github#206 merged (12b2b360) without changing it: the file is still sha256 032ed727..., which data/intr-protocol/v1/protocol.json main_merge_transfer.verifier pins as landed byte-identical in more than one organization, and resident-runtime/merge_transfer_gitstore.py writes the same receipt bodies under parity tests",
+        "required_evidence_or_repair": "a protocol revision of main_merge_transfer that lands, in every organization the v1 pin names, merge_transfer receipts carrying source CARRIED:<head> and head_receipt_sha (verified by carried_provenance_failure) and a CLI run through resident-runtime/writer_cli.py, with merge_transfer_gitstore.py and its fixtures regenerated to match",
+        "retry_entrypoint": "resident-runtime/merge_transfer.py append",
+        "owning_existing_goal": "StegVerse-org/.github#162",
+        "next_attempt": "on that protocol revision; this branch does not change a cross-organization pinned file"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "PROPAGATE_MISSING_LEDGER_ROOT_IS_SILENT",
+        "failed_predicate": "A_SUPPLIED_LEDGER_LOCATION_EXISTS_OR_IS_REFUSED",
+        "detail": "propagate_repository_receipts.py --repository-ledger-root naming a missing directory exits 0 with nothing propagated",
+        "required_evidence_or_repair": "refuse a supplied repository ledger root that does not exist with a six-field FAIL_CLOSED, non-zero exit",
+        "retry_entrypoint": "resident-runtime/propagate_repository_receipts.py --repository-ledger-root",
+        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
+        "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "IDENTICAL_REQUEST_AT_TWO_EPOCHS_ANSWERED_TWICE",
+        "failed_predicate": "ONE_REQUEST_PACKET_IS_CONSUMED_AND_ANSWERED_ONCE",
+        "detail": "the same request packet (same packet_sha256) published at two epochs is two frames; each is consumed and answered",
+        "required_evidence_or_repair": "bind consumption to the request packet (packet_id + packet_sha256), so a second frame of the same request is observed as already consumed and is not answered again",
+        "retry_entrypoint": "org-kernel/kernel.py::consume_and_respond",
+        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
+        "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "DIRECT_KERNEL_CONSUME_STAMPS_THE_FRAME_EPOCH",
+        "failed_predicate": "EVERY_CONSUMING_ENTRYPOINT_SUPPLIES_THE_CYCLE_EPOCH",
+        "detail": "kernel.consume_and_respond / consume_addressed_frames called directly with no hb_epoch stamp receipts with the frame's supplied epoch; the cycle entrypoints (federation_cycle, governance_return_cycle) always supply one",
+        "required_evidence_or_repair": "make hb_epoch required on the kernel consuming calls and refuse NOT_SUPPLIED without it; move direct callers (tests, capability workflows) onto a supplied cycle epoch",
+        "retry_entrypoint": "org-kernel/kernel.py::consume_and_respond (hb_epoch)",
+        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
+        "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "KERNEL_LEGACY_DIRECT_CALL_PATHS",
+        "failed_predicate": "LEGACY_KERNEL_ENTRYPOINTS_ARE_GATED_OR_REFUSED",
+        "detail": "carried over from before #207: ingest_frame called directly has no epoch gate; the now_ns test path skips classification; publish_ecosystem_from_directory raises TypeError instead of a six-field refusal",
+        "required_evidence_or_repair": "gate ingest_frame on a classified frame, remove or gate the now_ns path, and give publish_ecosystem_from_directory a six-field refusal",
+        "retry_entrypoint": "org-kernel/kernel.py (ingest_frame, consume_and_respond now_ns, publish_ecosystem_from_directory)",
+        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001 (post-freeze follow-up to StegVerse-org/.github#207)",
+        "next_attempt": "a follow-up PR after #207, under the frozen-row rule: these are post-freeze findings, FAIL_CLOSED-scoped and non-blocking"
+      },
+      {
+        "state": "OPEN",
+        "failure_code": "PROCESS_BOUNDARY_FAULT_SEMANTICS_DEFERRED",
+        "failed_predicate": "PROCESS_BOUNDARY_IS_THE_CANONICAL_DC_BYTES",
+        "detail": "org-boundary/runtime/process_boundary.py carries the Data-Continuation/.github#10 exit-code split (own write or working-space OSError: non-terminal 75; everything else: terminal 65; no traceback) and every caller treats only 75 as non-terminal, but it is a locally diverged copy, not the DC bytes (a1fd6681...d7681); the tree's process_boundary_sha256 below is checked by a test",
+        "process_boundary_sha256": "cc0ff9145fc46b1ef621c6ef0bbaecb0507f5a4c7c19d1b2c51348786b94497a",
+        "required_evidence_or_repair": "re-pin to the Data-Continuation/.github#10 bytes once it merges, keeping the caller-side split (only 75 non-terminal) and valid-input output byte-identical",
+        "retry_entrypoint": "python3 org-boundary/runtime/process_boundary.py --envelope ... --registry ... --out ...",
+        "owning_existing_goal": "Data-Continuation/.github#10 merge",
+        "next_attempt": "on DC#10 merge"
+      }
+    ]
   }
 }

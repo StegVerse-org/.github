@@ -528,6 +528,8 @@ def supplied_epoch_failure(hb_epoch: Any, reference: Any = None) -> tuple[str, s
             and reference["derived_from_clock"] is not False:
         return "HB_EPOCH_INVALID", ("the carrier's derived_from_clock is not exactly false; "
                                     "a clock-derived epoch is not a supplied one")
+    if reference is not None and "sampled_unix_ns" in reference: return "HB_EPOCH_INVALID", "the carrier's heartbeat reference carries sampled_unix_ns; a sampled clock value is CLOCK, never a supplied epoch"
+    if reference is not None and "derived_from_clock" not in reference: return "HB_EPOCH_PROVENANCE_UNMARKED", "the carrier's heartbeat reference carries no derived_from_clock; an unmarked clock value is laundering, and a carrier cannot self-assert CARRIED provenance"
     return None
 
 
@@ -558,7 +560,8 @@ def epoch_refusal(hb_epoch: Any, entrypoint: str) -> dict[str, Any] | None:
 
 
 def _record(transition_id: str, transition_class: str, predecessor: str, successor: str,
-            record: Mapping[str, Any], hb_epoch: int) -> dict[str, Any]:
+            record: Mapping[str, Any], hb_epoch: int,
+            hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Append at both levels: the repository first, the organization consuming it.
 
     The epoch is the supplied one (`epoch_refusal` has admitted it), so the
@@ -569,17 +572,20 @@ def _record(transition_id: str, transition_class: str, predecessor: str, success
     if epoch_refusal(hb_epoch, "resident-runtime/organization_egress_boundary.py") is not None:
         raise ValueError("HB_EPOCH_NOT_SUPPLIED_OR_INVALID: a ledger append takes a supplied epoch")
     idempotent = True
+    # Where a push run's epoch came from (COMMITTED_REQUEST and the request
+    # digest) is recorded on both receipts beside the epoch; it never supplies one.
+    source = {"hb_epoch_source": dict(hb_epoch_source)} if hb_epoch_source is not None else {}
     repository_receipt = repository_ledger.append(
         transition_id, transition_class, predecessor, successor,
-        dict(record), "NONE", hb_epoch=hb_epoch,
+        {**dict(record), **source}, "NONE", hb_epoch=hb_epoch,
         idempotent_on=("frame_sha256", "payload_sha256") if idempotent else None)
     organization_receipt = organization_ledger.append(
         repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
         {"operation": OPERATION_ID,
          "intended_action": record["intended_action"],
          "disposition": record["disposition"],
-         "crossed_an_organization_boundary": record["crossed_an_organization_boundary"]},
-        "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"] if idempotent else hb_epoch,
+         "crossed_an_organization_boundary": record["crossed_an_organization_boundary"], **source},
+        "NONE", hb_epoch=hb_epoch,
         idempotent=idempotent)
     return {"repository_receipt": repository_receipt,
             "organization_receipt": organization_receipt}
@@ -652,7 +658,17 @@ def emit(destination_organization: Any, payload: Mapping[str, Any], *,
                 raise EgressRefused(refused.failed_predicate, refused.reason) from None
             attested = attestation_module.record(declared, signature, receipt)
             packet = {**packet, "attestation": signature}
-        published = kernel.publish_packet(packet, root=mesh_root, epoch=hb_epoch)
+        # F3b: a replay is checked against this organization's own emission record
+        # before anything is published. The same frame is a write-once no-op and the
+        # record already held is returned; a different frame for a recorded packet
+        # (another epoch, another attestation) is refused here, so no frame is left
+        # on the mesh without a receipt and nothing raises after publishing.
+        frame = kernel.carrier_frame(packet, epoch=hb_epoch)
+        prior = recorded_emission(packet["packet_id"])
+        if prior is not None and prior.get("frame_sha256") != frame["frame_sha256"]:
+            return replay_collision_refusal(packet, prior, frame, payload)
+        published = {"packet": packet, "frame": frame,
+                     "path": str(kernel.publish_frame(frame, root=mesh_root))}
     except EgressRefused as exc:
         record = emit_refusal_record(exc.failed_predicate, exc.reason,
                                      destination_organization, origin, payload)
@@ -704,6 +720,33 @@ def refusal_repair(failed_predicate: str, detail: str) -> str:
     if "mesh_location_required" in str(detail):
         return "materialize this node with its federation mesh location (the supplied mesh is the durable queue)"
     return "satisfy the egress boundary's failed predicate: " + str(failed_predicate)
+
+
+def replay_collision_refusal(packet: Mapping[str, Any], prior: Mapping[str, Any],
+                             frame: Mapping[str, Any], payload: Any) -> dict[str, Any]:
+    """The six-field refusal of a replayed emission whose frame differs from the recorded one.
+
+    Nothing is published and nothing is appended: the recorded emission stands.
+    """
+    return {
+        "schema": RESULT_SCHEMA,
+        "operation": OPERATION_ID,
+        "disposition": FAIL_CLOSED,
+        "emitted": False,
+        "packet_id": packet["packet_id"],
+        "communication_id": (payload or {}).get("communication_id") if isinstance(payload, Mapping) else None,
+        "failure_code": "EMISSION_REPLAY_COLLISION",
+        "failed_predicate": "REPLAYED_EMISSION_REPRODUCES_THE_RECORDED_FRAME",
+        "detail": ("packet " + packet["packet_id"] + " is recorded as emitted in frame "
+                   + str(prior.get("frame_sha256")) + "; this replay would publish "
+                   + str(frame["frame_sha256"])),
+        "required_evidence_or_repair": "replay the emission at the epoch it was recorded with, or emit a new packet",
+        "retry_entrypoint": "resident-runtime/organization_egress_boundary.py::emit",
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "nothing was published and nothing was appended; the recorded emission stands",
+        "refusal_recorded": False,
+        "authority_effect": "NONE_REFUSAL_ONLY",
+    }
 
 
 def _refusal_result(record: Mapping[str, Any], appended: Mapping[str, Any]) -> dict[str, Any]:
@@ -849,7 +892,8 @@ def _recorded_attestation(emission: Mapping[str, Any] | None) -> dict[str, Any] 
 
 def close(destination_organization: str, packet_id: str, communication_id: str, *,
           root: Path | None = None, mesh_root: Path | None = None,
-          hb_epoch: int | None = None) -> dict[str, Any]:
+          hb_epoch: int | None = None,
+          hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Observe the far side's closure of an emitted crossing, and record it.
 
     Returns `PENDING` and records nothing when no response is in the mesh. An
@@ -894,7 +938,7 @@ def close(destination_organization: str, packet_id: str, communication_id: str, 
     transition_class = CLOSED_CLASS if not findings else CLOSURE_REFUSED_CLASS
     appended = _record(transition_class + ":" + packet_id, transition_class,
                        sha({"packet_id": packet_id, "communication_id": communication_id}),
-                       sha(record), record, hb_epoch)
+                       sha(record), record, hb_epoch, hb_epoch_source=hb_epoch_source)
     return {
         "schema": RESULT_SCHEMA,
         "operation": OPERATION_ID,
@@ -945,8 +989,16 @@ def main() -> int:
     if args.close:
         if not args.packet_id or not args.communication_id:
             raise SystemExit("--close requires --packet-id and --communication-id")
-        result = close(args.destination_organization, args.packet_id, args.communication_id,
-                       hb_epoch=args.hb_epoch)
+        # Checked before the destination and mesh are resolved, so a bad epoch
+        # is refused six-field rather than surfacing as a resolution error.
+        refused_epoch = epoch_refusal(args.hb_epoch, "resident-runtime/organization_egress_boundary.py (--close, --hb-epoch)")
+        if refused_epoch is not None:
+            result = {**{k: v for k, v in refused_epoch.items() if k != "emitted"},
+                      "closed": False, "closure_recorded": False,
+                      "communication_id": args.communication_id, "request_packet_id": args.packet_id}
+        else:
+            result = close(args.destination_organization, args.packet_id, args.communication_id,
+                           hb_epoch=args.hb_epoch)
     else:
         payload = json.loads(Path(args.payload).read_text(encoding="utf-8"))
         result = emit(args.destination_organization, payload, standing=standing,
@@ -961,4 +1013,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/organization_egress_boundary.py", inputs=('--payload', '--standing')))

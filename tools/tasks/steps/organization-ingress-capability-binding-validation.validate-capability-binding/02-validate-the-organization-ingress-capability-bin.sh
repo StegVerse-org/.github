@@ -1,0 +1,1 @@
+python -m unittest tests.test_organization_ingress_capability_binding -v

@@ -37,7 +37,7 @@ _peer_spec = importlib.util.spec_from_file_location("peer_organization", ROOT / 
 peers = importlib.util.module_from_spec(_peer_spec)
 _peer_spec.loader.exec_module(peers)
 CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
-MANIFEST = "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+MANIFEST = "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 STANDING = "tests/fixtures/crossing-standing-genesis.json"
 
 PEER = "StegVerse-Labs"
@@ -61,8 +61,6 @@ egress = _module("organization_egress_boundary",
 repository_ledger = _module("repo_transition_emit", ".stegverse/transition-ledger/emit.py")
 ledger_store = _module("ledger_store", "resident-runtime/ledger_store.py")
 kernel = egress.kernel
-# The carrier epoch these fixtures supply: the kernel reads no clock (hb_reference L76-77).
-SUPPLIED_EPOCH = kernel.HB_ANCHOR_EPOCH + 4168
 
 
 class CapabilityMapTests(unittest.TestCase):
@@ -132,11 +130,11 @@ class CapabilityMapTests(unittest.TestCase):
             destination_org="StegVerse-org",
             destination_service="stegverse-org." + PROFILE_ID,
             payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
-                     "declared_transition_surface": "LLM_ADAPTER",
+                     "declared_transition_surface": "TASK_REGISTRY_DISCLOSURE",
                      "manifest_sha256": kernel.sha(manifest), "manifest": manifest},
             standing=standing, transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
-        kernel.publish_packet(packet, root=self.mesh, epoch=SUPPLIED_EPOCH)
+        kernel.publish_packet(packet, root=self.mesh, epoch=4096)
         return kernel.consume_addressed_frames(
             ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
             org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])

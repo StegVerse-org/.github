@@ -20,7 +20,7 @@ required_evidence_or_repair, retry_entrypoint, owning_existing_goal and
 next_attempt, with `organization_transition_blocked: false`; the batch simply
 stays unrecorded downstream, which is a value in its evidence state, not a blocker.
 """
-import argparse,importlib.util,json,sys
+import argparse,importlib.util,json,os,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location("org_kernel",ROOT/"org-kernel/kernel.py")
@@ -52,6 +52,9 @@ REFUSALS={
  "ORGANIZATION_RECEIPT_SELF_DIGEST_MATCHES":("MASTER_RECORDS_RELEASE_RECEIPT_DIGEST_MISMATCH","supply the receipt bytes exactly as appended to the organization ledger; only an appended receipt is released"),
  "ORGANIZATION_RECEIPT_CHAIN_SEGMENT_IS_CONTIGUOUS":("MASTER_RECORDS_RELEASE_SEGMENT_NOT_CONTIGUOUS","supply a contiguous segment in chain order: each receipt's previous_receipt_sha256 names the receipt before it"),
  "STANDING_DECLARES_PREDECESSOR":("MASTER_RECORDS_RELEASE_STANDING_UNDECLARED","standing must declare the predecessor key; null is explicit genesis"),
+ "RELEASED_SEGMENT_HEAD_CARRIES_A_SUPPLIED_EPOCH":("MASTER_RECORDS_RELEASE_HEAD_EPOCH_NOT_CARRIED","release a segment whose head receipt carries a supplied epoch (hb_reference.epoch an int >= 32, derived_from_clock false); a clock-derived or absent one is never stamped on the frame as supplied"),
+ "ORGANIZATION_LEDGER_LOCATION_SUPPLIED":("MASTER_RECORDS_RELEASE_LEDGER_LOCATION_NOT_SUPPLIED","supply --org-ledger-root (or STEGVERSE_ORG_LEDGER_ROOT), the organization ledger the segment was appended to; the segment is verified against it, never trusted"),
+ "RELEASED_SEGMENT_IS_DURABLE_ORGANIZATION_LEDGER_STATE":("CARRIED_PROVENANCE_UNVERIFIED","release only receipts that are members of the organization ledger chain, byte-identical and recomputing; a declared, verified segment head need not be the tip"),
  "PACKET_PUBLISHED_TO_SUPPLIED_MESH":("MASTER_RECORDS_RELEASE_NOT_PUBLISHED","repair the packet or mesh the kernel refused"),
 }
 class ReleaseRefused(Exception):
@@ -82,6 +85,33 @@ def verify_released_segment(receipts):
   "segment_base_previous_receipt_sha256":receipts[0].get("previous_receipt_sha256"),
   "segment_first_receipt_sha256":receipts[0]["receipt_sha256"],"segment_head_receipt_sha256":receipts[-1]["receipt_sha256"],
   "receipts":list(receipts)}
+#: The CARRIED source this releaser declares (activation-manifest.json
+#: epoch_binding.carried_sources): the segment head is durable organization-ledger
+#: state, verified against that ledger's chain before anything is published.
+SEGMENT_HEAD_SOURCE="CARRIED:SEGMENT_HEAD"
+CHAIN_WALK_LIMIT=1_000_000
+def verified_in_ledger(receipts,locator):
+ """Verify every released receipt is a member of the organization ledger chain. No clock is read.
+
+ The chain is walked from the ledger's HEAD along previous_receipt_sha256; each
+ stored receipt must recompute, and each released one must be byte-identical
+ to the stored receipt at its digest. The segment head need not be the tip.
+ """
+ if not locator:raise ReleaseRefused("ORGANIZATION_LEDGER_LOCATION_SUPPLIED","no --org-ledger-root")
+ try:store=AGG.open_store(AGG.parse_locator(str(locator)))
+ except (OSError,ValueError) as exc:raise ReleaseRefused("ORGANIZATION_LEDGER_LOCATION_SUPPLIED",type(exc).__name__+": "+str(exc))
+ head=store.get(AGG.HEAD_KEY)
+ chain=set();sha=head.get("receipt_sha256") if isinstance(head,dict) else None
+ while sha is not None and len(chain)<CHAIN_WALK_LIMIT:
+  stored=store.get(AGG.receipt_key(sha))
+  if not isinstance(stored,dict) or AGG.sha({k:v for k,v in stored.items() if k!="receipt_sha256"})!=sha:
+   raise ReleaseRefused("RELEASED_SEGMENT_IS_DURABLE_ORGANIZATION_LEDGER_STATE","ledger receipt "+str(sha)+" does not recompute")
+  chain.add(sha);sha=stored.get("previous_receipt_sha256")
+ for receipt in receipts:
+  if receipt["receipt_sha256"] not in chain or store.get(AGG.receipt_key(receipt["receipt_sha256"]))!=receipt:
+   raise ReleaseRefused("RELEASED_SEGMENT_IS_DURABLE_ORGANIZATION_LEDGER_STATE",
+                        "receipt "+receipt["receipt_sha256"]+" is not a member of the organization ledger chain")
+ return receipts[-1]["receipt_sha256"]
 def build_released_batch_packet(receipts,predecessor_ecosystem_state_sha256,successor_ecosystem_state_sha256,relation_evidence,standing):
  batch=verify_released_segment(receipts)
  # Standing is declared, never derived here. The ecosystem-state digests chain
@@ -94,6 +124,14 @@ def build_released_batch_packet(receipts,predecessor_ecosystem_state_sha256,succ
   "predecessor_ecosystem_state_sha256":predecessor_ecosystem_state_sha256,"successor_ecosystem_state_sha256":successor_ecosystem_state_sha256,
   "relation_evidence":relation_evidence,"authority_transfer":False,"gates_organization_runtime_reality":False,"awaited_by_organization":False}
  return K.build_packet(origin_org=ORGANIZATION,origin_service=ORIGIN_SERVICE,destination_org=DESTINATION_ORG,destination_service=DESTINATION_SERVICE,payload=payload,standing=standing,transition_reference=TRANSITION_REFERENCE,authority_effect="NONE")
+def carried_head_epoch(head):
+ """The supplied epoch the segment's head receipt carries, or ReleaseRefused. No clock is read."""
+ reference=head.get("hb_reference")
+ epoch=reference.get("epoch") if isinstance(reference,dict) else None
+ failure=AGG.supplied_epoch_failure(epoch,reference)
+ if failure is not None:
+  raise ReleaseRefused("RELEASED_SEGMENT_HEAD_CARRIES_A_SUPPLIED_EPOCH",failure[0]+": "+failure[1])
+ return int(str(epoch))
 def release(a):
  if a.mesh_root is None:raise ReleaseRefused("MESH_ROOT_SUPPLIED","no --mesh-root")
  try:
@@ -106,7 +144,20 @@ def release(a):
  # segment again publishes the same frame -- a write-once no-op -- instead of a
  # second record request stamped by the host clock. Publication is
  # fire-and-forget evidence: no answer is requested and nothing waits for it.
- try:published=K.publish_packet(packet,root=a.mesh_root,epoch=(receipts[-1].get("hb_reference") or {}).get("epoch"))
+ # That epoch is CARRIED, not supplied: it is used only when the head receipt
+ # says it was supplied, and the frame payload names where it came from. A
+ # clock-derived or absent head epoch is refused rather than stamped on the
+ # frame as derived_from_clock false (or sampled from this host's clock).
+ epoch=carried_head_epoch(receipts[-1])
+ # F4: the segment head is a CARRIED source only as declared durable ledger
+ # state, verified against the organization ledger before anything is published;
+ # a caller-supplied receipt that is not on that chain is CARRIED_PROVENANCE_UNVERIFIED.
+ head_sha=verified_in_ledger(receipts,getattr(a,"org_ledger_root",None) or os.environ.get("STEGVERSE_ORG_LEDGER_ROOT"))
+ provenance={"source":SEGMENT_HEAD_SOURCE,"head_receipt_sha":head_sha}
+ # Marked in the frame's heartbeat reference (where provenance is read), with
+ # a copy in the payload.
+ packet["payload"]["hb_epoch_provenance"]={**provenance,"derived_from_clock":False}
+ try:published=K.publish_packet(packet,root=a.mesh_root,epoch=epoch,provenance=provenance)
  except (OSError,ValueError,KeyError,TypeError) as exc:raise ReleaseRefused("PACKET_PUBLISHED_TO_SUPPLIED_MESH",str(exc))
  return {"status":"PUBLISHED_FOR_ORGANIZATION_RECORD","disposition":"ALLOW","packet_id":packet["packet_id"],"receipt_count":len(receipts),
   "frame_sha256":published["frame"]["frame_sha256"],"organization_transition_blocked":False,"master_records_awaited":False,
@@ -120,6 +171,8 @@ def main():
  # The mesh this node was materialized with. Without one nothing is published,
  # and the result says so as a downstream DENY rather than a usage error.
  p.add_argument("--mesh-root",type=Path,default=None)
+ # The organization ledger the segment was appended to; it is verified there.
+ p.add_argument("--org-ledger-root",default=None,help="the organization ledger locator (default STEGVERSE_ORG_LEDGER_ROOT)")
  a=p.parse_args()
  try:result=release(a)
  except ReleaseRefused as refused:result=refused.refusal
@@ -128,4 +181,8 @@ def main():
   print(result["failure_code"]+": "+result["failed_predicate"]+" -- "+result["required_evidence_or_repair"],file=sys.stderr)
   return NOT_RECORDED_EXIT
  return 0
-if __name__=="__main__":sys.exit(main())
+if __name__=="__main__":
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/submit_org_transition_to_master_records.py", inputs=('--org-receipt', '--standing')))

@@ -45,7 +45,11 @@ REQUIRED_TASK_FIELDS = {"task_id", "issue", "title", "status", "workstream",
                         "depends_on", "outputs"}
 ALLOWED_TASK_FIELDS = REQUIRED_TASK_FIELDS | {
     "required_evidence", "tag_allowed", "activation_condition", "destinations",
-    "issue_refs", "repository_artifact_history", "unresolved_obligations"}
+    "issue_refs", "repository_artifact_history", "unresolved_obligations",
+    # ST-021 successors carried by the vendored repo-standards schema @e46a8a5a (StegVerse-org/.github#166):
+    # cosv is derived by the owner's tools/derive_task_registry_cosv.py, completion_evidence transcribes the
+    # task's own "Completion evidence contract v1" line.
+    "cosv", "completion_evidence"}
 ENTITY_FIELDS = {"assignee", "assignees", "agent", "entity", "model", "llm",
                  "owner", "claimed_by", "session", "author"}
 
