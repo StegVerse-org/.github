@@ -1,0 +1,1 @@
+python -m unittest tests.test_workspace_internal_endpoint_binding -v

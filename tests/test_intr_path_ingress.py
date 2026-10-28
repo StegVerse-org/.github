@@ -12,6 +12,8 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -86,6 +88,55 @@ class Ledger(TempLedger):
         self.scratch.cleanup()
 
 
+FIXED = {"GIT_AUTHOR_NAME": "fixture", "GIT_AUTHOR_EMAIL": "fixture@invalid", "GIT_AUTHOR_DATE": "@0 +0000",
+         "GIT_COMMITTER_NAME": "fixture", "GIT_COMMITTER_EMAIL": "fixture@invalid", "GIT_COMMITTER_DATE": "@0 +0000"}
+
+
+class PublicCopy:
+    """A temporary stand-in for the anonymous copy of the source's public ledger (what
+    tools/tasks/intr_public_ledgers.sh fetches before consume): a bare <SOURCE>.git whose ledger ref holds
+    HEAD.json -> the given synthetic source receipts. Fixed dates; no network, clock or credential."""
+
+    def __init__(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.dir.name)
+        self.saved = os.environ.get(pi.PUBLIC_LEDGERS_ENV)
+        os.environ[pi.PUBLIC_LEDGERS_ENV] = str(self.root)
+
+    def _git(self, bare, *args, data=None):
+        return subprocess.run(["git", "--git-dir=" + str(bare), *args], input=data, capture_output=True, check=True,
+                              env={**os.environ, **FIXED}).stdout.decode().strip()
+
+    def publish(self, org, repo):
+        bare = self.root / (SOURCE + ".git")
+        if not bare.is_dir():
+            subprocess.run(["git", "init", "-q", "--bare", str(bare)], check=True)
+        blob = lambda doc: self._git(bare, "hash-object", "-w", "--stdin",
+                                     data=(json.dumps(doc, indent=2, sort_keys=True) + "\n").encode())
+        tree = lambda entries: self._git(bare, "mktree", data="".join(
+            ("100644 blob " if kind == "blob" else "040000 tree ") + sha + "\t" + name + "\n"
+            for name, (kind, sha) in sorted(entries.items())).encode())
+        key = lambda receipt: receipt["receipt_sha256"].split(":", 1)[1] + ".json"
+        repo_tree = tree({"receipts": ("tree", tree({key(repo): ("blob", blob(repo))}))})
+        top = tree({"HEAD.json": ("blob", blob({"receipt_sha256": org["receipt_sha256"]})),
+                    "receipts": ("tree", tree({key(org): ("blob", blob(org))})),
+                    "repository-ledger": ("tree", tree({SOURCE: ("tree", tree({".github": ("tree", repo_tree)}))}))})
+        tip = self._git(bare, "commit-tree", top, "-m", "fixture public ledger copy")
+        self._git(bare, "update-ref", pi.LEDGER_REF, tip)
+        return tip
+
+    def withdraw(self):
+        """The anonymous read failed: no copy of the source ledger."""
+        subprocess.run(["rm", "-rf", str(self.root / (SOURCE + ".git"))], check=True)
+
+    def close(self):
+        if self.saved is None:
+            os.environ.pop(pi.PUBLIC_LEDGERS_ENV, None)
+        else:
+            os.environ[pi.PUBLIC_LEDGERS_ENV] = self.saved
+        self.dir.cleanup()
+
+
 def row(org, repo, pid=PID, cid=CID):
     return {"path_id": pid, "communication_id": cid,
             "carried": {"source_organization_receipt": org, "source_repository_receipt": repo}}
@@ -100,8 +151,10 @@ def source_readback(org, repo):
 class Consume(unittest.TestCase):
     def setUp(self):
         self.ledger = Ledger()
+        self.public = PublicCopy()
 
     def tearDown(self):
+        self.public.close()
         self.ledger.close()
 
     def six(self, result):
@@ -113,11 +166,12 @@ class Consume(unittest.TestCase):
 
     def test_carried_receipts_enter_ingress_and_link_by_seal(self):
         org, repo = synthetic_source()
+        tip = self.public.publish(org, repo)
         before = self.ledger.files()
         (result,) = pi.consume(self.ledger.write_inbound([row(org, repo)]))
         self.assertEqual(result["disposition"], "ALLOW", result)
-        self.assertEqual(result["source_inclusion"]["failure_code"], "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED")
-        self.six(result["source_inclusion"])
+        self.assertEqual((result["source_inclusion"]["disposition"], result["source_inclusion"]["state"],
+                          result["source_inclusion"]["source_ledger_tip"]), ("ALLOW", pi.PUBLIC_STATE, tip))
         after = self.ledger.files()
         for name, data in before.items():
             if not name.endswith("HEAD.json"):
@@ -126,6 +180,9 @@ class Consume(unittest.TestCase):
         self.assertEqual(pi.ledger.boundary(d_org)["operation"], "ORGANIZATION_INTR_DESTINATION_INGRESS")
         self.assertEqual(pi.ledger.boundary(d_org)["source_organization_receipt_sha256"], org["receipt_sha256"])
         self.assertEqual(d_rep["evidence"]["source_repository_receipt_sha256"], repo["receipt_sha256"])
+        self.assertEqual(d_rep["evidence"]["source_inclusion"],
+                         {"state": pi.PUBLIC_STATE, "source_ledger_tip": tip, "tvc_read_receipt": None})
+        self.assertIsNone(pi.recorded_inclusion(d_rep))
         (verified,) = pi.verify_inbound(self.ledger.inbound)
         self.assertEqual(verified["disposition"], "ALLOW", verified)
         (replay,) = pi.consume(self.ledger.inbound)
@@ -134,6 +191,7 @@ class Consume(unittest.TestCase):
 
     def test_end_to_end_is_allow_only_with_both_ledgers_read_back(self):
         org, repo = synthetic_source()
+        self.public.publish(org, repo)
         pi.consume(self.ledger.write_inbound([row(org, repo)]))
         destination = pi.readback(PID, CID, pi.OPERATION, "temp")
         whole = pi.verify_end_to_end(PID, CID, source_readback(org, repo), destination)
@@ -151,6 +209,7 @@ class Consume(unittest.TestCase):
 
     def test_destination_receipt_linking_another_source_is_denied(self):
         org, repo = synthetic_source()
+        self.public.publish(org, repo)
         pi.consume(self.ledger.write_inbound([row(org, repo)]))
         d_org, d_rep, _ = pi.find_destination(PID, CID)
         forged = seal({**repo, "evidence": {**repo["evidence"], "tree": "x"}})
@@ -184,6 +243,58 @@ class Consume(unittest.TestCase):
         self.assertEqual((unledgered["disposition"], unledgered["failure_code"]),
                          ("FAIL_CLOSED", "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED"))
         self.six(unledgered)
+
+    def test_a_failed_anonymous_source_read_writes_nothing_and_is_fail_closed(self):
+        org, repo = synthetic_source()
+        before = self.ledger.files()
+        (result,) = pi.consume(self.ledger.write_inbound([row(org, repo)]))
+        self.assertEqual((result["disposition"], result["failure_code"], result["appended"]),
+                         ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED", False), result)
+        self.six(result)
+        self.assertEqual(self.ledger.files(), before)
+        self.assertEqual(pi.find_destination(PID, CID)[0], None)
+
+    def test_an_unobserved_inclusion_gets_one_successor_receipt_that_records_it(self):
+        org, repo = synthetic_source()
+        checked = pi.check_source_pair(org, repo, PID, CID, DESTINATION)
+        epoch, failed = pi.ledger.head_epoch()
+        self.assertIsNone(failed)
+        legacy = pi.ingress_evidence(checked, None)   # what the writer recorded before it read the source ledger
+        self.assertEqual(legacy["source_inclusion"], "UNOBSERVED_WITHOUT_A_CROSS_ORG_READ_CREDENTIAL")
+        pi.ledger.append(pi.TRANSITION_CLASS, PID + "@" + CID, legacy, epoch, operation=pi.OPERATION,
+                         profile_id=pi.ingress.PROFILE_ID,
+                         boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
+                                         "source_organization_receipt_sha256": org["receipt_sha256"],
+                                         "source_repository_receipt_sha256": repo["receipt_sha256"]})
+        inbound = self.ledger.write_inbound([row(org, repo)])
+        (unobserved,) = pi.verify_inbound(inbound)
+        self.assertEqual((unobserved["disposition"], unobserved["failure_code"]),
+                         ("FAIL_CLOSED", "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"), unobserved)
+        self.six(unobserved)
+        # the read fails: nothing is written and the row stays fail-closed
+        before = self.ledger.files()
+        (refused,) = pi.consume(inbound)
+        self.assertEqual((refused["disposition"], refused["appended"]), ("FAIL_CLOSED", False), refused)
+        self.six(refused)
+        self.assertEqual(self.ledger.files(), before)
+        # the read succeeds: one successor receipt records the observed inclusion
+        tip = self.public.publish(org, repo)
+        (result,) = pi.consume(inbound)
+        self.assertEqual((result["disposition"], result["source_inclusion"]["state"]), ("ALLOW", pi.PUBLIC_STATE), result)
+        d_org, d_rep, _ = pi.find_destination(PID, CID)
+        self.assertEqual(d_rep["evidence"]["source_inclusion"]["source_ledger_tip"], tip)
+        self.assertNotEqual(d_rep["evidence"]["payload_sha256"], legacy["payload_sha256"])
+        (verified,) = pi.verify_inbound(inbound)
+        self.assertEqual(verified["disposition"], "ALLOW", verified)
+        destination = pi.readback(PID, CID, pi.OPERATION, "temp")
+        self.assertEqual(destination["organization_receipt"]["receipt_sha256"], d_org["receipt_sha256"])
+        after = self.ledger.files()
+        (again,) = pi.consume(inbound)   # answered from the ledger: no third receipt
+        self.assertTrue(again["replayed"], again)
+        self.assertEqual(self.ledger.files(), after)
+        self.public.withdraw()
+        (still,) = pi.consume(inbound)   # an observed newest receipt needs no further read
+        self.assertTrue(still["replayed"], still)
 
 
 if __name__ == "__main__":

@@ -36,6 +36,7 @@ from intr_path_temp_ledger import TempLedger  # noqa: E402
 
 CHECKOUT = ROOT / "tests/fixtures/intr-path-ledger/gitstore-checkout"
 EXPECTED = json.loads((ROOT / "tests/fixtures/intr-path-transfer/expected-real-state.json").read_text())
+APPEND_BASE = EXPECTED["append_base_tip"]   # last tip before the path receipts: fresh appends are tested here
 NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").read_text())[
     "repository_ledger_location"]["namespace"]
 SIX = ("failure_code", "failed_predicate", "required_evidence_or_repair",
@@ -140,33 +141,38 @@ class Selection(unittest.TestCase):
 
 
 class GitstoreBackend(unittest.TestCase):
-    def run_both(self, check):
+    def run_both(self, check, tip=EXPECTED["ledger_tip"]):
         # An organization pinned to the git store (StegVerse-Labs, GCAT-BCAT-Engine) keeps its ledger on the git
         # ref, and its writer refuses a POSIX copy as an ungoverned relocation; it runs the git store only. Every
         # other organization runs both stores.
         for git in ((True,) if pl.pin_for(ORG) else (False, True)):
             with self.subTest(store="git" if git else "posix"):
-                ledger = TempLedger(ROOT, EXPECTED["ledger_tip"], NAMESPACE, git=git)
+                ledger = TempLedger(ROOT, tip, NAMESPACE, git=git)
                 try:
                     check(ledger)
                 finally:
                     ledger.close()
 
     def test_readers_find_the_verified_transfer_and_the_real_state_is_unchanged(self):
-        def check(ledger):
+        # The real state is pinned at ledger_tip; unledgered_commit has no main-merge transfer receipt at
+        # append_base_tip (it is ledgered by ledger_tip), so each is read at the tip where it is pinned.
+        def check(ledger, at_tip):
             bound = Bound(gitstore())
             try:
                 for commit in EXPECTED.get("temp_merge_transfers") or []:   # temp copies only; not ledgered
                     self.assertEqual(pt.ledger.append_merge_transfer(commit)["disposition"], "ALLOW")
                 verdict = pt.ledger.verify_transfer(EXPECTED["verified_transfer_commit"])
-                missing = pt.ledger.verify_transfer(EXPECTED["unledgered_commit"])
-                state = pt.real_state()
+                missing = None if at_tip else pt.ledger.verify_transfer(EXPECTED["unledgered_commit"])
+                state = pt.real_state() if at_tip else None
             finally:
                 bound.close()
             self.assertEqual(verdict["disposition"], "ALLOW", verdict)
-            self.assertEqual(missing["failure_code"], "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED")
-            self.assertEqual(state["paths"], EXPECTED["paths"])
-        self.run_both(check)
+            if at_tip:
+                self.assertEqual(state["paths"], EXPECTED["paths"])
+            else:
+                self.assertEqual(missing["failure_code"], "MERGE_TRANSFER_RECEIPT_NOT_LEDGERED")
+        self.run_both(lambda ledger: check(ledger, True))
+        self.run_both(lambda ledger: check(ledger, False), APPEND_BASE)
 
     def test_without_the_ledger_module_every_append_fails_closed_and_writes_nothing(self):
         tmp = tempfile.TemporaryDirectory()
@@ -182,7 +188,7 @@ class GitstoreBackend(unittest.TestCase):
                 results = pt.append_transfers(EXPECTED["verified_transfer_commit"])
             finally:
                 bound.close()
-            self.assertEqual(len(results), 7)
+            self.assertEqual(len(results), len(mine()))
             for result in results:
                 self.assertEqual((result["disposition"], result["failure_code"]),
                                  ("FAIL_CLOSED", "INTR_PATH_GITSTORE_WRITER_UNBOUND"), result)
@@ -190,7 +196,7 @@ class GitstoreBackend(unittest.TestCase):
                     self.assertTrue(result[field], field)
                 self.assertIn("ledger_gitstore.py", result["required_evidence_or_repair"])
             self.assertEqual(ledger.files(), before)
-        self.run_both(check)
+        self.run_both(check, APPEND_BASE)
 
     def test_lane_d_append_writes_both_halves_and_they_verify_through_the_gitstore_readers(self):
         def check(ledger):
@@ -200,7 +206,7 @@ class GitstoreBackend(unittest.TestCase):
                     self.assertEqual(pt.ledger.append_merge_transfer(commit)["disposition"], "ALLOW")
                 transfer = pt.ledger.verify_transfer(EXPECTED["verified_transfer_commit"])
                 results = pt.append_transfers(EXPECTED["verified_transfer_commit"])
-                self.assertEqual([r["disposition"] for r in results], ["ALLOW"] * 7, results)
+                self.assertEqual([r["disposition"] for r in results], ["ALLOW"] * len(mine()), results)
                 after = ledger.files()
                 organization, repository = pt.ledger.readers()
                 for p in mine():
@@ -227,7 +233,7 @@ class GitstoreBackend(unittest.TestCase):
                 self.assertEqual(checked["disposition"], "ALLOW", checked)
             finally:
                 bound.close()
-        self.run_both(check)
+        self.run_both(check, APPEND_BASE)
 
 
 
@@ -241,7 +247,7 @@ class TwoLevelPreflight(unittest.TestCase):
     ROLLBACK = "LEDGER_TWO_LEVEL_ROLLBACK_FAILED"
 
     def setUp(self):
-        self.ledger = TempLedger(ROOT, EXPECTED["ledger_tip"], NAMESPACE, git=True)
+        self.ledger = TempLedger(ROOT, APPEND_BASE, NAMESPACE, git=True)
         self.addCleanup(self.ledger.close)
         self.binding = gitstore()
         self.bound = Bound(self.binding)
@@ -306,7 +312,7 @@ class TwoLevelPreflight(unittest.TestCase):
                 self.six(merge)
                 # one transfer-level refusal when the broken location also hides the transfer from the readers,
                 # else one refusal per declared path
-                self.assertIn(len(paths), (1, 7))
+                self.assertIn(len(paths), (1, len(mine())))
                 for result in paths:
                     self.assertEqual(result["disposition"], "FAIL_CLOSED", result)
                     self.six(result)
@@ -325,7 +331,7 @@ class TwoLevelPreflight(unittest.TestCase):
         before = self.tips()
         with mock.patch.object(lg, "append", side_effect=failed):
             paths = pt.append_transfers(EXPECTED["verified_transfer_commit"])
-        self.assertEqual(len(paths), 7)
+        self.assertEqual(len(paths), len(mine()))
         for result in paths:
             self.assertEqual((result["disposition"], result["failure_code"]), ("FAIL_CLOSED", self.ROLLBACK), result)
             self.six(result)

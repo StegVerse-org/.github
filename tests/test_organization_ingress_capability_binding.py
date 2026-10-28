@@ -110,7 +110,7 @@ class OrganizationIngressCapabilityBindingTests(unittest.TestCase):
 
     def test_a_document_this_organization_does_not_own_is_refused(self):
         foreign = boundary()
-        foreign["owner_repository"] = "StegVerse-org/LLM-adapter"
+        foreign["owner_repository"] = "StegVerse-org/TV"
         with self.assertRaises(ValueError) as refused:
             resolve_organization_ingress(
                 foreign, profile_id="sdk-manifest-ingress",
