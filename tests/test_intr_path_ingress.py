@@ -300,6 +300,40 @@ class Consume(unittest.TestCase):
         (still,) = pi.consume(inbound)   # an observed newest receipt needs no further read
         self.assertTrue(still["replayed"], still)
 
+    def test_an_unauthorized_successor_without_an_observed_inclusion_is_refused(self):
+        # StegVerse-org/.github#162: a successor on the same destination pair that records no source-inclusion
+        # read must not become the path's receipt. Readers walk newest-first, so it is refused, not skipped
+        # in favour of the older observed receipt.
+        org, repo = synthetic_source()
+        self.public.publish(org, repo)
+        inbound = self.ledger.write_inbound([row(org, repo)])
+        (authorized,) = pi.consume(inbound)
+        self.assertEqual(authorized["disposition"], "ALLOW", authorized)
+        (verified,) = pi.verify_inbound(inbound)
+        self.assertEqual(verified["disposition"], "ALLOW", verified)
+        checked = pi.check_source_pair(org, repo, PID, CID, DESTINATION)
+        epoch, failed = pi.mt.head_epoch(pi.mt.org_store())
+        self.assertIsNone(failed)
+        unobserved = pi.ingress_evidence(checked, None)
+        core = {k: v for k, v in unobserved.items()
+                if k not in ("source_inclusion", "payload_sha256", "disposition", "communication_id")}
+        absent = {**core, "payload_sha256": pi.sha(core), "disposition": "ALLOW", "communication_id": CID}
+        for suffix, evidence in (("#unauthorized-unobserved", unobserved), ("#unauthorized-absent", absent)):
+            with self.subTest(suffix=suffix):
+                appended, _ = pi.ingress._append(
+                    pi.TRANSITION_CLASS, PID + "@" + CID + suffix, evidence, epoch, operation=pi.OPERATION,
+                    profile_id=pi.ingress.PROFILE_ID,
+                    boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
+                                    "source_organization_receipt_sha256": org["receipt_sha256"],
+                                    "source_repository_receipt_sha256": repo["receipt_sha256"]})
+                d_org, _, _ = pi.find_destination(PID, CID)
+                self.assertEqual(d_org["receipt_sha256"], appended["organization_receipt"]["receipt_sha256"])
+                (refused,) = pi.verify_inbound(inbound)
+                self.assertEqual((refused["disposition"], refused["failure_code"]),
+                                 ("FAIL_CLOSED", "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"), refused)
+                self.assertEqual(refused["organization_receipt_sha256"], d_org["receipt_sha256"])
+                self.six(refused)
+
 
 if __name__ == "__main__":
     unittest.main()
