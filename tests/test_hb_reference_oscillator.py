@@ -59,6 +59,13 @@ class SuppliedTickTests(unittest.TestCase):
             kernel.hb_reference(sample)
         self.assertEqual(caught.exception.refusal["failure_code"], "HB_EPOCH_INVALID")
 
+    def test_a_clock_derived_reference_says_so(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule derived a reference from a host clock
+        sample and marked it derived_from_clock. #236 derives none: the sample is refused HB_EPOCH_INVALID.
+        """
+        self.test_a_clock_sample_is_refused_not_derived()
+
     def test_a_tick_and_a_sample_are_not_both_accepted(self):
         with self.assertRaises(ValueError):
             kernel.hb_reference(kernel.HB_ANCHOR_UNIX_NS, epoch=EPOCH)
@@ -85,6 +92,13 @@ class FrameReproducibilityTests(unittest.TestCase):
         with self.assertRaises(kernel.HbEpochSampledClock) as caught:
             kernel.carrier_frame(packet(), now_ns=base)
         self.assertEqual(caught.exception.refusal["failure_code"], "HB_EPOCH_INVALID")
+
+    def test_a_clock_derived_frame_is_not_reproducible(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule built a clock-derived frame that was not
+        reproducible. #236 builds none: a sampled now_ns is refused HB_EPOCH_INVALID.
+        """
+        self.test_a_clock_sample_is_refused_not_derived()
 
     def test_a_different_tick_changes_the_frame(self):
         self.assertNotEqual(
