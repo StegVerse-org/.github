@@ -212,11 +212,17 @@ class FederationCyclePropagationTests(SixFields, unittest.TestCase):
         (receipts / (digest.split(":", 1)[1] + ".json")).write_text(json.dumps({**body, "receipt_sha256": digest}))
         (receipts.parent / "HEAD.json").write_text(json.dumps({"repository": repository, "receipt_sha256": digest}))
         env = {"STEGVERSE_REPO_LEDGER_HOME": str(work / "homes"), "STEGVERSE_ORG_LEDGER_ROOT": str(work / "org")}
+        self.work, self.seeded = work, self.tree(work)
         with patch.dict(os.environ, env):
             cycle = _load("pr1c_federation_cycle", "resident-runtime/federation_cycle.py")
             with patch("sys.stdout"):
                 reported = cycle.main(mesh_root=work / "mesh", node_state_root=work / "node", hb_epoch=hb_epoch)
         return reported["repository_propagation"], work
+
+    @staticmethod
+    def tree(root):
+        return {str(path.relative_to(root)): path.read_bytes() if path.is_file() else None
+                for path in sorted(root.rglob("*"))}
 
     def refused(self, hb_epoch):
         # The cycle loads its own copy of the organization writer, so its
@@ -224,6 +230,9 @@ class FederationCyclePropagationTests(SixFields, unittest.TestCase):
         with self.assertRaises(SystemExit) as refused:
             self.cycle(hb_epoch)
         self.assertEqual(type(refused.exception).__name__, "OrgLedgerEpochRefused")
+        # Nothing is written: the seeded repository store is byte-identical and
+        # no organization ledger, mesh or node-state path was created.
+        self.assertEqual(self.tree(self.work), self.seeded)
         return refused.exception.refusal
 
     def test_no_epoch_is_refused_before_anything_is_written(self):
