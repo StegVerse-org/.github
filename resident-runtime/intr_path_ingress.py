@@ -49,6 +49,14 @@ FAIL_CLOSED with the six fields. A path whose newest receipt recorded the
 inclusion as unobserved gets one successor receipt (packet suffix
 #source-inclusion) that records it, and ``verify`` refuses a newest receipt
 that does not record an observed inclusion.
+
+The only successor declared for a destination pair is that #source-inclusion one
+(c71f23c): ``verify_inbound`` refuses FAIL_CLOSED a newest receipt whose transition
+id is neither the pair's own nor the pair's own plus #source-inclusion, never
+skipping to an older receipt. ``verify_inbound`` checks only the shape of the
+recorded inclusion (state, 40-hex source ledger tip); it does not re-read that
+tip. Authenticity of the inclusion needs ``verify_end_to_end``, which reads the
+source ledger itself.
 """
 from __future__ import annotations
 
@@ -105,6 +113,7 @@ CREDENTIAL_NOT_ISSUED = "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"
 SOURCE_NOT_LEDGERED = "INTR_PATH_RECEIPT_NOT_LEDGERED"
 SOURCE_LINK_UNVERIFIED = "INTR_PATH_RECEIPT_LINK_UNVERIFIED"
 INCLUSION_UNOBSERVED = "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"
+SUCCESSOR_UNDECLARED = "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"
 PUBLIC_LEDGERS_ENV = "STEGVERSE_INTR_PUBLIC_LEDGERS"
 LEDGER_REF = "refs/stegverse/organization-ledger"
 PUBLIC_STATE = "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ"
@@ -463,6 +472,16 @@ def verify_inbound(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
             continue
         found, found_repo, broken = find_destination(pid, cid)
         result = verify_destination_pair(found, found_repo, checked)
+        declared = TRANSITION_CLASS + ":" + str(pid) + "@" + str(cid)
+        if result["disposition"] == ALLOW and found_repo.get("transition_id") not in (
+                declared, declared + SOURCE_INCLUSION_PACKET_SUFFIX):
+            result = refusal(FAIL_CLOSED, SUCCESSOR_UNDECLARED, "DESTINATION_RECEIPT_IS_THE_PAIR_OR_ITS_DECLARED_SUCCESSOR",
+                             "the newest destination receipt for " + str(pid) + " must have transition id " + declared
+                             + " or its declared successor " + declared + SOURCE_INCLUSION_PACKET_SUFFIX + "; it has "
+                             + repr(found_repo.get("transition_id")),
+                             "an owner decision on #162 declares or retires this successor; nothing was verified",
+                             path_id=pid, communication_id=cid, half="destination",
+                             organization_receipt_sha256=found.get("receipt_sha256"))
         unobserved = recorded_inclusion(found_repo) if result["disposition"] == ALLOW else None
         if unobserved is not None:
             result = refusal(FAIL_CLOSED, INCLUSION_UNOBSERVED, "DESTINATION_RECEIPT_RECORDS_AN_OBSERVED_SOURCE_INCLUSION",

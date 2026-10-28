@@ -300,9 +300,9 @@ class Consume(unittest.TestCase):
         (still,) = pi.consume(inbound)   # an observed newest receipt needs no further read
         self.assertTrue(still["replayed"], still)
 
-    def test_an_unauthorized_successor_without_an_observed_inclusion_is_refused(self):
-        # StegVerse-org/.github#162: a successor on the same destination pair that records no source-inclusion
-        # read must not become the path's receipt. Readers walk newest-first, so it is refused, not skipped
+    def test_an_unauthorized_successor_is_refused(self):
+        # StegVerse-org/.github#162: a successor on the same destination pair that is not the declared
+        # #source-inclusion successor, or that records no source-inclusion read, must not become the path's receipt. Readers walk newest-first, so it is refused, not skipped
         # in favour of the older observed receipt.
         org, repo = synthetic_source()
         self.public.publish(org, repo)
@@ -318,7 +318,15 @@ class Consume(unittest.TestCase):
         core = {k: v for k, v in unobserved.items()
                 if k not in ("source_inclusion", "payload_sha256", "disposition", "communication_id")}
         absent = {**core, "payload_sha256": pi.sha(core), "disposition": "ALLOW", "communication_id": CID}
-        for suffix, evidence in (("#unauthorized-unobserved", unobserved), ("#unauthorized-absent", absent)):
+        forged = pi.ingress_evidence(checked, {"disposition": "ALLOW", "state": pi.PUBLIC_STATE,
+                                               "source_ledger_tip": "c" * 40, "tvc_read_receipt": None})
+        cases = (("#unauthorized-unobserved", unobserved, "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"),
+                 ("#unauthorized-absent", absent, "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"),
+                 # claims an observed inclusion it never read: the suffix is not the declared one
+                 ("#forged-claim", forged, "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"),
+                 # the declared suffix still has to record an observed inclusion
+                 (pi.SOURCE_INCLUSION_PACKET_SUFFIX, unobserved, "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"))
+        for suffix, evidence, code in cases:
             with self.subTest(suffix=suffix):
                 appended, _ = pi.ingress._append(
                     pi.TRANSITION_CLASS, PID + "@" + CID + suffix, evidence, epoch, operation=pi.OPERATION,
@@ -329,8 +337,7 @@ class Consume(unittest.TestCase):
                 d_org, _, _ = pi.find_destination(PID, CID)
                 self.assertEqual(d_org["receipt_sha256"], appended["organization_receipt"]["receipt_sha256"])
                 (refused,) = pi.verify_inbound(inbound)
-                self.assertEqual((refused["disposition"], refused["failure_code"]),
-                                 ("FAIL_CLOSED", "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"), refused)
+                self.assertEqual((refused["disposition"], refused["failure_code"]), ("FAIL_CLOSED", code), refused)
                 self.assertEqual(refused["organization_receipt_sha256"], d_org["receipt_sha256"])
                 self.six(refused)
 
