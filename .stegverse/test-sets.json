@@ -4424,6 +4424,7 @@
    "tests/workflow_surface.py"
   ],
   "tests/test_task_registry.py": [
+   ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
    "control/task-vector-index.json",
    "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
    "orchestration/task-registry.json",
