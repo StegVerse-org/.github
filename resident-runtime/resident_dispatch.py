@@ -3,8 +3,9 @@
 
 The activation manifest's epoch_binding names the epoch-requiring entrypoints
 (resident_executor.py, and federation_cycle.py, which the executor runs) and
-the in-tree dispatcher that supplies their hb_epoch
-(.github/workflows/resident-runtime-dispatch.yml). The epoch is checked by the
+the in-tree dispatcher that supplies their hb_epoch (this module, invoked
+with --hb-epoch; its workflow was removed by G17, see the manifest's open
+record RESIDENT_DISPATCH_WORKFLOW_REMOVED_BY_G17). The epoch is checked by the
 shared rule before anything is invoked; an absent or invalid one is a six-field
 refusal and exit 1. Each invocation carries the supplied epoch; none reads a
 clock.
@@ -21,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "resident-runtime" / "activation-manifest.json"
-RETRY_ENTRYPOINT = ".github/workflows/resident-runtime-dispatch.yml (hb_epoch input)"
+RETRY_ENTRYPOINT = "resident-runtime/resident_dispatch.py --hb-epoch"
 
 
 def _rule():

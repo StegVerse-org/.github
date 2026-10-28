@@ -552,7 +552,7 @@ duplicate = {"first": [(r.get("result") or {}).get("status") for r in dup_first]
 # recorded DENY and marked, never offered again.
 def endpoint_packet(capability, communication_id):
     return kernel.build_packet(origin_org="Probe-Origin", origin_service="probe-origin.org-control",
-                               destination_org=registry["organization"], destination_service="stegverse-org.llm-adapter",
+                               destination_org=registry["organization"], destination_service="stegverse-org.task-registry-disclosure",
                                payload={"communication_id": communication_id, "manifest": {"processing": {
                                    "capability": capability, "route_id": "stegverse.route.ecosystem-diagnostic.v1"}}},
                                standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})

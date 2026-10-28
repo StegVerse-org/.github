@@ -49,11 +49,9 @@
       "resident-runtime/resident_executor.py",
       "resident-runtime/federation_cycle.py"
     ],
-    "dispatcher": ".github/workflows/resident-runtime-dispatch.yml",
+    "dispatcher": "resident-runtime/resident_dispatch.py",
     "dispatcher_implementation": "resident-runtime/resident_dispatch.py",
-    "dispatcher_triggers": [
-      "workflow_dispatch"
-    ],
+    "dispatcher_triggers": [],
     "gate_precedes_invocation": true,
     "dispatcher_is_runtime_authority": false,
     "accepts_carried_crossings": false,
@@ -81,6 +79,16 @@
       }
     },
     "open_records": [
+      {
+        "state": "OPEN",
+        "failure_code": "RESIDENT_DISPATCH_WORKFLOW_REMOVED_BY_G17",
+        "failed_predicate": "NO_SURFACE_CARRIES_WORKFLOW_DISPATCH_UNLESS_ITS_REGISTERED_EXCEPTION_NAMES_IT",
+        "detail": "#207 carried .github/workflows/resident-runtime-dispatch.yml (workflow_dispatch only). Main's G17 registry (control/workflow-surface-registry.json) refuses an unregistered workflow and any workflow_dispatch surface without a registered exception, and caps the repository at three workflows; the file was removed when main was merged in. The gate and hand-over stay in resident-runtime/resident_dispatch.py, which the resident substrate invokes with --hb-epoch",
+        "required_evidence_or_repair": "an owner decision on #166 admitting a dispatch surface for the resident cycle (a registered exception or a manifest-directed committed request carrying hb_epoch); until then nothing hosted dispatches the resident entrypoints",
+        "retry_entrypoint": "resident-runtime/resident_dispatch.py --hb-epoch",
+        "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+        "next_attempt": "owner decision on #166; Grok Lane B may RATIFY or REVERT this removal on #207"
+      },
       {
         "state": "OPEN",
         "failure_code": "MERGE_TRANSFER_PROVENANCE_PENDING_206",

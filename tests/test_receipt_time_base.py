@@ -1003,10 +1003,12 @@ class WorkflowEpochGateTests(unittest.TestCase):
         return subprocess.run([sys.executable, "-c", source], capture_output=True, text=True,
                               cwd=str(ROOT), env=env)
 
-    def test_there_is_a_gate_in_front_of_the_self_closure_writer(self):
-        names = [(workflow, step) for workflow, step, _ in workflow_epoch_gates()]
-        self.assertIn(("organization-ledger-transition.yml",
-                       "Close an intr-destination diagnostic against this organization"), names)
+    def test_the_self_closure_writer_is_retired_so_it_needs_no_gate(self):
+        # Main retired the self-closure step (Rigel's rule, 2026-10-25: no InTr
+        # hop inside one organization), so it has no dispatch epoch to gate.
+        for path in sorted(WORKFLOWS.glob("*.yml")):
+            self.assertNotIn("      - name: Close an intr-destination diagnostic against this organization\n",
+                             path.read_text(encoding="utf-8"), path.name)
 
     def test_no_workflow_checks_the_epoch_with_a_shell_pattern_or_int(self):
         for path in sorted(WORKFLOWS.glob("*.yml")):
@@ -1179,7 +1181,7 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
                          {"MERGE_TRANSFER_PROVENANCE_PENDING_206", "PROPAGATE_MISSING_LEDGER_ROOT_IS_SILENT",
                           "IDENTICAL_REQUEST_AT_TWO_EPOCHS_ANSWERED_TWICE",
                           "DIRECT_KERNEL_CONSUME_STAMPS_THE_FRAME_EPOCH", "KERNEL_LEGACY_DIRECT_CALL_PATHS",
-                          "PROCESS_BOUNDARY_FAULT_SEMANTICS_DEFERRED"})
+                          "PROCESS_BOUNDARY_FAULT_SEMANTICS_DEFERRED", "RESIDENT_DISPATCH_WORKFLOW_REMOVED_BY_G17"})
         boundary, = [r for r in binding["open_records"] if r["failure_code"] == "PROCESS_BOUNDARY_FAULT_SEMANTICS_DEFERRED"]
         self.assertEqual(boundary["process_boundary_sha256"], __import__("hashlib").sha256(
             (ROOT / "org-boundary/runtime/process_boundary.py").read_bytes()).hexdigest())
@@ -1191,14 +1193,15 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
             (ROOT / "data/intr-protocol/v1/protocol.json").read_text(encoding="utf-8"))
         for field in SIX_FIELDS:
             self.assertTrue(pending[field], field)
-        dispatcher = ROOT / binding["dispatcher"]
-        self.assertTrue(dispatcher.is_file())
-        triggers, text = workflow_triggers(dispatcher)
-        self.assertEqual(triggers, {"workflow_dispatch"})
-        gate = text.index("Gate the supplied epoch before any entrypoint")
-        self.assertLess(gate, text.index("resident-runtime/resident_dispatch.py"))
-        names = [(w, step) for w, step, _ in workflow_epoch_gates()]
-        self.assertIn(("resident-runtime-dispatch.yml", "Gate the supplied epoch before any entrypoint"), names)
+        # G17 (main's control/workflow-surface-registry.json) admits no
+        # dispatch-only workflow, so the dispatcher is the module itself and no
+        # workflow triggers it; the removal is an OPEN six-field record.
+        self.assertEqual(binding["dispatcher"], binding["dispatcher_implementation"])
+        self.assertTrue((ROOT / binding["dispatcher"]).is_file())
+        self.assertEqual(binding["dispatcher_triggers"], [])
+        self.assertFalse((WORKFLOWS / "resident-runtime-dispatch.yml").exists())
+        removed, = [r for r in binding["open_records"] if r["failure_code"] == "RESIDENT_DISPATCH_WORKFLOW_REMOVED_BY_G17"]
+        self.assertEqual(removed["retry_entrypoint"], "resident-runtime/resident_dispatch.py --hb-epoch")
         # Nothing else triggers the resident entrypoints. (The push-triggered
         # governance return is gated on its request's own epoch, tested below.)
         for path in sorted(WORKFLOWS.glob("*.yml")):
@@ -1208,13 +1211,15 @@ class WorkflowTriggerProbeTests(unittest.TestCase):
                     self.assertNotIn("python resident-runtime/" + entrypoint, text, path.name)
 
     def test_push_triggered_production_writers_resolve_the_request_epoch_first(self):
-        _, transition = workflow_triggers(WORKFLOWS / "organization-ledger-transition.yml")
+        # G17 folded both writers into organization-ledger-writer.yml as jobs.
+        _, writer = workflow_triggers(WORKFLOWS / "organization-ledger-writer.yml")
+        transition = writer.split("\n  ledger-transition:\n", 1)[1].split("\n  governance-return:\n", 1)[0]
+        ret = writer.split("\n  governance-return:\n", 1)[1].split("\n  ledger-ingest:\n", 1)[0]
         loop = transition.split('while IFS= read -r request; do', 1)[1]
         self.assertLess(loop.index("manifest_directed_run_inputs.py request-epoch"),
                         loop.index("from stegverse.manifest_builder import build_manifest"))
         self.assertIn('epoch_args=(--hb-epoch "$request_epoch" --hb-epoch-source-json "$epoch_source")', loop)
         self.assertIn("Fail a run whose committed request carried no supplied epoch", transition)
-        _, ret = workflow_triggers(WORKFLOWS / "organization-governance-return.yml")
         self.assertLess(ret.index("--dispatch-hb-epoch"), ret.index("python resident-runtime/peer_mesh_intake.py"))
         self.assertIn('--hb-epoch "$RETURN_HB_EPOCH"', ret)
         self.assertIn('--hb-epoch-source-json "$RETURN_HB_EPOCH_SOURCE_JSON"', ret)
@@ -1456,7 +1461,7 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
     def envelope(self, work, capability="ecosystem_diagnostic"):
         packet = org.kernel.build_packet(
             origin_org="Probe-Origin", origin_service="probe-origin.org-control", destination_org="StegVerse-org",
-            destination_service="stegverse-org.llm-adapter",
+            destination_service="stegverse-org.task-registry-disclosure",
             payload={"manifest": {"processing": {"capability": capability,
                                                  "route_id": "stegverse.route.ecosystem-diagnostic.v1"}}},
             standing={"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None})
@@ -1523,7 +1528,7 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
         """75 -> writer fault (no marker); 65, 1, an unknown code, a crash, a missing result -> terminal."""
         packet = org.kernel.build_packet(
             origin_org="Probe-Origin", origin_service="probe-origin.org-control", destination_org="StegVerse-org",
-            destination_service="stegverse-org.llm-adapter",
+            destination_service="stegverse-org.task-registry-disclosure",
             payload={"manifest": {"processing": {"capability": "ecosystem_diagnostic",
                                                  "route_id": "stegverse.route.ecosystem-diagnostic.v1"}}},
             standing={"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None})
@@ -1572,7 +1577,7 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
         an unreadable result is a terminal far-side refusal; never a traceback."""
         writer = load_module("pb_writer_cli", "resident-runtime/writer_cli.py")
         crossing = load_module("pb_crossing_cli", "resident-runtime/sdk_manifest_crossing.py")
-        manifest = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+        manifest = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
         with tempfile.TemporaryDirectory() as work:
             standing = Path(work) / "standing.json"
             standing.write_text(json.dumps({"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None}))
@@ -1634,7 +1639,7 @@ class ProcessBoundaryExitSplitTests(unittest.TestCase):
         self.assertTrue(org.kernel.writer_fault(org.kernel.BoundaryWriteFault("x")))
         self.assertEqual(org.kernel.refusal_disposition("PROCESS_BOUNDARY_INPUT_FAULT:x"), "DENY")
         crossing = load_module("pb_sdk_manifest_crossing", "resident-runtime/sdk_manifest_crossing.py")
-        manifest = json.loads((ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json").read_text())
+        manifest = json.loads((ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure.json").read_text())
         registry = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
         standing = {"mode": "ESTABLISH_GENESIS", "node_ref": "pb", "predecessor": None}
         for status in (75, 65):
