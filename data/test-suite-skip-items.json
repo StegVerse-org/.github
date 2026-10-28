@@ -1,0 +1,37 @@
+{
+  "schema": "stegverse.test-suite-skip-items/v1",
+  "authority_effect": "NONE",
+  "note": "Every skip the selected-tests job can still meet in CI, classified. An item here never hides, converts or deselects a skip: test_suite_skip_receipt.py still counts it and, when the test is in a change's selected set, still fails closed with TEST_SUITE_SKIPPED_ON_HEAD. It only names who owns making the skip go away. Skips CI can satisfy from an existing StegVerse source are satisfied in the job instead.",
+  "items": [
+    {
+      "test_prefix": "tests.test_origin_attestation_tvc_conformance.",
+      "classification": "NOT_SATISFIABLE_WITHOUT_A_CREDENTIAL",
+      "failure_code": "TEST_SUITE_SKIP_TVC_SOURCE_PRIVATE",
+      "failed_predicate": "STEGVERSE_TVC_ROOT_PROVIDED_IN_CI",
+      "required_evidence_or_repair": "a read of StegVerse-Labs/TVC (private) supplied to CI through TV/TVC custody; this job's GITHUB_TOKEN cannot read another private repository and a bot may not hold a token for it",
+      "retry_entrypoint": "StegVerse-Labs/TVC#532 / #535 (TV/TVC custody read), then this job on the next head",
+      "owning_existing_goal": "StegVerse-org/.github#162 D2 (TV/TVC custody) / A4 TV/TVC origin attestation",
+      "next_attempt": "the next push to a pull request head after the custody read lands reruns this job; nothing is dispatched"
+    },
+    {
+      "test_prefix": "tests.test_ledger_store_remote_locator_refused.",
+      "classification": "DEFERRED_UNTIL_A_NAMED_PULL_REQUEST_LANDS",
+      "failure_code": "TEST_SUITE_SKIP_P1_FC_12_STEP_B_DEFERRED",
+      "failed_predicate": "P1_FC_12_STEP_B_READBACK_AND_WRITERS_REFUSE_A_REMOTE_LOCATOR_IN_SIX_FIELDS",
+      "required_evidence_or_repair": "StegVerse-org/.github#189 lands the readback and writers re-raising the locator refusal in six fields; the skip is the test's own declared deferral and is removed with it",
+      "retry_entrypoint": "StegVerse-org/.github#189, then this job on the next head",
+      "owning_existing_goal": "StegVerse-org/.github#189 (P1-FC-12)",
+      "next_attempt": "the next push to a pull request head after #189 lands reruns this job; nothing is dispatched"
+    },
+    {
+      "test_prefix": "tests.test_task_registry_schema_conformance.",
+      "classification": "NOT_SATISFIABLE_WITHOUT_A_CREDENTIAL",
+      "failure_code": "TEST_SUITE_SKIP_REPO_STANDARDS_PRIVATE_CROSS_ORG",
+      "failed_predicate": "REPO_STANDARDS_ROOT_PROVIDED_IN_CI",
+      "required_evidence_or_repair": "a read of StegVerse-Labs/repo-standards (private, another organization; checkout fails with git exit code 128, orchestration/schemas/PROVENANCE.json) supplied to CI through TV/TVC custody; a bot may not hold a token for it",
+      "retry_entrypoint": "the custody read of repo-standards, then this job on the next head",
+      "owning_existing_goal": "StegVerse-org/.github#162 D2 (TV/TVC custody) / repo-standards ST-021 task-registry schema owner",
+      "next_attempt": "the next push to a pull request head after the custody read lands reruns this job; nothing is dispatched"
+    }
+  ]
+}

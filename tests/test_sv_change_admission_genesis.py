@@ -176,10 +176,15 @@ class Plan(Base):
         self.assertIn("Q-ORG-REGISTRY-GENERATION", out["next_attempt"])
 
     def test_without_lane_b_producer_on_the_base_it_is_not_pinned(self):
-        G.contract = self._orig  # the real pins (Lane B #231 @b2f9fad2); this repository's main does not carry the producer
+        """#231 has since landed on main (4ef93c76), folded by G17: the producer is on the base but not at the
+        pinned bytes (its workflow is catalog group test-suite-selected.selected; select_tests_for_change.py moved),
+        so the op is still TEST_SUITE_RECEIPT_PRODUCER_NOT_PINNED until the contract is re-pinned to the landed form."""
+        G.contract = self._orig  # the real pins (Lane B #231 @b2f9fad2)
         out = self.go(root=ROOT)
         self.refused(out, "TEST_SUITE_RECEIPT_PRODUCER_NOT_PINNED")
-        self.assertIn("scripts/test_suite_skip_receipt.py", out["observed"])
+        self.assertIn(".github/workflows/test-suite-selected.yml", out["observed"])
+        self.assertIsNone(out["observed"][".github/workflows/test-suite-selected.yml"])
+        self.assertNotIn("scripts/test_suite_skip_receipt.py", out["observed"])  # landed at the pinned bytes
 
 
 class Append(Base):
@@ -220,12 +225,21 @@ class Append(Base):
         self.assertEqual(self.ledger.files(), before)
 
     def test_no_workflow_runs_the_op_yet(self):
+        """G17 (main 64e2bfd) reversed where the check lives: no workflow file references the op; its unit job is
+        catalog group sv-change-admission-genesis-validation.unit, read-only, and the retained workflow is contents: read."""
         texts = {p.name: p.read_text(encoding="utf-8") for p in (ROOT / ".github" / "workflows").glob("*.yml")}
         runs = [n for n, t in texts.items() if "sv_change_admission_genesis.py append" in t or "sv_change_admission_genesis.py plan" in t]
         self.assertEqual(runs, [])  # the triggering event is the undecided authorization form (Q-SV-NATIVE-BOOTSTRAP, C)
         refs = sorted(n for n, t in texts.items() if "sv_change_admission_genesis" in t)
-        self.assertEqual(refs, ["sv-change-admission-genesis-validation.yml"])
-        self.assertIn("contents: read", texts[refs[0]]); self.assertNotIn("contents: write", texts[refs[0]])
+        self.assertEqual(refs, [])
+        catalog = json.loads((ROOT / "tools/tasks/task_catalog.json").read_text(encoding="utf-8"))
+        group = next(g for g in catalog["groups"] if g["id"] == "sv-change-admission-genesis-validation.unit")
+        self.assertEqual(group["events"], ["pull_request"])
+        body = "\n".join((ROOT / s["run_file"]).read_text(encoding="utf-8") for s in group["steps"])
+        self.assertIn("tests.test_sv_change_admission_genesis", body)
+        self.assertNotIn("sv_change_admission_genesis.py append", body); self.assertNotIn("git push", body)
+        retained = (ROOT / "tools/tasks/retired/sv-change-admission-genesis-validation.yml").read_text(encoding="utf-8")
+        self.assertIn("contents: read", retained); self.assertNotIn("contents: write", retained)
 
 
 if __name__ == "__main__":

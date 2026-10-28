@@ -1,0 +1,115 @@
+{
+  "authority_effect": "NONE",
+  "base": "86382e60da984fa02892fecfac2b9bdec0e64a5f",
+  "degraded_not_stopped": true,
+  "derived_from_clock": false,
+  "disposition": "PRE_EXISTING_BASELINE_FAILURE",
+  "failed_predicate": "MAIN_FAILING_SET_IS_WITHIN_BASELINE",
+  "failure_code": "PRE_EXISTING_BASELINE_FAILURE",
+  "hb_epoch": "469411750",
+  "head": "a9e21108edfcfa89a691c528624ed98faa3eedbe",
+  "lowest_supported_mode": "E0",
+  "next_attempt": "the push to main that completes the repair task; this change proceeds now",
+  "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+  "ratchet": {
+    "baseline_failing_count": 99,
+    "excluded": [
+      "tests/test_canonical_master_records_local_adapter_repair.py::CanonicalMasterRecordsLocalAdapterRepairTests::test_calls_existing_state_transition_authority_without_schema_relabel"
+    ],
+    "newly_failing": [
+      "tests/test_component010_checked_out_shard_projection.py::Component010ProjectionTests::test_omitted_owner_stops_and_retains_immediate_predecessor",
+      "tests/test_component010_checked_out_shard_projection.py::Component010ProjectionTests::test_stale_generation_stops_before_overlap_evaluation",
+      "tests/test_component010_predecessor_unittest.py::CheckinPredecessorReadbackTest::test_existing_ledger_provides_exact_returned_predecessors",
+      "tests/test_ecosystem_chat_reusable_composition.py::LocalAnswerDefinitionTests::test_unresolved_dependencies_stay_out_of_composes_and_fail_closed",
+      "tests/test_s0_lane_d_migration_fixtures.py::LaneDS0MigrationFixtures::test_pinned_sources_match_repository_files",
+      "tests/test_task_registry_general_checkin_surface_gate.py::test_policy_surface_set_and_nonclaims"
+    ],
+    "newly_passing": [],
+    "observed_failing_count": 105
+  },
+  "receipt_sha256": "sha256:dc5c904e69a865dab21c0da4ddce4589633c47c8f5298c89f3a6903ac798e863",
+  "repository": "StegVerse-Labs/.github",
+  "required_evidence_or_repair": "repaired under the drift repair task emitted by detect on main; this change neither touches nor introduces it",
+  "retry_entrypoint": ".github/workflows/test-suite-ratchet.yml (push to main) -> scripts/test_suite_baseline_drift.py detect",
+  "schema": "stegverse.test-suite-pr-disposition/v1",
+  "tests": [
+    {
+      "blocking": false,
+      "disposition": "PRE_EXISTING_BASELINE_FAILURE",
+      "failed_predicate": "MAIN_FAILING_SET_IS_WITHIN_BASELINE",
+      "failure_code": "PRE_EXISTING_BASELINE_FAILURE",
+      "next_attempt": "the push to main that completes the repair task; this change proceeds now",
+      "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+      "required_evidence_or_repair": "repaired under the drift repair task emitted by detect on main; this change neither touches nor introduces it",
+      "retry_entrypoint": ".github/workflows/test-suite-ratchet.yml (push to main) -> scripts/test_suite_baseline_drift.py detect",
+      "status_at_base": "FAIL",
+      "test": "tests/test_component010_checked_out_shard_projection.py::Component010ProjectionTests::test_omitted_owner_stops_and_retains_immediate_predecessor",
+      "test_file_in_change_diff": false
+    },
+    {
+      "blocking": false,
+      "disposition": "PRE_EXISTING_BASELINE_FAILURE",
+      "failed_predicate": "MAIN_FAILING_SET_IS_WITHIN_BASELINE",
+      "failure_code": "PRE_EXISTING_BASELINE_FAILURE",
+      "next_attempt": "the push to main that completes the repair task; this change proceeds now",
+      "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+      "required_evidence_or_repair": "repaired under the drift repair task emitted by detect on main; this change neither touches nor introduces it",
+      "retry_entrypoint": ".github/workflows/test-suite-ratchet.yml (push to main) -> scripts/test_suite_baseline_drift.py detect",
+      "status_at_base": "FAIL",
+      "test": "tests/test_component010_checked_out_shard_projection.py::Component010ProjectionTests::test_stale_generation_stops_before_overlap_evaluation",
+      "test_file_in_change_diff": false
+    },
+    {
+      "blocking": false,
+      "disposition": "PRE_EXISTING_BASELINE_FAILURE",
+      "failed_predicate": "MAIN_FAILING_SET_IS_WITHIN_BASELINE",
+      "failure_code": "PRE_EXISTING_BASELINE_FAILURE",
+      "next_attempt": "the push to main that completes the repair task; this change proceeds now",
+      "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+      "required_evidence_or_repair": "repaired under the drift repair task emitted by detect on main; this change neither touches nor introduces it",
+      "retry_entrypoint": ".github/workflows/test-suite-ratchet.yml (push to main) -> scripts/test_suite_baseline_drift.py detect",
+      "status_at_base": "FAIL",
+      "test": "tests/test_component010_predecessor_unittest.py::CheckinPredecessorReadbackTest::test_existing_ledger_provides_exact_returned_predecessors",
+      "test_file_in_change_diff": false
+    },
+    {
+      "blocking": false,
+      "disposition": "PRE_EXISTING_BASELINE_FAILURE",
+      "failed_predicate": "MAIN_FAILING_SET_IS_WITHIN_BASELINE",
+      "failure_code": "PRE_EXISTING_BASELINE_FAILURE",
+      "next_attempt": "the push to main that completes the repair task; this change proceeds now",
+      "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+      "required_evidence_or_repair": "repaired under the drift repair task emitted by detect on main; this change neither touches nor introduces it",
+      "retry_entrypoint": ".github/workflows/test-suite-ratchet.yml (push to main) -> scripts/test_suite_baseline_drift.py detect",
+      "status_at_base": "FAIL",
+      "test": "tests/test_ecosystem_chat_reusable_composition.py::LocalAnswerDefinitionTests::test_unresolved_dependencies_stay_out_of_composes_and_fail_closed",
+      "test_file_in_change_diff": false
+    },
+    {
+      "blocking": false,
+      "disposition": "PRE_EXISTING_BASELINE_FAILURE",
+      "failed_predicate": "MAIN_FAILING_SET_IS_WITHIN_BASELINE",
+      "failure_code": "PRE_EXISTING_BASELINE_FAILURE",
+      "next_attempt": "the push to main that completes the repair task; this change proceeds now",
+      "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+      "required_evidence_or_repair": "repaired under the drift repair task emitted by detect on main; this change neither touches nor introduces it",
+      "retry_entrypoint": ".github/workflows/test-suite-ratchet.yml (push to main) -> scripts/test_suite_baseline_drift.py detect",
+      "status_at_base": "FAIL",
+      "test": "tests/test_s0_lane_d_migration_fixtures.py::LaneDS0MigrationFixtures::test_pinned_sources_match_repository_files",
+      "test_file_in_change_diff": false
+    },
+    {
+      "blocking": false,
+      "disposition": "PRE_EXISTING_BASELINE_FAILURE",
+      "failed_predicate": "MAIN_FAILING_SET_IS_WITHIN_BASELINE",
+      "failure_code": "PRE_EXISTING_BASELINE_FAILURE",
+      "next_attempt": "the push to main that completes the repair task; this change proceeds now",
+      "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+      "required_evidence_or_repair": "repaired under the drift repair task emitted by detect on main; this change neither touches nor introduces it",
+      "retry_entrypoint": ".github/workflows/test-suite-ratchet.yml (push to main) -> scripts/test_suite_baseline_drift.py detect",
+      "status_at_base": "FAIL",
+      "test": "tests/test_task_registry_general_checkin_surface_gate.py::test_policy_surface_set_and_nonclaims",
+      "test_file_in_change_diff": false
+    }
+  ]
+}

@@ -162,12 +162,14 @@ class EndToEnd(unittest.TestCase):
 
     def test_without_a_receipt_the_path_is_fail_closed_at_the_tvc_transition(self):
         org, repo = ti.synthetic_source()
-        (result,) = pi.consume(self.ledger.write_inbound([ti.row(org, repo)]))
-        self.assertEqual(result["disposition"], "ALLOW", result)
-        inc = result["source_inclusion"]
-        self.assertEqual((inc["disposition"], inc["failure_code"]),
-                         ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"))
+        before = self.ledger.files()
+        (inc,) = pi.consume(self.ledger.write_inbound([ti.row(org, repo)]))
+        # no observed source inclusion, no destination receipt: fail-closed with the six fields, nothing written
+        self.assertEqual((inc["disposition"], inc["failure_code"], inc["appended"]),
+                         ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED", False), inc)
         self.assertIn("TVC-PRIVATE-SOURCE-READ-001", inc["owning_existing_goal"])
+        six(self, inc)
+        self.assertEqual(self.ledger.files(), before)
         whole = pi.end_to_end_via_tvc(ti.PID, ti.CID)
         self.assertEqual((whole["disposition"], whole["failure_code"], whole["path"]),
                          ("FAIL_CLOSED", "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED", "UNVERIFIED"))
@@ -191,19 +193,22 @@ class EndToEnd(unittest.TestCase):
         org, repo = ti.synthetic_source()
         other_org, other_repo = ti.synthetic_source(cid="intr-path-v1:other")
         self.land(other_org, other_repo)
-        (result,) = pi.consume(self.ledger.write_inbound([ti.row(org, repo)]))
-        inc = result["source_inclusion"]
+        before = self.ledger.files()
+        (inc,) = pi.consume(self.ledger.write_inbound([ti.row(org, repo)]))
         self.assertEqual((inc["disposition"], inc["failure_code"]), ("DENY", "INTR_PATH_RECEIPT_LINK_UNVERIFIED"), inc)
         six(self, inc)
+        self.assertEqual(self.ledger.files(), before)
 
     def test_resident_class_is_required_outside_tests(self):
         org, repo = ti.synthetic_source()
         self.land(org, repo)
         pi.TVC_FIXTURE_OK = False
         (result,) = pi.consume(self.ledger.write_inbound([ti.row(org, repo)]))
-        self.assertEqual(result["source_inclusion"]["failure_code"], "INTR_PATH_TVC_READ_RECEIPT_NOT_RESIDENT")
-        d_org, d_rep, _ = pi.find_destination(ti.PID, ti.CID)
-        self.assertEqual(d_rep["evidence"]["source_inclusion"], "UNOBSERVED_WITHOUT_A_CROSS_ORG_READ_CREDENTIAL")
+        self.assertEqual((result["disposition"], result["failure_code"]),
+                         ("FAIL_CLOSED", "INTR_PATH_TVC_READ_RECEIPT_NOT_RESIDENT"), result)
+        six(self, result)
+        # nothing is recorded as unobserved any more: no destination receipt without an observed inclusion
+        self.assertEqual(pi.find_destination(ti.PID, ti.CID)[0], None)
 
 
 class RealState(unittest.TestCase):

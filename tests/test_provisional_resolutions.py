@@ -40,6 +40,8 @@ def undeclared(repo, blob=BLOB, **over):
 
 class Records(unittest.TestCase):
     def test_both_resolutions_are_provisional_e1_with_a_pending_c_review(self):
+        """Same records as #234. G17 (main 64e2bfd) reversed the declared workflow's existence: it now asserts the
+        workflow is retained under tools/tasks/retired/ and FAIL_CLOSED pending in the workflow-surface registry."""
         for q in ("Q-ORG-REGISTRY-GENERATION", "Q-SV-NATIVE-BOOTSTRAP"):
             r = RES["resolutions"][q]
             self.assertEqual((r["class"], r["provisional_mode"], r["status"]), ("C", "E1", "PROVISIONAL"), q)
@@ -49,8 +51,14 @@ class Records(unittest.TestCase):
             self.assertTrue(r["e0_checks"])
         ev = RES["resolutions"]["Q-SV-NATIVE-BOOTSTRAP"]["event"]
         self.assertEqual(ev["event_name"], "pull_request")
-        self.assertTrue((ROOT / ev["workflow_path"]).is_file())
-        text = (ROOT / ev["workflow_path"]).read_text(encoding="utf-8")
+        # G17: the declared workflow is not a registered surface. It is retained verbatim under
+        # tools/tasks/retired/ and recorded FAIL_CLOSED pending until a successor resolution names one.
+        self.assertFalse((ROOT / ev["workflow_path"]).exists())
+        retained = ROOT / "tools/tasks/retired" / Path(ev["workflow_path"]).name
+        self.assertTrue(retained.is_file())
+        pending = json.loads((ROOT / "control/workflow-surface-registry.json").read_text(encoding="utf-8"))["fail_closed_pending"]
+        self.assertIn("GENESIS_EVENT_WORKFLOW_NOT_ON_A_REGISTERED_SURFACE", [p["failure_code"] for p in pending])
+        text = retained.read_text(encoding="utf-8")
         self.assertIn("contents: read", text); self.assertNotIn("contents: write", text)  # no writer job in this draft
         self.assertNotIn("workflow_dispatch", text); self.assertNotIn("schedule", text)
 
