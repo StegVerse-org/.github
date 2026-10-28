@@ -199,11 +199,26 @@ class AnswerEpochTests(unittest.TestCase):
         self.assertEqual(again[0]["response_publication"]["frame"], answer)
         self.assertEqual(self.frames(mesh), before)
 
-    def test_a_local_status_read_is_labelled_as_a_clock_sample(self):
+    def test_a_local_status_read_without_an_epoch_carries_no_reference(self):
+        # Flipped (resident_status L569): it was labelled a clock sample; no clock is read now.
         status = kernel.resident_status(ROOT)
-        self.assertIs(status["heartbeat_reference"]["derived_from_clock"], True)
+        self.assertIsNone(status["heartbeat_reference"])
+        refusal = status["heartbeat_reference_refusal"]
+        self.assertEqual(refusal["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+        self.assertEqual(refusal["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
+        for field in ("required_evidence_or_repair", "retry_entrypoint", "owning_existing_goal", "next_attempt"):
+            self.assertTrue(refusal[field], field)
+        self.assertIs(refusal["derived_from_clock"], False)
         self.assertEqual(kernel.resident_status(ROOT, epoch=kernel.HB_ANCHOR_EPOCH + 1)
                          ["heartbeat_reference"]["derived_from_clock"], False)
+
+    def test_a_local_status_read_is_labelled_as_a_clock_sample(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule sampled the host clock for a status read
+        given no epoch and labelled it derived_from_clock. #194 reads no clock: the status carries
+        heartbeat_reference null and a six-field HB_EPOCH_NOT_SUPPLIED heartbeat_reference_refusal.
+        """
+        self.test_a_local_status_read_without_an_epoch_carries_no_reference()
 
 
 class MasterRecordsSubmitterTests(unittest.TestCase):

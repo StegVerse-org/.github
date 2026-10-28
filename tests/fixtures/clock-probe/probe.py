@@ -201,8 +201,10 @@ clock_monitor = kernel.build_packet(origin_org="Probe-Origin", origin_service="p
                                     payload={"communication_id": "c-clock-monitor", "message_class": "ecosystem.monitor.request",
                                              "subject": "s", "body": {}},
                                     standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})
-kernel.publish_packet(clock_comm, root=qmesh)       # stamped from the (fixed) clock
-kernel.publish_packet(clock_monitor, root=qmesh)    # stamped from the (fixed) clock
+# The kernel reads no clock (#196), so these CLOCK inputs carry the (fixed)
+# clock sample explicitly: derived_from_clock true with sampled_unix_ns.
+kernel.publish_packet(clock_comm, root=qmesh, now_ns=FIXED_NS)
+kernel.publish_packet(clock_monitor, root=qmesh, now_ns=FIXED_NS)
 forged = addressed("c-forged-carried")
 kernel.publish_packet(forged, root=qmesh, epoch=4096,
                       provenance={"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "f" * 64})
@@ -604,10 +606,16 @@ later_rows = kernel.consume_and_respond(ROOT, mesh_root=later_mesh, node_state_r
 io_later = {"status": [(r.get("result") or {}).get("status") for r in later_rows],
             "receipts": len({d["receipt_sha256"] for d in full_receipts_for(later["packet_id"])})}
 
-# A frame-only publication with no epoch: the WU-B13 helper default, marked.
+# A frame-only publication with no epoch: no clock fallback (#196), it is
+# refused HB_EPOCH_NOT_SUPPLIED in six fields and nothing is published.
 start = CALLS["n"]
-kernel.publish_packet(dict(packet, packet_id="probe-frame-only"), root=WORK / "frame-only-mesh")
+try:
+    kernel.publish_packet(dict(packet, packet_id="probe-frame-only"), root=WORK / "frame-only-mesh")
+    phases["frame_only_refusal"] = None
+except kernel.HbEpochNotSupplied as exc:
+    phases["frame_only_refusal"] = exc.refusal["failure_code"]
 phases["frame_only_clock_calls"] = CALLS["n"] - start
+phases["frame_only_published"] = (WORK / "frame-only-mesh").exists() and any((WORK / "frame-only-mesh").rglob("*.json"))
 
 found = []
 # Every reference this run wrote; the deliberately forged or off-epoch input

@@ -643,7 +643,11 @@ class ClockProbeTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
         probe = json.loads(completed.stdout.splitlines()[-1])
         self.assertEqual(probe["phases"]["supplied_writer_clock_calls"], 0)
-        self.assertEqual(probe["phases"]["frame_only_clock_calls"], 1)
+        # No clock fallback (#196): a frame-only publish with no epoch reads no
+        # clock, is refused HB_EPOCH_NOT_SUPPLIED and publishes nothing.
+        self.assertEqual(probe["phases"]["frame_only_clock_calls"], 0)
+        self.assertEqual(probe["phases"]["frame_only_refusal"], "HB_EPOCH_NOT_SUPPLIED")
+        self.assertIs(probe["phases"]["frame_only_published"], False)
         self.assertTrue(probe["references"])
         # A response is published at the validated epoch of the frame it answers,
         # and a monitor answer's resident_status carries it: no clock default.

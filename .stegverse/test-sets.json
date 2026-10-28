@@ -2461,6 +2461,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_kernel_hb_reference_no_clock.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_kernel_hb_reference_no_clock.py"
+   ],
+   "tests": [
+    "tests.test_kernel_hb_reference_no_clock"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_kernel_node_state_is_addressed.py",
    "inputs": [],
    "surfaces": [
@@ -3188,6 +3200,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_resident_status_supplied_epoch.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_resident_status_supplied_epoch.py"
+   ],
+   "tests": [
+    "tests.test_resident_status_supplied_epoch"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_reviewer_prompt_conformance.py",
    "inputs": [
     "labs-stdlib-json-schema"
@@ -3562,6 +3586,7 @@
    "resident-runtime/main_change_receipt.py"
   ],
   "resident-runtime/ecosystem_control.py": [
+   "org-boundary/runtime/capability_ingress.py",
    "org-kernel/kernel.py"
   ],
   "resident-runtime/federation_cycle.py": [
@@ -3760,6 +3785,7 @@
    "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/run_sv002_self_characterization_roundtrip.py": [
+   "org-boundary/runtime/capability_ingress.py",
    "resident-runtime/sdk_self_characterization_egress.py"
   ],
   "resident-runtime/sdk_manifest_crossing.py": [
@@ -3769,6 +3795,7 @@
    "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/sdk_self_characterization_egress.py": [
+   "org-boundary/runtime/capability_ingress.py",
    "org-kernel/kernel.py"
   ],
   "resident-runtime/sdk_self_characterization_response.py": [
@@ -4093,6 +4120,12 @@
    "org-kernel/kernel.py",
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/federation_cycle.py"
+  ],
+  "tests/test_kernel_hb_reference_no_clock.py": [
+   "org-kernel/kernel.py",
+   "resident-runtime/ecosystem_control.py",
+   "resident-runtime/run_sv002_self_characterization_roundtrip.py",
+   "tests/fixtures/crossing-standing-genesis.json"
   ],
   "tests/test_kernel_node_state_is_addressed.py": [
    "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
@@ -4458,6 +4491,10 @@
    "org-runtime/runtime_boundary.py",
    "resident-runtime/resident_runtime_convergence.py",
    "tests/workflow_surface.py"
+  ],
+  "tests/test_resident_status_supplied_epoch.py": [
+   "org-kernel/kernel.py",
+   "resident-runtime/ecosystem_control.py"
   ],
   "tests/test_reviewer_prompt_conformance.py": [
    "control/task-vector-index.json",
