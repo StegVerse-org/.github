@@ -9,11 +9,11 @@ Status: `WIRED INTO THE RESIDENT CYCLE / INTRA-ORGANIZATION / NO INTERLOCK-INTR 
 
 ## What was missing
 
-`organization_scope_rule` is that every state transition occurring within the organization emits an organization receipt. Repositories in this organization append their own transitions to their own ledgers — the LLM-adapter records a node's arrival at its ingress boundary — and nothing carried those receipts up. The organization's record began at its own boundary, so the whole front half of the path was absent from it.
+`organization_scope_rule` is that every state transition occurring within the organization emits an organization receipt. Repositories in this organization append their own transitions to their own ledgers, and nothing carried those receipts up. The organization's record began at its own boundary, so the whole front half of the path was absent from it.
 
 ## It is not a crossing, and it never needed Interlock/InTr
 
-This was mis-stated earlier in the work and is worth recording plainly: `StegVerse-org/LLM-adapter` and `StegVerse-org/.github` are both inside `StegVerse-org`. There is no organization boundary between them. Interlock/InTr is the *inter-organization* transport; the hop that needs it is organization to `propagation_target: master-records/.github`.
+A repository declared in `org-boundary/registry/services.json` and `StegVerse-org/.github` are both inside `StegVerse-org`. There is no organization boundary between them. No organization repository routes to, or writes a ledger for, `StegVerse-org/LLM-adapter`: its only InTr use is that an external machine that has established itself as a healthy node may become an InTr endpoint — nothing else, and never an org-internal hop. The registry declares no LLM-adapter row, so it is not in propagation scope. Interlock/InTr is the *inter-organization* transport; the hop that needs it is organization to `propagation_target: master-records/.github`.
 
 Three things made this available already and none of them is transport:
 
@@ -46,13 +46,12 @@ The organization state digests are the repository receipt's own predecessor and 
 `resident-runtime/federation_cycle.py` propagates on each cycle and reports what it carried in the cycle receipt. It runs *after* the frames are handled, so a cycle that failed to consume does not report having carried receipts it never reached.
 
 ```text
-registration at the adapter's ingress boundary
-  -> NODE_INGRESS_ADMITTED on StegVerse-org/LLM-adapter's ledger
+a transition on a declared repository's own ledger
      -> resident cycle
         -> REPO_STATE_PROPAGATION on StegVerse-org's ledger
-           source_repository     StegVerse-org/LLM-adapter
+           source_repository     the declared repository (never StegVerse-org/LLM-adapter)
            repo_receipt_sha256   the repository receipt's own digest
-           repo_transition_id    NODE_INGRESS_ADMITTED:<node>
+           repo_transition_id    the repository's transition id
 ```
 
 ## Validation

@@ -440,11 +440,16 @@ class Standard(unittest.TestCase):
             self.assertNotIn(forbidden, source)
 
     def test_the_workflow_runs_on_request_and_pull_request_only(self):
-        workflow = (ROOT / ".github/workflows/resident-runtime-convergence-validation.yml").read_text()
-        self.assertIn("workflow_dispatch:", workflow)
-        self.assertIn("pull_request:", workflow)
-        for trigger in ("schedule:", "cron", "push:", "pull_request_target:", "workflow_run:"):
-            self.assertNotIn(trigger, workflow)
+        # G17: the validation workflow is a catalog group of the stable validator
+        # dispatcher; it keeps its pull_request-only event (workflow_dispatch removed).
+        from tests.workflow_surface import catalog_groups, step_bodies
+        groups = catalog_groups("resident-runtime-convergence-validation.yml")
+        self.assertTrue(groups)
+        for group in groups:
+            self.assertEqual(group["events"], ["pull_request"], group["id"])
+            body = step_bodies(group)
+            for trigger in ("schedule:", "cron", "pull_request_target:", "workflow_run:", "git push"):
+                self.assertNotIn(trigger, body)
 
     def test_the_repository_manifest_validates(self):
         manifest = conv.load_manifest(ROOT / conv.DEFAULT_MANIFEST)
