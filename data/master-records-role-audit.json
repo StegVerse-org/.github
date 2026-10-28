@@ -22,9 +22,9 @@
       "PROPER": 176,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
-      "HISTORICAL_EVIDENCE": 37,
+      "HISTORICAL_EVIDENCE": 47,
       "NAMING_ONLY": 40,
-      "total": 253
+      "total": 263
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1838,6 +1838,76 @@
       "text": "- The three still-internal organizations (Infrastructure-Continuity-Ventures, formalism-tests, master-records) are not conformant, so no path to or from them is declared. Any path to them stays FAIL_CLOSED with the six fields on #162.",
       "classification": "NAMING_ONLY",
       "reason": "Names the master-records organization only as one of the three still-internal, non-conformant organizations to which no InTr path is declared (StegVerse-org/.github#162, Lane B 13-org reseal). It asserts no role."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 87,
+      "text": "\"authority_owner\": \"Master Records\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Diagnostic-request test row (stegverse_ecosystem_diagnostic_request.tests) naming Master Records as the owner of an AUTHENTIC_EXP3_* predicate whose observation is null: a question the Labs experiment asks of the ecosystem, not a role granted here. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 127,
+      "text": "\"authority_owner\": \"Master Records\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Diagnostic-request test row (stegverse_ecosystem_diagnostic_request.tests) naming Master Records as the owner of an AUTHENTIC_EXP3_* predicate whose observation is null: a question the Labs experiment asks of the ecosystem, not a role granted here. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 155,
+      "text": "\"authority_owner\": \"Master Records\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Diagnostic-request test row (stegverse_ecosystem_diagnostic_request.tests) naming Master Records as the owner of an AUTHENTIC_EXP3_* predicate whose observation is null: a question the Labs experiment asks of the ecosystem, not a role granted here. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 156,
+      "text": "\"component_id\": \"stegverse.matched_master_records\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Identifier of the matched_master_records diagnostic test row (observation null, predicate AUTHENTIC_EXP3_INDEPENDENT_EVIDENCE); names the test only. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 159,
+      "text": "\"test_id\": \"matched_master_records\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Identifier of the matched_master_records diagnostic test row (observation null, predicate AUTHENTIC_EXP3_INDEPENDENT_EVIDENCE); names the test only. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 196,
+      "text": "\"capability\": \"Existing canonical source specifies exact state-transition and required-evidence digests with independently recomputable Master Records reconstruction.\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Capability-boundary dimension statement describing what canonical source claims about Master Records reconstruction/custody, paired in the same row with a 'limit' saying source does not establish it; an assessment, not a role statement. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 199,
+      "text": "\"verification\": \"Fetch exact registered transition and its organization receipt and corresponding Master Records RECORDED/PASS/PASS response; recompute hashes and deliberately mutate evidence.\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Capability-boundary dimension's verification method, describing how an independent assessor would query Master Records; a test procedure the experiment describes, not a dependency of this organization. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 202,
+      "text": "\"capability\": \"Canonical source defines retention of exact state-transition receipts and each bound required-evidence item through authoritative organization-first and Master Records custody.\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Capability-boundary dimension statement describing what canonical source claims about Master Records reconstruction/custody, paired in the same row with a 'limit' saying source does not establish it; an assessment, not a role statement. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 205,
+      "text": "\"verification\": \"From authenticated resident organization HEAD enumerate all linked immutable receipts, query Master Records by exact transition and compare every retained evidence item and retention/loss policy.\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Capability-boundary dimension's verification method, describing how an independent assessor would query Master Records; a test procedure the experiment describes, not a dependency of this organization. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
+    },
+    {
+      "file": ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",
+      "line": 240,
+      "text": "\"answer\": \"No authenticated current Exp3 organization-ledger event and matching Master Records response has been read back in this SDK manifest.\",",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "four_questions answer with evidence_class NOT_OBSERVED recording that no matching Master Records response was read back; it records an absence, not a gate. Inside the frozen MIR/SV Experiment 3 SDK diagnostic manifest owned by StegVerse-Labs/.github#2682 (COSV 50000000100000), carried byte-for-byte from StegVerse-SDK run 39129312951 and sealed by expected_canonical_manifest_sha256 (request sha256 b5f0f546...bb48). This organization's runtime never reads it (no resident-runtime, org-kernel or ledger-writer code reads manifest payload fields), so nothing here awaits or is gated on Master Records. Editing it would misstate the frozen manifest (StegVerse-org/.github#198); classified as the frozen first-generation manifest reproduced in tests/test_sdk_self_characterization_egress.py is."
     }
   ],
   "remeasured": [
@@ -1856,6 +1926,10 @@
     {
       "by": "Lane B 13-org post-genesis reseal (StegVerse-org/.github#162)",
       "change": "docs/INTR_POST_GENESIS_REPLAY.md current-seal section names the master-records organization among the three still-internal organizations (1, NAMING_ONLY); 0 stale entries, 1 entry added"
+    },
+    {
+      "by": "WU-B11 Experiment 3 organization transition request (StegVerse-org/.github#198, Claude lane; coordinator ruling under #160)",
+      "change": "the frozen Experiment 3 SDK diagnostic manifest carried in .stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json (10, HISTORICAL_EVIDENCE, precedent: the frozen manifest reproduced in tests/test_sdk_self_characterization_egress.py); 0 stale entries, 10 entries added"
     }
   ]
 }
