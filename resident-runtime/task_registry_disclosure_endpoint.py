@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Serve this organization's current task registry to an admitted manifest.
 
-This is the endpoint adapter for `stegverse-org.llm-adapter`. Until now that
-registry row carried no `endpoint_adapter` and no `admits_processing`, so a
-manifest addressed to it was refused -- correctly, but it meant nothing could
-ask this organization what it is working on and get an answer across the
-boundary.
+This is the endpoint adapter for `stegverse-org.task-registry-disclosure`, a
+service of StegVerse-org/.github itself. No organization repository routes to
+StegVerse-org/LLM-adapter: LLM-adapter's only InTr use is that an external
+machine that has established itself as a healthy node may become an InTr
+endpoint, never an org-internal hop.
 
 What crosses back is the committed registry, read at request time, with its
 digest. The registry is the work-intent truth for this organization, so a
@@ -110,7 +110,7 @@ def main():
 
     packet = json.loads(args.envelope.read_text(encoding="utf-8"))
     destination = (packet.get("destination") or {}).get("service")
-    if destination != "stegverse-org.llm-adapter":
+    if destination != "stegverse-org.task-registry-disclosure":
         raise SystemExit("task-registry-disclosure-wrong-destination:" + str(destination))
 
     result = disclosure(packet.get("payload"))

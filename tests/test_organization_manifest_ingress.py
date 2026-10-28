@@ -25,7 +25,7 @@ from stegverse.manifest_state_transition_runtime import derive_execution_request
 
 ROOT = Path(__file__).resolve().parents[1]
 CAPABILITY_REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
-FIXTURE = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+FIXTURE = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 GENESIS = ROOT / "tests/fixtures/crossing-standing-genesis.json"
 BUILD_SPEC = ROOT / "tests/fixtures/sdk-manifest-build-spec.json"
 OWNER = "StegVerse-org/.github"
@@ -181,7 +181,7 @@ class ReceivingOperationTests(unittest.TestCase):
         # changed.
         spec = json.loads(BUILD_SPEC.read_text(encoding="utf-8"))
         arguments = {"data": spec["data"], "processor_request": spec["processor_request"],
-                     **spec["common"], **spec["manifests"]["task-registry-disclosure-to-llm-adapter"],
+                     **spec["common"], **spec["manifests"]["task-registry-disclosure"],
                      "source_output_id": source_output_id}
         return build_manifest(**arguments)
 
@@ -226,7 +226,7 @@ class ReceivingOperationTests(unittest.TestCase):
         committed fixture's, so the two cannot drift apart.
         """
         spec = json.loads(BUILD_SPEC.read_text(encoding="utf-8"))
-        declared = spec["manifests"]["unadmitted-capability-to-llm-adapter"]
+        declared = spec["manifests"]["unadmitted-capability-to-task-registry-disclosure"]
         return build_manifest(
             data=declared["data"], source_framework="organization-boundary-test",
             source_output_id=source_output_id, process=declared["process"],
@@ -468,7 +468,7 @@ class ReceivingOperationTests(unittest.TestCase):
         """Reading the resolution, rather than assuming it, is what refuses this."""
         request = dict(derive_execution_request(manifest(), ingress.boundary()))
         resolution = json.loads(json.dumps(request["manifest_declared_destination"]))
-        resolution["receiving_operation"]["owner_repository"] = "StegVerse-org/LLM-adapter"
+        resolution["receiving_operation"]["owner_repository"] = "StegVerse-org/TV"
         request["manifest_declared_destination"] = resolution
         with self.assertRaises(ValueError) as refused:
             ingress.bound_here(request)

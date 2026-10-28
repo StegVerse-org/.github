@@ -227,6 +227,22 @@ def recorded_for(location, canonical_manifest_sha256):
                  if r["predecessor_org_state_sha256"] == state), None)
 
 
+def failed(location, exc):
+    """The readback's own six-field FAIL_CLOSED for an unreadable or refused chain."""
+    return {
+        "schema": "stegverse.organization-ledger-readback/v1",
+        "location": location,
+        "disposition": "FAIL_CLOSED",
+        "failure_code": "ORGANIZATION_LEDGER_READBACK_FAILED",
+        "failed_predicate": getattr(exc, "failed_predicate", "ORGANIZATION_LEDGER_READS_BACK"),
+        "required_evidence_or_repair": getattr(exc, "detail", str(exc)),
+        "retry_entrypoint": RETRY,
+        "owning_existing_goal": GOAL,
+        "next_attempt": "fetch the ledger ref again and rerun the readback; nothing is written by it",
+        "authority_effect": "NONE_READBACK_ONLY",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--location", required=True, help="ledger locator, e.g. git+<repo>#<ref>")
@@ -249,19 +265,15 @@ def main():
         if args.repository_namespace:
             result["repository_ledger"] = repository_readback(
                 args.location, args.repository_namespace, result, ingress)
-    except (ReadbackRefused, ValueError, RuntimeError, FileNotFoundError) as exc:
-        result, code = {
-            "schema": "stegverse.organization-ledger-readback/v1",
-            "location": args.location,
-            "disposition": "FAIL_CLOSED",
-            "failure_code": "ORGANIZATION_LEDGER_READBACK_FAILED",
-            "failed_predicate": getattr(exc, "failed_predicate", "ORGANIZATION_LEDGER_READS_BACK"),
-            "required_evidence_or_repair": getattr(exc, "detail", str(exc)),
-            "retry_entrypoint": RETRY,
-            "owning_existing_goal": GOAL,
-            "next_attempt": "fetch the ledger ref again and rerun the readback; nothing is written by it",
-            "authority_effect": "NONE_READBACK_ONLY",
-        }, 1
+    except ValueError as exc:
+        if getattr(exc, "refusal", None):
+            # P1-FC-12 step b: a remote locator is reported in ledger_store's six fields, under this entrypoint.
+            result, code = dict(exc.refusal, schema="stegverse.organization-ledger-readback/v1",
+                                location=args.location, retry_entrypoint=RETRY), 1
+        else:
+            result, code = failed(args.location, exc), 1
+    except (ReadbackRefused, RuntimeError, FileNotFoundError) as exc:
+        result, code = failed(args.location, exc), 1
     text = json.dumps(result, indent=2, sort_keys=True)
     if args.out:
         args.out.write_text(text + "\n")

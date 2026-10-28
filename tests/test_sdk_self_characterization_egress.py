@@ -90,7 +90,7 @@ def generic_manifest(**overrides):
         "source_organization": {"organization_id": "StegVerse-SDK-Evaluator",
                                 "role": "EXTERNAL_EVALUATOR_ORGANIZATION"},
         "target": {"entity_id": "StegVerse-org", "organization": "StegVerse-org",
-                   "service": "stegverse-org.llm-adapter",
+                   "service": "stegverse-org.task-registry-disclosure",
                    "relationship_at_manifest_creation": "EXTERNAL_NOT_SELF"},
         "operation": "REQUEST_CURRENT_TASK_REGISTRY",
         "objective": GENERIC_OBJECTIVE,
@@ -128,7 +128,7 @@ class ManifestDeclaredRouteTests(unittest.TestCase):
     def test_the_far_side_is_the_one_the_manifest_declared(self):
         packet = M.build_packet(request(generic_manifest()))
         self.assertEqual(packet["destination"]["org"], "StegVerse-org")
-        self.assertEqual(packet["destination"]["service"], "stegverse-org.llm-adapter")
+        self.assertEqual(packet["destination"]["service"], "stegverse-org.task-registry-disclosure")
 
     def test_a_different_declared_far_side_reaches_a_different_surface(self):
         """The point of the change: a second question needs no edit to this runtime."""
@@ -165,7 +165,7 @@ class NothingIsDefaultedTests(unittest.TestCase):
             M.build_packet(request(generic_manifest(target=target)))
 
     def test_a_manifest_declaring_no_far_side_organization_is_refused(self):
-        target = {"entity_id": "StegVerse-org", "service": "stegverse-org.llm-adapter",
+        target = {"entity_id": "StegVerse-org", "service": "stegverse-org.task-registry-disclosure",
                   "relationship_at_manifest_creation": "EXTERNAL_NOT_SELF"}
         with self.assertRaisesRegex(ValueError, "manifest.target.organization"):
             M.build_packet(request(generic_manifest(target=target)))

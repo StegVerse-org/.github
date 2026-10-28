@@ -3,12 +3,11 @@
 
 `organization_scope_rule` is that every state transition occurring within the
 organization emits an organization receipt. Repositories in this organization
-append their own transitions to their own ledgers -- the LLM-adapter records a
-node's arrival at its ingress boundary -- and nothing carried those receipts up,
+append their own transitions to their own ledgers, and nothing carried those receipts up,
 so the organization's record began at its own boundary and the whole front half
 of the path was absent from it.
 
-Nothing about this is a crossing. The adapter and this repository are both in
+Nothing about this is a crossing. A declared repository and this one are both in
 `StegVerse-org`, so there is no organization boundary between them and no
 Interlock/InTr involved; InTr is the inter-organization transport, and the hop
 that needs it is organization to `master-records/.github`. A repository ledger

@@ -15,6 +15,8 @@ import sys
 import unittest
 from pathlib import Path
 
+from tests.workflow_surface import catalog_groups, step_bodies, writer_job
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -30,8 +32,9 @@ base = load("test_merge_transfer_for_admission", "tests/test_merge_transfer.py")
 b2 = load("merge_transfer_admission_under_test", "resident-runtime/merge_transfer_admission.py")
 mt = b2.mt
 Ledger, FIXTURES = base.Ledger, base.FIXTURES
-WRITER = ROOT / ".github/workflows/organization-ledger-merge-transfer.yml"
-VALIDATION = ROOT / ".github/workflows/organization-ledger-merge-transfer-validation.yml"
+# G17: the writer is job merge-transfer of organization-ledger-writer.yml and the
+# validation workflow's jobs are catalog groups run by validation-dispatcher.yml.
+VALIDATION = "organization-ledger-merge-transfer-validation.yml"
 
 
 def fixture() -> dict:
@@ -181,7 +184,8 @@ class Pins(unittest.TestCase):
         self.assertEqual(digest, "032ed727358d56f33369b35e6cc50d65f6af5dc0035f0b69fe7cddb3f4f4e20e")
 
     def test_the_writer_appends_through_b2_and_checks_after_publish(self):
-        text = WRITER.read_text()
+        """G17: the writer is job merge-transfer of organization-ledger-writer.yml; same assertions on that job."""
+        text = writer_job("merge-transfer")
         self.assertIn("merge_transfer_admission.py append", text)
         self.assertNotIn("merge_transfer.py append", text)
         self.assertLess(text.index("git push origin"), text.index("merge_transfer_admission.py checkpoint"))
@@ -191,7 +195,8 @@ class Pins(unittest.TestCase):
         self.assertNotIn("secrets.", text)
 
     def test_the_validation_workflow_runs_b2(self):
-        text = VALIDATION.read_text()
+        """G17: the validation workflow's jobs are catalog groups; B2 runs in their step bodies."""
+        text = "\n".join(step_bodies(g) for g in catalog_groups(VALIDATION))
         self.assertIn("resident-runtime/merge_transfer_admission.py", text)
         self.assertIn("tests.test_merge_transfer_admission", text)
 

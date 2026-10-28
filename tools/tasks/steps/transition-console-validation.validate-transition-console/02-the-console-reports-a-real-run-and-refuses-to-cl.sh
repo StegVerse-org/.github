@@ -1,0 +1,83 @@
+python - <<'PY'
+import importlib.util, json, shutil, tempfile
+from pathlib import Path
+
+def load(name, relative):
+    spec = importlib.util.spec_from_file_location(name, relative)
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+egress = load("egress", "resident-runtime/organization_egress_boundary.py")
+lineage = load("lineage", "resident-runtime/receipt_lineage_projection.py")
+console = load("console", "resident-runtime/transition_console.py")
+K = egress.kernel
+
+PEER, PEER_CONTROL = "StegVerse-Labs", "stegverse-labs.org-control"
+CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+mesh = Path(tempfile.mkdtemp()); peer = Path(tempfile.mkdtemp())
+peer_state = Path(tempfile.mkdtemp())  # supplied node state, never a checkout
+(peer / "org-boundary/registry").mkdir(parents=True)
+(peer / "org-boundary/registry/services.json").write_text(json.dumps({
+    "schema_version": "stegverse.org-boundary-registry.v1", "organization": PEER,
+    "boundary_rule": "ALL_ORGANIZATION_INGRESS_EGRESS_GENERATED_AT_ORG_DOT_GITHUB_BOUNDARY",
+    "services": [{"service_id": PEER_CONTROL, "repository": PEER + "/.github",
+                  "boundary_role": "BOUNDARY_LOCAL_CONTROL"}]}))
+(peer / "org-boundary/runtime").mkdir(parents=True)
+for name in ("process_boundary.py", "manifest_selection.py", "node_standing.py"):
+    shutil.copy2("org-boundary/runtime/" + name, peer / "org-boundary/runtime" / name)
+(peer / "docs").mkdir(parents=True, exist_ok=True)
+shutil.copy2(CONTRACT, peer / CONTRACT)
+
+standing = {"mode": "ESTABLISH_GENESIS", "node_ref": "ci-console", "predecessor": None}
+emitted = egress.emit(PEER, {"message_class": "ecosystem.communication",
+    "communication_id": "ci-console-001", "body": {"ci": True}},
+    standing=standing, mesh_root=mesh, hb_epoch=32)
+# The peer consumes through its own kernel into its own ledgers.
+_po_spec = importlib.util.spec_from_file_location("peer_organization", "tests/peer_organization.py")
+_po = importlib.util.module_from_spec(_po_spec); _po_spec.loader.exec_module(_po)
+_peer_registry = json.loads((peer / "org-boundary/registry/services.json").read_text())
+peer_node = _po.materialize(None, _peer_registry["organization"], _peer_registry["services"])
+peer_node.consume(mesh_root=mesh, node_state_root=peer_state)
+egress.close(PEER, emitted["packet_id"], "ci-console-001",
+             mesh_root=mesh, hb_epoch=32)
+
+# A real chain, rendered.
+rendered = console.view(lineage.repository_chain(), root=mesh)
+assert rendered["transition_count"] > 0, "no transitions rendered"
+assert len(rendered["lines"]) == rendered["transition_count"], rendered
+for row in rendered["transitions"]:
+    assert row["transition_class"] != "UNDECLARED", row
+    assert row["hb_epoch"] is not None, row
+print("CONSOLE_RENDERED=" + str(rendered["transition_count"]), "transitions")
+for line in rendered["lines"]:
+    print("  " + line)
+
+# The run declares which reality it observed.
+run = rendered["run"]
+assert run["run_mode"] == console.MATERIALIZER_SUPPLIED, run
+assert run["mesh_portable"] is True, run
+assert run["store_kind"] == "POSIX_FILESYSTEM", run
+print("CONSOLE_RUN_MODE=" + run["run_mode"], "| portable", run["mesh_portable"])
+
+# The materializer-supplied mode declares the mesh axis and cannot
+# be substituted by environment or host fallback.
+mode = console.run_mode(root=mesh)
+assert mode["axis"] == "MESH_MEDIUM", mode
+assert mode["route_axis_is_not_resolved_here"] is True, mode
+assert mode["route_axis_field"] == "routing_surface", mode
+assert "reaches_a_production_ecosystem_over_a_network" not in mode, mode
+try:
+    console.run_mode(root=mesh, env={"STEGVERSE_ORG_FEDERATION_ROOT": "/srv/m"})
+    raise AssertionError("host environment unexpectedly selected mesh")
+except ValueError as exc:
+    assert "host_environment_mesh_binding_forbidden" in str(exc)
+try:
+    console.run_mode(root=None)
+    raise AssertionError("missing materializer mesh unexpectedly admitted")
+except ValueError as exc:
+    assert "mesh_location_required_from_materializer" in str(exc)
+
+assert rendered["ledger_unchanged_by_this_view"] is True
+assert rendered["authority_effect"] == "NONE_CONSOLE_ONLY"
+print("CONSOLE=PASS")
+PY

@@ -1,0 +1,1 @@
+git fetch --quiet --no-tags "https://github.com/${GITHUB_REPOSITORY}" "+refs/stegverse/organization-ledger:refs/stegverse/organization-ledger"

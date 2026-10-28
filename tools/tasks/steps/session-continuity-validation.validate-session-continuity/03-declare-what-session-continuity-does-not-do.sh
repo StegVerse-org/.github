@@ -1,0 +1,4 @@
+echo 'authority_effect=NONE_CONTINUITY_ONLY; a_break_is_reported_not_refused=true'
+echo 'session_identity_is_derived_from_the_chain_not_declared=true'
+echo 'declared_label_establishes_nothing=true'
+echo 'predecessor_digests_recomputed_against_the_prior_disposition=false'
