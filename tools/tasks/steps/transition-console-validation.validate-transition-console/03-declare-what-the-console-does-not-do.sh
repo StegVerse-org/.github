@@ -1,0 +1,5 @@
+echo 'authority_effect=NONE_CONSOLE_ONLY; ledger_unchanged=true'
+echo 'live=AT_THE_EPOCH_THE_READER_SAMPLES; is_a_pushed_stream=false'
+echo 'run_modes=MATERIALIZER_SUPPLIED; host-derived modes prohibited'
+echo 'axis=MESH_MEDIUM; store_kind=POSIX_FILESYSTEM'
+echo 'route_axis=routing_surface owned by StegVerse-SDK/stegverse/route_resolution.py'

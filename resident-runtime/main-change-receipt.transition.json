@@ -1,0 +1,62 @@
+{
+  "schema": "stegverse.transition-declaration/v1",
+  "declaration_status": "DRAFT_PULL_REQUEST",
+  "operation": "MAIN_CHANGE_RECEIPT_APPEND",
+  "profile_id": "main-change-receipt",
+  "transition": "MAIN_CHANGE_RECEIPT_APPEND",
+  "owning_existing_goal": "StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+  "ledger_goal": "StegVerse-org/.github#162",
+  "form_note": "same form as resident-runtime/test-suite-baseline-refresh.transition.json; the default writer placement proposed on StegVerse-org/.github#238 for #222: no 4th workflow and no hosted writer job; the receipt is produced read-only by a dispatcher catalog group and the append is a manifest-directed transition carried by organization-ledger-writer.yml once admitted",
+  "trigger": {
+    "event": "push",
+    "branches": [
+      "main"
+    ],
+    "workflow": ".github/workflows/validation-dispatcher.yml",
+    "catalog_group": "main-change-receipt.receipt",
+    "catalog": "tools/tasks/task_catalog.json",
+    "forbidden": [
+      "schedule",
+      "cron",
+      "workflow_dispatch",
+      "repository_dispatch",
+      "workflow_run",
+      "polling"
+    ]
+  },
+  "input": {
+    "producer": "resident-runtime/main_change_receipt.py observe over the pushed range (github.event.before..github.event.after) on a scratch copy",
+    "seal": "receipt_sha256 = sha256 over canonical JSON without the field (B1 writer seal)"
+  },
+  "reuses": {
+    "writer": {
+      "path": "resident-runtime/main_change_receipt.py",
+      "sha256": "884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf",
+      "reused": [
+        "observe",
+        "append (scratch only)",
+        "verify"
+      ]
+    }
+  },
+  "output": {
+    "ref": "refs/stegverse/main-change-receipts",
+    "publish": "NONE until admission: the receipts, the scratch append and the fresh-fetch verification are retained as workflow artifacts; nothing is committed, pushed or appended",
+    "consequence_carrier": ".github/workflows/organization-ledger-writer.yml (the only workflow holding contents: write) once MAIN_CHANGE_RECEIPT_APPEND is admitted; no new workflow"
+  },
+  "workflow_surface_effect": "NONE: workflows stay at 3 (validation-dispatcher.yml, organization-ledger-writer.yml, organization-egress-boundary-validation.yml)",
+  "admission": {
+    "disposition": "FAIL_CLOSED",
+    "failure_code": "MAIN_CHANGE_RECEIPT_ADMISSION_PENDING_GENESIS",
+    "failed_predicate": "MAIN_CHANGE_RECEIPT_TRANSITION_IS_ADMITTED_FROM_ORGANIZATION_LEDGER_GENESIS",
+    "required_evidence_or_repair": "the organization ledger declares its genesis and admits operation MAIN_CHANGE_RECEIPT_APPEND from it; organization-ledger-writer.yml then appends the retained receipts to refs/stegverse/main-change-receipts",
+    "retry_entrypoint": "tools/tasks/task_catalog.json group main-change-receipt.receipt (validation-dispatcher.yml, push to main)",
+    "owning_existing_goal": "StegVerse-org/.github#162 (organization ledger) / StegVerse-org/.github#166 ENTERPRISE-HOST-PROVIDER-ERADICATION-001",
+    "next_attempt": "the first push to main after genesis admits MAIN_CHANGE_RECEIPT_APPEND"
+  },
+  "skap_vault_invariant": "the SKAP Vault (KV/_Vault/SKAP) is the only PII and credential store for every user, including the StegVerse ecosystem's own PII and credentials; this transition reads, stores and moves no PII or credential",
+  "organization_ledger_effect": "NONE",
+  "registry_generation_effect": "NONE",
+  "authority_effect": "NONE",
+  "lowest_supported_mode": "E0"
+}

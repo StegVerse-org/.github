@@ -19,7 +19,19 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from merge_transfer import ALLOW, FAIL_CLOSED, NOT_LEDGERED, SIX_FIELDS  # noqa: E402
+from merge_transfer import ALLOW, FAIL_CLOSED, GOAL, NOT_LEDGERED, SIX_FIELDS  # noqa: E402
+
+RESULT_UNREADABLE = "DRY_RUN_RESULT_UNREADABLE"
+
+
+def unreadable(path: str, exc: Exception) -> dict:
+    return {"disposition": FAIL_CLOSED, "failure_code": RESULT_UNREADABLE,
+            "failed_predicate": "DRY_RUN_REAL_STATE_IS_A_READABLE_JSON_LIST",
+            "required_evidence_or_repair": "the verify step must write its records to " + path
+                                           + " (" + type(exc).__name__ + ")",
+            "retry_entrypoint": "tools/tasks/run_catalog.py run --group organization-ledger-merge-transfer-validation.dry-run",
+            "owning_existing_goal": GOAL,
+            "next_attempt": "repair the selection or verify step, then re-run the PR's validation"}
 
 
 def _field_ok(value: object) -> bool:
@@ -50,7 +62,12 @@ def main(argv: list[str] | None = None) -> int:
     if len(args) != 1:
         print("usage: merge_transfer_dry_run_check.py <real-state.json>", file=sys.stderr)
         return 2
-    results = json.loads(Path(args[0]).read_text(encoding="utf-8"))
+    try:
+        results = json.loads(Path(args[0]).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        # An absent or unreadable result is FAIL_CLOSED with six fields, never a traceback.
+        print("DRY_RUN_GATE_FAIL:", json.dumps(unreadable(args[0], exc), sort_keys=True))
+        return 1
     for r in results if isinstance(results, list) else []:
         if isinstance(r, dict):
             print(r.get("merge_commit"), r.get("disposition"), r.get("transfer"), r.get("failure_code"))
