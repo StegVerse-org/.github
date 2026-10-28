@@ -23,7 +23,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 GENESIS = json.loads((ROOT / "tests/fixtures/crossing-standing-genesis.json").read_text())
-FIXTURE = ROOT / "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+FIXTURE = ROOT / "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json"
 LEDGER_REF = "refs/stegverse/organization-ledger"
 MESH_REF = "refs/test/federation-mesh"
 DECIDER = "StegVerse-Labs"
@@ -441,17 +441,28 @@ class ReturnCycleCustodyRefusals(unittest.TestCase):
 
 
 class ReturnWorkflowShape(unittest.TestCase):
-    """organization-governance-return.yml binds, takes in, returns, publishes and reads back in that order."""
+    """The governance-return writer job binds, takes in, returns, publishes and reads back in that order.
+
+    G17: organization-governance-return.yml is job governance-return of
+    .github/workflows/organization-ledger-writer.yml.
+    """
 
     def setUp(self):
-        self.workflow = (ROOT / ".github/workflows/organization-governance-return.yml").read_text()
+        from tests.workflow_surface import writer_job
+        self.workflow = writer_job("governance-return")
         self.steps = re.findall(r"- name: (.+)", self.workflow)
 
     def test_both_locators_are_required_dispatch_inputs(self):
-        inputs = self.workflow.split("workflow_dispatch:")[1].split("permissions:")[0]
-        for name in ("mesh_root", "peer_mesh"):
-            self.assertRegex(inputs, name + r":\n\s+description: .*\n\s+required: true")
-        self.assertNotIn("pull_request", self.workflow.split("permissions:")[0])
+        # G17 removed workflow_dispatch: dispatched locators are FAIL_CLOSED pending
+        # (six fields, registry); a committed return request supplies both on push.
+        from tests.workflow_surface import registry
+        head = self.workflow.split("\njobs:\n", 1)[0]
+        self.assertNotIn("workflow_dispatch:", head)
+        self.assertNotIn("pull_request", head)
+        pending = [r for r in registry()["fail_closed_pending"] if "peer_mesh" in r["surface"]]
+        self.assertEqual(len(pending), 1)
+        for name in ("DISPATCH_MESH_ROOT", "DISPATCH_PEER_MESH"):
+            self.assertIn(name, self.workflow)
 
     def test_the_order_is_bind_intake_return_publish_mesh_publish_ledger_read_back(self):
         order = ["Bind the designated mesh to this run",
@@ -484,10 +495,13 @@ class ReturnWorkflowShape(unittest.TestCase):
         # SDK the return defaults to, so a request is returned on the SDK it was
         # received under.
         pins = set()
-        for name in ("organization-ledger-transition.yml", "governance-inter-org-route-validation.yml",
-                     "organization-manifest-ingress-validation.yml"):
-            text = (ROOT / ".github/workflows" / name).read_text()
-            pins.update(re.findall(r"repository: StegVerse-org/StegVerse-SDK\n\s+ref: ([0-9a-f]{40})", text))
+        from tests.workflow_surface import catalog_groups, writer_job
+        pins.update(re.findall(r"repository: StegVerse-org/StegVerse-SDK\n\s+ref: ([0-9a-f]{40})",
+                               writer_job("ledger-transition")))
+        for name in ("governance-inter-org-route-validation.yml", "organization-manifest-ingress-validation.yml"):
+            for group in catalog_groups(name):
+                if group["runner"].get("x_repository") == "StegVerse-org/StegVerse-SDK":
+                    pins.add(group["runner"]["x_ref"])
         self.assertEqual(len(pin), 1)
         self.assertEqual(pins, set(pin), "the receiving and validating workflows pin the SDK the return defaults to")
         self.assertIn("SDK_REF_IS_AN_EXACT_COMMIT", self.workflow)

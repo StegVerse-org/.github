@@ -1,0 +1,4536 @@
+{
+ "authority_effect": "NONE",
+ "generated_from": {
+  "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
+  "spec": ".stegverse/test-set-spec.json",
+  "spec_sha256": "86c5e67cce079ec9f50459a2de56d4eca106c0aa38ddf349f2837d2018ab8c6e"
+ },
+ "inputs": {
+  "jsonschema": {
+   "check": {
+    "kind": "python_module",
+    "module": "jsonschema"
+   },
+   "finish_point": "the full-suite job imports jsonschema and tests/test_stdlib_json_schema_agreement.py (the stdlib validator's agreement oracle) runs and passes at the exact head",
+   "owner": "StegVerse-org/.github#166 (P4 lane: the agreement oracle only; every other schema check uses the pinned stdlib validator)",
+   "repair": "the full-suite job installs jsonschema (python -m pip install \"jsonschema==4.26.0\", the version the agreement oracle is qualified at) for the agreement check only"
+  },
+  "labs-stdlib-json-schema": {
+   "check": {
+    "env": "STEGVERSE_LABS_ROOT",
+    "kind": "env_path"
+   },
+   "finish_point": "STEGVERSE_LABS_ROOT names the pinned StegVerse-Labs checkout (sha256-checked) and the schema-conformance tests run and pass at the exact head",
+   "owner": "StegVerse-org/.github#166 (P4 lane: wired in catalog group required-verification.full-suite)",
+   "repair": "the job fetches the commit in .stegverse/test-suite-baseline/labs-tool-pin.json (resident-runtime/pinned_labs.py fetch) and sets STEGVERSE_LABS_ROOT"
+  },
+  "organization-ledger-ref": {
+   "check": {
+    "kind": "git_ref",
+    "ref": "refs/stegverse/organization-ledger"
+   },
+   "finish_point": "the checkout holds the ledger ref and the InTr path and merge-transfer tests run and pass at the exact head",
+   "owner": "Lane C/D (organization ledger store; StegVerse-org/.github#162)",
+   "repair": "the full-suite job fetches refs/stegverse/organization-ledger read-only, as intr-path-transfer-validation.yml does"
+  },
+  "repo-standards": {
+   "check": {
+    "allow": "ALLOW",
+    "argv": [
+     "consume",
+     "--ledger",
+     "git+{root}#refs/stegverse/organization-ledger",
+     "--head-root",
+     "{root}"
+    ],
+    "consumer": "resident-runtime/repo_standards_owner_drift_receipt.py",
+    "consumer_source": "ported from resident-runtime/tvc_conformance_receipt.py; the receipt producer is StegVerse-Labs/repo-standards#83 (run block org-owner-drift-receipt)",
+    "kind": "receipt_consumer"
+   },
+   "finish_point": "resident-runtime/repo_standards_owner_drift_receipt.py consume returns ALLOW at the exact head. That needs a repo-standards OwnerDriftTests receipt (REPO_STANDARDS_ORG_OWNER_DRIFT_TEST_RECEIPT) on refs/stegverse/organization-ledger, sealed by StegVerse-Labs/repo-standards' CI run block org-owner-drift-receipt and appended by the organization ledger writer, whose bound org surface (the vendored schema, PROVENANCE.json and the test file) has the same sha256 as this head. The [repo-standards] set is then verified by that receipt and not run here.",
+   "owner": "GitHub Product, Lane C (StegVerse-org/.github#164; taken over by the admission coordinator, #167); producer StegVerse-Labs/repo-standards#83; append: the organization ledger writer (Lane B, #162)",
+   "repair": "repo-standards' run block org-owner-drift-receipt seals an ALLOW receipt on a push to repo-standards main with config/org_owner_drift_source.json pinned to an org commit holding this head's bound surface, and the organization ledger writer appends it. A repo-standards checkout or REPO_STANDARDS_ROOT in this job does not satisfy this input, and no credential is routed around."
+  },
+  "stegverse-sdk": {
+   "check": {
+    "env": "STEGVERSE_SDK_PIN_74D9B473",
+    "kind": "pinned_source",
+    "manifest": ".stegverse/verification-inputs/stegverse-sdk.json",
+    "module": "stegverse",
+    "pin": "74d9b473"
+   },
+   "finish_point": "catalog group required-verification.full-suite (tools/tasks/task_catalog.json) materializes pin 74d9b473 (scripts/pinned_source_input.py materialize, sha256-checked against .stegverse/verification-inputs/stegverse-sdk.json), sets STEGVERSE_SDK_PIN_74D9B473 to its tree, and the set's tests run in that pin's run group and pass at the exact head with 0 skipped",
+   "owner": "P1 (StegVerse-org/.github#163)",
+   "repair": "materialize pin 74d9b473 with scripts/pinned_source_input.py (one anonymous git fetch of the pinned commit; no package index, no install) and export STEGVERSE_SDK_PIN_74D9B473=<dest>/tree before selection; a sha256 mismatch is FAIL_CLOSED, never loaded"
+  },
+  "stegverse-sdk@0028cab9": {
+   "check": {
+    "env": "STEGVERSE_SDK_PIN_0028CAB9",
+    "kind": "pinned_source",
+    "manifest": ".stegverse/verification-inputs/stegverse-sdk.json",
+    "module": "stegverse",
+    "pin": "0028cab9",
+    "shims": [
+     "requests"
+    ]
+   },
+   "finish_point": "catalog group required-verification.full-suite (tools/tasks/task_catalog.json) materializes pin 0028cab9 (scripts/pinned_source_input.py, sha256-checked against .stegverse/verification-inputs/stegverse-sdk.json; the pin sdk-manifest-crossing-validation.yml already checks out) together with its sha256-pinned urllib stand-in for requests (shims.requests, declared here), sets STEGVERSE_SDK_PIN_0028CAB9, and tests/test_sdk_manifest_crossing_fidelity.py runs in that pin's run group - requests unimportable from the interpreter is fine, it is never installed or required - and passes at the exact head with 0 skipped",
+   "owner": "P1 (StegVerse-org/.github#163)",
+   "repair": "materialize pin 0028cab9 with scripts/pinned_source_input.py (one anonymous git fetch of the pinned commit; no package index, no install; its shim is copied from .stegverse/verification-inputs/shims after a sha256 check) and export STEGVERSE_SDK_PIN_0028CAB9=<dest>/tree before selection. A shim that does not hash to the manifest is FAIL_CLOSED PINNED_INPUT_SHIM_SHA256_MISMATCH; a shim this check does not list is PINNED_INPUT_SHIM_NOT_DECLARED_BY_THE_SET; an installed requests that shadows the shim is PINNED_INPUT_SHIM_NOT_LOADED. No requests-free SDK commit replays these fixtures (the drift begins 0e2d1c4, before requests left the SDK at 85c7e67), so re-pinning is not the repair",
+   "why_this_pin": "tests/test_sdk_manifest_crossing_fidelity.py replays fixtures sealed against 0028cab9 (sdk-manifest-crossing-validation.yml); on 74d9b473 8 fail and 5 error (fixture drift: the SDK reads no destination)"
+  },
+  "tvc": {
+   "check": {
+    "allow": "ALLOW",
+    "argv": [
+     "consume",
+     "--ledger",
+     "git+{root}#refs/stegverse/organization-ledger",
+     "--head-root",
+     "{root}"
+    ],
+    "consumer": "resident-runtime/tvc_conformance_receipt.py",
+    "consumer_source": "ported from StegVerse-Labs/.github#3332 (acc4adf6); the receipt producer is StegVerse-Labs/TVC#539 (run block tvc-conformance-receipt)",
+    "kind": "receipt_consumer"
+   },
+   "finish_point": "resident-runtime/tvc_conformance_receipt.py consume returns ALLOW at the exact head. That needs a TVC org conformance test receipt (TVC_ORG_CONFORMANCE_TEST_RECEIPT) on refs/stegverse/organization-ledger, sealed by StegVerse-Labs/TVC's CI run block tvc-conformance-receipt (TVC#539) and appended by the organization ledger writer, whose consumed org surface has the same sha256 as this head. The [tvc] set is then verified by that receipt and not run here.",
+   "owner": "GitHub Product, Lane C (StegVerse-org/.github#164; taken over by the admission coordinator, #167); producer StegVerse-Labs/TVC#539; append: the organization ledger writer",
+   "repair": "TVC's run block tvc-conformance-receipt seals an ALLOW org conformance receipt on a push to TVC main with config/org_conformance_source.json pinned to a commit holding this head's surface, and the organization ledger writer appends it. A TVC checkout in this job does not satisfy this input, and no credential is routed around."
+  }
+ },
+ "repository": "StegVerse-org/.github",
+ "runner": "unittest",
+ "schema": "stegverse.test-sets/v1",
+ "selects_all": [
+  "*conftest.py",
+  ".stegverse/test-set-spec.json",
+  ".stegverse/test-sets.json",
+  ".stegverse/test-suite-baseline/labs-tool-pin.json",
+  "tests/*__init__.py",
+  "tools/tasks/steps/required-verification.full-suite/*",
+  "tools/tasks/task_catalog.json"
+ ],
+ "sets": [
+  {
+   "always": true,
+   "exclude": [],
+   "id": "core",
+   "inputs": [],
+   "surfaces": [
+    ".stegverse/test-suite-baseline/**",
+    "resident-runtime/required_verification.py",
+    "tests/test_required_verification.py"
+   ],
+   "tests": [
+    "tests.test_required_verification"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_admission_predicate.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_admission_predicate.py"
+   ],
+   "tests": [
+    "tests.test_admission_predicate"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_boundary_processing_selection.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_boundary_processing_selection.py"
+   ],
+   "tests": [
+    "tests.test_boundary_processing_selection"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_capability_demonstration_projection.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_capability_demonstration_projection.py"
+   ],
+   "tests": [
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_declared_capability_nothing_exercised_is_named_as_such",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_declared_side_comes_from_the_overlay",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_refusal_is_exercise_and_not_capability",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_closed_capability_crossing_demonstrates_the_peer_address",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_no_declared_column_is_invented_for_a_peer",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_peer_entry_is_an_address_not_an_identified_organization",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_control_crossing_invents_no_capability_for_the_control_service",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_closure_with_no_emission_is_not_a_demonstration",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_chain_that_did_not_recompute_is_an_unserved_attempt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_capability_demonstration_projection.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_capability_demonstration_projection.py"
+   ],
+   "tests": [
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_chain_that_does_not_verify_refuses_the_projection",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_a_submission_declaring_nothing_records_nulls_not_omission",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_an_admitted_submission_demonstrates_the_capability",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_every_demonstration_cites_a_receipt",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_declared_and_the_ledger_roots_are_not_the_same_root",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_declares_and_stores_nothing",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_grants_nothing_and_cites_st_022",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_projection_states_that_absence_is_not_refutation",
+    "tests.test_capability_demonstration_projection.CapabilityMapTests.test_the_refusal_record_carries_what_the_map_needs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_capability_ingress_address.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_capability_ingress_address.py"
+   ],
+   "tests": [
+    "tests.test_capability_ingress_address.AddressIsDeclaredTests",
+    "tests.test_capability_ingress_address.OverlayIsTheAuthorityTests",
+    "tests.test_capability_ingress_address.PeerCapabilityAddressTests",
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_a_submission_carrying_no_manifest_refuses_the_dispatch",
+    "tests.test_capability_ingress_address.ResolverIsRequiredOnlyForItsOwnRoleTests",
+    "tests.test_capability_ingress_address.SubmissionShapeTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_capability_ingress_address.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_capability_ingress_address.py"
+   ],
+   "tests": [
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_a_peer_published_manifest_reaches_the_bound_operation",
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_both_ledger_levels_record_the_submission",
+    "tests.test_capability_ingress_address.PeerSubmissionReachesTheOperationTests.test_the_address_selects_no_processing_and_says_where_it_was_processed"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_drift_receipt_appender.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_drift_receipt_appender.py"
+   ],
+   "tests": [
+    "tests.test_drift_receipt_appender"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ecosystem_ai_reuse.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ecosystem_ai_reuse.py"
+   ],
+   "tests": [
+    "tests.test_ecosystem_ai_reuse"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_federation_cycle_frame_consumption_disposition.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_federation_cycle_frame_consumption_disposition.py"
+   ],
+   "tests": [
+    "tests.test_federation_cycle_frame_consumption_disposition"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_federation_cycle_propagation_location.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_federation_cycle_propagation_location.py"
+   ],
+   "tests": [
+    "tests.test_federation_cycle_propagation_location"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_federation_cycle_supplied_epoch.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_federation_cycle_supplied_epoch.py"
+   ],
+   "tests": [
+    "tests.test_federation_cycle_supplied_epoch"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_federation_projection.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_federation_projection.py"
+   ],
+   "tests": [
+    "tests.test_federation_projection"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_git_ledger_store.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_git_ledger_store.py"
+   ],
+   "tests": [
+    "tests.test_git_ledger_store"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_git_mesh_store.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_git_mesh_store.py"
+   ],
+   "tests": [
+    "tests.test_git_mesh_store"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governance_inter_org_route.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_governance_inter_org_route.py"
+   ],
+   "tests": [
+    "tests.test_governance_inter_org_route"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governance_mesh_locator_readback.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_governance_mesh_locator_readback.py"
+   ],
+   "tests": [
+    "tests.test_governance_mesh_locator_readback"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governance_request_vocabulary.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_governance_request_vocabulary.py"
+   ],
+   "tests": [
+    "tests.test_governance_request_vocabulary"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governance_return_peer_mesh.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_governance_return_peer_mesh.py"
+   ],
+   "tests": [
+    "tests.test_governance_return_peer_mesh"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_governed_ingress_census.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_governed_ingress_census.py"
+   ],
+   "tests": [
+    "tests.test_governed_ingress_census"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_hb_reference_oscillator.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_hb_reference_oscillator.py"
+   ],
+   "tests": [
+    "tests.test_hb_reference_oscillator"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ingress_refusal_precedence.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_ingress_refusal_precedence.py"
+   ],
+   "tests": [
+    "tests.test_ingress_refusal_precedence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_internal_endpoint_dispatch.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_internal_endpoint_dispatch.py"
+   ],
+   "tests": [
+    "tests.test_internal_endpoint_dispatch"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_destination_capability.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_destination_capability.py"
+   ],
+   "tests": [
+    "tests.test_intr_destination_capability"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_hop.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_hop.py"
+   ],
+   "tests": [
+    "tests.test_intr_hop"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_org_crossing.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_org_crossing.py"
+   ],
+   "tests": [
+    "tests.test_intr_org_crossing"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_path_ingress.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_intr_path_ingress.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_ingress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_path_public_ledger_read.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_path_public_ledger_read.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_public_ledger_read"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_path_transfer.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_intr_path_transfer.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_transfer"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_path_tvc_read.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_intr_path_tvc_read.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_tvc_read"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_post_genesis_replay.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisKitTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_protocol_conformance.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_protocol_conformance.py"
+   ],
+   "tests": [
+    "tests.test_intr_protocol_conformance"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_protocol_conformance_merge_transfer.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_protocol_conformance_merge_transfer.py"
+   ],
+   "tests": [
+    "tests.test_intr_protocol_conformance_merge_transfer"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py"
+   ],
+   "tests": [
+    "tests.test_intr_protocol_conformance_merge_transfer_gitstore"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_protocol_copy_equality.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_protocol_copy_equality.py"
+   ],
+   "tests": [
+    "tests.test_intr_protocol_copy_equality"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_kernel_crossing_organization_receipts.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_kernel_crossing_organization_receipts.py"
+   ],
+   "tests": [
+    "tests.test_kernel_crossing_organization_receipts"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_kernel_node_state_is_addressed.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_kernel_node_state_is_addressed.py"
+   ],
+   "tests": [
+    "tests.test_kernel_node_state_is_addressed"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_kernel_node_state_supplied.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_kernel_node_state_supplied.py"
+   ],
+   "tests": [
+    "tests.test_kernel_node_state_supplied"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_gitstore.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_gitstore.py"
+   ],
+   "tests": [
+    "tests.test_ledger_gitstore"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_location_supplied.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_location_supplied.py"
+   ],
+   "tests": [
+    "tests.test_ledger_location_supplied"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_store_contract.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_store_contract.py"
+   ],
+   "tests": [
+    "tests.test_ledger_store_contract"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_store_remote_locator_refused.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_store_remote_locator_refused.py"
+   ],
+   "tests": [
+    "tests.test_ledger_store_remote_locator_refused"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_ledger_substrate_transaction.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_substrate_transaction.py"
+   ],
+   "tests": [
+    "tests.test_ledger_substrate_transaction"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_llm_org_foundation.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_llm_org_foundation.py"
+   ],
+   "tests": [
+    "tests.test_llm_org_foundation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_llm_org_foundation_validation.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_llm_org_foundation_validation.py"
+   ],
+   "tests": [
+    "tests.test_llm_org_foundation_validation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_main_change_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_main_change_receipt.py"
+   ],
+   "tests": [
+    "tests.test_main_change_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_main_change_receipt_census.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_main_change_receipt_census.py"
+   ],
+   "tests": [
+    "tests.test_main_change_receipt_census"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_manifest_ingress_d7_fail_closed.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_manifest_ingress_d7_fail_closed.py"
+   ],
+   "tests": [
+    "tests.test_manifest_ingress_d7_fail_closed"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_manifest_ingress_idempotent.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_manifest_ingress_idempotent.py"
+   ],
+   "tests": [
+    "tests.test_manifest_ingress_idempotent"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_merge_transfer.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_dry_run_check.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_transfer_dry_run_check.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_dry_run_check"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_gitstore.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_transfer_gitstore.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_gitstore"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_gitstore_parity.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_transfer_gitstore_parity.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_gitstore_parity"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_range.py",
+   "inputs": [
+    "organization-ledger-ref"
+   ],
+   "surfaces": [
+    "tests/test_merge_transfer_range.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_range"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_mesh_locator_binding.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_mesh_locator_binding.py"
+   ],
+   "tests": [
+    "tests.test_mesh_locator_binding"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_no_hosted_gateway_route.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_no_hosted_gateway_route.py"
+   ],
+   "tests": [
+    "tests.test_no_hosted_gateway_route"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_node_standing_ingress.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_node_standing_ingress.py"
+   ],
+   "tests": [
+    "tests.test_node_standing_ingress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_node_store_contract.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_node_store_contract.py"
+   ],
+   "tests": [
+    "tests.test_node_store_contract"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_observation_window.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_observation_window.py"
+   ],
+   "tests": [
+    "tests.test_observation_window"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_org_emp_kv_projection_schema.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_org_emp_kv_projection_schema.py"
+   ],
+   "tests": [
+    "tests.test_org_emp_kv_projection_schema"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_org_ledger_atomic_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_org_ledger_atomic_append.py"
+   ],
+   "tests": [
+    "tests.test_org_ledger_atomic_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_org_ledger_predecessor_resolution.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_org_ledger_predecessor_resolution.py"
+   ],
+   "tests": [
+    "tests.test_org_ledger_predecessor_resolution"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_egress_boundary.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_organization_egress_boundary.py"
+   ],
+   "tests": [
+    "tests.test_organization_egress_boundary"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_ingress_capability_binding.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_organization_ingress_capability_binding.py"
+   ],
+   "tests": [
+    "tests.test_organization_ingress_capability_binding"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_ledger_ingest.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_organization_ledger_ingest.py"
+   ],
+   "tests": [
+    "tests.test_organization_ledger_ingest"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_manifest_ingress.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_organization_manifest_ingress.py"
+   ],
+   "tests": [
+    "tests.test_organization_manifest_ingress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_repository_propagation.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_organization_repository_propagation.py"
+   ],
+   "tests": [
+    "tests.test_organization_repository_propagation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_organization_role_runtime_reality_deployment.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_organization_role_runtime_reality_deployment.py"
+   ],
+   "tests": [
+    "tests.test_organization_role_runtime_reality_deployment"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_origin_attestation.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_origin_attestation.py"
+   ],
+   "tests": [
+    "tests.test_origin_attestation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_origin_attestation_tvc_conformance.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_origin_attestation_tvc_conformance.py"
+   ],
+   "tests": [
+    "tests.test_origin_attestation_tvc_conformance.ConformanceIsReportedTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_origin_attestation_tvc_conformance.py[tvc]",
+   "inputs": [
+    "tvc"
+   ],
+   "surfaces": [
+    "tests/test_origin_attestation_tvc_conformance.py"
+   ],
+   "tests": [
+    "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_p1_fc10_cli_epoch_str.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_p1_fc10_cli_epoch_str.py"
+   ],
+   "tests": [
+    "tests.test_p1_fc10_cli_epoch_str"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_p1_supplied_epoch_and_ledger_paths.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_p1_supplied_epoch_and_ledger_paths.py"
+   ],
+   "tests": [
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_the_resolver_refuses_no_epoch_with_six_fields_before_loading_the_operation",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_dispatch_without_the_frame_epoch_fails_closed_and_appends_nothing",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_ingest_frame_hands_dispatch_the_frames_own_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_self_close_cli_refuses_coerced_epochs",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_self_close_cli_accepts_a_leading_zero_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_egress_cli_refuses_coerced_epochs",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_egress_cli_accepts_a_leading_zero_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.EgressSuppliedEpochTests",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_the_intr_destination_cli_refuses_an_invalid_consumer_root",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_self_close_cli_prints_the_writers_refusal_as_given",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_self_close_cli_builds_six_fields_for_an_old_layout_writer",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_an_exit_that_is_not_a_writer_call_is_not_reported_as_a_ledger_refusal",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_a_legacy_segment_ledger_is_read_back_with_the_contract_and_the_namespace",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_fixture_readback_refuses_without_the_contract_or_the_namespace",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_cli_forwards_the_default_contract_and_the_namespace",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_the_contract_defaults_to_the_consumer_root_or_this_checkout",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.SharedEpochValidatorTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_p1_supplied_epoch_and_ledger_paths.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_p1_supplied_epoch_and_ledger_paths.py"
+   ],
+   "tests": [
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CapabilityIngressEpochTests.test_dispatch_passes_the_frame_epoch_through_to_the_receiving_operation",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_ingress_cli_accepts_a_leading_zero_epoch",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.CliRawEpochTests.test_the_ingress_cli_refuses_coerced_epochs",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_a_path_in_neither_layout_is_refused",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_the_flat_layout_is_accepted",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerComponentLayoutTests.test_the_nested_layout_is_accepted",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_a_given_component_and_consumer_root_are_where_the_writers_load_and_resolve",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_absent_paths_keep_this_checkout",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_an_invalid_path_fails_closed_and_leaves_the_bound_writers",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerPathTests.test_the_ingress_cli_refuses_an_invalid_path_and_receives_with_valid_ones",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_ingress_cli_builds_six_fields_for_an_old_layout_writer",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_ingress_cli_prints_the_writers_refusal_as_given",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.LedgerWriterRefusalTests.test_the_refusal_is_read_from_the_systemexit_only",
+    "tests.test_p1_supplied_epoch_and_ledger_paths.ReadbackContractTests.test_an_empty_ledger_is_organization_ledger_head_absent"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_peer_migration_artifacts.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_peer_migration_artifacts.py"
+   ],
+   "tests": [
+    "tests.test_peer_migration_artifacts"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_pinned_labs.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_pinned_labs.py"
+   ],
+   "tests": [
+    "tests.test_pinned_labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_pr1b_direct_entrypoint_epoch.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_pr1b_direct_entrypoint_epoch.py"
+   ],
+   "tests": [
+    "tests.test_pr1b_direct_entrypoint_epoch"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_pr1c_clock_fallbacks.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_pr1c_clock_fallbacks.py"
+   ],
+   "tests": [
+    "tests.test_pr1c_clock_fallbacks"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_push_receipt_session_binder.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_push_receipt_session_binder.py"
+   ],
+   "tests": [
+    "tests.test_push_receipt_session_binder"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_receipt_disorder_measurement.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_receipt_disorder_measurement.py"
+   ],
+   "tests": [
+    "tests.test_receipt_disorder_measurement"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_receipt_lineage_projection.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_receipt_lineage_projection.py"
+   ],
+   "tests": [
+    "tests.test_receipt_lineage_projection"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_receipt_time_base.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_receipt_time_base.py"
+   ],
+   "tests": [
+    "tests.test_receipt_time_base"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_refused_crossings_recorded.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_refused_crossings_recorded.py"
+   ],
+   "tests": [
+    "tests.test_refused_crossings_recorded"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_remediation_lane.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_remediation_lane.py"
+   ],
+   "tests": [
+    "tests.test_remediation_lane"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_repo_ledger_durable_in_sovereign_ref.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_repo_ledger_durable_in_sovereign_ref.py"
+   ],
+   "tests": [
+    "tests.test_repo_ledger_durable_in_sovereign_ref"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_repo_ledger_exact_retry.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_repo_ledger_exact_retry.py"
+   ],
+   "tests": [
+    "tests.test_repo_ledger_exact_retry"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_repo_ledger_serialized_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_repo_ledger_serialized_append.py"
+   ],
+   "tests": [
+    "tests.test_repo_ledger_serialized_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_repo_standards_owner_drift_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_repo_standards_owner_drift_receipt.py"
+   ],
+   "tests": [
+    "tests.test_repo_standards_owner_drift_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_resident_materialization.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_resident_materialization.py"
+   ],
+   "tests": [
+    "tests.test_resident_materialization"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_resident_runtime_convergence.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_resident_runtime_convergence.py"
+   ],
+   "tests": [
+    "tests.test_resident_runtime_convergence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_reviewer_prompt_conformance.py",
+   "inputs": [
+    "labs-stdlib-json-schema"
+   ],
+   "surfaces": [
+    "tests/test_reviewer_prompt_conformance.py"
+   ],
+   "tests": [
+    "tests.test_reviewer_prompt_conformance"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_run_catalog_deny_without_source.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_run_catalog_deny_without_source.py"
+   ],
+   "tests": [
+    "tests.test_run_catalog_deny_without_source"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sdk_manifest_crossing.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sdk_manifest_crossing.py"
+   ],
+   "tests": [
+    "tests.test_sdk_manifest_crossing"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sdk_manifest_crossing_fidelity.py",
+   "inputs": [
+    "stegverse-sdk@0028cab9"
+   ],
+   "surfaces": [
+    "tests/test_sdk_manifest_crossing_fidelity.py"
+   ],
+   "tests": [
+    "tests.test_sdk_manifest_crossing_fidelity"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sdk_manifest_crossing_six_fields.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sdk_manifest_crossing_six_fields.py"
+   ],
+   "tests": [
+    "tests.test_sdk_manifest_crossing_six_fields"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sdk_self_characterization_egress.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sdk_self_characterization_egress.py"
+   ],
+   "tests": [
+    "tests.test_sdk_self_characterization_egress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_select_tests_for_change.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_select_tests_for_change.py"
+   ],
+   "tests": [
+    "tests.test_select_tests_for_change"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_session_continuity.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_session_continuity.py"
+   ],
+   "tests": [
+    "tests.test_session_continuity"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_stable_epoch_and_adapter_effects.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_stable_epoch_and_adapter_effects.py"
+   ],
+   "tests": [
+    "tests.test_stable_epoch_and_adapter_effects"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_stdlib_json_schema_agreement.py",
+   "inputs": [
+    "jsonschema",
+    "labs-stdlib-json-schema"
+   ],
+   "surfaces": [
+    "tests/test_stdlib_json_schema_agreement.py"
+   ],
+   "tests": [
+    "tests.test_stdlib_json_schema_agreement"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_task_registry.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_task_registry.py"
+   ],
+   "tests": [
+    "tests.test_task_registry"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_task_registry_disclosure_endpoint.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_task_registry_disclosure_endpoint.py"
+   ],
+   "tests": [
+    "tests.test_task_registry_disclosure_endpoint"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_task_registry_schema_conformance.py",
+   "inputs": [
+    "labs-stdlib-json-schema"
+   ],
+   "surfaces": [
+    "tests/test_task_registry_schema_conformance.py"
+   ],
+   "tests": [
+    "tests.test_task_registry_schema_conformance.ConformanceTests",
+    "tests.test_task_registry_schema_conformance.ProvenanceTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_task_registry_schema_conformance.py[repo-standards]",
+   "inputs": [
+    "labs-stdlib-json-schema",
+    "repo-standards"
+   ],
+   "surfaces": [
+    "tests/test_task_registry_schema_conformance.py"
+   ],
+   "tests": [
+    "tests.test_task_registry_schema_conformance.OwnerDriftTests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_test_suite_baseline_refresh.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_test_suite_baseline_refresh.py"
+   ],
+   "tests": [
+    "tests.test_test_suite_baseline_refresh"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_test_suite_skip_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_test_suite_skip_receipt.py"
+   ],
+   "tests": [
+    "tests.test_test_suite_skip_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_transition_console.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_transition_console.py"
+   ],
+   "tests": [
+    "tests.test_transition_console"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_tvc_conformance_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_tvc_conformance_receipt.py"
+   ],
+   "tests": [
+    "tests.test_tvc_conformance_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_unittest_junit.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_unittest_junit.py"
+   ],
+   "tests": [
+    "tests.test_unittest_junit"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_workflow_action_pins.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_workflow_action_pins.py"
+   ],
+   "tests": [
+    "tests.test_workflow_action_pins"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_workflow_surface_registry.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_workflow_surface_registry.py"
+   ],
+   "tests": [
+    "tests.test_workflow_surface_registry"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_workspace_internal_endpoint_binding.py",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_workspace_internal_endpoint_binding.py"
+   ],
+   "tests": [
+    "tests.test_workspace_internal_endpoint_binding"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_writer_plan.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_writer_plan.py"
+   ],
+   "tests": [
+    "tests.test_writer_plan"
+   ]
+  }
+ ],
+ "surface_graph": {
+  ".stegverse/transition-ledger/emit.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py"
+  ],
+  "org-boundary/runtime/capability_ingress.py": [
+   "org-runtime/interlock-intr.json"
+  ],
+  "org-boundary/runtime/federation_projection.py": [
+   "org-boundary/registry/federation.json"
+  ],
+  "org-boundary/runtime/node_standing.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
+  ],
+  "org-boundary/runtime/process_boundary.py": [
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py"
+  ],
+  "org-kernel/kernel.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-boundary/runtime/process_boundary.py",
+   "org-kernel/node_store.py",
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "org-kernel/node_store.py": [
+   "resident-runtime/ledger_store.py"
+  ],
+  "org-kernel/tests/test_kernel.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel.py"
+  ],
+  "org-runtime/intr_protocol.py": [
+   "data/intr-protocol/v1/**",
+   "data/intr-protocol/v1/protocol.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json"
+  ],
+  "org-runtime/runtime_boundary.py": [
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-boundary/runtime/origin_attestation.py",
+   "org-kernel/kernel.py",
+   "org-runtime/activation.json",
+   "org-runtime/interlock-intr.json"
+  ],
+  "resident-runtime/admission_predicate.py": [
+   "config/admission-predicate/**",
+   "config/admission-predicate/base-state-readback.pin.json",
+   "config/admission-predicate/lane-a-job-observation.pin.json",
+   "orchestration/task-registry.json"
+  ],
+  "resident-runtime/aggregate_repo_transition.py": [
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/capability_demonstration_projection.py": [
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "resident-runtime/drift_receipt_appender.py": [
+   "resident-runtime/drift-receipt-appender.transition.json",
+   "resident-runtime/main_change_receipt.py"
+  ],
+  "resident-runtime/ecosystem_control.py": [
+   "org-kernel/kernel.py"
+  ],
+  "resident-runtime/federation_cycle.py": [
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/governance_decision_return.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/mesh_locator_binding.py",
+   "resident-runtime/propagate_repository_receipts.py"
+  ],
+  "resident-runtime/governance_decision_return.py": [
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_manifest_ingress.py"
+  ],
+  "resident-runtime/governance_endpoint.py": [
+   "org-runtime/interlock-intr.json"
+  ],
+  "resident-runtime/governance_return_acceptance.py": [
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/peer_mesh_intake.py"
+  ],
+  "resident-runtime/governance_return_cycle.py": [
+   "resident-runtime/federation_cycle.py"
+  ],
+  "resident-runtime/intr_destination_ingress.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_gitstore.py",
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_ledger_readback.py"
+  ],
+  "resident-runtime/intr_hop.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py"
+  ],
+  "resident-runtime/intr_path_ingress.py": [
+   ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/inbound.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/intr_path_tvc_read.py",
+   "resident-runtime/merge_transfer.py"
+  ],
+  "resident-runtime/intr_path_transfer.py": [
+   ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/transfers.json",
+   "org-runtime/intr_protocol.py",
+   "resident-runtime/intr_path_ingress.py",
+   "resident-runtime/merge_transfer.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-protocol/destinations/**",
+   "tests/fixtures/intr-protocol/destinations/manifest.json"
+  ],
+  "resident-runtime/intr_path_tvc_read.py": [
+   ".stegverse/intr-path-transfer/**"
+  ],
+  "resident-runtime/ledger_gitstore.py": [
+   "resident-runtime/merge_transfer_gitstore.py"
+  ],
+  "resident-runtime/main_change_receipt_census.py": [
+   ".github/workflows/**",
+   "resident-runtime/main_change_receipt.py"
+  ],
+  "resident-runtime/merge_transfer.py": [
+   ".stegverse/merge-transfer/pending.json",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/merge_transfer_dry_run_check.py": [
+   "resident-runtime/merge_transfer.py",
+   "tools/tasks/run_catalog.py"
+  ],
+  "resident-runtime/merge_transfer_gitstore.py": [
+   ".stegverse/merge-transfer/pending.json",
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "resident-runtime/merge_transfer_range.py": [
+   "resident-runtime/merge_transfer.py"
+  ],
+  "resident-runtime/observation_window.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "resident-runtime/org_boundary_runtime.py": [
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/intr_transport.py"
+  ],
+  "resident-runtime/organization_egress_boundary.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/registry/federation.json",
+   "org-boundary/runtime/origin_attestation.py",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/organization_ledger_ingest.py": [
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/accepted-sealed-receipts.json",
+   ".stegverse/organization-ledger-ingest/request.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/organization_ledger_readback.py"
+  ],
+  "resident-runtime/organization_ledger_readback.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/organization_manifest_ingress.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/submit_org_transition_to_master_records.py"
+  ],
+  "resident-runtime/peer_mesh_intake.py": [
+   "org-kernel/kernel.py",
+   "resident-runtime/mesh_locator_binding.py"
+  ],
+  "resident-runtime/pinned_labs.py": [
+   ".stegverse/test-suite-baseline/labs-tool-pin.json"
+  ],
+  "resident-runtime/propagate_repository_receipts.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py"
+  ],
+  "resident-runtime/receipt_disorder_measurement.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "resident-runtime/receipt_lineage_projection.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/repo_standards_owner_drift_receipt.py": [
+   ".stegverse/verification-inputs/**",
+   ".stegverse/verification-inputs/repo-standards-owner-drift-receipt.json",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "tools/tasks/**"
+  ],
+  "resident-runtime/required_verification.py": [
+   ".github/workflows/**"
+  ],
+  "resident-runtime/resident_executor.py": [
+   "resident-runtime/federation_cycle.py"
+  ],
+  "resident-runtime/resident_runtime_convergence.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/resident-runtime-convergence-manifest.json"
+  ],
+  "resident-runtime/run_once.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/process_boundary.py",
+   "resident-runtime/org_boundary_runtime.py"
+  ],
+  "resident-runtime/run_sv002_self_characterization_roundtrip.py": [
+   "resident-runtime/sdk_self_characterization_egress.py"
+  ],
+  "resident-runtime/sdk_manifest_crossing.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/intr_transport.py",
+   "org-boundary/runtime/process_boundary.py"
+  ],
+  "resident-runtime/sdk_self_characterization_egress.py": [
+   "org-kernel/kernel.py"
+  ],
+  "resident-runtime/sdk_self_characterization_response.py": [
+   "org-kernel/node_store.py"
+  ],
+  "resident-runtime/session_continuity.py": [
+   "org-kernel/kernel.py"
+  ],
+  "resident-runtime/submit_org_transition_to_master_records.py": [
+   "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "resident-runtime/task_registry_disclosure_endpoint.py": [
+   "orchestration/task-registry.json"
+  ],
+  "resident-runtime/test_suite_baseline_refresh.py": [
+   ".github/workflows/validation-dispatcher.yml",
+   "resident-runtime/test-suite-baseline-refresh.transition.json",
+   "tools/tasks/task_catalog.json"
+  ],
+  "resident-runtime/transition_console.py": [
+   "org-kernel/kernel.py",
+   "org-kernel/node_store.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "resident-runtime/tvc_conformance_receipt.py": [
+   ".stegverse/verification-inputs/**",
+   ".stegverse/verification-inputs/tvc-conformance-receipt.json",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "tools/tasks/**"
+  ],
+  "scripts/intr_post_genesis_replay.py": [
+   ".stegverse/intr-post-genesis/**",
+   ".stegverse/transition-ledger/**",
+   ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
+   "resident-runtime/intr_path_transfer.py"
+  ],
+  "scripts/select_tests_for_change.py": [
+   "data/test-selection-map.json"
+  ],
+  "tests/fixtures/d6_far_side_registry.py": [
+   "tests/fixtures/d6-far-side-non-allow.json"
+  ],
+  "tests/fixtures/sdk_manifest_fixture_build.py": [
+   "tests/fixtures/sdk-manifest-build-spec.json",
+   "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/peer_organization.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-boundary/runtime/process_boundary.py",
+   "org-kernel/kernel.py",
+   "org-kernel/node_store.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_admission_predicate.py": [
+   "config/admission-predicate/**",
+   "resident-runtime/admission_predicate.py",
+   "tests/fixtures/**",
+   "tests/fixtures/admission-predicate/base-state-readback/**",
+   "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880.json",
+   "vendor/lane_a/**"
+  ],
+  "tests/test_boundary_processing_selection.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_capability_demonstration_projection.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/capability_demonstration_projection.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_capability_ingress_address.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/organization_egress_boundary.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
+  ],
+  "tests/test_drift_receipt_appender.py": [
+   "resident-runtime/drift_receipt_appender.py",
+   "tests/fixtures/**",
+   "tests/fixtures/drift-receipt-appender/**",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_ecosystem_ai_reuse.py": [
+   "orchestration/ecosystem_ai_reuse.py"
+  ],
+  "tests/test_federation_cycle_frame_consumption_disposition.py": [
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/resident_executor.py"
+  ],
+  "tests/test_federation_cycle_propagation_location.py": [
+   "resident-runtime/federation_cycle.py"
+  ],
+  "tests/test_federation_cycle_supplied_epoch.py": [
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/resident_executor.py"
+  ],
+  "tests/test_federation_projection.py": [
+   "org-boundary/registry/federation.json",
+   "org-boundary/runtime/federation_projection.py"
+  ],
+  "tests/test_git_ledger_store.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_git_mesh_store.py": [
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_governance_inter_org_route.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/manifest_selection.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/governance_decision_return.py",
+   "resident-runtime/governance_endpoint.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json"
+  ],
+  "tests/test_governance_mesh_locator_readback.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "org-boundary/registry/services.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json"
+  ],
+  "tests/test_governance_request_vocabulary.py": [
+   ".stegverse/transition-requests/**"
+  ],
+  "tests/test_governance_return_peer_mesh.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "org-boundary/registry/services.json",
+   "resident-runtime/governance_return_acceptance.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/mesh_locator_binding.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "resident-runtime/peer_mesh_intake.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_governed_ingress_census.py": [
+   ".stegverse/transition-ledger/**",
+   ".stegverse/transition-ledger/emit.py",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-boundary/runtime/process_boundary.py",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/governance_decision_return.py",
+   "resident-runtime/governance_endpoint.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "resident-runtime/peer_mesh_intake.py",
+   "resident-runtime/propagate_repository_receipts.py",
+   "resident-runtime/resident_executor.py",
+   "resident-runtime/run_sv002_self_characterization_roundtrip.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/sdk_self_characterization_egress.py",
+   "resident-runtime/sdk_self_characterization_response.py",
+   "resident-runtime/submit_org_transition_to_master_records.py",
+   "resident-runtime/task_registry_disclosure_endpoint.py",
+   "resident-runtime/workspace_resource_consumer_adapter.py"
+  ],
+  "tests/test_hb_reference_oscillator.py": [
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_ingress_refusal_precedence.py": [
+   "org-boundary/runtime/capability_ingress.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_manifest_ingress.py"
+  ],
+  "tests/test_internal_endpoint_dispatch.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_intr_destination_capability.py": [
+   ".github/workflows/organization-ledger-writer.yml",
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "org-runtime/interlock-intr.json",
+   "org-runtime/runtime_boundary.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_intr_hop.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-boundary/registry/services.json",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/intr_hop.py",
+   "tools/tasks/retired/intr-destination-hop.yml"
+  ],
+  "tests/test_intr_org_crossing.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/intr_transport.py",
+   "org-boundary/runtime/process_boundary.py",
+   "resident-runtime/run_once.py"
+  ],
+  "tests/test_intr_path_ingress.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
+   "tests/fixtures/intr-path-ingress/pin.json",
+   "tools/tasks/intr_public_ledgers.sh"
+  ],
+  "tests/test_intr_path_public_ledger_read.py": [
+   ".stegverse/intr-path-transfer/inbound.json",
+   "resident-runtime/intr_path_ingress.py"
+  ],
+  "tests/test_intr_path_transfer.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/intr-path-transfer/inbound.json",
+   ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
+   "resident-runtime/intr_path_transfer.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-path-transfer/**",
+   "tools/tasks/**",
+   "tools/tasks/intr_public_ledgers.sh"
+  ],
+  "tests/test_intr_path_tvc_read.py": [
+   "tests/fixtures/intr-path-tvc-read/receipt-SV-011--StegVerse-org-source_inclusion.json",
+   "tests/test_intr_path_ingress.py"
+  ],
+  "tests/test_intr_post_genesis_replay.py": [
+   ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/inbound.json",
+   ".stegverse/intr-post-genesis/**",
+   "scripts/intr_post_genesis_replay.py",
+   "scripts/intr_post_genesis_replay.sh",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-post-genesis/tvc-class-records/**"
+  ],
+  "tests/test_intr_protocol_conformance.py": [
+   "org-boundary/registry/**",
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-runtime/interlock-intr.json",
+   "org-runtime/intr_protocol.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-protocol/destinations/**",
+   "tests/fixtures/intr-protocol/destinations/manifest.json"
+  ],
+  "tests/test_intr_protocol_conformance_merge_transfer.py": [
+   "org-runtime/intr_protocol.py",
+   "resident-runtime/merge_transfer.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-protocol/destinations/**",
+   "tests/fixtures/intr-protocol/destinations/manifest.json",
+   "tests/fixtures/intr-protocol/merge-transfer/**"
+  ],
+  "tests/test_intr_protocol_conformance_merge_transfer_gitstore.py": [
+   "org-runtime/intr_protocol.py",
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/merge_transfer_gitstore.py",
+   "tests/fixtures/**",
+   "tests/fixtures/intr-protocol/merge-transfer-gitstore/**",
+   "tests/fixtures/intr-protocol/merge-transfer/manifest.json"
+  ],
+  "tests/test_intr_protocol_copy_equality.py": [
+   "data/intr-protocol/v1/protocol.json",
+   "org-runtime/intr_protocol.py"
+  ],
+  "tests/test_kernel_crossing_organization_receipts.py": [
+   "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py"
+  ],
+  "tests/test_kernel_node_state_is_addressed.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/manifest_selection.py",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_kernel_node_state_supplied.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/control/**",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_ledger_gitstore.py": [
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/ledger_gitstore.py",
+   "tests/test_merge_transfer_gitstore.py"
+  ],
+  "tests/test_ledger_location_supplied.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/propagate_repository_receipts.py"
+  ],
+  "tests/test_ledger_store_contract.py": [
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_ledger_store_remote_locator_refused.py": [
+   ".stegverse/transition-ledger/emit.py"
+  ],
+  "tests/test_ledger_substrate_transaction.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_llm_org_foundation.py": [
+   "control/task-vectors/**",
+   "control/task-vectors/SVORG-LLM-ORG-FOUNDATION-001.json",
+   "data/llm-org-foundation.json",
+   "orchestration/task-registry.json"
+  ],
+  "tests/test_llm_org_foundation_validation.py": [
+   "llm_org_foundation_validation.py",
+   "orchestration/task-registry.json",
+   "tests/test_llm_org_foundation.py"
+  ],
+  "tests/test_main_change_receipt.py": [
+   ".github/workflows/**",
+   "control/workflow-surface-registry.json",
+   "resident-runtime/main-change-receipt.transition.json",
+   "resident-runtime/main_change_receipt.py",
+   "tools/tasks/retired/main-change-receipt.yml",
+   "tools/tasks/task_catalog.json"
+  ],
+  "tests/test_main_change_receipt_census.py": [
+   "resident-runtime/main_change_receipt_census.py"
+  ],
+  "tests/test_manifest_ingress_d7_fail_closed.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/d6_far_side_registry.py",
+   "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/test_manifest_ingress_idempotent.py": [
+   "tests/test_organization_manifest_ingress.py"
+  ],
+  "tests/test_merge_transfer.py": [
+   ".stegverse/merge-transfer/pending.json",
+   "resident-runtime/merge_transfer.py",
+   "tests/fixtures/merge-transfer/**",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_merge_transfer_dry_run_check.py": [
+   "resident-runtime/ledger_publish_guard.py",
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/merge_transfer_dry_run_check.py",
+   "resident-runtime/merge_transfer_range.py"
+  ],
+  "tests/test_merge_transfer_gitstore.py": [
+   ".stegverse/merge-transfer/pending.json",
+   "resident-runtime/merge_transfer_gitstore.py",
+   "tests/fixtures/merge-transfer-gitstore/**",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_merge_transfer_gitstore_parity.py": [
+   "data/intr-protocol/v1/protocol.json",
+   "resident-runtime/merge_transfer.py",
+   "tests/test_merge_transfer_gitstore.py"
+  ],
+  "tests/test_merge_transfer_range.py": [
+   ".stegverse/merge-transfer/pending.json",
+   "resident-runtime/merge_transfer_range.py",
+   "tests/fixtures/merge-transfer/f160ac7d.json",
+   "tests/fixtures/merge-transfer/f40ad7dd.json",
+   "tests/test_merge_transfer.py",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_mesh_locator_binding.py": [
+   ".github/workflows/organization-ledger-writer.yml",
+   "org-kernel/kernel.py",
+   "resident-runtime/manifest_directed_run_inputs.py",
+   "resident-runtime/mesh_locator_binding.py",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_no_hosted_gateway_route.py": [
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/ecosystem_control.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/sdk_self_characterization_egress.py",
+   "tests/fixtures/crossing-standing-genesis.json"
+  ],
+  "tests/test_node_standing_ingress.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/**",
+   "org-boundary/runtime/node_standing.py",
+   "org-boundary/runtime/process_boundary.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/submit_org_transition_to_master_records.py"
+  ],
+  "tests/test_node_store_contract.py": [
+   "org-kernel/node_store.py"
+  ],
+  "tests/test_observation_window.py": [
+   "resident-runtime/observation_window.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "tests/test_org_emp_kv_projection_schema.py": [
+   "orchestration/schemas/org-emp-kv-projection.v1.schema.json"
+  ],
+  "tests/test_org_ledger_atomic_append.py": [
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "tests/test_org_ledger_predecessor_resolution.py": [
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py"
+  ],
+  "tests/test_organization_egress_boundary.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/**",
+   "org-boundary/registry/federation.json",
+   "org-boundary/registry/services.json",
+   "org-runtime/interlock-intr.json",
+   "org-runtime/runtime_boundary.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_organization_ingress_capability_binding.py": [
+   "org-runtime/interlock-intr.json",
+   "org-runtime/runtime_boundary.py"
+  ],
+  "tests/test_organization_ledger_ingest.py": [
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/request.json",
+   "control/workflow-surface-registry.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_ledger_ingest.py",
+   "tools/tasks/writer_plan.py"
+  ],
+  "tests/test_organization_manifest_ingress.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/submit_org_transition_to_master_records.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifest-build-spec.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
+  ],
+  "tests/test_organization_repository_propagation.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/control/sv002-sdk-query.request.json",
+   "resident-runtime/propagate_repository_receipts.py"
+  ],
+  "tests/test_organization_role_runtime_reality_deployment.py": [
+   ".stegverse/transition-ledger/**",
+   ".stegverse/transition-ledger/org-contract.json",
+   "README.md",
+   "data/master-records-role-audit.json",
+   "data/organization-role-exemption-register.json",
+   "data/organization-role-runtime-reality-deployment.json",
+   "docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "tests/test_origin_attestation.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/runtime/origin_attestation.py",
+   "org-runtime/interlock-intr.json",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/receipt_disorder_measurement.py",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_origin_attestation_tvc_conformance.py": [
+   "org-boundary/runtime/origin_attestation.py",
+   "org-kernel/kernel.py"
+  ],
+  "tests/test_p1_fc10_cli_epoch_str.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/propagate_repository_receipts.py"
+  ],
+  "tests/test_p1_supplied_epoch_and_ledger_paths.py": [
+   ".stegverse/transition-ledger/**",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
+  ],
+  "tests/test_peer_migration_artifacts.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "docs/PEER_KERNEL_GENERATION_ADMISSION_MIGRATION_002.md",
+   "docs/migrations/**",
+   "docs/migrations/admissible-existence.node-standing-gate.patch",
+   "org-boundary/runtime/node_standing.py",
+   "org-kernel/kernel-manifest.json",
+   "org-kernel/kernel.py",
+   "org-kernel/tests/test_kernel.py",
+   "resident-runtime/submit_org_transition_to_master_records.py"
+  ],
+  "tests/test_pinned_labs.py": [
+   ".stegverse/test-set-spec.json",
+   "resident-runtime/pinned_labs.py",
+   "resident-runtime/required_verification.py",
+   "tests/test_stdlib_json_schema_agreement.py",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_pr1b_direct_entrypoint_epoch.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/capability_ingress.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
+  ],
+  "tests/test_pr1c_clock_fallbacks.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "org-boundary/runtime/capability_ingress.py",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/observation_window.py"
+  ],
+  "tests/test_push_receipt_session_binder.py": [
+   "resident-runtime/push_receipt_session_binder.py"
+  ],
+  "tests/test_receipt_disorder_measurement.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/receipt_disorder_measurement.py",
+   "resident-runtime/receipt_lineage_projection.py",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_receipt_lineage_projection.py": [
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/receipt_lineage_projection.py"
+  ],
+  "tests/test_receipt_time_base.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "tests/test_refused_crossings_recorded.py": [
+   "tests/peer_organization.py"
+  ],
+  "tests/test_remediation_lane.py": [
+   "org-boundary/registry/services.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/sdk-manifests/unadmitted-capability-to-task-registry-disclosure.json"
+  ],
+  "tests/test_repo_ledger_durable_in_sovereign_ref.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   ".stegverse/transition-ledger/org-contract.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_repo_ledger_exact_retry.py": [
+   ".stegverse/transition-ledger/emit.py"
+  ],
+  "tests/test_repo_ledger_serialized_append.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py"
+  ],
+  "tests/test_repo_standards_owner_drift_receipt.py": [
+   ".stegverse/test-set-spec.json",
+   ".stegverse/verification-inputs/**",
+   ".stegverse/verification-inputs/repo-standards-owner-drift-receipt.json",
+   "orchestration/schemas/PROVENANCE.json",
+   "orchestration/schemas/task-registry.schema.json",
+   "org-kernel/node_store.py",
+   "resident-runtime/repo_standards_owner_drift_receipt.py",
+   "tests/test_task_registry_schema_conformance.py",
+   "tests/test_tvc_conformance_receipt.py",
+   "tools/tasks/**",
+   "tools/tasks/steps/required-verification.full-suite/**",
+   "tools/tasks/steps/required-verification.full-suite/02-declared-inputs-this-repository-already-supplies.sh"
+  ],
+  "tests/test_required_verification.py": [
+   ".github/workflows/**",
+   ".stegverse/test-set-spec.json",
+   ".stegverse/test-sets.json",
+   ".stegverse/test-suite-baseline/labs-tool-pin.json",
+   "resident-runtime/required_verification.py",
+   "tests/test_main_change_receipt_census.py",
+   "tests/workflow_surface.py",
+   "tools/tasks/task_catalog.json"
+  ],
+  "tests/test_resident_materialization.py": [
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/resident_executor.py",
+   "resident-runtime/run_sv002_self_characterization_roundtrip.py",
+   "tests/test_sdk_self_characterization_egress.py"
+  ],
+  "tests/test_resident_runtime_convergence.py": [
+   ".stegverse/transition-ledger/contract.json",
+   ".stegverse/transition-ledger/emit.py",
+   "org-runtime/interlock-intr.json",
+   "org-runtime/runtime_boundary.py",
+   "resident-runtime/resident_runtime_convergence.py",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_reviewer_prompt_conformance.py": [
+   "control/task-vector-index.json",
+   "control/task-vectors/SVORG-STEGOS-PORTABILITY-001.json",
+   "data/llm-org-foundation.json",
+   "data/organization-role-runtime-reality-deployment.json",
+   "docs/EXTERNAL_REVIEWER_NODE_STANDING_PROMPT.md",
+   "docs/EXTERNAL_REVIEWER_TASK_REGISTRY_PROMPT.md",
+   "orchestration/schemas/task-registry.schema.json",
+   "tests/test_organization_role_runtime_reality_deployment.py",
+   "tests/test_task_registry.py",
+   "tests/test_task_registry_schema_conformance.py"
+  ],
+  "tests/test_run_catalog_deny_without_source.py": [
+   "tools/tasks/run_catalog.py",
+   "tools/tasks/task_catalog.json"
+  ],
+  "tests/test_sdk_manifest_crossing.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/test_sdk_manifest_crossing_fidelity.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "tests/fixtures/sdk-manifests/**",
+   "tests/fixtures/sdk_manifest_fixture_build.py"
+  ],
+  "tests/test_sdk_manifest_crossing_six_fields.py": [
+   "org-boundary/registry/services.json",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "tests/fixtures/crossing-standing-genesis.json",
+   "tests/fixtures/d6_far_side_registry.py",
+   "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/test_sdk_self_characterization_egress.py": [
+   "resident-runtime/sdk_self_characterization_egress.py"
+  ],
+  "tests/test_select_tests_for_change.py": [
+   "README.md",
+   "data/test-selection-map.json",
+   "scripts/select_tests_for_change.py"
+  ],
+  "tests/test_session_continuity.py": [
+   "org-boundary/runtime/node_standing.py",
+   "resident-runtime/session_continuity.py"
+  ],
+  "tests/test_stable_epoch_and_adapter_effects.py": [
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "org-boundary/registry/services.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/sdk_self_characterization_response.py",
+   "resident-runtime/submit_org_transition_to_master_records.py",
+   "tests/peer_organization.py"
+  ],
+  "tests/test_stdlib_json_schema_agreement.py": [
+   "orchestration/schemas/task-registry.schema.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/pinned_labs.py",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_task_registry.py": [
+   "control/task-vector-index.json",
+   "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/control/sv002-sdk-query.request.json",
+   "tests/fixtures/**"
+  ],
+  "tests/test_task_registry_disclosure_endpoint.py": [
+   "orchestration/task-registry.json",
+   "org-boundary/registry/services.json",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/task_registry_disclosure_endpoint.py",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
+  ],
+  "tests/test_task_registry_schema_conformance.py": [
+   "orchestration/schemas/PROVENANCE.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/pinned_labs.py"
+  ],
+  "tests/test_test_suite_baseline_refresh.py": [
+   ".stegverse/test-suite-baseline/labs-tool-pin.json",
+   ".stegverse/test-suite-baseline/main-receipt.json",
+   "resident-runtime/drift_receipt_appender.py",
+   "resident-runtime/main_change_receipt.py",
+   "resident-runtime/pinned_labs.py",
+   "resident-runtime/test_suite_baseline_refresh.py"
+  ],
+  "tests/test_test_suite_skip_receipt.py": [
+   "scripts/test_suite_skip_receipt.py"
+  ],
+  "tests/test_transition_console.py": [
+   "orchestration/task-registry.json",
+   "org-kernel/node_store.py",
+   "resident-runtime/transition_console.py"
+  ],
+  "tests/test_tvc_conformance_receipt.py": [
+   ".stegverse/test-set-spec.json",
+   ".stegverse/verification-inputs/**",
+   ".stegverse/verification-inputs/tvc-conformance-receipt.json",
+   "org-kernel/node_store.py",
+   "resident-runtime/tvc_conformance_receipt.py",
+   "tests/test_origin_attestation_tvc_conformance.py",
+   "tools/tasks/**",
+   "tools/tasks/steps/required-verification.full-suite/**",
+   "tools/tasks/steps/required-verification.full-suite/02-declared-inputs-this-repository-already-supplies.sh"
+  ],
+  "tests/test_unittest_junit.py": [
+   "scripts/unittest_junit.py"
+  ],
+  "tests/test_workflow_action_pins.py": [
+   ".github/workflows/**"
+  ],
+  "tests/test_workflow_surface_registry.py": [
+   ".github/workflows/**",
+   "control/workflow-surface-registry.json",
+   "docs/WORKFLOW_SURFACE_MIRROR_HANDOFF.md",
+   "tools/tasks/run_catalog.py",
+   "tools/tasks/task_catalog.json"
+  ],
+  "tests/test_workspace_internal_endpoint_binding.py": [
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/process_boundary.py",
+   "resident-runtime/workspace_resource_consumer_adapter.py"
+  ],
+  "tests/test_writer_plan.py": [
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/request.json",
+   ".stegverse/transition-requests/**",
+   "README.md",
+   "control/workflow-surface-registry.json",
+   "tools/tasks/**",
+   "tools/tasks/writer_plan.py"
+  ],
+  "tests/workflow_surface.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".github/workflows/validation-dispatcher.yml",
+   "control/workflow-surface-registry.json",
+   "tools/tasks/task_catalog.json"
+  ],
+  "tools/tasks/run_catalog.py": [
+   "tools/tasks/task_catalog.json"
+  ],
+  "tools/tasks/writer_plan.py": [
+   "control/workflow-surface-registry.json"
+  ]
+ },
+ "surface_rule": "a set verifies its surfaces and everything they reach in surface_graph (a file's direct repository references: string-literal paths, path chains, local imports)"
+}

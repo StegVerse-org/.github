@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
-UNADMITTED = ROOT / "tests/fixtures/sdk-manifests/unadmitted-capability-to-llm-adapter.json"
+UNADMITTED = ROOT / "tests/fixtures/sdk-manifests/unadmitted-capability-to-task-registry-disclosure.json"
 GENESIS = json.loads((ROOT / "tests/fixtures/crossing-standing-genesis.json").read_text())
 SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
               "retry_entrypoint", "owning_existing_goal", "next_attempt")

@@ -68,7 +68,7 @@
     {
       "organization": "Admissible-Existence",
       "repository": "Admissible-Existence/.github",
-      "source_commit": "6d3e4265b14f68aabe0fde0bc11d5f31ca434a12",
+      "source_commit": "897ac386c80c1f6d2dd326a05bcba08ef7d04d33",
       "interlock": {
         "file": "Admissible-Existence.interlock-intr.json",
         "source_path": "org-runtime/interlock-intr.json",
@@ -128,17 +128,17 @@
     {
       "organization": "AaCT-E",
       "repository": "AaCT-E/.github",
-      "source_commit": "f63382baca536a740324f8d1ede80f1d12f5cd07",
+      "source_commit": "b71fce2d6401943161257171ed0217915ca770b3",
       "source_ref": "default branch (main) at source_commit",
       "interlock": {
         "file": "AaCT-E.interlock-intr.json",
         "source_path": "org-runtime/interlock-intr.json",
-        "sha256": "sha256:79c4a7362f2c52fb4e88a06514aa13ce67ec08ef798d0ef59ff163610c939d5a"
+        "sha256": "sha256:69293ee2194f8ba0d97478948311c958fab7ab5e1c85097a3d3c1cc756883626"
       },
       "services": {
         "file": "AaCT-E.services.json",
         "source_path": "org-boundary/registry/services.json",
-        "sha256": "sha256:ed1da9119ef18fa98626161edb6d38794527a7f8486dab4fa5ce00509487c5f1"
+        "sha256": "sha256:f367fe40e2ced9b6e46f38162a103fc47804000172df02fdf4c52e808140ad77"
       },
       "observed_gaps": [
         "no intr-destination ingress binding (INTR_DESTINATION_ENTRY_ABSENT)",
@@ -154,18 +154,17 @@
     {
       "organization": "AdmittedCode",
       "repository": "AdmittedCode/.github",
-      "source_commit": "91b67fccd34d554d4d8bef9dabf072830c7df678",
+      "source_commit": "a64a956baf5c78769bbb8f69b428a36e9e7d92d9",
       "source_ref": "default branch (main) at source_commit",
       "interlock": {
-        "file": null,
+        "file": "AdmittedCode.interlock-intr.json",
         "source_path": "org-runtime/interlock-intr.json",
-        "sha256": null,
-        "observed": "absent from AdmittedCode/.github at source_commit"
+        "sha256": "sha256:c97f7c6fd722ee89900bd0601264420eb33241321e7ad3b6e5c1491b67052781"
       },
       "services": {
         "file": "AdmittedCode.services.json",
         "source_path": "org-boundary/registry/services.json",
-        "sha256": "sha256:123423564b943c24e14e94dbde37950dc4ad512d89a21bb8f12b9845f7700123"
+        "sha256": "sha256:a8e8eab5e843e16847088513da9ad97543349734723f2e6aeb2ad390b5ee178f"
       },
       "observed_gaps": [
         "org-runtime/interlock-intr.json absent",
@@ -179,17 +178,17 @@
     {
       "organization": "Data-Continuation",
       "repository": "Data-Continuation/.github",
-      "source_commit": "99ba313b296c3a5a1d82ae7c5368283f9869a11e",
+      "source_commit": "ae0d8a134123d28523af90e6d855e456bcc145c1",
       "source_ref": "default branch (main) at source_commit",
       "interlock": {
         "file": "Data-Continuation.interlock-intr.json",
         "source_path": "org-runtime/interlock-intr.json",
-        "sha256": "sha256:7dee1ae1a73f7905bbc9e2ae7db1da623260e035558ff9b55696caf27a5f680e"
+        "sha256": "sha256:f47d8ae9cab44fbb2fe5701b9f03a632afc4e6a8fd871c51310f72125237f59c"
       },
       "services": {
         "file": "Data-Continuation.services.json",
         "source_path": "org-boundary/registry/services.json",
-        "sha256": "sha256:38356c96a9dd0ccda85531856b1285d7cca70eb5e6df7457b68df8463fd04620"
+        "sha256": "sha256:5701696ea7b53dcc5ae57f48abe48a5f484be99bcbbf372b54c239ad9516af5f"
       },
       "observed_gaps": [
         "no intr-destination ingress binding (INTR_DESTINATION_ENTRY_ABSENT)",
@@ -205,17 +204,17 @@
     {
       "organization": "ECAT-ICAT-Formal",
       "repository": "ECAT-ICAT-Formal/.github",
-      "source_commit": "21a10956301c57e50c3f2171ed63fd5cc5362421",
+      "source_commit": "59b800504aac160a2fe69fe4fb48b7b2b6a6d5ab",
       "source_ref": "default branch (main) at source_commit",
       "interlock": {
         "file": "ECAT-ICAT-Formal.interlock-intr.json",
         "source_path": "org-runtime/interlock-intr.json",
-        "sha256": "sha256:1a4c990d06b74d0c22501eea82dcc79d57e37d22a4c5e302664a89b204dcdf2d"
+        "sha256": "sha256:a0c668722f5dad64a035f15a173a7b0e05b47e3a57ebe65544b53a1b9270e689"
       },
       "services": {
         "file": "ECAT-ICAT-Formal.services.json",
         "source_path": "org-boundary/registry/services.json",
-        "sha256": "sha256:ab0e51ed8fbafe8362f06fad502b27cc7d0f722ae1f47a1c82e9c756c62cab0f"
+        "sha256": "sha256:a7f6fa3f7be7a59118696ee04697fb3145c87caec3f42df950c72dc54741e6a9"
       },
       "observed_gaps": [
         "no intr-destination ingress binding (INTR_DESTINATION_ENTRY_ABSENT)",
@@ -257,17 +256,17 @@
     {
       "organization": "Triad-Test",
       "repository": "Triad-Test/.github",
-      "source_commit": "ce21996770709fe817c62d8e039314cfc85b9c4d",
+      "source_commit": "2e8a289a59c99024c01f0db0de3fd2b277d4bc2f",
       "source_ref": "default branch (main) at source_commit",
       "interlock": {
         "file": "Triad-Test.interlock-intr.json",
         "source_path": "org-runtime/interlock-intr.json",
-        "sha256": "sha256:3f6c0822ad7e95006d7726d160d7df29cd6e81ddc74eed8d29b550c4444487b4"
+        "sha256": "sha256:5e069853de9aee9b12a02e59ee301bf9db1f50b56803e258102c4c93e0df0ead"
       },
       "services": {
         "file": "Triad-Test.services.json",
         "source_path": "org-boundary/registry/services.json",
-        "sha256": "sha256:b9cb163638953c48dc9d77b7df7023e2f9c1d5f5f35c267478b7ffe77ccb87eb"
+        "sha256": "sha256:eb554ac4d0722a53deff2d1172b4af03369af9675f438f19d20bec8b0cb184d0"
       },
       "observed_gaps": [
         "no intr-destination ingress binding (INTR_DESTINATION_ENTRY_ABSENT)",

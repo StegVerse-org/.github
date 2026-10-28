@@ -1,0 +1,1 @@
+python -m unittest tests.test_governance_request_vocabulary -v

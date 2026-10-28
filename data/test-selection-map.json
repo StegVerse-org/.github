@@ -1,0 +1,36 @@
+{
+  "schema": "stegverse.test-selection-map/v1",
+  "authority_effect": "NONE",
+  "note": "The path-to-test-set map scripts/select_tests_for_change.py selects with. A changed test file selects itself; a changed path selects the tests that read it (reference_method, derived from the bytes of the tree being judged); a rule below selects its tests; a no_test_paths match that no test reads selects nothing; any other changed path is unmapped and selects the whole suite. Nothing here marks a test as bypassable: a test not selected is listed as not selected for this change, not run for that verdict, and never reported as passing.",
+  "reference_method": "literal repository paths containing '/' and ROOT-joined paths in a Python file, plus this repository's Python modules it imports; closed over this repository's Python files",
+  "unmapped_path_policy": "SELECT_FULL_SUITE",
+  "rules": [
+    {
+      "id": "selection-and-skip-receipt-tooling",
+      "paths": [
+        "scripts/select_tests_for_change.py",
+        "scripts/test_suite_skip_receipt.py",
+        "scripts/unittest_junit.py",
+        "data/test-selection-map.json",
+        "data/test-suite-skip-items.json"
+      ],
+      "tests": [
+        "tests/test_test_suite_skip_receipt.py",
+        "tests/test_select_tests_for_change.py",
+        "tests/test_unittest_junit.py"
+      ]
+    }
+  ],
+  "no_test_paths": [
+    "*.md",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.svg",
+    "*.pdf",
+    "LICENSE",
+    ".gitignore",
+    ".github/workflows/*.yml",
+    ".github/workflows/*.yaml"
+  ]
+}

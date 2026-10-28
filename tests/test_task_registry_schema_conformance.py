@@ -20,18 +20,25 @@ owner's whenever repo-standards is reachable -- in a session that has it
 attached, not here. That case skips rather than passes when it cannot look, so
 a skip is never mistaken for agreement.
 
+Validation uses the pinned StegVerse-Labs stdlib JSON Schema validator
+(`resident-runtime/pinned_labs.py`, sha256-pinned in
+`.stegverse/test-suite-baseline/labs-tool-pin.json`; set STEGVERSE_LABS_ROOT to
+the fetched checkout). Its agreement with `jsonschema` is checked in CI by
+`tests/test_stdlib_json_schema_agreement.py`.
+
 Source validation only. No authority effect is claimed.
 """
 import hashlib
 import json
 import os
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
-import jsonschema
-
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "resident-runtime"))
+import pinned_labs  # noqa: E402  (the pinned stdlib JSON Schema validator, loaded by sha256)
 REGISTRY = json.loads((ROOT / "orchestration/task-registry.json").read_text(encoding="utf-8"))
 PROVENANCE = json.loads((ROOT / "orchestration/schemas/PROVENANCE.json").read_text(encoding="utf-8"))
 RECORD = PROVENANCE["vendored"][0]
@@ -87,7 +94,9 @@ def commit_is_on_owner_default_branch(base, commit):
 
 class ConformanceTests(unittest.TestCase):
     def test_the_registry_validates_against_the_schema(self):
-        jsonschema.validate(REGISTRY, SCHEMA)
+        # The pinned StegVerse-Labs stdlib validator implements exactly the keywords the consumer schemas use
+        # and refuses (six fields, never accepts) a schema with any other; a missing pin raises, never skips.
+        pinned_labs.json_schema().Validator(SCHEMA).validate(REGISTRY)
 
     def test_the_schema_is_the_orchestration_task_registry(self):
         """Guard against validating happily against some other schema."""

@@ -183,10 +183,10 @@
       "endpoint_adapter_disposition": "FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_INSTALLED"
     },
     {
-      "service_id": "stegverse-org.llm-adapter",
-      "repository": "StegVerse-org/LLM-adapter",
+      "service_id": "stegverse-org.task-registry-disclosure",
+      "repository": "StegVerse-org/.github",
       "boundary_role": "INTERNAL_ENDPOINT",
-      "profile_status": "NEEDS_REPOSITORY_HANDOFF_RECONCILIATION",
+      "profile_status": "ACTIVE",
       "runtime_required_for_consumption": true,
       "endpoint_adapter": "resident-runtime/task_registry_disclosure_endpoint.py",
       "admits_processing": [
