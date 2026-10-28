@@ -160,6 +160,14 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         self.assertEqual(organization["hb_reference"]["epoch"], 99)
         self.assertIs(organization["hb_reference"]["derived_from_clock"], False)
 
+    def test_replay_completion_takes_its_epoch_from_the_retained_receipt(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule read the replayed completion's epoch
+        back from the retained receipt. #207 removes that read-back hop: the completion carries the
+        epoch it was supplied.
+        """
+        self.test_replay_completion_takes_the_epoch_it_was_supplied()
+
     def test_replay_of_one_transition_id_over_another_manifest_refuses(self):
         first = self.receive()
         repository, = self.receipts(REPO)

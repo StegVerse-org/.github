@@ -212,6 +212,14 @@ class AnswerEpochTests(unittest.TestCase):
         self.assertEqual(kernel.resident_status(ROOT, epoch=kernel.HB_ANCHOR_EPOCH + 1)
                          ["heartbeat_reference"]["derived_from_clock"], False)
 
+    def test_a_local_status_read_is_labelled_as_a_clock_sample(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule sampled the host clock for a status read
+        given no epoch and labelled it derived_from_clock. #194 reads no clock: the status carries
+        heartbeat_reference null and a six-field HB_EPOCH_NOT_SUPPLIED heartbeat_reference_refusal.
+        """
+        self.test_a_local_status_read_without_an_epoch_carries_no_reference()
+
 
 class MasterRecordsSubmitterTests(unittest.TestCase):
     """Master Records records released organization batches downstream; it gates nothing."""

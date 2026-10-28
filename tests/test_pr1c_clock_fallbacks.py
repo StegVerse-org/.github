@@ -230,8 +230,23 @@ class FederationCyclePropagationTests(SixFields, unittest.TestCase):
         refusal = self.refused(None)
         self.assertSixFieldRefusal(refusal, "HB_EPOCH_NOT_SUPPLIED")
 
+    def test_no_epoch_records_a_six_field_refusal_instead_of_stopping(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule recorded a six-field refusal and let
+        the cycle continue. #207 refuses the cycle before anything is written.
+        """
+        self.test_no_epoch_is_refused_before_anything_is_written()
+
     def test_an_invalid_epoch_is_hb_epoch_invalid(self):
         self.assertSixFieldRefusal(self.refused("+33"), "HB_EPOCH_INVALID")
+
+    def test_an_invalid_epoch_records_hb_epoch_invalid(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule recorded HB_EPOCH_INVALID in a cycle
+        record that still ran. #207 refuses an invalid epoch as HB_EPOCH_INVALID before anything
+        runs.
+        """
+        self.test_an_invalid_epoch_is_hb_epoch_invalid()
 
     def test_a_supplied_epoch_carries_the_receipt(self):
         propagation, _ = self.cycle(4200)
