@@ -151,7 +151,7 @@ class WorkflowBinding(unittest.TestCase):
         self.assertIn('--dispatch-mesh-root "$mesh_root"', self.workflow)
         self.assertNotIn("STEGVERSE_ORG_FEDERATION_ROOT", self.workflow)
 
-    def test_the_push_selects_only_the_committed_transition_requests_it_carries(self):
+    def test_dispatch_selects_only_committed_transition_request_paths(self):
         # workflow_dispatch is removed, so the request input and its path checks were dead
         # (#166 P4): the only selection is the push diff under .stegverse/transition-requests/.
         selection = self.workflow.split("Select committed transition requests")[1].split("- name:")[0]

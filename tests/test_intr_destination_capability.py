@@ -633,7 +633,7 @@ class LedgerWriterSelfClosureModeTests(unittest.TestCase):
         self.assertNotIn(prohibited, (
             ROOT / "resident-runtime/intr_destination_ingress.py").read_text(encoding="utf-8").lower())
 
-    def test_the_request_selection_has_no_dispatch_branch(self):
+    def test_a_request_dispatch_still_names_a_committed_request(self):
         # #166 P4: workflow_dispatch is removed, so the request input branch was dead; a
         # committed request is selected only by the push that carries it.
         text = self.step("Select committed transition requests")
