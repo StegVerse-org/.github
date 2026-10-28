@@ -22,7 +22,7 @@ absent from it. No row in that registry resolved to
 ```text
 stegverse-org.org-control             BOUNDARY_LOCAL_CONTROL
 stegverse-org.boundary-diagnostic     BOUNDARY_LOCAL_DIAGNOSTIC
-stegverse-org.llm-adapter             INTERNAL_ENDPOINT
+stegverse-org.task-registry-disclosure INTERNAL_ENDPOINT
 ...18 rows, none of them the manifest ingress
 ```
 
@@ -152,7 +152,7 @@ destination  StegVerse-org  / stegverse-org.sdk-manifest-ingress
 dispatch     CONSUMED   processing_selection BOUNDARY_LOCAL_NO_PROCESSOR_SELECTED
 address      capability_received true   profile sdk-manifest-ingress
 operation    ORGANIZATION_SDK_MANIFEST_INGRESS
-             resolved_service_id             stegverse-org.llm-adapter
+             resolved_service_id             stegverse-org.task-registry-disclosure
              intr_admission_observed         true
              far_side_transition_observed    true
              repository_receipt_observed     true

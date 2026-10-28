@@ -22,7 +22,10 @@ from tests.test_merge_transfer import FIXTURES, Ledger, load
 
 ROOT = Path(__file__).resolve().parents[1]
 sp = load("sv_push_receipt_append_under_test", "resident-runtime/sv_push_receipt_append.py")
-WORKFLOW = ROOT / ".github/workflows/organization-ledger-push-receipt.yml"
+# G17: the writer workflow is retained verbatim as a non-executing record (its push-to-any-branch
+# trigger is on no registered surface; FAIL_CLOSED pending in control/workflow-surface-registry.json).
+# WorkflowShape checks the retained bytes, so the writer that is admitted is the one reviewed here.
+WORKFLOW = ROOT / "tools/tasks/retired/organization-ledger-push-receipt.yml"
 SIX = sp.SIX_FIELDS
 
 
