@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
               "retry_entrypoint", "owning_existing_goal", "next_attempt")
-MANIFEST = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+MANIFEST = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 GENESIS_PATH = ROOT / "tests/fixtures/crossing-standing-genesis.json"
 GENESIS = {k: v for k, v in json.loads(GENESIS_PATH.read_text(encoding="utf-8")).items()
            if not k.startswith("_")}
@@ -178,7 +178,7 @@ class CapabilityIngressEpochTests(TemporaryLedgers):
             origin_org=PEER, origin_service="stegverse-labs.sdk-manifest-ingress",
             destination_org="StegVerse-org", destination_service=ADDRESS,
             payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
-                     "declared_transition_surface": "LLM_ADAPTER",
+                     "declared_transition_surface": "TASK_REGISTRY_DISCLOSURE",
                      "manifest": body, "manifest_sha256": kernel.sha(body)},
             standing=GENESIS, transition_reference="intr:transition:p1-epoch",
             authority_effect="NONE", packet_id=packet_id)

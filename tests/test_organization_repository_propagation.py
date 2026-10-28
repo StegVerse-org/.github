@@ -21,7 +21,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REPOSITORY = "StegVerse-org/LLM-adapter"
+REPOSITORY = "StegVerse-org/StegVerse-SDK"
 ORGANIZATION_RECEIPT = "stegverse.organization-transition-receipt/v1"
 
 

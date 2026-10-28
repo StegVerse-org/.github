@@ -114,6 +114,18 @@ class OrgLedgerAppendRefused(SystemExit):
         self.failed_predicate = failed_predicate
 
 
+class OrgLedgerLocatorRefused(OrgLedgerAppendRefused):
+    """An append refused because the supplied ledger root names a remote (P1-FC-12 step b).
+
+    `refusal` is ledger_store's six-field FAIL_CLOSED LEDGER_LOCATOR_INVALID, re-raised with this
+    writer's own retry entrypoint. Raised before anything is opened, verified or written.
+    """
+
+    def __init__(self, refusal):
+        super().__init__(refusal["disposition"], refusal["failed_predicate"])
+        self.refusal = dict(refusal, retry_entrypoint=OrgLedgerAppendRefused.retry_entrypoint)
+
+
 class OrgLedgerEpochRefused(OrgLedgerAppendRefused):
     """An append refused because its epoch was not supplied or is invalid.
 
@@ -528,6 +540,16 @@ def recorded(store, head, source_transition_sha256):
 def append(source_receipt, org_transition_class, predecessor_state, successor_state,
            boundary_evidence, authority_effect, hb_epoch=None, store=None, idempotent=False,
            hb_provenance=None):
+    # The supplied ledger root is resolved first: a remote locator is refused in six fields
+    # (P1-FC-12 step b) before anything is verified, opened or written.
+    location = None
+    if store is None:
+        try:
+            location = ledger_root()
+        except ValueError as exc:
+            if getattr(exc, "refusal", None):
+                raise OrgLedgerLocatorRefused(exc.refusal) from exc
+            raise
     # Admission is decided before the append lock is taken; an inadmissible
     # source receipt never contends for the organization ledger.
     source = verify_source(source_receipt)
@@ -544,7 +566,7 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
         raise OrgLedgerEpochRefused(refusal)
     heartbeat = (kernel.hb_reference(epoch=int(str(hb_epoch))) if hb_provenance is None
                  else carried_heartbeat(hb_epoch, hb_provenance))
-    target = store or open_store(ledger_root())
+    target = store or open_store(location)
     target.initialize()
     # The storage substrate owns serialization. A lost comparison writes
     # nothing, so a retry cannot strand an orphan receipt.

@@ -19,7 +19,14 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github/workflows/organization-ledger-transition.yml"
+# G17: the transition and return writers are jobs of the organization ledger writer.
+
+def _job(name):
+    from tests.workflow_surface import writer_job
+    return writer_job(name)
+
+
+WORKFLOW = ROOT / ".github/workflows/organization-ledger-writer.yml"
 SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
               "retry_entrypoint", "owning_existing_goal", "next_attempt")
 
@@ -129,14 +136,18 @@ class Binding(unittest.TestCase):
 
 class WorkflowBinding(unittest.TestCase):
     def setUp(self):
-        self.workflow = WORKFLOW.read_text()
+        self.workflow = _job("ledger-transition")
 
     def test_mesh_root_is_a_request_mode_dispatch_input_and_never_inferred(self):
-        # mode=self-closure does not leave this organization, so mesh_root is
-        # an input of the committed-request mode. That mode takes it from the
+        # mesh_root is an input of the committed-request mode (the self-closure
+        # mode is retired by Rigel's rule, 2026-10-25: no InTr hop inside one organization). That mode takes it from the
         # dispatch or from the committed request, never from the runner.
-        inputs = self.workflow.split("workflow_dispatch:")[1].split("permissions:")[0]
-        self.assertRegex(inputs, r"mesh_root:\n\s+description: '[^\n]*mode=request[^\n]*'\n")
+        # G17 removed workflow_dispatch: a dispatched mesh_root is FAIL_CLOSED
+        # pending in the registry; the committed request supplies it on push.
+        from tests.workflow_surface import registry
+        self.assertNotIn("workflow_dispatch:", self.workflow.split("\njobs:\n", 1)[0])
+        self.assertTrue([p for p in registry()["fail_closed_pending"] if "mesh_root" in p["surface"]
+                         or "self-closure" in p["surface"]])
         self.assertIn('--dispatch-mesh-root "$mesh_root"', self.workflow)
         self.assertNotIn("STEGVERSE_ORG_FEDERATION_ROOT", self.workflow)
 
@@ -286,12 +297,13 @@ class ManifestDirectedRunInputs(unittest.TestCase):
         self._six(self._resolve(self._return_request(hb_epoch="+33")))
 
     def test_both_runtime_workflows_resolve_their_inputs_through_the_committed_request(self):
-        transition = WORKFLOW.read_text()
+        transition = _job("ledger-transition")
         receive = transition.split("Receive each request")[1].split("- name:")[0]
         self.assertIn("manifest_directed_run_inputs.py transition-mesh", receive)
         self.assertLess(receive.index("transition-mesh"), receive.index("mesh_locator_binding.py"))
-        ret = (ROOT / ".github/workflows/organization-governance-return.yml").read_text()
-        trigger = ret.split("on:")[1].split("permissions:")[0]
+        ret = _job("governance-return")
+        from tests.workflow_surface import registry
+        trigger = next(j for j in registry()["writer_jobs"] if j["job"] == "governance-return")["paths"]
         self.assertIn(".stegverse/governance-return-requests/**", trigger)
         steps = re.findall(r"- name: (.+)", ret)
         self.assertLess(steps.index("Resolve this run's inputs from the committed return request or the dispatch"),
@@ -375,7 +387,7 @@ class CommittedTransitionManifest(unittest.TestCase):
                 self._six(self.resolve(request), "REQUEST_CARRIES_EXACTLY_ONE_MANIFEST_FORM")
 
     def test_the_ledger_transition_run_resolves_its_manifest_here(self):
-        workflow = (ROOT / ".github/workflows/organization-ledger-transition.yml").read_text()
+        workflow = _job("ledger-transition")
         self.assertIn("inputs.committed_manifest(request, build=build_manifest, canonical_of=canonical_of)", workflow)
         self.assertIn("inputs.request_process(request) in bound", workflow)
         self.assertNotIn('request["build_manifest"] and request["standing"]', workflow)

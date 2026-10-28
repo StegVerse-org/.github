@@ -1,0 +1,1 @@
+python tests/fixtures/sdk_manifest_fixture_build.py

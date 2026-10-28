@@ -37,7 +37,7 @@ _peer_spec = importlib.util.spec_from_file_location("peer_organization", ROOT / 
 peers = importlib.util.module_from_spec(_peer_spec)
 _peer_spec.loader.exec_module(peers)
 CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
-MANIFEST = "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+MANIFEST = "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 STANDING = "tests/fixtures/crossing-standing-genesis.json"
 
 PEER = "StegVerse-Labs"
@@ -130,7 +130,7 @@ class CapabilityMapTests(unittest.TestCase):
             destination_org="StegVerse-org",
             destination_service="stegverse-org." + PROFILE_ID,
             payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
-                     "declared_transition_surface": "LLM_ADAPTER",
+                     "declared_transition_surface": "TASK_REGISTRY_DISCLOSURE",
                      "manifest_sha256": kernel.sha(manifest), "manifest": manifest},
             standing=standing, transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
