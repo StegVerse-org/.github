@@ -2473,6 +2473,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_kernel_hb_reference_no_sample.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_kernel_hb_reference_no_sample.py"
+   ],
+   "tests": [
+    "tests.test_kernel_hb_reference_no_sample"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_kernel_node_state_is_addressed.py",
    "inputs": [],
    "surfaces": [
@@ -4126,6 +4138,9 @@
    "resident-runtime/ecosystem_control.py",
    "resident-runtime/run_sv002_self_characterization_roundtrip.py",
    "tests/fixtures/crossing-standing-genesis.json"
+  ],
+  "tests/test_kernel_hb_reference_no_sample.py": [
+   "org-kernel/kernel.py"
   ],
   "tests/test_kernel_node_state_is_addressed.py": [
    "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",

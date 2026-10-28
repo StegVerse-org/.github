@@ -52,12 +52,12 @@ class SuppliedTickTests(unittest.TestCase):
         self.assertNotIn("sampled_unix_ns", ref)
         self.assertEqual(ref["progression_dependency"], "OSCILLATOR_ONLY")
 
-    def test_a_clock_derived_reference_says_so(self):
-        """Deriving from a host clock is permitted but must never be silent."""
+    def test_a_clock_sample_is_refused_not_derived(self):
+        """No reference is derived from a host clock sample: it is refused HB_EPOCH_INVALID."""
         sample = kernel.HB_ANCHOR_UNIX_NS + 40_960_000_000
-        ref = kernel.hb_reference(sample)
-        self.assertIs(ref["derived_from_clock"], True)
-        self.assertEqual(ref["sampled_unix_ns"], sample)
+        with self.assertRaises(kernel.HbEpochSampledClock) as caught:
+            kernel.hb_reference(sample)
+        self.assertEqual(caught.exception.refusal["failure_code"], "HB_EPOCH_INVALID")
 
     def test_a_tick_and_a_sample_are_not_both_accepted(self):
         with self.assertRaises(ValueError):
@@ -79,13 +79,12 @@ class FrameReproducibilityTests(unittest.TestCase):
         self.assertEqual(first["frame_sha256"], second["frame_sha256"])
         self.assertEqual(first, second)
 
-    def test_a_clock_derived_frame_is_not_reproducible(self):
-        """States the cost of the fallback rather than hiding it: two samples a
-        heartbeat period apart give different frames for the same packet."""
+    def test_a_clock_sample_is_refused_not_derived(self):
+        """No frame is derived from a clock sample: now_ns is refused HB_EPOCH_INVALID."""
         base = kernel.HB_ANCHOR_UNIX_NS + 40_960_000_000
-        first = kernel.carrier_frame(packet(), now_ns=base)
-        second = kernel.carrier_frame(packet(), now_ns=base + kernel.HB_PERIOD_NS)
-        self.assertNotEqual(first["frame_sha256"], second["frame_sha256"])
+        with self.assertRaises(kernel.HbEpochSampledClock) as caught:
+            kernel.carrier_frame(packet(), now_ns=base)
+        self.assertEqual(caught.exception.refusal["failure_code"], "HB_EPOCH_INVALID")
 
     def test_a_different_tick_changes_the_frame(self):
         self.assertNotEqual(
