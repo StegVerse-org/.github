@@ -1,0 +1,1 @@
+python -m unittest tests.test_manifest_ingress_d7_fail_closed -v

@@ -103,8 +103,11 @@ class OlderTip(unittest.TestCase):
 
 class WriterUsesTheRange(unittest.TestCase):
     def test_the_writer_and_the_dry_run_select_through_the_range_script(self):
-        for name in ("organization-ledger-merge-transfer.yml", "organization-ledger-merge-transfer-validation.yml"):
-            text = (ROOT / ".github/workflows" / name).read_text()
+        from tests.workflow_surface import catalog_groups, step_bodies, writer_job
+        texts = {"writer job merge-transfer": writer_job("merge-transfer"),
+                 "organization-ledger-merge-transfer-validation.yml": "\n".join(
+                     step_bodies(g) for g in catalog_groups("organization-ledger-merge-transfer-validation.yml"))}
+        for name, text in texts.items():
             self.assertIn("python3 resident-runtime/merge_transfer_range.py --before", text, name)
             self.assertNotIn("merge_transfer.py commits", text, name)
 

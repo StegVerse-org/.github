@@ -1,0 +1,2 @@
+python org-runtime/runtime_boundary.py ingress --peer-org validation-peer --interlock-id validation-interlock --payload-sha256 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --transition-elements-ref validation-transition-elements | tee /tmp/ingress.json
+python -c 'import json; x=json.load(open("/tmp/ingress.json")); assert x["direction"]=="INGRESS"; assert x["protocol"]=="InTr"; assert x["authority_effect_resolution"]=="DERIVED_FROM_APPLICABLE_TRANSITION_ELEMENTS"'

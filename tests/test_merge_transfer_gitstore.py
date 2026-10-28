@@ -22,6 +22,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.workflow_surface import assert_read_only_validation, writer_job
+
 try:  # Under pytest, a suite that declares a POSIX ledger locus by default leaves this one on its own declaration.
     import pytest
     pytestmark = pytest.mark.repository_ledger_locus
@@ -32,8 +34,8 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/merge-transfer-gitstore"
 PIN = json.loads((FIXTURE / "pin.json").read_text(encoding="utf-8"))
 SNAPSHOT = json.loads((FIXTURE / PIN["snapshot"]).read_text(encoding="utf-8"))
-WRITER = ROOT / ".github/workflows/organization-ledger-merge-transfer.yml"
-VALIDATION = ROOT / ".github/workflows/merge-transfer-gitstore-validation.yml"
+# G17: writer = job merge-transfer of the organization ledger writer; validation = catalog groups.
+VALIDATION = "merge-transfer-gitstore-validation.yml"
 PENDING = ROOT / ".stegverse/merge-transfer/pending.json"
 ENV_KEYS = ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_GIT_DIR", "STEGVERSE_REPO_LEDGER_ROOT",
             "STEGVERSE_ORG_LEDGER_STORE", "STEGVERSE_ORG_LEDGER_GIT_REF", "STEGVERSE_ORG_LEDGER_GIT_REMOTE",
@@ -446,7 +448,7 @@ class Commits(unittest.TestCase):
 
 class WorkflowShape(unittest.TestCase):
     def test_the_writer_runs_only_on_push_to_main(self):
-        text = WRITER.read_text(encoding="utf-8")
+        text = writer_job("merge-transfer")
         on = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
         self.assertEqual(on.strip(), "push:\n    branches: [main]")
         self.assertNotIn("secrets.", text)
@@ -456,16 +458,7 @@ class WorkflowShape(unittest.TestCase):
         self.assertNotRegex(text, r"git push[^\n]*\+")
 
     def test_the_validation_workflow_is_read_only_and_never_pushes(self):
-        text = VALIDATION.read_text(encoding="utf-8")
-        on = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
-        self.assertTrue(on.lstrip().startswith("pull_request:"))
-        for word in ("push:", "workflow_dispatch", "schedule", "repository_dispatch", "workflow_run"):
-            self.assertNotIn(word, on)
-        self.assertIn("\npermissions:\n  contents: read\n", text)
-        self.assertNotIn("contents: write", text)
-        self.assertNotIn("git push", text)
-        self.assertNotIn("secrets.", text)
-        self.assertNotIn("if:", text)
+        assert_read_only_validation(self, VALIDATION)
 
 
 if __name__ == "__main__":
