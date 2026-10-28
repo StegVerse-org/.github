@@ -37,7 +37,6 @@ _peer_spec.loader.exec_module(peers)
 
 PEER = "Kernel-Peer"
 CONTROL = "kernel-peer.org-control"
-TICK = kernel.HB_ANCHOR_UNIX_NS + 1_000_000_000
 #: A supplied epoch: a frame stamped from a clock sample is quarantined, not consumed.
 EPOCH = kernel.HB_ANCHOR_EPOCH + 100
 REFUSED = "node_state_location_required_from_materializer"

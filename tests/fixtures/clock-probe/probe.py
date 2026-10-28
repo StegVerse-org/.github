@@ -56,6 +56,26 @@ def references(value, found):
 intr = load("probe_intr", "resident-runtime/intr_destination_ingress.py")
 cycle = load("probe_federation_cycle", "resident-runtime/federation_cycle.py")
 kernel = cycle.K
+
+
+def clock_reference(now_ns):
+    """A peer's or a legacy CLOCK reference: the kernel derives none (#196, #236), so it is built here."""
+    q, phase = divmod(now_ns - kernel.HB_ANCHOR_UNIX_NS, kernel.HB_PERIOD_NS)
+    epoch = kernel.HB_ANCHOR_EPOCH + q
+    return kernel.validate_hb_reference({"epoch": epoch, "generation": epoch, "heartbeat_id": f"HB:{epoch}",
+                                         "sampled_unix_ns": now_ns, "phase_offset_ns": phase,
+                                         "frequency_hz": kernel.HB_HZ, "progression_dependency": "OSCILLATOR_ONLY",
+                                         "derived_from_clock": True, "authority_effect": "NONE"})
+
+
+def clock_stamped(build):
+    """Run `build` with frames stamped by a sampled clock, as a peer without the supplied-epoch rule stamps them."""
+    real = kernel.hb_reference
+    kernel.hb_reference = lambda *args, **kwargs: clock_reference(FIXED_NS)
+    try:
+        return build()
+    finally:
+        kernel.hb_reference = real
 phases = {}
 
 # Supplied epoch, every writer route.
@@ -201,10 +221,11 @@ clock_monitor = kernel.build_packet(origin_org="Probe-Origin", origin_service="p
                                     payload={"communication_id": "c-clock-monitor", "message_class": "ecosystem.monitor.request",
                                              "subject": "s", "body": {}},
                                     standing={"mode": "ESTABLISH_GENESIS", "node_ref": "clock-probe", "predecessor": None})
-# The kernel reads no clock (#196), so these CLOCK inputs carry the (fixed)
-# clock sample explicitly: derived_from_clock true with sampled_unix_ns.
-kernel.publish_packet(clock_comm, root=qmesh, now_ns=FIXED_NS)
-kernel.publish_packet(clock_monitor, root=qmesh, now_ns=FIXED_NS)
+# The kernel reads no clock and takes no sample (#196, #236), so these CLOCK
+# inputs are stamped as a peer would stamp them: derived_from_clock true with
+# sampled_unix_ns at the fixed clock value, without calling the clock.
+clock_stamped(lambda: kernel.publish_packet(clock_comm, root=qmesh))
+clock_stamped(lambda: kernel.publish_packet(clock_monitor, root=qmesh))
 forged = addressed("c-forged-carried")
 kernel.publish_packet(forged, root=qmesh, epoch=4096,
                       provenance={"source": "CARRIED:ORGANIZATION_LEDGER_HEAD", "head_receipt_sha": "sha256:" + "f" * 64})
@@ -269,10 +290,10 @@ for epoch in ("abc", 5):
 # B-P36o on a CLOCK frame: an incoherent reference is refused explicitly before
 # the CLOCK branch, never consumed as a clock frame. F11: a self-asserted CARRIED
 # claim on an unflagged sampled frame is checked before CLOCK is returned.
-clock_generation = copy.deepcopy(kernel.carrier_frame(addressed("c-clock-gen"), now_ns=FIXED_NS))
+clock_generation = copy.deepcopy(clock_stamped(lambda: kernel.carrier_frame(addressed("c-clock-gen"))))
 clock_generation["heartbeat_reference"]["generation"] = clock_generation["heartbeat_reference"]["epoch"] + 1
 bad["clock_generation"] = reseal(clock_generation)
-forged_sampled = copy.deepcopy(kernel.carrier_frame(addressed("c-clock-forged"), now_ns=FIXED_NS))
+forged_sampled = copy.deepcopy(clock_stamped(lambda: kernel.carrier_frame(addressed("c-clock-forged"))))
 del forged_sampled["heartbeat_reference"]["derived_from_clock"]
 forged_sampled["heartbeat_reference"].update({"source": "CARRIED:ORGANIZATION_LEDGER_HEAD",
                                               "head_receipt_sha": "sha256:" + "f" * 64})

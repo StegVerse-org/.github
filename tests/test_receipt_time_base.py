@@ -374,6 +374,28 @@ INTR = ROOT / "resident-runtime/intr_destination_ingress.py"
 FIXED_CLOCK_NS = org.kernel.HB_ANCHOR_UNIX_NS + 7_000_000_000
 
 
+def clock_reference(now_ns=FIXED_CLOCK_NS, kernel=None):
+    """A peer's or a legacy CLOCK reference: the kernel derives none (#196, #236), so it is built here."""
+    kernel = kernel or org.kernel
+    q, phase = divmod(now_ns - kernel.HB_ANCHOR_UNIX_NS, kernel.HB_PERIOD_NS)
+    epoch = kernel.HB_ANCHOR_EPOCH + q
+    return kernel.validate_hb_reference({"epoch": epoch, "generation": epoch, "heartbeat_id": f"HB:{epoch}",
+                                         "sampled_unix_ns": now_ns, "phase_offset_ns": phase,
+                                         "frequency_hz": kernel.HB_HZ, "progression_dependency": "OSCILLATOR_ONLY",
+                                         "derived_from_clock": True, "authority_effect": "NONE"})
+
+
+@contextlib.contextmanager
+def clock_stamped(kernel, now_ns=FIXED_CLOCK_NS):
+    """Stamp frames with a sampled clock reference, as a peer without the supplied-epoch rule does."""
+    real = kernel.hb_reference
+    kernel.hb_reference = lambda *args, **kwargs: clock_reference(now_ns, kernel)
+    try:
+        yield
+    finally:
+        kernel.hb_reference = real
+
+
 class SharedRuleReferenceTests(unittest.TestCase):
     """The FINAL shared rule on a carrier reference: CLOCK and unmarked are refused; false passes."""
 
@@ -520,17 +542,20 @@ class MarkerVocabularyTests(unittest.TestCase):
             self.assertNotIn("sampled_unix_ns", ref)
             self.assertEqual(ref["epoch"], 4096)
 
-    def test_a_clock_sample_is_marked_clock(self):
-        clocked = org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
-        self.assertIs(clocked["derived_from_clock"], True)
-        self.assertEqual(clocked["sampled_unix_ns"], FIXED_CLOCK_NS)
+    def test_a_clock_sample_is_refused_not_marked(self):
+        # #236: hb_reference has no sample path; a caller-sampled now_ns is
+        # refused HB_EPOCH_INVALID in six fields and no reference is built.
+        with self.assertRaises(org.kernel.HbEpochSampledClock) as caught:
+            org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
+        self.assertEqual(caught.exception.refusal["failure_code"], "HB_EPOCH_INVALID")
+        self.assertIs(clock_reference()["derived_from_clock"], True)
 
 
 class ClockSourceReceiptTests(unittest.TestCase):
     """O-1: the organization writer does not consume a clock-provenance repository receipt."""
 
     def test_a_clock_repository_receipt_is_refused_and_nothing_written(self):
-        for reference in (org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS),
+        for reference in (clock_reference(),
                           {"epoch": 33, "sampled_unix_ns": FIXED_CLOCK_NS}):
             with self.subTest(reference=reference), tempfile.TemporaryDirectory() as root:
                 body = {"schema": "stegverse.repo-transition-receipt/v1",
@@ -611,7 +636,7 @@ class IngressEpochProvenanceProbe(unittest.TestCase):
         # returns it, and its epoch must not reach the organization receipt.
         kernel = self.intr.repository_ledger.kernel
         real = kernel.hb_reference
-        kernel.hb_reference = lambda *a, **k: real(now_ns=FIXED_CLOCK_NS)
+        kernel.hb_reference = lambda *a, **k: clock_reference(FIXED_CLOCK_NS, kernel)
         try:
             legacy = self.intr.repository_ledger.append(
                 "PROBE:probe-3", "PROBE", "sha256:" + "e" * 64,
@@ -910,7 +935,7 @@ class ReleasedSegmentHeadEpochTests(unittest.TestCase):
             self.assertEqual(frames, [])
 
     def test_a_clock_flagged_absent_or_invalid_head_epoch_is_refused_and_nothing_published(self):
-        clocked = org.kernel.hb_reference(now_ns=FIXED_CLOCK_NS)
+        clocked = clock_reference()
         for reference in (clocked, None, {"epoch": 31, "derived_from_clock": False},
                           {k: v for k, v in org.kernel.hb_reference(epoch=4096).items() if k != "derived_from_clock"}):
             with self.subTest(reference=reference), tempfile.TemporaryDirectory() as work:
@@ -1088,11 +1113,13 @@ class GovernanceReturnEpochTests(unittest.TestCase):
         self.assertNotIn(str(FIXED_CLOCK_NS), json.dumps(refusal))
 
     def test_a_consumed_clock_answer_lends_the_closure_no_epoch(self):
-        self.kernel.publish_packet(self.packet, root=self.mesh, now_ns=FIXED_CLOCK_NS)
+        with clock_stamped(self.kernel):
+            self.kernel.publish_packet(self.packet, root=self.mesh)
         self.assert_not_supplied(self.returns(self.consumed(epoch_lent=None)))
 
     def test_a_clock_flagged_or_unmarked_answer_frame_is_not_a_supplied_epoch(self):
-        self.kernel.publish_packet(self.packet, root=self.mesh, now_ns=FIXED_CLOCK_NS)
+        with clock_stamped(self.kernel):
+            self.kernel.publish_packet(self.packet, root=self.mesh)
         self.assert_not_supplied(self.returns(self.consumed()))
 
     def test_a_cycle_without_a_supplied_epoch_consumes_nothing_and_marks_nothing(self):

@@ -68,39 +68,48 @@ class HbEpochNotSupplied(ValueError):
           "derived_from_clock":False,"consequence_committed":False}
         super().__init__("HB_EPOCH_NOT_SUPPLIED:no hb_epoch was supplied and no clock is read")
 
+class HbEpochSampledClock(ValueError):
+    """hb_reference was handed a clock sample (now_ns); `.refusal` carries the six fields.
+
+    A sampled clock value is CLOCK, never a supplied epoch (the marker
+    vocabulary of StegVerse-Labs/.github#3290: a reference with
+    derived_from_clock true or a sampled_unix_ns is HB_EPOCH_INVALID). No
+    reference is derived from the sample and nothing is stamped.
+    """
+    def __init__(self):
+        self.refusal={"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_INVALID",
+          "failed_predicate":"SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+          "detail":"a caller-sampled clock value (now_ns) was handed to hb_reference; a sampled clock value is CLOCK, never a supplied epoch",
+          "required_evidence_or_repair":"pass epoch= as the carrier supplied it: ASCII digits with value >= 32; it is never derived from a clock",
+          "retry_entrypoint":"org-kernel/kernel.py::hb_reference",
+          "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
+          "next_attempt":"call again with the supplied epoch and no now_ns; nothing was stamped",
+          "derived_from_clock":False,"consequence_committed":False}
+        super().__init__("HB_EPOCH_INVALID:a sampled clock value is CLOCK, never a supplied epoch")
+
 def hb_reference(now_ns:int|None=None, *, epoch:int|None=None)->dict[str,Any]:
-    """Build the heartbeat reference for a crossing.
+    """Build the heartbeat reference for a crossing from the supplied epoch.
 
     Progression is OSCILLATOR_ONLY: the epoch is a count of heartbeat periods,
-    not a reading of a wall clock. Supply `epoch` from the carrier wherever the
-    tick is available; the reference is then reproducible, so the same packet
-    at the same epoch yields the same frame digest.
+    not a reading of a wall clock, and it is supplied by the carrier. The
+    reference is then reproducible: the same packet at the same epoch yields
+    the same frame digest (receipts are byte-deterministic).
 
-    Deriving the epoch from a host clock instead makes the reference depend on
-    that host's clock discipline -- an NTP step moves or reverses it, and two
-    nodes with skewed clocks assign different epochs to one event. A derived
-    reference therefore says so and carries the sample it was derived from.
+    No epoch is derived from a clock. A caller-sampled `now_ns` is refused
+    HB_EPOCH_INVALID (HbEpochSampledClock), checked before anything else, and
+    an absent epoch is refused HB_EPOCH_NOT_SUPPLIED (HbEpochNotSupplied). The
+    `now_ns` parameter stays only so an old caller fails closed in six fields
+    instead of with a TypeError; no derived_from_clock true reference is built.
     """
-    if epoch is not None:
-        if now_ns is not None: raise ValueError("supply_epoch_or_sample_not_both")
-        if not isinstance(epoch,int) or isinstance(epoch,bool) or epoch<HB_ANCHOR_EPOCH:
-            raise ValueError("epoch_precedes_hb32_anchor")
-        return validate_hb_reference({"epoch":epoch,"generation":epoch,"heartbeat_id":f"HB:{epoch}",
-                "phase_offset_ns":0,"frequency_hz":HB_HZ,"progression_dependency":"OSCILLATOR_ONLY",
-                "derived_from_clock":False,"authority_effect":"NONE"})
-    if now_ns is None:
-        # No clock fallback: an epoch is supplied by the carrier or nothing is
-        # stamped (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH). A caller with
-        # neither fails closed here instead of reading this host's clock.
+    if now_ns is not None:
+        raise HbEpochSampledClock()
+    if epoch is None:
         raise HbEpochNotSupplied()
-    if now_ns<HB_ANCHOR_UNIX_NS:
-        raise ValueError("sample_precedes_hb32_anchor")
-    q,phase=divmod(now_ns-HB_ANCHOR_UNIX_NS,HB_PERIOD_NS)
-    epoch=HB_ANCHOR_EPOCH+q
+    if not isinstance(epoch,int) or isinstance(epoch,bool) or epoch<HB_ANCHOR_EPOCH:
+        raise ValueError("epoch_precedes_hb32_anchor")
     return validate_hb_reference({"epoch":epoch,"generation":epoch,"heartbeat_id":f"HB:{epoch}",
-            "sampled_unix_ns":now_ns,"phase_offset_ns":phase,"frequency_hz":HB_HZ,
-            "progression_dependency":"OSCILLATOR_ONLY","derived_from_clock":True,
-            "authority_effect":"NONE"})
+            "phase_offset_ns":0,"frequency_hz":HB_HZ,"progression_dependency":"OSCILLATOR_ONLY",
+            "derived_from_clock":False,"authority_effect":"NONE"})
 
 def derive_channel(payload_hash:str)->dict[str,Any]:
     if not isinstance(payload_hash,str) or not payload_hash.startswith("sha256:") or len(payload_hash)!=71:
@@ -1088,6 +1097,9 @@ def consume_and_respond(repo_root:Path, *, mesh_root:Path|None=None, node_state_
                         repo_ledger_root:Path|None=None, org_ledger_root:Path|None=None,
                         seen:set[str]|None=None, now_ns:int|None=None,
                         hb_epoch:Any=None, hb_epoch_source:dict[str,Any]|None=None)->list[dict[str,Any]]:
+    # A caller-sampled now_ns never replaces the answered frame's epoch: it is
+    # refused HB_EPOCH_INVALID before any frame is consumed or answered (#236).
+    if now_ns is not None: raise HbEpochSampledClock()
     # `hb_epoch` is the cycle's own supplied epoch (F1). When given, this
     # organization's crossing receipts are this organization's transition and are
     # stamped with it; the consumed frame's epoch is recorded only as inbound
