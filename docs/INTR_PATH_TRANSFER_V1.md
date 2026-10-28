@@ -21,7 +21,7 @@ of that commit's main-merge transfer organization receipt. A ledgered row is ans
 | half | ALLOW when | absent / unsealed | contradicted |
 |---|---|---|---|
 | source | sealed path organization receipt, linked to its sealed repository receipt, linked to the transfer commit's sealed main-merge transfer receipt | FAIL_CLOSED `INTR_PATH_RECEIPT_NOT_LEDGERED` | DENY `INTR_PATH_RECEIPT_LINK_UNVERIFIED` |
-| destination | the destination ledger's sealed `ORGANIZATION_INTR_DESTINATION_INGRESS` receipt for the same path_id and communication_id, linked to its repository receipt, both carrying the source organization and repository receipt seals, read back from the destination ledger | FAIL_CLOSED `INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED` (no verified TVC read receipt; class A) or `INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED` | DENY `INTR_PATH_DESTINATION_RECEIPT_LINK_UNVERIFIED` |
+| destination | the destination ledger's sealed `ORGANIZATION_INTR_DESTINATION_INGRESS` receipt for the same path_id and communication_id, linked to its repository receipt, both carrying the source organization and repository receipt seals, read back from the destination ledger | FAIL_CLOSED `INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED` (no verified TVC read receipt and no anonymous public-ledger copy; class A) or `INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED` | DENY `INTR_PATH_DESTINATION_RECEIPT_LINK_UNVERIFIED` |
 
 A path is ALLOW (VERIFIED) only when both halves verify. Every non-ALLOW carries the six fields.
 
@@ -39,7 +39,7 @@ boundary_evidence and repository evidence carry both source seals. A ledgered ro
 |---|---|
 | carried pair absent or unsealed | FAIL_CLOSED `INTR_PATH_SOURCE_RECEIPT_NOT_CARRIED` (nothing appended) |
 | carried pair names another path, destination, address or message, or the receipts do not link | DENY `INTR_PATH_CARRIED_RECEIPT_CONTRADICTED` (nothing appended) |
-| carried pair's inclusion in the source ledger | FAIL_CLOSED `INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`, recorded in the evidence as `source_inclusion` |
+| carried pair's inclusion in the source ledger, when neither a verified TVC read receipt nor an anonymous public-ledger copy is present | FAIL_CLOSED `INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`, recorded in the evidence as `source_inclusion` |
 
 **End to end** (`python resident-runtime/intr_path_ingress.py end-to-end --source-readback S --destination-readback D`)
 takes a readback of each ledger (`stegverse.intr-path-ledger-readback/v1`: tip, head seal, chain, the pair). It is
@@ -62,13 +62,22 @@ the read-only flags are false and its evidence class is `TVC_RESIDENT_EXECUTION`
 ingress evidence (`source_inclusion.state: VERIFIED_BY_TVC_READ_RECEIPT`, with the source ledger tip). No bot holds a
 credential; no classic PAT or FEDERATION_* token is used.
 
-**Class B.** In CI the other organization's ledger is not readable: `GITHUB_TOKEN` is scoped to the repository and
-the repositories are internal. No token is minted and no `FEDERATION_*` token is used. Paths whose source is
+**Public-ledger route** (E0, no credential). When the other organization's `.github` is public, its
+`refs/stegverse/organization-ledger` is fetched anonymously (no credential helper, no auth header) into
+`$STEGVERSE_INTR_PUBLIC_LEDGERS/<Organization>.git` before any verifier runs; the verifiers read only that local
+copy. A verified TVC read receipt is used first, then this copy (`source_inclusion.state:
+VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ`, `end-to-end-via-tvc --public-ledgers`). A source not readable
+anonymously has no copy and stays FAIL_CLOSED `INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED` on the TV/TVC route.
+
+**Class B.** In CI `GITHUB_TOKEN` is scoped to the repository, so another organization's ledger is readable only
+anonymously when that `.github` is public; an internal or private one is not readable. No token is minted and no `FEDERATION_*` token is used. Paths whose source is
 another organization also need this transition installed in that organization's `.github`.
 
-**Real state** (`tests/fixtures/intr-path-transfer/expected-real-state.json`, ledger tip `0db6e0bd`): 56/56
-FAIL_CLOSED `INTR_PATH_RECEIPT_NOT_LEDGERED`. No path receipt exists yet. Path receipts appear only once this
-transition lands on main. After that, the 7 paths from StegVerse-org verify their source half, and every path
-stays FAIL_CLOSED at the destination half (`INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`, class A, retry at TVC) until its TVC read receipt is landed. Receipts in
+**Real state** (`tests/fixtures/intr-path-transfer/expected-real-state.json`, ledger tip `21648778`, read with
+`git ls-remote` on 2026-10-23): 56/56 FAIL_CLOSED. The 7 paths sourced in StegVerse-org carry their path receipts
+(transfer commit `5b98086e`, #209): source half ALLOW, destination half FAIL_CLOSED
+(`INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED`, class A) until the destination's read of this ledger verifies
+(a TVC read receipt, or the anonymous public-ledger read for a public source). The other 49 are FAIL_CLOSED
+`INTR_PATH_RECEIPT_NOT_LEDGERED` here. Fresh appends are tested on a copy of the pre-receipt tip `0db6e0bd`. Receipts in
 the tests and the PR dry-run are written to temporary directories or a scratch ref. They are not ledgered and
 not authentic.

@@ -27,7 +27,7 @@ SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
               "retry_entrypoint", "owning_existing_goal", "next_attempt")
 REGISTRY_PATH = ROOT / "org-boundary/registry/services.json"
 REGISTRY = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
-MANIFEST_PATH = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+MANIFEST_PATH = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 GENESIS_PATH = ROOT / "tests/fixtures/crossing-standing-genesis.json"
 GENESIS = {k: v for k, v in json.loads(GENESIS_PATH.read_text(encoding="utf-8")).items()
            if not k.startswith("_")}

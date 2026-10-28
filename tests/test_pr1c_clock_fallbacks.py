@@ -187,7 +187,7 @@ class FederationCyclePropagationTests(SixFields, unittest.TestCase):
     def cycle(self, hb_epoch):
         work = Path(tempfile.mkdtemp())
         self.addCleanup(__import__("shutil").rmtree, work, True)
-        repository = "StegVerse-org/LLM-adapter"
+        repository = "StegVerse-org/StegVerse-SDK"
         body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": repository,
                 "transition_id": "NODE_INGRESS_ADMITTED:pr1c", "transition_class": "NODE_INGRESS_ADMITTED",
                 "predecessor_state_sha256": STATE_BEFORE, "successor_state_sha256": STATE_AFTER,

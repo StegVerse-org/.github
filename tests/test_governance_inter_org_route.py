@@ -31,7 +31,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
-FIXTURE = ROOT / "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+FIXTURE = ROOT / "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json"
 GENESIS = json.loads((ROOT / "tests/fixtures/crossing-standing-genesis.json").read_text())
 DECIDER = "StegVerse-Labs"
 DECIDING_SERVICE = "stegverse-labs.governance"
@@ -142,7 +142,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
             origin_org="SV-LLM", origin_service="sv-llm.org-control",
             destination_org="StegVerse-org", destination_service="stegverse-org.sdk-manifest-ingress",
             payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
-                     "declared_transition_surface": "LLM_ADAPTER",
+                     "declared_transition_surface": "TASK_REGISTRY_DISCLOSURE",
                      "manifest": body, "manifest_sha256": kernel.sha(body)},
             standing=GENESIS, transition_reference="intr:transition:capability-address-mesh",
             authority_effect="NONE", packet_id="capability-address-mesh")

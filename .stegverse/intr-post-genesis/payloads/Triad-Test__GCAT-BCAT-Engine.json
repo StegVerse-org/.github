@@ -1,0 +1,177 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "nothing to write: GCAT-BCAT-Engine/.github's ledger (read anonymously at 295bd916f45c1221dbb2c3e46ff2a6e6a586f3b1) holds destination receipt sha256:305df05896a8f67ee682b652328e208707c6ba98fbb9aa8b642b6482bd1c2263; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
+  }
+ ],
+ "cls": "DESTINATION_RECEIPT_LEDGERED",
+ "communication_id": "intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+ "destination": "GCAT-BCAT-Engine",
+ "destination_receipts": {
+  "destination_ledger_tip_observed": "295bd916f45c1221dbb2c3e46ff2a6e6a586f3b1",
+  "destination_organization_receipt_sha256": "sha256:305df05896a8f67ee682b652328e208707c6ba98fbb9aa8b642b6482bd1c2263"
+ },
+ "e0_terminal": true,
+ "expected_at_genesis": "ALLOW",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "Triad-Test->GCAT-BCAT-Engine:intr-destination",
+ "payload": {
+  "evidence_at_observed_source_tip": {
+   "addressed_service": "gcat-bcat-engine.intr-destination",
+   "communication_id": "intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+   "disposition": "ALLOW",
+   "message": {
+    "body": {
+     "path_id": "Triad-Test->GCAT-BCAT-Engine:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "d22d0dca97d5f33e1e7101dca13fcf5d0422145f"
+    },
+    "communication_id": "intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:9cb6dd698866274a0c4b9e193c750a2226f1bbb409f0067292f66ad99fb156d9",
+   "path_id": "Triad-Test->GCAT-BCAT-Engine:intr-destination",
+   "payload_sha256": "sha256:f0eb7361d47c71398d833220df325a7e7bd86391030f503ff88f81b1ba4a0b8d",
+   "repository": "GCAT-BCAT-Engine/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_inclusion": {
+    "source_ledger_tip": "4314c84866210b985c7675418cd5959128debfcd",
+    "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+    "tvc_read_receipt": null
+   },
+   "source_organization_receipt_sha256": "sha256:a735ec48f5eedcaee0fbf4d2e979f7d55b5f8617a06cb49aeb51f40e8bbc6d64",
+   "source_repository": "Triad-Test/.github",
+   "source_repository_receipt_sha256": "sha256:e0dc5079d51ad3a28f8823a839786b1b8d4410e476ad0cddf7ffc334bd2e685d"
+  },
+  "evidence_invariant": {
+   "addressed_service": "gcat-bcat-engine.intr-destination",
+   "message": {
+    "body": {
+     "path_id": "Triad-Test->GCAT-BCAT-Engine:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "d22d0dca97d5f33e1e7101dca13fcf5d0422145f"
+    },
+    "communication_id": "intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:9cb6dd698866274a0c4b9e193c750a2226f1bbb409f0067292f66ad99fb156d9",
+   "path_id": "Triad-Test->GCAT-BCAT-Engine:intr-destination",
+   "repository": "GCAT-BCAT-Engine/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_organization_receipt_sha256": "sha256:a735ec48f5eedcaee0fbf4d2e979f7d55b5f8617a06cb49aeb51f40e8bbc6d64",
+   "source_repository": "Triad-Test/.github",
+   "source_repository_receipt_sha256": "sha256:e0dc5079d51ad3a28f8823a839786b1b8d4410e476ad0cddf7ffc334bd2e685d"
+  },
+  "evidence_invariant_sha256": "sha256:c456b6ebf8a585b3239ee240dec456904b59f959052dcb074971c5bf0dc2d080",
+  "source_inclusion_rule": {
+   "source_ledger_tip": "the source ledger tip read at consume time; its chain must include source_organization_receipt_sha256",
+   "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+   "tvc_read_receipt": null
+  }
+ },
+ "record_sha256": "sha256:9ba8d66ede89abfc131ef1f971239b4397bec4d44fcb147479b59d73b5231f2a",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "Triad-Test",
+ "source_receipts": {
+  "organization_receipt": {
+   "authority_effect": "NONE",
+   "boundary_evidence": {
+    "communication_id": "intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+    "destination_organization": "GCAT-BCAT-Engine",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "Triad-Test->GCAT-BCAT-Engine:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "Triad-Test/.github",
+    "transfer_commit": "d22d0dca97d5f33e1e7101dca13fcf5d0422145f"
+   },
+   "canonical_state_transition_receipt_sha256": null,
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469411750,
+    "frequency_hz": 100,
+    "generation": 469411750,
+    "heartbeat_id": "HB:469411750",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "org_transition_class": "REPO_STATE_PROPAGATION",
+   "organization": "Triad-Test",
+   "predecessor_org_state_sha256": "sha256:9b6adc1ea7d04411f54e5966cf0ce97f293d3e7c0c44c88e1d9b2680bb2458c9",
+   "previous_receipt_sha256": "sha256:89ecf1b5a02b8265c53ef1bd65dad6f4133dec21496c5f9c95cdf9a867448804",
+   "receipt_sha256": "sha256:a735ec48f5eedcaee0fbf4d2e979f7d55b5f8617a06cb49aeb51f40e8bbc6d64",
+   "repo_receipt_sha256": "sha256:e0dc5079d51ad3a28f8823a839786b1b8d4410e476ad0cddf7ffc334bd2e685d",
+   "repo_transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->GCAT-BCAT-Engine:intr-destination@intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+   "schema": "stegverse.organization-transition-receipt/v1",
+   "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+   "source_repository": "Triad-Test/.github",
+   "source_transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->GCAT-BCAT-Engine:intr-destination@intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+   "source_transition_sha256": "sha256:e0dc5079d51ad3a28f8823a839786b1b8d4410e476ad0cddf7ffc334bd2e685d",
+   "subject_or_correlation_id": null,
+   "successor_org_state_sha256": "sha256:865d0a9b387813d180db1f43d4f1765ff3162514ed9fee63d386db56e27de8b8"
+  },
+  "repository_receipt": {
+   "authority_effect": "NONE",
+   "evidence": {
+    "capability": "intr-destination",
+    "communication_id": "intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+    "destination_address": "gcat-bcat-engine.intr-destination",
+    "destination_organization": "GCAT-BCAT-Engine",
+    "disposition": "ALLOW",
+    "merge_transfer_organization_receipt_sha256": "sha256:53a44e5eb4936b0c1cdd7fc67c324fad34e6d4e374ff139b4ad6b099d00441be",
+    "message": {
+     "body": {
+      "path_id": "Triad-Test->GCAT-BCAT-Engine:intr-destination",
+      "schema": "stegverse.org-intr-destination-diagnostic/v1",
+      "transfer_commit": "d22d0dca97d5f33e1e7101dca13fcf5d0422145f"
+     },
+     "communication_id": "intr-path-v1:Triad-Test->GCAT-BCAT-Engine",
+     "message_class": "ecosystem.communication"
+    },
+    "message_sha256": "sha256:9cb6dd698866274a0c4b9e193c750a2226f1bbb409f0067292f66ad99fb156d9",
+    "path_id": "Triad-Test->GCAT-BCAT-Engine:intr-destination",
+    "payload_sha256": "sha256:9b6adc1ea7d04411f54e5966cf0ce97f293d3e7c0c44c88e1d9b2680bb2458c9",
+    "repository": "Triad-Test/.github",
+    "schema": "stegverse.intr-path-transfer-evidence/v1",
+    "source_organization": "Triad-Test",
+    "transfer_commit": "d22d0dca97d5f33e1e7101dca13fcf5d0422145f"
+   },
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469411750,
+    "frequency_hz": 100,
+    "generation": 469411750,
+    "heartbeat_id": "HB:469411750",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "predecessor_state_sha256": "sha256:9b6adc1ea7d04411f54e5966cf0ce97f293d3e7c0c44c88e1d9b2680bb2458c9",
+   "previous_receipt_sha256": "sha256:a25bf1a8fe17191ef9df218f2e9c191ce84d3bf7cef09661616d5c3ac3ad158b",
+   "receipt_sha256": "sha256:e0dc5079d51ad3a28f8823a839786b1b8d4410e476ad0cddf7ffc334bd2e685d",
+   "repository": "Triad-Test/.github",
+   "schema": "stegverse.repo-transition-receipt/v1",
+   "successor_state_sha256": "sha256:865d0a9b387813d180db1f43d4f1765ff3162514ed9fee63d386db56e27de8b8",
+   "transition_class": "INTR_MESH_PATH_TRANSFER",
+   "transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->GCAT-BCAT-Engine:intr-destination@intr-path-v1:Triad-Test->GCAT-BCAT-Engine"
+  },
+  "source_ledger_tip_observed": "4314c84866210b985c7675418cd5959128debfcd"
+ },
+ "status": {
+  "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+  "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "nothing to write: GCAT-BCAT-Engine/.github's ledger (read anonymously at 295bd916f45c1221dbb2c3e46ff2a6e6a586f3b1) holds destination receipt sha256:305df05896a8f67ee682b652328e208707c6ba98fbb9aa8b642b6482bd1c2263; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
+ }
+}
