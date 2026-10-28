@@ -633,10 +633,13 @@ class LedgerWriterSelfClosureModeTests(unittest.TestCase):
         self.assertNotIn(prohibited, (
             ROOT / "resident-runtime/intr_destination_ingress.py").read_text(encoding="utf-8").lower())
 
-    def test_a_request_dispatch_still_names_a_committed_request(self):
+    def test_the_request_selection_has_no_dispatch_branch(self):
+        # #166 P4: workflow_dispatch is removed, so the request input branch was dead; a
+        # committed request is selected only by the push that carries it.
         text = self.step("Select committed transition requests")
-        self.assertIn("DISPATCH_REQUEST_REQUIRED", text)
-        self.assertIn("DISPATCH_REQUEST_NOT_COMMITTED", text)
+        self.assertNotIn("INPUT_REQUEST", text)
+        self.assertNotIn("DISPATCH_REQUEST_", text)
+        self.assertIn(".stegverse/transition-requests/*.json", text)
 
 
 class LedgerWriterNonAllowMessageTests(unittest.TestCase):
@@ -688,9 +691,6 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
             codes.add(message["failure_code"])
         self.assertEqual(codes, {
             "ORGANIZATION_LEDGER_CONTRACT_OR_REQUEST_INVALID", "ORGANIZATION_LEDGER_REF_BINDING_FAILED",
-            "DISPATCH_REQUEST_REQUIRED", "DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS",
-            "DISPATCH_REQUEST_PATH_INVALID", "DISPATCH_REQUEST_CONTROL_CHARACTER",
-            "DISPATCH_REQUEST_NOT_COMMITTED",
             "MESH_REF_PUBLISH_RACE", "ORGANIZATION_LEDGER_PUBLISH_RACE",
             "AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE"})
         # No refusal is a bare "FAIL_CLOSED: CODE" line any more.
@@ -740,29 +740,25 @@ class LedgerWriterNonAllowMessageTests(unittest.TestCase):
     def test_request_mode_and_self_closure_refusals_resolve_with_the_six_fields(self):
         select = "Select committed transition requests"
         with tempfile.TemporaryDirectory() as tmp:
-            subprocess.run(["git", "init", "-q"], cwd=tmp, check=True)
+            git = lambda *a: subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", *a],
+                                            cwd=tmp, check=True, capture_output=True, text=True).stdout.strip()
+            git("init", "-q")
             requests = Path(tmp, ".stegverse", "transition-requests")
             requests.mkdir(parents=True)
+            (requests / "earlier.json").write_text("{}", encoding="utf-8")
+            git("add", "-A"); git("commit", "-q", "-m", "before")
+            before = git("rev-parse", "HEAD")
             (requests / "committed.json").write_text("{}", encoding="utf-8")
-            (requests / "uncommitted.json").write_text("{}", encoding="utf-8")
-            subprocess.run(["git", "add", ".stegverse/transition-requests/committed.json"], cwd=tmp, check=True)
-            cases = [
-                ("", "DISPATCH_REQUEST_REQUIRED"),
-                ("elsewhere/request.json", "DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS"),
-                (".stegverse/transition-requests/../committed.json", "DISPATCH_REQUEST_PATH_INVALID"),
-                (".stegverse/transition-requests/a\x01b.json", "DISPATCH_REQUEST_CONTROL_CHARACTER"),
-                (".stegverse/transition-requests/uncommitted.json", "DISPATCH_REQUEST_NOT_COMMITTED"),
-            ]
-            for request, code in cases:
-                run = self.run_step(select, tmp, {"GITHUB_EVENT_NAME": "workflow_dispatch", "INPUT_REQUEST": request,
-                                                  "BEFORE": "", "GITHUB_SHA": ""})
-                self.assertEqual(run.returncode, 1, (request, run.stderr))
-                message = self.last_message(run)
-                self.assertEqual(message["failure_code"], code)
-                self.assert_six(message)
-            run = self.run_step(select, tmp, {"GITHUB_EVENT_NAME": "workflow_dispatch", "BEFORE": "", "GITHUB_SHA": "",
-                                              "INPUT_REQUEST": ".stegverse/transition-requests/committed.json"})
+            Path(tmp, "elsewhere.json").write_text("{}", encoding="utf-8")
+            git("add", "-A"); git("commit", "-q", "-m", "push")
+            # A push selects exactly the transition requests it adds or modifies; nothing is
+            # named by an input (there is none since workflow_dispatch was removed).
+            run = self.run_step(select, tmp, {"GITHUB_EVENT_NAME": "push", "BEFORE": before,
+                                              "GITHUB_SHA": git("rev-parse", "HEAD"),
+                                              "INPUT_REQUEST": "elsewhere.json"})
             self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertEqual(Path(tmp, ".runner", "requests.txt").read_text().split(),
+                             [".stegverse/transition-requests/committed.json"])
             self.assertNotIn("failure_code", run.stdout + run.stderr)
 
         # The self-closure step is removed (Rigel's rule, 2026-10-25: no InTr hop inside one organization);
