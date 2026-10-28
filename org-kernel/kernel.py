@@ -746,9 +746,23 @@ def resident_status(root:Path, registry:dict[str,Any]|None=None, *, epoch:int|No
       "registered_service_count":len(reg.get("services") or []),
       "registered_services":[s.get("service_id") for s in reg.get("services") or []],
       "org_control_service":organization_slug(reg["organization"])+".org-control",
-      "heartbeat_reference":hb_reference(epoch=epoch) if epoch is not None else hb_reference(),
-      "runtime_observation_claimed":False
+      "heartbeat_reference":hb_reference(epoch=epoch) if epoch is not None else None,
+      "runtime_observation_claimed":False,
+      # No epoch supplied: the status carries no reference and says why, as the
+      # federation cycle record does (heartbeat_reference_refusal). No clock is read.
+      **({} if epoch is not None else {"heartbeat_reference_refusal":resident_status_epoch_refusal()})
     }
+
+def resident_status_epoch_refusal()->dict[str,Any]:
+    """Six-field FAIL_CLOSED record for a status read given no epoch (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH)."""
+    return {"disposition":"FAIL_CLOSED","failure_code":"HB_EPOCH_NOT_SUPPLIED",
+            "failed_predicate":"SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
+            "detail":"no epoch was supplied and no clock is read",
+            "required_evidence_or_repair":"supply epoch= (ecosystem_control.py status --hb-epoch) from the carrier: ASCII digits, value >= 32; it is never derived from a clock",
+            "retry_entrypoint":"org-kernel/kernel.py::resident_status",
+            "owning_existing_goal":"INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
+            "next_attempt":"read the status again with the supplied epoch; the status fields above are unaffected",
+            "derived_from_clock":False,"consequence_committed":False}
 
 def persist_work_request(root:Path, packet:dict[str,Any], *, store:Any|None=None)->dict[str,Any]:
     payload=packet.get("payload") or {}
