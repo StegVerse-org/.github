@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
               "retry_entrypoint", "owning_existing_goal", "next_attempt")
-MANIFEST = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+MANIFEST = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 GENESIS_PATH = ROOT / "tests/fixtures/crossing-standing-genesis.json"
 GENESIS = {k: v for k, v in json.loads(GENESIS_PATH.read_text(encoding="utf-8")).items()
            if not k.startswith("_")}
@@ -123,10 +123,10 @@ class EgressSuppliedEpochTests(TemporaryLedgers):
         self.assert_six_fields(self.emit(hb_epoch=None), "HB_EPOCH_NOT_SUPPLIED")
 
 
-#: sha256 of `supplied_epoch_failure`'s source text. The same pin is asserted in
-#: StegVerse-org/.github#185 and StegVerse-Labs/.github#3212 / #3213, so the
-#: validator is byte-identical across the three.
-SHARED_VALIDATOR_SHA256 = "7f36f0e697cadc91acd27af121eee3fc460b887ec67cfa258727bfccec0ca5f8"
+#: sha256 of `supplied_epoch_failure`'s source text (inspect.getsource of that one
+#: function): the StegVerse-Labs/.github#3282 FINAL text, so the validator is
+#: byte-identical across organizations and across this repository's four copies.
+SHARED_VALIDATOR_SHA256 = "ad8ff52936d5bcd9a2ad6caceb2d9a637a099518989b34bbb3370301c7a4cce2"
 #: Not ASCII [0-9]+ (or below 32): each is refused, never coerced to an epoch.
 COERCED_EPOCHS = ("+33", " 33", "33 ", "3_3", "33.0", "33\n", "", "\u0663\u0663", "0x21",
                   True, False, 33.0, 31, "31", -33, "-33", [33])
@@ -136,7 +136,8 @@ class SharedEpochValidatorTests(unittest.TestCase):
     """One supplied-epoch rule at the egress boundary and the capability resolver."""
 
     def test_one_validator_text_everywhere(self):
-        for module in (egress, capability):
+        aggregate = _load("aggregate_repo_transition_p1", "resident-runtime/aggregate_repo_transition.py")
+        for module in (egress, capability, kernel, aggregate):
             source = inspect.getsource(module.supplied_epoch_failure)
             self.assertEqual(hashlib.sha256(source.encode()).hexdigest(), SHARED_VALIDATOR_SHA256,
                              module.__name__)
@@ -162,7 +163,8 @@ class SharedEpochValidatorTests(unittest.TestCase):
     def test_a_carried_derived_from_clock_must_be_exactly_false(self):
         rule = egress.supplied_epoch_failure
         self.assertIsNone(rule(33, {"derived_from_clock": False}))
-        self.assertIsNone(rule(33, {}))
+        # #3282 FINAL: a reference that carries no derived_from_clock is unmarked.
+        self.assertEqual(rule(33, {})[0], "HB_EPOCH_PROVENANCE_UNMARKED")
         for value in (True, None, 0, "false"):
             with self.subTest(derived_from_clock=value):
                 self.assertEqual(rule(33, {"derived_from_clock": value})[0], "HB_EPOCH_INVALID")
@@ -176,7 +178,7 @@ class CapabilityIngressEpochTests(TemporaryLedgers):
             origin_org=PEER, origin_service="stegverse-labs.sdk-manifest-ingress",
             destination_org="StegVerse-org", destination_service=ADDRESS,
             payload={"schema": "stegverse.sdk-manifest-crossing-payload/v1",
-                     "declared_transition_surface": "LLM_ADAPTER",
+                     "declared_transition_surface": "TASK_REGISTRY_DISCLOSURE",
                      "manifest": body, "manifest_sha256": kernel.sha(body)},
             standing=GENESIS, transition_reference="intr:transition:p1-epoch",
             authority_effect="NONE", packet_id=packet_id)

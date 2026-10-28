@@ -1,0 +1,132 @@
+name: Main Change Receipt
+
+# B1 (StegVerse-org/.github#160 issuecomment-6353130407 section 1.3; correction issuecomment-6354202109):
+# every commit a push to main introduces gets a sealed receipt, whatever produced it (PR merge, squash,
+# direct push, bot commit). Lowest supported operating mode E0: no LLM, no human, no clock, no network
+# beyond this repository and a read of the organization ledger ref, no secret beyond the run's GITHUB_TOKEN.
+#
+# Reusable only. Each repository installs a caller pinned to a commit of StegVerse-org/.github:
+#
+#   on:
+#     push:
+#       branches: [main]
+#   permissions:
+#     contents: write
+#   jobs:
+#     receipt:
+#       uses: StegVerse-org/.github/.github/workflows/main-change-receipt.yml@<40-hex commit>
+#       with:
+#         writer_ref: <the same 40-hex commit>
+#         writer_sha256: <sha256 of resident-runtime/main_change_receipt.py at that commit>
+#
+# The receipts are appended fast-forward only to refs/stegverse/main-change-receipts in the calling
+# repository and verified from a fresh fetch of the published ref. Recording is not admission.
+on:
+  workflow_call:
+    inputs:
+      writer_ref:
+        description: "40-hex commit of StegVerse-org/.github carrying the writer (equal to the uses: pin)"
+        required: true
+        type: string
+      writer_sha256:
+        description: "sha256 of resident-runtime/main_change_receipt.py at writer_ref"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-change-receipt
+  cancel-in-progress: false
+
+jobs:
+  receipt:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RECEIPT_REF: refs/stegverse/main-change-receipts
+      ORG_LEDGER_REF: refs/stegverse/organization-ledger
+      BEFORE: ${{ github.event.before }}
+      AFTER: ${{ github.sha }}
+      WRITER_REF: ${{ inputs.writer_ref }}
+      WRITER_SHA256: ${{ inputs.writer_sha256 }}
+    steps:
+      - name: Checkout the repository that pushed to main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout the pinned writer
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: StegVerse-org/.github
+          ref: ${{ inputs.writer_ref }}
+          path: .stegverse-main-change-receipt-writer
+          persist-credentials: false
+
+      - name: Bind the writer bytes
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/results"
+          writer=.stegverse-main-change-receipt-writer/resident-runtime/main_change_receipt.py
+          actual=$(sha256sum "$writer" | cut -d' ' -f1)
+          if ! printf '%s' "$WRITER_REF" | grep -Eq '^[0-9a-f]{40}$' || [ "$actual" != "$WRITER_SHA256" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"MAIN_CHANGE_RECEIPT_WRITER_NOT_AT_PIN","failed_predicate":"WRITER_BYTES_EQUAL_PINNED_SHA256","required_evidence_or_repair":"pin writer_ref to a 40-hex commit of StegVerse-org/.github and writer_sha256 to the writer bytes at that commit","retry_entrypoint":".github/workflows/main-change-receipt.yml (the next push to main)","owning_existing_goal":"STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)","next_attempt":"the next push to main"}' | tee "$RUNNER_TEMP/results/refusal.json"
+            exit 1
+          fi
+          echo "WRITER=$writer" >> "$GITHUB_ENV"
+
+      - name: Read the organization ledger head for the supplied epoch (read only)
+        run: |
+          set -euo pipefail
+          # this repository's own organization ledger ref, else the organization's .github repository's
+          if ! git fetch -q --no-tags origin "+$ORG_LEDGER_REF:$ORG_LEDGER_REF" 2>/dev/null; then
+            git fetch -q --no-tags "https://github.com/${GITHUB_REPOSITORY_OWNER}/.github" "+$ORG_LEDGER_REF:$ORG_LEDGER_REF" 2>/dev/null \
+              || echo "no organization ledger head readable: receipts carry HB_EPOCH_SOURCE_UNOBSERVED"
+          fi
+          git fetch -q --no-tags origin "+$RECEIPT_REF:$RECEIPT_REF" 2>/dev/null || echo "first receipt on $RECEIPT_REF"
+          if [ -f .github/workflows/organization-ledger-merge-transfer.yml ]; then
+            echo "ORG_WRITER_FLAG=--organization-ledger-writer-installed" >> "$GITHUB_ENV"
+          else
+            echo "ORG_WRITER_FLAG=" >> "$GITHUB_ENV"
+          fi
+
+      - name: Observe every commit this push introduced
+        run: |
+          set -euo pipefail
+          python3 "$WRITER" observe --root . --repository "$GITHUB_REPOSITORY" --before "$BEFORE" --after "$AFTER" \
+            --writer-ref "$WRITER_REF" --writer-sha256 "$WRITER_SHA256" $ORG_WRITER_FLAG \
+            --out "$RUNNER_TEMP/results/receipts.json" > /dev/null
+          python3 - "$RUNNER_TEMP/results/receipts.json" <<'PY'
+          import json, sys
+          for r in json.load(open(sys.argv[1])):
+              print(r["commit"], r["merge_kind"], r["pull_request"], r["disposition"], r.get("first_item", {}).get("failure_code"))
+          PY
+
+      - name: Append the receipts (fast-forward only)
+        run: |
+          set -euo pipefail
+          python3 "$WRITER" append --root . --receipts "$RUNNER_TEMP/results/receipts.json" --out "$RUNNER_TEMP/results/append.json"
+          if ! git push origin "$RECEIPT_REF:$RECEIPT_REF"; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"MAIN_CHANGE_RECEIPT_PUBLISH_RACE","failed_predicate":"PUBLISHED_REF_FAST_FORWARDS","required_evidence_or_repair":"another append moved the ref first; this run published nothing","retry_entrypoint":".github/workflows/main-change-receipt.yml (re-run the push)","owning_existing_goal":"STEGVERSE-CANONICAL-WORK-COORDINATION-001 (StegVerse-org/.github#160)","next_attempt":"re-run; a receipt already ledgered is answered from the ref"}'
+            exit 1
+          fi
+
+      - name: Verify from a fresh fetch of the published ref
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/readback.git"
+          git init -q --bare "$fresh"
+          auth_header=$(git config --local --get http.https://github.com/.extraheader || true)
+          git --git-dir="$fresh" -c "http.https://github.com/.extraheader=$auth_header" fetch -q "$(git remote get-url origin)" "+$RECEIPT_REF:$RECEIPT_REF"
+          python3 "$WRITER" verify --root "$fresh" --receipts "$RUNNER_TEMP/results/receipts.json" --out "$RUNNER_TEMP/results/verify.json"
+          { echo '### main-change receipts'; echo '```json'; cat "$RUNNER_TEMP/results/receipts.json"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain the run's evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: main-change-receipt-${{ github.sha }}
+          path: ${{ runner.temp }}/results

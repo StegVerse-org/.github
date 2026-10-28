@@ -1,0 +1,1 @@
+python -m unittest tests.test_manifest_ingress_idempotent -v

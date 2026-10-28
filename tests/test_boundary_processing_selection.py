@@ -350,7 +350,7 @@ class LiveRegistryTests(unittest.TestCase):
         It previously held that no surface in this organization declared a
         capability bound to a route it admits, with the requirement that the
         case be replaced by coverage of a real binding when one landed.
-        `stegverse-org.llm-adapter` is that binding: it admits
+        `stegverse-org.task-registry-disclosure` is that binding: it admits
         `ecosystem_diagnostic` on the diagnostic route and serves the
         committed task registry. The end-to-end path is covered in
         `tests/test_task_registry_disclosure_endpoint.py`.

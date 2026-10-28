@@ -1,0 +1,1 @@
+python -m unittest tests.test_kernel_node_state_is_addressed -v

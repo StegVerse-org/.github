@@ -583,13 +583,14 @@ def _record_refusal(record: Mapping[str, Any], hb_epoch: int | None) -> dict[str
          "intended_action": INTENDED_ACTION,
          "disposition": record["disposition"],
          "failed_predicate": record["failed_predicate"]},
-        "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"], idempotent=True)
+        "NONE", hb_epoch=hb_epoch, idempotent=True)
     return {"repository_receipt": repository_receipt,
             "organization_receipt": organization_receipt}
 
 
 def _refused(failed_predicate: str, detail: str, *, manifest: Any,
              hb_epoch: int | None = None, six_fields: Mapping[str, Any] | None = None,
+             hb_epoch_source: Mapping[str, Any] | None = None,
              **extra: Any) -> dict[str, Any]:
     """Record and return a refusal.
 
@@ -612,6 +613,8 @@ def _refused(failed_predicate: str, detail: str, *, manifest: Any,
     stored_fields = fields if (six_fields or fields["failure_code"] != REFUSED_CLASS) else None
     record = refusal_record(failed_predicate, detail, manifest, stored_fields,
                             disposition=disposition)
+    if hb_epoch_source is not None:
+        record = {**record, "hb_epoch_source": dict(hb_epoch_source)}
     appended = _record_refusal(record, hb_epoch)
     return {
         "schema": RESULT_SCHEMA_ORG,
@@ -1069,13 +1072,18 @@ def _deliver_non_allow_disposition(result: Mapping[str, Any], request: Mapping[s
 
 def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standing: Mapping[str, Any] | None = None,
             packet_id: str = "organization-sdk-manifest-ingress",
-            hb_epoch: int | None = None, mesh_root: Path | None = None) -> dict[str, Any]:
+            hb_epoch: int | None = None, mesh_root: Path | None = None,
+            hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Receive a submitted manifest on this organization's ingress operation.
 
     `mesh_root` is the federation mesh the node was materialized with. A
     governance request leaves on it. A route-related NON-ALLOW leaves on it
     too, as a disposition delivery on the manifest-calculated route. A
     NON-ALLOW with no derivable request is recorded here and is not emitted.
+
+    `hb_epoch_source`, when the epoch came from a committed request (a push run),
+    names it: {"source": "COMMITTED_REQUEST", "request_sha256": ...}. It is
+    recorded in the receipts beside the supplied epoch; it never supplies one.
     """
     # PR-1b: no epoch, or one the shared rule refuses, is FAIL_CLOSED before
     # anything is derived or appended; the host clock is never the fallback.
@@ -1102,7 +1110,8 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
         # route that request calculates. No request means no route, and the
         # receipt is the whole record.
         recorded = _refused(failed_predicate, detail, manifest=manifest,
-                            hb_epoch=submitted_epoch, six_fields=six_fields, **extra)
+                            hb_epoch=submitted_epoch, six_fields=six_fields,
+                            hb_epoch_source=hb_epoch_source, **extra)
         if request is None:
             return recorded
         return _deliver_non_allow_disposition(
@@ -1186,6 +1195,8 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
     # The lookup is read again after a collision once, because a concurrent
     # delivery of the same request may have recorded it in between.
     evidence = transition_evidence(request, crossing, closures, manifest)
+    if hb_epoch_source is not None:
+        evidence = {**evidence, "hb_epoch_source": dict(hb_epoch_source)}
     for resolution in range(2):
         prior = _ledger_write(repository_ledger.recorded,
             chain, chain.get(repository_ledger.ledger_store.HEAD_KEY),
@@ -1205,17 +1216,19 @@ def receive(manifest: Mapping[str, Any], *, registry: Mapping[str, Any], standin
             if resolution:
                 return refused("ONE_TRANSITION_ID_BINDS_ONE_MANIFEST", str(exc),
                                request_sha256=request["request_sha256"])
-    # Everything after the repository receipt takes its epoch from that receipt,
-    # so a replay rebuilds the same organization receipt and the same outbound
-    # frame rather than ones stamped with whatever epoch this attempt carried.
-    hb_epoch = repository_receipt["hb_reference"]["epoch"]
+    # The organization receipt and the outbound emission below take the epoch
+    # this receive was supplied, never one read back from the recorded
+    # repository receipt. A replay is still one organization receipt (the
+    # idempotent append returns the recorded one); a replay supplied with a
+    # different epoch emits its request frame at that epoch.
     organization_receipt = _ledger_write(organization_ledger.append,
         repository_receipt, "REPO_STATE_PROPAGATION",
         predecessor_state, successor_state,
         {"receiving_operation": OPERATION_ID,
          "resolved_service_id": crossing["resolved_service_id"],
          "ingress_packet_id": crossing["ingress_packet_id"],
-         "egress_packet_id": crossing["egress_packet_id"]},
+         "egress_packet_id": crossing["egress_packet_id"],
+         **({"hb_epoch_source": dict(hb_epoch_source)} if hb_epoch_source is not None else {})},
         "NONE", hb_epoch=hb_epoch, idempotent=True)
 
     # Governance is decided by the organization that owns StegCore. The ingress
@@ -1320,8 +1333,11 @@ def main() -> int:
                              "required unless the manifest declares its own chain position")
     parser.add_argument("--packet-id", default="organization-sdk-manifest-ingress")
     parser.add_argument("--hb-epoch", type=str, default=None,
-                        help="heartbeat epoch; derived from the host clock, and marked as "
-                             "derived, when absent")
+                        help="heartbeat epoch, as supplied (ASCII digits >= 32); absent or "
+                             "invalid is refused FAIL_CLOSED, never derived from a clock")
+    parser.add_argument("--hb-epoch-source-json", default=None,
+                        help='where the supplied epoch came from, recorded in the receipts, e.g. '
+                             '{"source": "COMMITTED_REQUEST", "request_sha256": "sha256:..."}')
     parser.add_argument("--mesh-root", type=Path, default=None,
                         help="federation mesh this node was materialized with; a governance "
                              "request leaves on it")
@@ -1341,6 +1357,26 @@ def main() -> int:
                           "authority_effect": "NONE_REFUSAL_ONLY"}, sort_keys=True))
         return 1
 
+    epoch_source = None
+    if args.hb_epoch_source_json:
+        try:
+            epoch_source = json.loads(args.hb_epoch_source_json)
+        except ValueError:
+            epoch_source = None
+        if not (isinstance(epoch_source, dict)
+                and epoch_source.get("source") in ("COMMITTED_REQUEST", "WORKFLOW_DISPATCH")
+                and str(epoch_source.get("request_sha256") or "").startswith("sha256:")):
+            print(json.dumps({"schema": RESULT_SCHEMA_ORG, "receiving_operation": OPERATION_ID, "received": False,
+                              "disposition": "FAIL_CLOSED", "failure_code": "HB_EPOCH_SOURCE_INVALID",
+                              "failed_predicate": "HB_EPOCH_SOURCE_NAMES_ITS_REQUEST",
+                              "required_evidence_or_repair": "--hb-epoch-source-json names source COMMITTED_REQUEST or "
+                                                             "WORKFLOW_DISPATCH and the request_sha256",
+                              "retry_entrypoint": "resident-runtime/organization_manifest_ingress.py (--hb-epoch-source-json)",
+                              "owning_existing_goal": INTR_PROTOCOL_GOAL,
+                              "next_attempt": "rerun with a well-formed source; nothing was received or appended",
+                              "refusal_recorded": False, "authority_effect": "NONE_REFUSAL_ONLY"}, sort_keys=True))
+            return 1
+
     if args.ledger_component is not None or args.consumer_root is not None:
         try:
             bind_ledger_writers(args.ledger_component, args.consumer_root)
@@ -1359,7 +1395,8 @@ def main() -> int:
             registry=json.loads(args.registry.read_text(encoding="utf-8")),
             standing=(json.loads(args.standing.read_text(encoding="utf-8"))
                       if args.standing else None),
-            packet_id=args.packet_id, hb_epoch=hb_epoch, mesh_root=args.mesh_root)
+            packet_id=args.packet_id, hb_epoch=hb_epoch, mesh_root=args.mesh_root,
+            hb_epoch_source=epoch_source)
     except SystemExit as exc:
         refused = ledger_writer_refusal(
             exc, "resident-runtime/organization_manifest_ingress.py (--hb-epoch)", INTR_PROTOCOL_GOAL)
@@ -1385,4 +1422,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/organization_manifest_ingress.py", inputs=('--manifest', '--registry', '--standing')))

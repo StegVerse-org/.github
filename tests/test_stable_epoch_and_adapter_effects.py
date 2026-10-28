@@ -250,6 +250,27 @@ class MasterRecordsSubmitterTests(unittest.TestCase):
         paths, standing = self.write(work, self.chain(1))
         return paths[0], standing
 
+    @staticmethod
+    def ledger(receipts):
+        """An organization ledger whose chain holds the released receipts (F4: they are verified there)."""
+        root = Path(tempfile.mkdtemp())
+        loaded = []
+        for path in receipts:
+            try:
+                loaded.append(json.loads(Path(path).read_text()))
+            except (OSError, ValueError):
+                continue
+        for receipt in loaded:
+            if isinstance(receipt, dict) and isinstance(receipt.get("receipt_sha256"), str) \
+                    and receipt["receipt_sha256"].startswith("sha256:"):
+                target = root / "receipts" / (receipt["receipt_sha256"][7:] + ".json")
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(json.dumps(receipt))
+        if loaded and isinstance(loaded[-1], dict) and loaded[-1].get("receipt_sha256"):
+            (root / "HEAD.json").write_text(json.dumps({"organization": "StegVerse-org",
+                                                         "receipt_sha256": loaded[-1]["receipt_sha256"]}))
+        return root
+
     def submit(self, receipts, standing, mesh=None):
         if not isinstance(receipts, list):
             receipts = [receipts]
@@ -260,7 +281,9 @@ class MasterRecordsSubmitterTests(unittest.TestCase):
                     "--successor-ecosystem-state-sha256", "sha256:" + "2" * 64,
                     "--standing", str(standing)]
         if mesh is not None:
-            command += ["--mesh-root", str(mesh)]
+            ledger = self.ledger(receipts)
+            self.addCleanup(shutil.rmtree, ledger, True)
+            command += ["--mesh-root", str(mesh), "--org-ledger-root", str(ledger)]
         return subprocess.run(command, cwd=str(ROOT), capture_output=True, text=True)
 
     def published_frames(self, mesh):

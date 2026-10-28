@@ -23,7 +23,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
 GENESIS = json.loads((ROOT / "tests/fixtures/crossing-standing-genesis.json").read_text())
-FIXTURE = ROOT / "tests/fixtures/sdk-manifests/governance-to-llm-adapter.json"
+FIXTURE = ROOT / "tests/fixtures/sdk-manifests/governance-to-task-registry-disclosure.json"
 LEDGER_REF = "refs/stegverse/organization-ledger"
 MESH_REF = "refs/test/federation-mesh"
 DECIDER = "StegVerse-Labs"
@@ -109,7 +109,7 @@ class PeerAnswerReturned(unittest.TestCase):
         return packet
 
     def return_cycle(self, name):
-        return cycle.run(mesh_root=self.own, node_state_root=Path(self.temp.name) / name)
+        return cycle.run(mesh_root=self.own, node_state_root=Path(self.temp.name) / name, hb_epoch=4096)
 
     def ledger_tip(self):
         return subprocess.run(["git", "--git-dir", str(self.ledger), "rev-parse", LEDGER_REF],
@@ -134,6 +134,41 @@ class PeerAnswerReturned(unittest.TestCase):
         classes = [c["transition_class"] for c in repository["chain"]]
         self.assertIn("ORGANIZATION_EGRESS_CLOSED", classes)
         self.assertTrue(repository["every_receipt_retained_in_organization_ledger"])
+
+    def test_a_push_runs_epoch_source_is_recorded_on_every_receipt_it_writes(self):
+        """09:20Z ruling (b): the crossing and the closure, at both levels, record SUPPLIED,
+        source COMMITTED_REQUEST and the committed request's digest beside the epoch."""
+        source = {"source": "COMMITTED_REQUEST", "request_sha256": "sha256:" + "d" * 64}
+        self.answer_on_the_peer_mesh()
+        intake.intake(self.peer, own_mesh_root=self.own)
+        result = cycle.run(mesh_root=self.own, node_state_root=Path(self.temp.name) / "node", hb_epoch=4096,
+                           hb_epoch_source=source)
+        self.assertEqual(result["governance_returns"][0]["disposition"], "ALLOW", result)
+        store_module = egress.repository_ledger.ledger_store
+
+        def chain(locator):
+            store = store_module.open_store(store_module.parse_locator(locator))
+            cursor, found = (store.get(store_module.HEAD_KEY) or {}).get("receipt_sha256"), []
+            while cursor:
+                receipt = store.get(store_module.receipt_key(cursor))
+                found.append(receipt)
+                cursor = receipt.get("previous_receipt_sha256")
+            return found
+
+        repository = {r["transition_class"]: r for r in chain(os.environ["STEGVERSE_REPO_LEDGER_ROOT"])}
+        organization = chain(os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
+        crossing = repository["ORGANIZATION_FEDERATION_CROSSING_CONSUMED"]
+        closure = repository["ORGANIZATION_EGRESS_CLOSED"]
+        self.assertEqual(crossing["evidence"]["frame_reference"]["cycle_epoch_source"], source)
+        self.assertEqual(closure["evidence"]["hb_epoch_source"], source)
+        for repository_receipt, where in ((crossing, "frame_reference"), (closure, None)):
+            org_receipt = next(r for r in organization if r.get("repo_receipt_sha256") == repository_receipt["receipt_sha256"])
+            evidence = org_receipt["boundary_evidence"]
+            recorded = evidence[where]["cycle_epoch_source"] if where else evidence["hb_epoch_source"]
+            self.assertEqual(recorded, source, repository_receipt["transition_class"])
+            for receipt in (repository_receipt, org_receipt):
+                self.assertEqual((receipt["hb_reference"]["epoch"], receipt["hb_reference"]["derived_from_clock"]),
+                                 (4096, False))
 
     def test_a_replayed_answer_returns_the_closure_already_recorded(self):
         self.answer_on_the_peer_mesh()
@@ -165,7 +200,7 @@ class PeerAnswerReturned(unittest.TestCase):
         with mock.patch.object(runtime, "derive_execution_request", another_sdk):
             result = self.return_cycle("node-b")
             status = cycle.main(["--mesh-root", self.own, "--node-state-root",
-                                 str(Path(self.temp.name) / "node-c")])
+                                 str(Path(self.temp.name) / "node-c"), "--hb-epoch", "4096"])
         replayed = result["governance_returns"][0]
         self.assertEqual(self.ledger_tip(), tip, "a replayed answer appended to the ledger")
         self.assertEqual(replayed["disposition"], "CLOSURE_ALREADY_RECORDED", replayed)
@@ -412,12 +447,13 @@ class ReturnCycleCustodyRefusals(unittest.TestCase):
         with mock.patch.dict(os.environ, cleared):
             for name in self.LEDGERS:
                 os.environ.pop(name)
-            refused = cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node")
+            refused = cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node", hb_epoch=4096)
             with mock.patch.object(cycle.cycle.PR, "propagate_all", return_value={
                     "repositories_declared": 0, "repositories_present": 0,
                     "receipts_propagated": 0, "receipts_already_carried": 0}), \
                     mock.patch("builtins.print"):
-                federation = cycle.cycle.main(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node-f")
+                federation = cycle.cycle.main(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node-f",
+                                              hb_epoch=4096)
         self.assert_six_fields(refused)
         self.assertEqual(refused["failed_predicate"], "LEDGER_LOCATION_REQUIRED_FROM_MATERIALIZER")
         consumption = federation["consumption"]
@@ -432,26 +468,37 @@ class ReturnCycleCustodyRefusals(unittest.TestCase):
         out = Path(self.temp.name) / "out.json"
         with mock.patch.object(cycle.K, "consume_and_respond", side_effect=typed), mock.patch("builtins.print"):
             status = cycle.main(["--mesh-root", str(self.mesh), "--node-state-root", str(Path(self.temp.name) / "node"),
-                                 "--out", str(out)])
+                                 "--out", str(out), "--hb-epoch", "4096"])
         self.assertEqual(status, 1)
         self.assert_six_fields(json.loads(out.read_text()))
         with mock.patch.object(cycle.K, "consume_and_respond", side_effect=ValueError("something_else")):
             with self.assertRaises(ValueError):
-                cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node")
+                cycle.run(mesh_root=self.mesh, node_state_root=Path(self.temp.name) / "node", hb_epoch=4096)
 
 
 class ReturnWorkflowShape(unittest.TestCase):
-    """organization-governance-return.yml binds, takes in, returns, publishes and reads back in that order."""
+    """The governance-return writer job binds, takes in, returns, publishes and reads back in that order.
+
+    G17: organization-governance-return.yml is job governance-return of
+    .github/workflows/organization-ledger-writer.yml.
+    """
 
     def setUp(self):
-        self.workflow = (ROOT / ".github/workflows/organization-governance-return.yml").read_text()
+        from tests.workflow_surface import writer_job
+        self.workflow = writer_job("governance-return")
         self.steps = re.findall(r"- name: (.+)", self.workflow)
 
     def test_both_locators_are_required_dispatch_inputs(self):
-        inputs = self.workflow.split("workflow_dispatch:")[1].split("permissions:")[0]
-        for name in ("mesh_root", "peer_mesh"):
-            self.assertRegex(inputs, name + r":\n\s+description: .*\n\s+required: true")
-        self.assertNotIn("pull_request", self.workflow.split("permissions:")[0])
+        # G17 removed workflow_dispatch: dispatched locators are FAIL_CLOSED pending
+        # (six fields, registry); a committed return request supplies both on push.
+        from tests.workflow_surface import registry
+        head = self.workflow.split("\njobs:\n", 1)[0]
+        self.assertNotIn("workflow_dispatch:", head)
+        self.assertNotIn("pull_request", head)
+        pending = [r for r in registry()["fail_closed_pending"] if "peer_mesh" in r["surface"]]
+        self.assertEqual(len(pending), 1)
+        for name in ("DISPATCH_MESH_ROOT", "DISPATCH_PEER_MESH"):
+            self.assertIn(name, self.workflow)
 
     def test_the_order_is_bind_intake_return_publish_mesh_publish_ledger_read_back(self):
         order = ["Bind the designated mesh to this run",
@@ -484,10 +531,13 @@ class ReturnWorkflowShape(unittest.TestCase):
         # SDK the return defaults to, so a request is returned on the SDK it was
         # received under.
         pins = set()
-        for name in ("organization-ledger-transition.yml", "governance-inter-org-route-validation.yml",
-                     "organization-manifest-ingress-validation.yml"):
-            text = (ROOT / ".github/workflows" / name).read_text()
-            pins.update(re.findall(r"repository: StegVerse-org/StegVerse-SDK\n\s+ref: ([0-9a-f]{40})", text))
+        from tests.workflow_surface import catalog_groups, writer_job
+        pins.update(re.findall(r"repository: StegVerse-org/StegVerse-SDK\n\s+ref: ([0-9a-f]{40})",
+                               writer_job("ledger-transition")))
+        for name in ("governance-inter-org-route-validation.yml", "organization-manifest-ingress-validation.yml"):
+            for group in catalog_groups(name):
+                if group["runner"].get("x_repository") == "StegVerse-org/StegVerse-SDK":
+                    pins.add(group["runner"]["x_ref"])
         self.assertEqual(len(pin), 1)
         self.assertEqual(pins, set(pin), "the receiving and validating workflows pin the SDK the return defaults to")
         self.assertIn("SDK_REF_IS_AN_EXACT_COMMIT", self.workflow)

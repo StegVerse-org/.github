@@ -45,19 +45,27 @@ def _refused(refusal):
             "authority_effect": "NONE_REFUSAL_ONLY"}
 
 
-def run(*, mesh_root, node_state_root):
+def run(*, mesh_root, node_state_root, hb_epoch=None, hb_epoch_source=None):
     if mesh_root is None:
         return _refused(cycle.mesh_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
+    # A cycle without a supplied epoch consumes nothing (§Q): it refuses
+    # NOT_SUPPLIED before the mesh is read, so every frame stays pending on the
+    # mesh, with no quarantine and no seen-marker, for a cycle that has one.
+    refused = cycle.epoch_refused(hb_epoch)
+    if refused is not None:
+        return _refused({**refused, "retry_entrypoint": RETRY_ENTRYPOINT, "consequence_committed": False})
     repo_ledger_root = cycle.supplied_ledger("STEGVERSE_REPO_LEDGER_ROOT")
     org_ledger_root = cycle.supplied_ledger("STEGVERSE_ORG_LEDGER_ROOT")
     try:
         results = K.consume_and_respond(ROOT, mesh_root=mesh_root, node_state_root=node_state_root,
-                                        repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root)
+                                        repo_ledger_root=repo_ledger_root, org_ledger_root=org_ledger_root,
+                                        hb_epoch=int(str(hb_epoch)), hb_epoch_source=hb_epoch_source)
     except ValueError as exc:
         if "ledger_location_required_from_materializer" not in str(exc):
             raise
         return _refused(cycle.ledger_location_refusal(retry_entrypoint=RETRY_ENTRYPOINT))
-    returns = cycle.returns_for_consumed(results, mesh_root=mesh_root)
+    returns = cycle.returns_for_consumed(results, mesh_root=mesh_root, hb_epoch=int(str(hb_epoch)),
+                                         hb_epoch_source=hb_epoch_source)
     return {
         "schema": SCHEMA,
         "organization": K.load_registry(ROOT)["organization"],
@@ -77,8 +85,14 @@ def main(argv=None):
     parser.add_argument("--mesh-root", required=True, help="this organization's bound mesh locator")
     parser.add_argument("--node-state-root", type=Path, required=True)
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--hb-epoch", default=None,
+                        help="the supplied heartbeat epoch (ASCII digits >= 32); without one nothing is consumed")
+    parser.add_argument("--hb-epoch-source-json", default=None,
+                        help="where the epoch came from (source COMMITTED_REQUEST and the request digest); recorded")
     args = parser.parse_args(argv)
-    result = run(mesh_root=args.mesh_root, node_state_root=args.node_state_root)
+    source = json.loads(args.hb_epoch_source_json) if args.hb_epoch_source_json else None
+    result = run(mesh_root=args.mesh_root, node_state_root=args.node_state_root, hb_epoch=args.hb_epoch,
+                 hb_epoch_source=source)
     text = json.dumps(result, indent=2, sort_keys=True, default=str)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -89,4 +103,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/governance_return_cycle.py"))

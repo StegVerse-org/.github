@@ -1,0 +1,9 @@
+{
+  "authority_effect": "NONE",
+  "baseline_is_a_ceiling_not_an_endorsement": true,
+  "excluded": [],
+  "known_failing": [],
+  "pre_existing_until": "organization ledger genesis (StegVerse-org/.github#162): every failure that fails at a pull request's exact base is receipted PRE_EXISTING_BASELINE_FAILURE (non-blocking) until then; skips and collection errors are never pre-existing and stay REQUIRED_VERIFICATION_SKIPPED; introduced failures block",
+  "schema": "stegverse.test-suite-baseline/v1",
+  "target": "tests"
+}
