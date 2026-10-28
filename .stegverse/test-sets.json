@@ -3,7 +3,7 @@
  "generated_from": {
   "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
   "spec": ".stegverse/test-set-spec.json",
-  "spec_sha256": "86c5e67cce079ec9f50459a2de56d4eca106c0aa38ddf349f2837d2018ab8c6e"
+  "spec_sha256": "99f407d236dab701d23955f385a710ce5c02f6876f0265b772f32ea1017e18e4"
  },
  "inputs": {
   "jsonschema": {
@@ -3042,7 +3042,49 @@
     "tests/test_receipt_time_base.py"
    ],
    "tests": [
-    "tests.test_receipt_time_base"
+    "tests.test_receipt_time_base.CliEpochParsingTests",
+    "tests.test_receipt_time_base.ClockProbeTests",
+    "tests.test_receipt_time_base.ClockSourceReceiptTests",
+    "tests.test_receipt_time_base.EgressCloseCliEpochTests",
+    "tests.test_receipt_time_base.FederationCycleEpochTests",
+    "tests.test_receipt_time_base.GovernanceReturnEpochTests",
+    "tests.test_receipt_time_base.IngressEpochProvenanceProbe",
+    "tests.test_receipt_time_base.MarkerVocabularyTests",
+    "tests.test_receipt_time_base.OrganizationReceiptTests",
+    "tests.test_receipt_time_base.ProcessBoundaryExitSplitTests",
+    "tests.test_receipt_time_base.ReleasedSegmentHeadEpochTests",
+    "tests.test_receipt_time_base.RepositoryAppendEpochTests",
+    "tests.test_receipt_time_base.RepositoryLedgerContractTests",
+    "tests.test_receipt_time_base.RepositoryReceiptTests",
+    "tests.test_receipt_time_base.RequestEpochResolutionTests",
+    "tests.test_receipt_time_base.ResidentDispatchTests",
+    "tests.test_receipt_time_base.ResidentExecutorEpochTests",
+    "tests.test_receipt_time_base.SharedRuleReferenceTests",
+    "tests.test_receipt_time_base.SourceReceiptProvenanceTests",
+    "tests.test_receipt_time_base.WorkflowEpochGateTests",
+    "tests.test_receipt_time_base.WorkflowTriggerProbeTests",
+    "tests.test_receipt_time_base.WriterCarriedProvenanceTests",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_a_fault_after_head_is_committed_is_retried_into_the_recorded_receipt",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_an_exact_rerun_returns_the_recorded_receipt_and_another_transition_collides",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_an_unusable_input_file_is_terminal_and_writes_nothing",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_the_repository_emitter",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_the_organization_writer",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_every_writer_cli_runs_through_the_six_field_wrapper",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_the_wrapper_classifies_each_failure"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_receipt_time_base.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_receipt_time_base.py"
+   ],
+   "tests": [
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_a_too_deep_inline_json_argument_is_a_terminal_input_refusal"
    ]
   },
   {
