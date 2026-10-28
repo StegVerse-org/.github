@@ -19,6 +19,15 @@
         "tests/test_select_tests_for_change.py",
         "tests/test_unittest_junit.py"
       ]
+    },
+    {
+      "id": "sv-push-receipt-vendored-producer",
+      "paths": [
+        "resident-runtime/vendor/labs_bb780200/**"
+      ],
+      "tests": [
+        "tests/test_sv_push_receipt_append.py"
+      ]
     }
   ],
   "no_test_paths": [
