@@ -21,10 +21,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.workflow_surface import assert_read_only_validation, step_bodies, writer_job
+
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = sorted((ROOT / "tests/fixtures/merge-transfer").glob("*.json"))
-WRITER = ROOT / ".github/workflows/organization-ledger-merge-transfer.yml"
-VALIDATION = ROOT / ".github/workflows/organization-ledger-merge-transfer-validation.yml"
+# G17: the writer is job merge-transfer of the organization ledger writer; the
+# validation workflow is catalog groups run by the stable validator dispatcher.
+VALIDATION = "organization-ledger-merge-transfer-validation.yml"
 PENDING = ROOT / ".stegverse/merge-transfer/pending.json"
 
 
@@ -317,16 +320,22 @@ class Refusals(unittest.TestCase):
 
 class PushedCommits(unittest.TestCase):
     def test_pending_first_then_the_first_parent_range(self):
-        fixture = json.loads(FIXTURES[0].read_text())
+        fixtures = [json.loads(p.read_text()) for p in FIXTURES]
+        # the newest pending merge: every other pending merge is its ancestor
+        fixture = next(f for f in fixtures if all(
+            subprocess.run(["git", "-C", str(ROOT), "merge-base", "--is-ancestor", g["commit"]["merge_commit"],
+                            f["commit"]["merge_commit"]]).returncode == 0 for g in fixtures))
         merge = fixture["commit"]["merge_commit"]
         first_parent = fixture["commit"]["parents"][0]
+        pending = mt.pending(PENDING)
         self.assertEqual(mt.pushed_commits(first_parent, merge, None), [merge])
         self.assertEqual(mt.pushed_commits("0" * 40, merge, None), [merge])
-        self.assertEqual(mt.pushed_commits(first_parent, merge, PENDING), [merge])
+        self.assertEqual(mt.pushed_commits(first_parent, merge, PENDING), pending)
         head = git("rev-parse", "HEAD").strip()
         listed = mt.pushed_commits(merge, head, PENDING)
-        self.assertEqual(listed[0], merge)
-        self.assertEqual(listed[1:], git("rev-list", "--first-parent", "--reverse", merge + ".." + head).split())
+        self.assertEqual(listed[:len(pending)], pending)
+        self.assertEqual(listed[len(pending):],
+                         git("rev-list", "--first-parent", "--reverse", merge + ".." + head).split())
 
     def test_a_pending_merge_not_on_main_is_refused(self):
         fixture = json.loads(FIXTURES[0].read_text())
@@ -342,7 +351,7 @@ class WorkflowShape(unittest.TestCase):
     """A merge on main triggers the append; nothing else does, and nothing on a PR writes."""
 
     def test_the_writer_runs_only_on_push_to_main(self):
-        text = WRITER.read_text()
+        text = writer_job("merge-transfer")
         on = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
         self.assertEqual(on.strip(), "push:\n    branches: [main]")
         for word in ("workflow_dispatch", "schedule", "cron", "repository_dispatch", "workflow_run",
@@ -357,16 +366,8 @@ class WorkflowShape(unittest.TestCase):
         self.assertIn("merge_transfer.py verify", text)
 
     def test_the_validation_workflow_is_read_only_and_never_pushes(self):
-        text = VALIDATION.read_text()
-        on = text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
-        self.assertTrue(on.lstrip().startswith("pull_request:"))
-        for word in ("push:", "workflow_dispatch", "schedule", "repository_dispatch"):
-            self.assertNotIn(word, on)
-        self.assertIn("\npermissions:\n  contents: read\n", text)
-        self.assertNotIn("contents: write", text)
-        self.assertNotIn("git push", text)
-        self.assertNotIn("secrets.", text)
-        self.assertNotIn("if:", text)  # every job and step runs; nothing is conditionally skipped
+        # every folded step runs; nothing is conditionally skipped, nothing writes
+        assert_read_only_validation(self, VALIDATION)
 
 
 if __name__ == "__main__":

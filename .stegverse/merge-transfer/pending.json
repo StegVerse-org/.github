@@ -7,6 +7,11 @@
       "merge_commit": "f160ac7d61891ee8b187368fbf05372eacc8064c",
       "pull_request": 200,
       "observed_state": "FAIL_CLOSED MERGE_TRANSFER_RECEIPT_NOT_LEDGERED at ledger tip 2acec0e1cfd158a6a3313ad422737caf41badda3"
+    },
+    {
+      "merge_commit": "f40ad7dd47160add7f1f18559b2dda6c73f57f29",
+      "pull_request": 203,
+      "observed_state": "FAIL_CLOSED MERGE_TRANSFER_RECEIPT_NOT_LEDGERED at ledger tip 824e0b76d470081bcabceb096c59e0695361e6d4"
     }
   ]
 }

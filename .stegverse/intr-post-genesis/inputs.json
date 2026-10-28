@@ -1,0 +1,84 @@
+{
+ "schema": "stegverse.intr-post-genesis-inputs/v1",
+ "owning_existing_goal": "StegVerse-org/.github#162",
+ "observed": "2026-10-25 by Lane B (91117956) against StegVerse-org/.github main 98556a33 (156 declared paths, 13 organizations), after SV-011/.github#26 (32caf077) wired SV-011 and the twelve SV-011 inbound rows landed (reader reads both receipt generations); anonymous fetches with HOME=/tmp/anonhome, credential.helper= and no auth header; committed facts, not read by any verifier from a clock or the network",
+ "genesis": {
+  "SV-LLM": {
+   "pr": "SV-LLM/.github#50",
+   "head": "c0444fbcd6793d09c2b8e46311b57225408b81ae",
+   "inbound_rows": [
+    "StegVerse-Labs->SV-LLM:intr-destination",
+    "StegVerse-org->SV-LLM:intr-destination"
+   ]
+  }
+ },
+ "destination_ingress_on_main": {
+  "AaCT-E": true,
+  "Admissible-Existence": true,
+  "AdmittedCode": true,
+  "Data-Continuation": true,
+  "ECAT-ICAT-Formal": true,
+  "GCAT-BCAT-Engine": true,
+  "SV-011": true,
+  "SV-LLM": true,
+  "StegGhost": true,
+  "StegVerse-002": true,
+  "StegVerse-Labs": true,
+  "StegVerse-org": true,
+  "Triad-Test": true
+ },
+ "destination_ingress_evidence": {
+  "AaCT-E": "main e8253adc: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
+  "Admissible-Existence": "main 048d0d4b: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
+  "AdmittedCode": "main 165959c4: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
+  "Data-Continuation": "main da66a199: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
+  "ECAT-ICAT-Formal": "main e4817c83: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
+  "GCAT-BCAT-Engine": "main a6a5f636: resident-runtime/intr_path_ingress.py blob 93a5ebbe with the public-ledger route; invoked from .github/workflows/intr-path-ingress.yml",
+  "SV-011": "main 32caf077: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route (SV-011/.github#26); invoked from .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer), which reads each inbound row's source ledger anonymously before consume",
+  "SV-LLM": "main b591579d: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
+  "StegGhost": "main 99311bb4: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
+  "StegVerse-002": "main 31d4b801: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer); head epoch supplied by the committed .stegverse/organization-ledger/epoch-packet.json",
+  "StegVerse-Labs": "main 680e261f: resident-runtime/intr_path_ingress.py blob 93a5ebbe with the public-ledger route; invoked from .github/workflows/intr-path-ingress.yml",
+  "StegVerse-org": "main 98556a33: resident-runtime/intr_path_ingress.py blob 2c525892 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)",
+  "Triad-Test": "main 03f37a2a: resident-runtime/intr_path_ingress.py blob 7bc58c72 with the public-ledger route; invoked from .github/workflows/organization-ledger-writer.yml (the intr-path-ingress steps are folded into the writer)"
+ },
+ "anonymous_ledger_read": {
+  "AaCT-E": "7c07caf366bf6a5531d67089f8b2838e9064facd",
+  "Admissible-Existence": "f4fe48e878fa363c54941ea703c331c3e949298b",
+  "AdmittedCode": "458250525f838ff3a9bf1b7bf7447072af3dd379",
+  "Data-Continuation": "c97bf4a679cfd549cb334a61fcf24a8aa93f69a8",
+  "ECAT-ICAT-Formal": "9eadd046f44951373d82a79c287aa1f2bed04c30",
+  "GCAT-BCAT-Engine": "295bd916f45c1221dbb2c3e46ff2a6e6a586f3b1",
+  "SV-011": "bdef7a2b474dcca55fb829814a779a45dc1d8a74",
+  "SV-LLM": "e01e34cd686c85aba022b1e7ba8e225bdc159991",
+  "StegGhost": "4aaf76844a0d440b3fbfe9071856eb898de6e531",
+  "StegVerse-002": "b190634a8b23ae3e9f0e8dbc18a8b2163fd8c738",
+  "StegVerse-Labs": "393a659424a7933c04b75f02b1039db57b791228",
+  "StegVerse-org": "c9b47d693768c800f8f87d208c0e609abc124555",
+  "Triad-Test": "4314c84866210b985c7675418cd5959128debfcd"
+ },
+ "tvc": {
+  "retry_entrypoint": "StegVerse-Labs/TVC#532 (durable-queue manifest transition) + StegVerse-Labs/TVC#535 (single-use TV/TVC read lease); no resident host",
+  "owning_existing_goal": "TVC-PRIVATE-SOURCE-READ-001 (StegVerse-Labs/TVC#33); InTr mesh StegVerse-org/.github#162"
+ },
+ "authority_effect": "NONE",
+ "source_writers": {
+  "SV-LLM": {
+   "pr": "SV-LLM/.github#50",
+   "head": "c0444fbcd6793d09c2b8e46311b57225408b81ae"
+  }
+ },
+ "source_writer_entity": "INTR_MESH_PATH_TRANSFER via resident-runtime/intr_path_transfer.py + .github/workflows/intr-path-transfer.yml (workflow_run), linked to ORGANIZATION_MAIN_MERGE_TRANSFER from organization-ledger-merge-transfer.yml. P4's B1 writer (StegVerse-org/.github#222 main_change_receipt.py) resolves to this established entity: its census (main_change_receipt_census.py EXISTING_WRITER) counts a repository with the merge-transfer writer as covered.",
+ "ledger_head_epoch_owner": {
+  "Admissible-Existence": {
+   "repair": "Admissible-Existence/.github#100 (E1 successor of #97, B-P31: writers require a supplied epoch, no clock fallback; folded into #99) or #97 admitted, then an AE ledger append carrying a supplied epoch (derived_from_clock false); the 6 AE-end paths then re-seal from the anonymous copy",
+   "retry_entrypoint": "Admissible-Existence/.github .github/workflows/organization-ledger-transition.yml self-closure with a supplied hb_epoch (AE resident host), then the AE intr-path workflows",
+   "owning_existing_goal": "Admissible-Existence/.github#100 / #97 (B-P31 HB_EPOCH_NOT_SUPPLIED_PATH_LIVE, for Claude/ChatGPT to reconcile); InTr mesh StegVerse-org/.github#162"
+  }
+ },
+ "admitted_genesis": {
+  "StegVerse-org": "StegVerse-org/.github#224 merged at 575c520d (head 973a843e)",
+  "StegVerse-Labs": "StegVerse-Labs/.github#3312 merged at 149f16e8 (head 50432089)",
+  "Admissible-Existence": "Admissible-Existence/.github#99 closed unmerged (head 0a9a8a8e); no AE genesis PR is open"
+ }
+}

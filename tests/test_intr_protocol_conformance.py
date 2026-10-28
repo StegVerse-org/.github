@@ -14,10 +14,17 @@ intr = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(intr)
 
 ORGS = ["StegVerse-org", "StegVerse-Labs", "SV-011", "GCAT-BCAT-Engine",
-        "Admissible-Existence", "StegGhost", "StegVerse-002", "SV-LLM"]
-# Pinned expectations for the snapshot. SV-011's row pins SV-011/.github#14,
-# which declares authority_effect on its intr-destination binding.
+        "Admissible-Existence", "StegGhost", "StegVerse-002", "SV-LLM",
+        "AaCT-E", "AdmittedCode", "Data-Continuation", "ECAT-ICAT-Formal", "Triad-Test"]
+# The other three organizations of the federation directory
+# (org-boundary/registry/federation.json, denominator 16). None installs the
+# receiving operation or the ledger, so each fails closed at its first
+# unobserved predicate (class B: missing capability). AaCT-E, AdmittedCode,
+# Data-Continuation, ECAT-ICAT-Formal and Triad-Test installed the component
+# (snapshots refreshed from their main, StegVerse-org/.github#162 Lane B).
+UNINSTALLED = ["Infrastructure-Continuity-Ventures", "formalism-tests", "master-records"]
 EXPECTED = {org: ("ALLOW", None) for org in ORGS}
+EXPECTED.update({org: ("FAIL_CLOSED", "PEER_ADDRESS_FORM_IS_SLUG_DOT_PROFILE") for org in UNINSTALLED})
 
 
 def snapshot(org):
@@ -76,7 +83,19 @@ class MeshSnapshot(unittest.TestCase):
         got = {r["subject"]["organization"]: (r["disposition"], r.get("failed_predicate"))
                for r in report["results"]}
         self.assertEqual(got, EXPECTED)
-        self.assertEqual(report["counts"], {"ALLOW": 8, "DENY": 0, "FAIL_CLOSED": 0})
+        self.assertEqual(report["counts"], {"ALLOW": 13, "DENY": 0, "FAIL_CLOSED": 3})
+        for row in report["results"]:
+            if row["disposition"] != "ALLOW":
+                for field in intr.load_contract()["non_allow_fields"]:
+                    self.assertTrue(row.get(field), field)
+
+    def test_snapshot_covers_the_federation_directory(self):
+        federation = json.loads((ROOT / "org-boundary" / "registry" / "federation.json").read_text())
+        manifest = json.loads(SNAPSHOT.read_text())
+        declared = sorted(o["organization"] for o in federation["organizations"])
+        self.assertEqual(len(declared), federation["denominator"])
+        self.assertEqual(sorted(r["organization"] for r in manifest["destinations"]), declared)
+        self.assertEqual(sorted(ORGS + UNINSTALLED), declared)
 
     def test_mesh_report_is_deterministic(self):
         self.assertEqual(intr.canon(intr.conform_mesh(SNAPSHOT)), intr.canon(intr.conform_mesh(SNAPSHOT)))

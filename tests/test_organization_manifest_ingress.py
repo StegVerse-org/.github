@@ -25,7 +25,7 @@ from stegverse.manifest_state_transition_runtime import derive_execution_request
 
 ROOT = Path(__file__).resolve().parents[1]
 CAPABILITY_REGISTRY = json.loads((ROOT / "org-boundary/registry/services.json").read_text())
-FIXTURE = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+FIXTURE = ROOT / "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 GENESIS = ROOT / "tests/fixtures/crossing-standing-genesis.json"
 BUILD_SPEC = ROOT / "tests/fixtures/sdk-manifest-build-spec.json"
 OWNER = "StegVerse-org/.github"
@@ -181,7 +181,7 @@ class ReceivingOperationTests(unittest.TestCase):
         # changed.
         spec = json.loads(BUILD_SPEC.read_text(encoding="utf-8"))
         arguments = {"data": spec["data"], "processor_request": spec["processor_request"],
-                     **spec["common"], **spec["manifests"]["task-registry-disclosure-to-llm-adapter"],
+                     **spec["common"], **spec["manifests"]["task-registry-disclosure"],
                      "source_output_id": source_output_id}
         return build_manifest(**arguments)
 
@@ -226,7 +226,7 @@ class ReceivingOperationTests(unittest.TestCase):
         committed fixture's, so the two cannot drift apart.
         """
         spec = json.loads(BUILD_SPEC.read_text(encoding="utf-8"))
-        declared = spec["manifests"]["unadmitted-capability-to-llm-adapter"]
+        declared = spec["manifests"]["unadmitted-capability-to-task-registry-disclosure"]
         return build_manifest(
             data=declared["data"], source_framework="organization-boundary-test",
             source_output_id=source_output_id, process=declared["process"],
@@ -332,6 +332,52 @@ class ReceivingOperationTests(unittest.TestCase):
             "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
         self.assertEqual(repository["evidence"]["disposition"], "FAIL_CLOSED")
 
+    def readback_module(self):
+        spec = importlib.util.spec_from_file_location(
+            "organization_ledger_readback", ROOT / "resident-runtime/organization_ledger_readback.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_a_refused_manifest_carrying_non_ascii_text_is_bound_at_readback(self):
+        """The readback hashes a refused manifest the way ingress recorded it (H27).
+
+        Ingress hashes the submitted manifest with the default ensure_ascii=True;
+        the readback used ensure_ascii=False, so a refused manifest carrying
+        non-ASCII text could not be bound to its refusal receipt.
+        """
+        readback = self.readback_module()
+        submitted = self.unadmitted(source_output_id="refused-caf\u00e9-\u2713")
+        self.assertNotEqual(json.dumps(submitted, ensure_ascii=False), json.dumps(submitted))
+        result = self.refuse(manifest=submitted)
+        self.assertIs(result["refusal_recorded"], True)
+        repository, = self.ledger_receipts(
+            "STEGVERSE_REPO_LEDGER_ROOT", "stegverse.repo-transition-receipt/v1",
+            "ORGANIZATION_SDK_MANIFEST_INGRESS_REFUSED")
+        recorded = repository["evidence"]["submitted_manifest_sha256"]
+        self.assertEqual(readback.submitted_manifest_sha(submitted), recorded)
+        # The receipt-body encoding is a different digest for this manifest.
+        self.assertNotEqual(readback.sha(submitted), recorded)
+        bound = readback.readback(os.environ["STEGVERSE_ORG_LEDGER_ROOT"], result, submitted)
+        self.assertIs(bound["ingress_refused"], True)
+        self.assertIs(bound["ingress_receipt_bound_to_manifest"], True)
+        self.assertEqual(bound["ingress_organization_receipt_sha256"],
+                         result["refusal_organization_receipt_sha256"])
+
+    def test_a_refused_manifest_that_does_not_match_its_recorded_digest_fails_closed(self):
+        readback = self.readback_module()
+        submitted = self.unadmitted(source_output_id="refused-caf\u00e9-\u2713")
+        result = self.refuse(manifest=submitted)
+        self.assertIs(result["refusal_recorded"], True)
+        location = os.environ["STEGVERSE_ORG_LEDGER_ROOT"]
+        for other in (self.unadmitted(source_output_id="refused-cafe-\u2713"),
+                      {**submitted, "label": "\u2713"}, None):
+            with self.subTest(other=other):
+                with self.assertRaises(readback.ReadbackRefused) as refused:
+                    readback.readback(location, result, other)
+                self.assertEqual(refused.exception.failed_predicate,
+                                 "RECEIPT_IS_BOUND_TO_THE_SUBMITTED_MANIFEST")
+
     def test_a_manifest_the_crossing_cannot_drive_is_recorded_rather_than_raised(self):
         """No declared standing used to leave the operation by exception.
 
@@ -422,7 +468,7 @@ class ReceivingOperationTests(unittest.TestCase):
         """Reading the resolution, rather than assuming it, is what refuses this."""
         request = dict(derive_execution_request(manifest(), ingress.boundary()))
         resolution = json.loads(json.dumps(request["manifest_declared_destination"]))
-        resolution["receiving_operation"]["owner_repository"] = "StegVerse-org/LLM-adapter"
+        resolution["receiving_operation"]["owner_repository"] = "StegVerse-org/TV"
         request["manifest_declared_destination"] = resolution
         with self.assertRaises(ValueError) as refused:
             ingress.bound_here(request)

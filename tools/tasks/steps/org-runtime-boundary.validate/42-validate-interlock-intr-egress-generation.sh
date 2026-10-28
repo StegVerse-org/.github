@@ -1,0 +1,2 @@
+python org-runtime/runtime_boundary.py egress --peer-org validation-peer --interlock-id validation-interlock --payload-sha256 fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210 --transition-elements-ref validation-transition-elements | tee /tmp/egress.json
+python -c 'import json; x=json.load(open("/tmp/egress.json")); assert x["direction"]=="EGRESS"; assert x["protocol"]=="InTr"; assert x["github_token_runtime_authority"]=="NONE"'

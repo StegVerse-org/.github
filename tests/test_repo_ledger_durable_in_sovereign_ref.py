@@ -264,7 +264,8 @@ class BindingTests(unittest.TestCase):
         self.assertEqual(contract["replay_rule"], "REPOSITORY_REPLAY_MUST_NOT_REQUIRE_ORGANIZATION_OR_ECOSYSTEM_REPLAY")
 
     def test_the_transition_workflow_binds_the_root_from_the_contract_not_the_runner(self):
-        workflow = (ROOT / ".github/workflows/organization-ledger-transition.yml").read_text()
+        from tests.workflow_surface import writer_job  # G17: job ledger-transition of the writer
+        workflow = writer_job("ledger-transition")
         self.assertNotIn("runner.temp }}/repo-ledger", workflow)
         self.assertIn('export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$REPO_LEDGER_NAMESPACE"', workflow)
         self.assertIn("repository_ledger_location", workflow)

@@ -1,0 +1,2494 @@
+{
+  "schema": "stegverse.resident-runtime-convergence-dry-run/v3",
+  "baseline": "StegVerse-org/.github@0f9481af324fc0cf8e46c2446ad69de07f9a8a9d",
+  "run": "local dry run 2026-10-18, sandbox only, no append; round 2: hunk reconciliation, org extension, closure and config additions; round 3 (Coordination 04:55Z scope change): close() predicate evaluated on InTr's six close-port heads; full-module convergence kept as non-blocking record",
+  "pr186_close_globals": [
+    "CLOSED_CLASS",
+    "CLOSURE_REFUSED_CLASS",
+    "FAIL_CLOSED",
+    "INTR_PROTOCOL_GOAL",
+    "OPERATION_ID",
+    "RESPONSE_ABSENT_FAILURE_CODE",
+    "RESPONSE_ABSENT_PREDICATE",
+    "RESULT_SCHEMA",
+    "_record",
+    "_recorded_attestation",
+    "closure_record",
+    "epoch_refusal",
+    "kernel",
+    "reconstruct_far_side_chain",
+    "recorded_emission",
+    "resolve_destination",
+    "sha",
+    "this_organization",
+    "verify_closure"
+  ],
+  "orgs": {
+    "SV-011": {
+      "disposition": "FAIL_CLOSED",
+      "reconciliation": {
+        "ported": 19,
+        "ported_but_not_carried": 0,
+        "superseded": 28,
+        "undocumented": 0,
+        "unreconciled": 0
+      },
+      "extension": {
+        "imports": [],
+        "lines": 319,
+        "path": "resident-runtime/organization_egress_boundary.py",
+        "sha256": "b78538bd88ea740104561d04ebda3d53dd2b7fa0f9f11a2be2f8257dcf5abefa",
+        "symbols": [
+          "EgressRefused",
+          "declared_capabilities",
+          "destination_bindings",
+          "peer_capability_service",
+          "resolve_destination",
+          "closability_refusal",
+          "_constraint_fields",
+          "emission_record",
+          "emit_refusal_record",
+          "closure_record",
+          "_record",
+          "_refusal_result",
+          "emit"
+        ]
+      },
+      "closure_added": [
+        {
+          "git_blob_sha": "2c70486ca6f242bf9ceb0a04f34b8f3934e3eb5b",
+          "path": "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+          "sha256": "398c794b3d1c617787a5cf1edd59d3420584800aec01f718b9e9611f5f9b7bab"
+        },
+        {
+          "git_blob_sha": "b99a65edd3c0b33da095ed64f433edefd786e44d",
+          "path": "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+          "sha256": "1003399b44ed8a44fbb2fa77be73fbc8f0eefa2c17ab9187b8d41b5dc1991c46"
+        },
+        {
+          "git_blob_sha": "8d9171c6f2ff83991b7c0da0e06ecbb7fb08ce5c",
+          "path": "org-boundary/runtime/manifest_selection.py",
+          "sha256": "188601c5c2adf86353e4ccfbc808b00f186398ca7cdda17ede4a263992ac76db"
+        },
+        {
+          "git_blob_sha": "504ad7f2e726a57b96427531462814814adfdd94",
+          "path": "org-boundary/runtime/node_standing.py",
+          "sha256": "a24b7d2cc546fa57e4467e55d075e717249e20c2624b4299b36dca08f307ac8e"
+        },
+        {
+          "git_blob_sha": "b6dc84cf1f5c0dc8709e23c2673df720ae1df13f",
+          "path": "org-boundary/runtime/origin_attestation.py",
+          "sha256": "d736f10892c6b1666fd525879eebda48d194adc51b33e3357bfe7d2a04533647"
+        },
+        {
+          "git_blob_sha": "20eeeef6b2dd03e3b091f661c9dc1db6ecbc1f8f",
+          "path": "org-kernel/node_store.py",
+          "sha256": "fb125119a6b8783fcc810f79719e989702565aacfd027308aeeece2e29367874"
+        },
+        {
+          "git_blob_sha": "5f989e6eb95d8a495902ee7821bf6200976d2ea1",
+          "path": "tests/peer_organization.py",
+          "sha256": "fb47e1aef438988008e9a12e57e1c348faad7f0a4ded52783ccd383264290bc1"
+        }
+      ],
+      "config_added": [
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/peer_destination_resolution",
+          "value_sha256": "sha256:07d1e9907ce8346b58f209184b0db4c534b5f742cad15a13bd861b9e001f99bc"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/origin_attestation",
+          "value_sha256": "sha256:df72f08940c2e1bb1ca1a0fefcd21c148c8333f41c9394ce7e8689eb2aaec696"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "478911384c798d876a860eeff67e3d9dc981110694d8c924b6ef187038e3d762",
+          "after_sha256": "020f22f84c718fd4c6f66d5892575ffd6684a0587da164967b46326b13730f8d",
+          "after_lines": 1283,
+          "baseline_prefix_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_sha256": "22ce454ae109a2c91c45a66c5a4b43a92a62b96ddb799d50d5dcdc3dd39aeeef"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "after_sha256": "235099ffd119a4a41dda2d99c63221161d7e7529c1bfe544f28e8628d84f827f",
+          "after_lines": 732,
+          "baseline_prefix_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_sha256": "55c1995cb87dfc1a1abeddb52833e4f3251aaf17b35242085113e23d5c949aab"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "after_sha256": "e5739233ee9f956f3635846a7e57cd447c56684786c0b6cd4c4c92c6c088f2c5",
+          "after_lines": 208,
+          "baseline_prefix_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_sha256": "20e14b9793a700b590036f677faaa65c2b5858714a5dcaf5cbd27684a638ff1f"
+        }
+      ],
+      "closure_still_absent": [
+        "org-runtime/activation.json",
+        "resident-runtime/activation-manifest.json"
+      ],
+      "tests_before_round2": {
+        "tests_run": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ]
+      },
+      "tests_after": {
+        "tests_run": 52,
+        "passed": 16,
+        "failures": 2,
+        "errors": 34,
+        "by_cause": {
+          "DIVERGENT_CLOSURE_FILE:org-kernel/kernel.py": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-runtime/runtime_boundary.py": [
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_unbound_egress_still_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+          ],
+          "UNATTRIBUTED": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_organization_consumes_the_repository_receipt_it_did_not_author",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded"
+          ]
+        }
+      },
+      "org_tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "before_passed": true,
+          "after_passed": false,
+          "after_failures_by_cause": {
+            "PENDING_INTR_CLOSE_PORT": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          }
+        }
+      ],
+      "refusals": [
+        {
+          "detail": {
+            "path": "org-runtime/interlock-intr.json",
+            "pointer": "/egress/capability_destination_bindings"
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "ORG_CONFIG_KEY_THE_BASELINE_READS_IS_DECLARED_BY_THE_ORGANIZATION",
+          "failure_code": "ORG_CONFIG_KEY_UNDECIDABLE",
+          "next_attempt": "rerun converge once the organization's overlay declares egress.capability_destination_bindings (or this manifest records that it declares none)",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4) for H52; routing declared by the target organization's own overlay",
+          "required_evidence_or_repair": "org-runtime/interlock-intr.json/egress/capability_destination_bindings: the baseline value is StegVerse-org's routing policy (which capability goes to which destination organization and decision authority). ORRD conformance item 2: the manifest determines the destination, so this organization declares its own bindings; it is not copied",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "absent": [
+              "org-runtime/activation.json",
+              "resident-runtime/activation-manifest.json"
+            ],
+            "absent_org_owned": [
+              "org-runtime/activation.json",
+              "resident-runtime/activation-manifest.json"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+          "failure_code": "BASELINE_DEPENDENCY_CLOSURE_ABSENT",
+          "next_attempt": "rerun converge once the closure resolves in the target",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "declare each absent closure file (detail) as a closure addition of baseline bytes, or, where it is that organization's own configuration, have the organization author it",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "AssertionError",
+              "AttributeError",
+              "KeyError"
+            ],
+            "import_failed": false,
+            "tests_run": 52,
+            "unattributed": [
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_organization_consumes_the_repository_receipt_it_did_not_author",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the unattributed failures named in detail (evidence/tests.out); each is a divergence between a carried org extension or org-owned closure file and the baseline contract",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "org-kernel/kernel.py": {
+              "missing_baseline_symbols": [
+                "CROSSING_CONSUMED_CLASS",
+                "CROSSING_REFUSED_CLASS",
+                "CUSTODY_REFUSALS",
+                "DETERMINISTIC_REFUSALS",
+                "PosixStateStore",
+                "__all__",
+                "_own_module",
+                "_store_spec",
+                "addressed_node_state_store",
+                "aggregate_ecosystem_results",
+                "build_ecosystem_packets",
+                "build_endpoint_response",
+                "consume_and_respond",
+                "crossing_custody",
+                "federation_cycles",
+                "federation_root",
+                "federation_seen_frame_names",
+                "handle_control_message",
+                "ingest_recorded",
+                "manifest_selection",
+                "mark_federation_frame_seen",
+                "mesh_store",
+                "node_standing",
+                "node_state_store",
+                "node_store_module",
+                "persist_outbox",
+                "persist_work_request",
+                "publish_ecosystem_from_directory",
+                "publish_ecosystem_message",
+                "record_crossing",
+                "record_federation_cycle",
+                "record_refusal",
+                "refusal_disposition",
+                "required_node_state",
+                "resident_status",
+                "resolve_node_state_root"
+              ],
+              "signature_differs": [
+                "canon",
+                "ingest_frame",
+                "node_state_provenance",
+                "publish_frame",
+                "scan_addressed_frames",
+                "sha"
+              ],
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes"
+              ]
+            },
+            "org-runtime/runtime_boundary.py": {
+              "missing_baseline_symbols": [
+                "ACT",
+                "ATTESTATION_MODULE",
+                "CAPABILITY_BINDING_KEY",
+                "EGRESS_EMITTING_OPERATION_ID",
+                "EGRESS_NON_AUTHORIZING_FLAGS",
+                "NON_AUTHORIZING_BINDING_FLAGS",
+                "activation_request",
+                "canonical",
+                "capability_bindings_resolve",
+                "egress_destinations_resolve_from_the_directory",
+                "egress_emitting_operation",
+                "egress_emitting_operation_bound",
+                "egress_refuses_an_unclosable_crossing",
+                "envelope",
+                "kernel_responded_request_classes",
+                "origin_attestation_is_bound",
+                "sdk_manifest_ingress_bound"
+              ],
+              "signature_differs": [
+                "capability_addresses_resolve",
+                "capability_bindings",
+                "peer_capability_addresses_derive"
+              ],
+              "tests": [
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_unbound_egress_still_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+              ]
+            }
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "THE_TARGETS_CLOSURE_FILES_EXPOSE_THE_API_THE_BASELINE_CALLS",
+          "failure_code": "BASELINE_CLOSURE_FILE_DIVERGENT",
+          "next_attempt": "rerun converge once those closure files expose the baseline API",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "each closure file in detail is the organization's own revision and lacks baseline symbols or signatures the converged files call; converge it as a further manifest unit with its own hunk reconciliation, or have the organization add the named symbols",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "baseline_tests": [],
+            "org_tests": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "CONVERGED_CLOSE_IS_THE_INTR_PORT_FOR_THIS_ORGANIZATION",
+          "failure_code": "INTR_CLOSE_PORT_PENDING",
+          "next_attempt": "rerun converge on the target commit that carries the InTr close() port",
+          "owning_existing_goal": "StegVerse-org/.github#162 (Lane B, InTr), H52 per-org close() port",
+          "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "full_module_convergence_blocking": false
+    },
+    "GCAT-BCAT-Engine": {
+      "disposition": "FAIL_CLOSED",
+      "reconciliation": {
+        "ported": 32,
+        "ported_but_not_carried": 0,
+        "superseded": 22,
+        "undocumented": 0,
+        "unreconciled": 0
+      },
+      "extension": {
+        "imports": [],
+        "lines": 362,
+        "path": "resident-runtime/organization_egress_boundary.py",
+        "sha256": "fff2c4bebe9f5a89665cc0d0d96cde87135ee94a0e3dea296cad4e640127cfe4",
+        "symbols": [
+          "RESPONDED_REQUEST_CLASSES",
+          "kernel",
+          "ledger",
+          "_boundary",
+          "declared_capabilities",
+          "outbound_entries",
+          "select_outbound_binding",
+          "peer_capability_service",
+          "resolve_destination",
+          "closability_refusal",
+          "_unattested",
+          "emission_record",
+          "emit_refusal_record",
+          "closure_record",
+          "_record",
+          "_refusal_result",
+          "emit",
+          "recorded_emission"
+        ]
+      },
+      "closure_added": [
+        {
+          "git_blob_sha": "2c70486ca6f242bf9ceb0a04f34b8f3934e3eb5b",
+          "path": "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+          "sha256": "398c794b3d1c617787a5cf1edd59d3420584800aec01f718b9e9611f5f9b7bab"
+        },
+        {
+          "git_blob_sha": "b99a65edd3c0b33da095ed64f433edefd786e44d",
+          "path": "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+          "sha256": "1003399b44ed8a44fbb2fa77be73fbc8f0eefa2c17ab9187b8d41b5dc1991c46"
+        },
+        {
+          "git_blob_sha": "8d9171c6f2ff83991b7c0da0e06ecbb7fb08ce5c",
+          "path": "org-boundary/runtime/manifest_selection.py",
+          "sha256": "188601c5c2adf86353e4ccfbc808b00f186398ca7cdda17ede4a263992ac76db"
+        },
+        {
+          "git_blob_sha": "504ad7f2e726a57b96427531462814814adfdd94",
+          "path": "org-boundary/runtime/node_standing.py",
+          "sha256": "a24b7d2cc546fa57e4467e55d075e717249e20c2624b4299b36dca08f307ac8e"
+        },
+        {
+          "git_blob_sha": "b6dc84cf1f5c0dc8709e23c2673df720ae1df13f",
+          "path": "org-boundary/runtime/origin_attestation.py",
+          "sha256": "d736f10892c6b1666fd525879eebda48d194adc51b33e3357bfe7d2a04533647"
+        },
+        {
+          "git_blob_sha": "20eeeef6b2dd03e3b091f661c9dc1db6ecbc1f8f",
+          "path": "org-kernel/node_store.py",
+          "sha256": "fb125119a6b8783fcc810f79719e989702565aacfd027308aeeece2e29367874"
+        },
+        {
+          "git_blob_sha": "5f989e6eb95d8a495902ee7821bf6200976d2ea1",
+          "path": "tests/peer_organization.py",
+          "sha256": "fb47e1aef438988008e9a12e57e1c348faad7f0a4ded52783ccd383264290bc1"
+        }
+      ],
+      "config_added": [
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/peer_destination_resolution",
+          "value_sha256": "sha256:07d1e9907ce8346b58f209184b0db4c534b5f742cad15a13bd861b9e001f99bc"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/origin_attestation",
+          "value_sha256": "sha256:df72f08940c2e1bb1ca1a0fefcd21c148c8333f41c9394ce7e8689eb2aaec696"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/emitting_operation",
+          "value_sha256": "sha256:9bcaf1a1f03c19583b990ff8a5cea0e68c11b8fb4a1d520bc21979b443434b57"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/emitting_operation_rule",
+          "value_sha256": "sha256:a0ddb713ffcf5b2e3ece780ab70eb43ba414802b2f4df8fff0ba0a99d9211da8"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/closable_crossing_precondition",
+          "value_sha256": "sha256:efd434bd6fb90c9e1c75b9f5204db3b6346c5cee08aad01de5b03036fbfe3803"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "48fb1d7c023eff5d1d3868daae231add74ea3ce1b640c916783d02043bc1c669",
+          "after_sha256": "8b42bbb32cbe360422e863b512e4634e2722f1b0f8c181843eea12ee729d9092",
+          "after_lines": 1326,
+          "baseline_prefix_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_sha256": "5d996d5650c0fb4b35237ec8fa9576ed41e8df0ebee624a7c734ac6514ff7418"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "after_sha256": "2308c137cd390f501397f85d63f634cffcefd3afbab60e9b3388fefe82779070",
+          "after_lines": 732,
+          "baseline_prefix_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_sha256": "104fd2c86b30a584a8138fb606595c53ec495c0ad38263b4b642e40f696dea52"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "after_sha256": "e373a8ce1f1ae2cdaf00911042b7d339f8e7afd850d110312b365de6cd3f3336",
+          "after_lines": 208,
+          "baseline_prefix_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_sha256": "9e4135fe8baa70de5cd30086c8e2b46bcfc5e50ce31639f4b369160b321c84b6"
+        }
+      ],
+      "closure_still_absent": [],
+      "tests_before_round2": {
+        "tests_run": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ]
+      },
+      "tests_after": {
+        "tests_run": 52,
+        "passed": 13,
+        "failures": 4,
+        "errors": 35,
+        "by_cause": {
+          "DIVERGENT_CLOSURE_FILE:org-boundary/registry/federation.json": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-kernel/kernel.py": [
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_answering_set_is_the_kernels_own",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-runtime/runtime_boundary.py": [
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_unbound_egress_still_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+          ],
+          "UNATTRIBUTED": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_below_the_declared_kernel_requirement_is_not_refused",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_ordinary_peer_resolves_at_its_organization_control_service",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+          ]
+        }
+      },
+      "org_tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "before_passed": true,
+          "after_passed": false,
+          "after_failures_by_cause": {
+            "PENDING_INTR_CLOSE_PORT": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          }
+        }
+      ],
+      "refusals": [
+        {
+          "detail": {
+            "path": "org-runtime/interlock-intr.json",
+            "pointer": "/egress/capability_destination_bindings"
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "ORG_CONFIG_KEY_THE_BASELINE_READS_IS_DECLARED_BY_THE_ORGANIZATION",
+          "failure_code": "ORG_CONFIG_KEY_UNDECIDABLE",
+          "next_attempt": "rerun converge once the organization's overlay declares egress.capability_destination_bindings (or this manifest records that it declares none)",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4) for H52; routing declared by the target organization's own overlay",
+          "required_evidence_or_repair": "org-runtime/interlock-intr.json/egress/capability_destination_bindings: the baseline value is StegVerse-org's routing policy (which capability goes to which destination organization and decision authority). ORRD conformance item 2: the manifest determines the destination, so this organization declares its own bindings; it is not copied",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "AssertionError",
+              "AttributeError",
+              "KeyError",
+              "TypeError"
+            ],
+            "import_failed": false,
+            "tests_run": 52,
+            "unattributed": [
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_below_the_declared_kernel_requirement_is_not_refused",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_ordinary_peer_resolves_at_its_organization_control_service",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the unattributed failures named in detail (evidence/tests.out); each is a divergence between a carried org extension or org-owned closure file and the baseline contract",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "org-boundary/registry/federation.json": {
+              "missing_baseline_symbols": null,
+              "signature_differs": null,
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there"
+              ]
+            },
+            "org-kernel/kernel.py": {
+              "missing_baseline_symbols": [
+                "CROSSING_CONSUMED_CLASS",
+                "CROSSING_REFUSED_CLASS",
+                "CUSTODY_REFUSALS",
+                "DETERMINISTIC_REFUSALS",
+                "PosixStateStore",
+                "RESPONDED_REQUEST_CLASSES",
+                "_own_module",
+                "_store_spec",
+                "addressed_node_state_store",
+                "build_endpoint_response",
+                "carried_standing",
+                "crossing_custody",
+                "federation_cycles",
+                "ingest_recorded",
+                "manifest_selection",
+                "mesh_store",
+                "node_standing",
+                "node_state_provenance",
+                "node_state_store",
+                "node_store_module",
+                "record_crossing",
+                "record_federation_cycle",
+                "record_refusal",
+                "refusal_disposition",
+                "required_node_state",
+                "resolve_federation_root",
+                "resolve_node_state_root",
+                "validate_hb_reference"
+              ],
+              "signature_differs": [
+                "build_ecosystem_packets",
+                "build_packet",
+                "carrier_frame",
+                "consume_addressed_frames",
+                "consume_and_respond",
+                "dispatch",
+                "federation_root",
+                "federation_seen_frame_names",
+                "handle_control_message",
+                "ingest_frame",
+                "load_registry",
+                "mark_federation_frame_seen",
+                "persist_outbox",
+                "persist_work_request",
+                "publish_ecosystem_message",
+                "publish_frame",
+                "publish_packet",
+                "resident_status",
+                "scan_addressed_frames"
+              ],
+              "tests": [
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_answering_set_is_the_kernels_own",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy"
+              ]
+            },
+            "org-runtime/runtime_boundary.py": {
+              "missing_baseline_symbols": [
+                "ATTESTATION_MODULE",
+                "CAPABILITY_BINDING_KEY",
+                "EGRESS_EMITTING_OPERATION_ID",
+                "EGRESS_NON_AUTHORIZING_FLAGS",
+                "NON_AUTHORIZING_BINDING_FLAGS",
+                "capability_bindings_resolve",
+                "egress_destinations_resolve_from_the_directory",
+                "egress_emitting_operation",
+                "egress_emitting_operation_bound",
+                "egress_refuses_an_unclosable_crossing",
+                "kernel_responded_request_classes",
+                "origin_attestation_is_bound",
+                "sdk_manifest_ingress_bound"
+              ],
+              "signature_differs": [],
+              "tests": [
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_unbound_egress_still_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+              ]
+            }
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "THE_TARGETS_CLOSURE_FILES_EXPOSE_THE_API_THE_BASELINE_CALLS",
+          "failure_code": "BASELINE_CLOSURE_FILE_DIVERGENT",
+          "next_attempt": "rerun converge once those closure files expose the baseline API",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "each closure file in detail is the organization's own revision and lacks baseline symbols or signatures the converged files call; converge it as a further manifest unit with its own hunk reconciliation, or have the organization add the named symbols",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "baseline_tests": [],
+            "org_tests": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "CONVERGED_CLOSE_IS_THE_INTR_PORT_FOR_THIS_ORGANIZATION",
+          "failure_code": "INTR_CLOSE_PORT_PENDING",
+          "next_attempt": "rerun converge on the target commit that carries the InTr close() port",
+          "owning_existing_goal": "StegVerse-org/.github#162 (Lane B, InTr), H52 per-org close() port",
+          "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "full_module_convergence_blocking": false
+    },
+    "Admissible-Existence": {
+      "disposition": "FAIL_CLOSED",
+      "reconciliation": {
+        "ported": 28,
+        "ported_but_not_carried": 0,
+        "superseded": 25,
+        "undocumented": 0,
+        "unreconciled": 0
+      },
+      "extension": {
+        "imports": [
+          "import os"
+        ],
+        "lines": 359,
+        "path": "resident-runtime/organization_egress_boundary.py",
+        "sha256": "6a074988b1e8ddbd117212b9349e00647f5ffd7944f659719529be6f21f519e9",
+        "symbols": [
+          "kernel",
+          "repository_ledger",
+          "organization_ledger",
+          "_boundary",
+          "declared_capabilities",
+          "outbound_entries",
+          "select_outbound_binding",
+          "peer_capability_service",
+          "resolve_destination",
+          "closability_refusal",
+          "_unattested",
+          "emission_record",
+          "emit_refusal_record",
+          "closure_record",
+          "_record",
+          "_require_ledger_roots",
+          "_refusal_result",
+          "emit"
+        ]
+      },
+      "closure_added": [
+        {
+          "git_blob_sha": "b99a65edd3c0b33da095ed64f433edefd786e44d",
+          "path": "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+          "sha256": "1003399b44ed8a44fbb2fa77be73fbc8f0eefa2c17ab9187b8d41b5dc1991c46"
+        },
+        {
+          "git_blob_sha": "8d9171c6f2ff83991b7c0da0e06ecbb7fb08ce5c",
+          "path": "org-boundary/runtime/manifest_selection.py",
+          "sha256": "188601c5c2adf86353e4ccfbc808b00f186398ca7cdda17ede4a263992ac76db"
+        },
+        {
+          "git_blob_sha": "b6dc84cf1f5c0dc8709e23c2673df720ae1df13f",
+          "path": "org-boundary/runtime/origin_attestation.py",
+          "sha256": "d736f10892c6b1666fd525879eebda48d194adc51b33e3357bfe7d2a04533647"
+        },
+        {
+          "git_blob_sha": "20eeeef6b2dd03e3b091f661c9dc1db6ecbc1f8f",
+          "path": "org-kernel/node_store.py",
+          "sha256": "fb125119a6b8783fcc810f79719e989702565aacfd027308aeeece2e29367874"
+        },
+        {
+          "git_blob_sha": "5f989e6eb95d8a495902ee7821bf6200976d2ea1",
+          "path": "tests/peer_organization.py",
+          "sha256": "fb47e1aef438988008e9a12e57e1c348faad7f0a4ded52783ccd383264290bc1"
+        }
+      ],
+      "config_added": [
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/peer_destination_resolution",
+          "value_sha256": "sha256:07d1e9907ce8346b58f209184b0db4c534b5f742cad15a13bd861b9e001f99bc"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/origin_attestation",
+          "value_sha256": "sha256:df72f08940c2e1bb1ca1a0fefcd21c148c8333f41c9394ce7e8689eb2aaec696"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/closable_crossing_precondition",
+          "value_sha256": "sha256:efd434bd6fb90c9e1c75b9f5204db3b6346c5cee08aad01de5b03036fbfe3803"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "bf4ff06b7e52f22ac7440edb2534bba01787016cb91809f243b878cce41cf057",
+          "after_sha256": "d51d4d91bb378b4e53167c7e432d3d25fbe27634130a00374f7a1cc80031ff8c",
+          "after_lines": 1323,
+          "baseline_prefix_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_sha256": "1d7f618395fd845ac1d60bbb534c6a7e50d86bda4b712f4b8932be726f43dedf"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "after_sha256": "25a530d8adc300685190f1b07f0f4c66b44a27ed065d8b737c2629fc8c3959f5",
+          "after_lines": 732,
+          "baseline_prefix_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_sha256": "acadd160c14a0d43aa036820848361182860794cbf3cb5eaa9997a8c2b20c5f1"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "after_sha256": "0f5d8754416c0bf2bb35d283ab45273cc7d9c5568aa3ed67eb083ba1ec0e96a2",
+          "after_lines": 208,
+          "baseline_prefix_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_sha256": "431a923d6ac46c42ce0acc28a65ebf535bd443dd353faaf08794934832470f81"
+        }
+      ],
+      "closure_still_absent": [],
+      "tests_before_round2": {
+        "tests_run": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ]
+      },
+      "tests_after": {
+        "tests_run": 52,
+        "passed": 11,
+        "failures": 4,
+        "errors": 37,
+        "by_cause": {
+          "DIVERGENT_CLOSURE_FILE:.stegverse/transition-ledger/emit.py": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_replayed_emission_at_a_supplied_epoch_publishes_and_records_once"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-boundary/registry/federation.json": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-kernel/kernel.py": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-runtime/runtime_boundary.py": [
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_unbound_egress_still_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+          ],
+          "UNATTRIBUTED": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_below_the_declared_kernel_requirement_is_not_refused",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_ordinary_peer_resolves_at_its_organization_control_service",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+          ]
+        }
+      },
+      "org_tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "before_passed": true,
+          "after_passed": false,
+          "after_failures_by_cause": {
+            "PENDING_INTR_CLOSE_PORT": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          }
+        }
+      ],
+      "refusals": [
+        {
+          "detail": {
+            "path": "org-runtime/interlock-intr.json",
+            "pointer": "/egress/capability_destination_bindings"
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "ORG_CONFIG_KEY_THE_BASELINE_READS_IS_DECLARED_BY_THE_ORGANIZATION",
+          "failure_code": "ORG_CONFIG_KEY_UNDECIDABLE",
+          "next_attempt": "rerun converge once the organization's overlay declares egress.capability_destination_bindings (or this manifest records that it declares none)",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4) for H52; routing declared by the target organization's own overlay",
+          "required_evidence_or_repair": "org-runtime/interlock-intr.json/egress/capability_destination_bindings: the baseline value is StegVerse-org's routing policy (which capability goes to which destination organization and decision authority). ORRD conformance item 2: the manifest determines the destination, so this organization declares its own bindings; it is not copied",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "AssertionError",
+              "AttributeError",
+              "KeyError",
+              "TypeError",
+              "ValueError"
+            ],
+            "import_failed": false,
+            "tests_run": 52,
+            "unattributed": [
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_below_the_declared_kernel_requirement_is_not_refused",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_ordinary_peer_resolves_at_its_organization_control_service",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the unattributed failures named in detail (evidence/tests.out); each is a divergence between a carried org extension or org-owned closure file and the baseline contract",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            ".stegverse/transition-ledger/emit.py": {
+              "missing_baseline_symbols": [
+                "C",
+                "CHAIN_BREAK",
+                "DIGEST",
+                "RepoLedgerChainBreak",
+                "_ABSENT",
+                "_spec",
+                "_sspec",
+                "chain",
+                "chain_break_refusal",
+                "kernel",
+                "node"
+              ],
+              "signature_differs": [
+                "append",
+                "recorded"
+              ],
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_replayed_emission_at_a_supplied_epoch_publishes_and_records_once"
+              ]
+            },
+            "org-boundary/registry/federation.json": {
+              "missing_baseline_symbols": null,
+              "signature_differs": null,
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there"
+              ]
+            },
+            "org-kernel/kernel.py": {
+              "missing_baseline_symbols": [
+                "CROSSING_CONSUMED_CLASS",
+                "CROSSING_REFUSED_CLASS",
+                "CUSTODY_REFUSALS",
+                "DETERMINISTIC_REFUSALS",
+                "PosixStateStore",
+                "_own_module",
+                "_store_spec",
+                "addressed_node_state_store",
+                "build_endpoint_response",
+                "crossing_custody",
+                "federation_cycles",
+                "ingest_recorded",
+                "manifest_selection",
+                "mesh_store",
+                "node_state_provenance",
+                "node_state_store",
+                "node_store_module",
+                "record_crossing",
+                "record_federation_cycle",
+                "record_refusal",
+                "refusal_disposition",
+                "required_node_state",
+                "resolve_federation_root",
+                "resolve_node_state_root",
+                "validate_hb_reference"
+              ],
+              "signature_differs": [
+                "carrier_frame",
+                "consume_addressed_frames",
+                "consume_and_respond",
+                "dispatch",
+                "federation_root",
+                "federation_seen_frame_names",
+                "handle_control_message",
+                "hb_reference",
+                "ingest_frame",
+                "load_registry",
+                "mark_federation_frame_seen",
+                "persist_outbox",
+                "persist_work_request",
+                "publish_ecosystem_from_directory",
+                "publish_frame",
+                "publish_packet",
+                "resident_status",
+                "scan_addressed_frames"
+              ],
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes"
+              ]
+            },
+            "org-runtime/runtime_boundary.py": {
+              "missing_baseline_symbols": [
+                "ATTESTATION_MODULE",
+                "CAPABILITY_BINDING_KEY",
+                "EGRESS_EMITTING_OPERATION_ID",
+                "EGRESS_NON_AUTHORIZING_FLAGS",
+                "NON_AUTHORIZING_BINDING_FLAGS",
+                "capability_bindings_resolve",
+                "egress_destinations_resolve_from_the_directory",
+                "egress_emitting_operation",
+                "egress_emitting_operation_bound",
+                "egress_refuses_an_unclosable_crossing",
+                "kernel_responded_request_classes",
+                "origin_attestation_is_bound",
+                "sdk_manifest_ingress_bound"
+              ],
+              "signature_differs": [],
+              "tests": [
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_unbound_egress_still_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+              ]
+            }
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "THE_TARGETS_CLOSURE_FILES_EXPOSE_THE_API_THE_BASELINE_CALLS",
+          "failure_code": "BASELINE_CLOSURE_FILE_DIVERGENT",
+          "next_attempt": "rerun converge once those closure files expose the baseline API",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "each closure file in detail is the organization's own revision and lacks baseline symbols or signatures the converged files call; converge it as a further manifest unit with its own hunk reconciliation, or have the organization add the named symbols",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "baseline_tests": [],
+            "org_tests": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "CONVERGED_CLOSE_IS_THE_INTR_PORT_FOR_THIS_ORGANIZATION",
+          "failure_code": "INTR_CLOSE_PORT_PENDING",
+          "next_attempt": "rerun converge on the target commit that carries the InTr close() port",
+          "owning_existing_goal": "StegVerse-org/.github#162 (Lane B, InTr), H52 per-org close() port",
+          "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "full_module_convergence_blocking": false
+    },
+    "StegGhost": {
+      "disposition": "FAIL_CLOSED",
+      "reconciliation": {
+        "ported": 52,
+        "ported_but_not_carried": 0,
+        "superseded": 32,
+        "undocumented": 0,
+        "unreconciled": 0
+      },
+      "extension": {
+        "imports": [],
+        "lines": 576,
+        "path": "resident-runtime/organization_egress_boundary.py",
+        "sha256": "ff042a3f4bdb76b343562e0921757721879edb27a0df7549db5e8a304a2dba0d",
+        "symbols": [
+          "RESULT_SCHEMA",
+          "EMISSION_SCHEMA",
+          "CLOSURE_SCHEMA",
+          "INTENDED_ACTION_MATCH",
+          "MATCH_SCHEMA",
+          "MATCH_SATISFIED_CLASS",
+          "MATCH_REFUSED_CLASS",
+          "disclosure_module",
+          "declared_capabilities",
+          "peer_capability_service",
+          "resolve_destination",
+          "closability_refusal",
+          "resolve_standing",
+          "_attestation",
+          "emission_record",
+          "emit_refusal_record",
+          "closure_record",
+          "_record",
+          "emit",
+          "_refusal_result",
+          "request_bilateral_match",
+          "observe_bilateral_match"
+        ]
+      },
+      "closure_added": [
+        {
+          "git_blob_sha": "b99a65edd3c0b33da095ed64f433edefd786e44d",
+          "path": "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+          "sha256": "1003399b44ed8a44fbb2fa77be73fbc8f0eefa2c17ab9187b8d41b5dc1991c46"
+        },
+        {
+          "git_blob_sha": "20eeeef6b2dd03e3b091f661c9dc1db6ecbc1f8f",
+          "path": "org-kernel/node_store.py",
+          "sha256": "fb125119a6b8783fcc810f79719e989702565aacfd027308aeeece2e29367874"
+        },
+        {
+          "git_blob_sha": "5f989e6eb95d8a495902ee7821bf6200976d2ea1",
+          "path": "tests/peer_organization.py",
+          "sha256": "fb47e1aef438988008e9a12e57e1c348faad7f0a4ded52783ccd383264290bc1"
+        }
+      ],
+      "config_added": [
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/peer_destination_resolution",
+          "value_sha256": "sha256:07d1e9907ce8346b58f209184b0db4c534b5f742cad15a13bd861b9e001f99bc"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/closable_crossing_precondition",
+          "value_sha256": "sha256:efd434bd6fb90c9e1c75b9f5204db3b6346c5cee08aad01de5b03036fbfe3803"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "35b54677d6b36355c8efabca843f6c5c2b5580dbd89788de178044e30b9a21a7",
+          "after_sha256": "e30261d0591aef2d0788d703954804a9b27776fc61340e7e48a2a6a449fb5283",
+          "after_lines": 1540,
+          "baseline_prefix_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_sha256": "1fbc88a7d03acd1265a19167cc5ce2a018037daf17ba65773f8a9d4ff8c0ae4d"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "after_sha256": "f3110bd270b0b24d518d4e326dc1a401c177dd3ebb3522e32d7fa3f66e65c677",
+          "after_lines": 732,
+          "baseline_prefix_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_sha256": "708a2c637b4a850702641842d680bd8f4aa2e346f11b9f6a98b6109a055e3b34"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "0caf696eaa28f9c95dcc028a5a6968e452215813a8afc0de8dc18c8586444ccb",
+          "after_sha256": "73d7bdfcea74f8816bc77f352a4a84432523785a56bdf0bb21d3baa54fcb758c",
+          "after_lines": 208,
+          "baseline_prefix_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_sha256": "c775c73bc9a1f741bae7237ca8810a9e7a2da50b9c994015e4eea514f2fe9c7a"
+        }
+      ],
+      "closure_still_absent": [],
+      "tests_before_round2": {
+        "tests_run": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ]
+      },
+      "tests_after": {
+        "tests_run": 52,
+        "passed": 11,
+        "failures": 16,
+        "errors": 25,
+        "by_cause": {
+          "DIVERGENT_CLOSURE_FILE:org-boundary/registry/federation.json": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-kernel/kernel.py": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-runtime/runtime_boundary.py": [
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+          ],
+          "UNATTRIBUTED": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_refusal_is_never_recorded_as_a_crossing_that_left",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_record_says_a_boundary_was_crossed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_answering_set_is_the_kernels_own",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_replayed_emission_at_a_supplied_epoch_publishes_and_records_once",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+          ]
+        }
+      },
+      "org_tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "before_passed": true,
+          "after_passed": false,
+          "after_failures_by_cause": {
+            "PENDING_INTR_CLOSE_PORT": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          }
+        },
+        {
+          "id": "resident-runtime/tests/test_organization_egress_boundary.py",
+          "before_passed": true,
+          "after_passed": false,
+          "after_failures_by_cause": {
+            "PENDING_INTR_CLOSE_PORT": [
+              "resident-runtime/tests/test_organization_egress_boundary.py"
+            ]
+          }
+        },
+        {
+          "id": "resident-runtime/tests/test_origin_attestation_seam.py",
+          "before_passed": true,
+          "after_passed": true,
+          "after_failures_by_cause": {}
+        }
+      ],
+      "refusals": [
+        {
+          "detail": {
+            "path": "org-runtime/interlock-intr.json",
+            "pointer": "/egress/capability_destination_bindings"
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "ORG_CONFIG_KEY_THE_BASELINE_READS_IS_DECLARED_BY_THE_ORGANIZATION",
+          "failure_code": "ORG_CONFIG_KEY_UNDECIDABLE",
+          "next_attempt": "rerun converge once the organization's overlay declares egress.capability_destination_bindings (or this manifest records that it declares none)",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4) for H52; routing declared by the target organization's own overlay",
+          "required_evidence_or_repair": "org-runtime/interlock-intr.json/egress/capability_destination_bindings: the baseline value is StegVerse-org's routing policy (which capability goes to which destination organization and decision authority). ORRD conformance item 2: the manifest determines the destination, so this organization declares its own bindings; it is not copied",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "AssertionError",
+              "AttributeError",
+              "KeyError",
+              "TypeError"
+            ],
+            "import_failed": false,
+            "tests_run": 52,
+            "unattributed": [
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_refusal_is_never_recorded_as_a_crossing_that_left",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_record_says_a_boundary_was_crossed",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_answering_set_is_the_kernels_own",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_replayed_emission_at_a_supplied_epoch_publishes_and_records_once",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the unattributed failures named in detail (evidence/tests.out); each is a divergence between a carried org extension or org-owned closure file and the baseline contract",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "org-boundary/registry/federation.json": {
+              "missing_baseline_symbols": null,
+              "signature_differs": null,
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there"
+              ]
+            },
+            "org-kernel/kernel.py": {
+              "missing_baseline_symbols": [
+                "CROSSING_CONSUMED_CLASS",
+                "CROSSING_REFUSED_CLASS",
+                "CUSTODY_REFUSALS",
+                "DETERMINISTIC_REFUSALS",
+                "PosixStateStore",
+                "_own_module",
+                "_store_spec",
+                "addressed_node_state_store",
+                "build_endpoint_response",
+                "crossing_custody",
+                "federation_cycles",
+                "ingest_recorded",
+                "mesh_store",
+                "node_state_provenance",
+                "node_state_store",
+                "node_store_module",
+                "record_crossing",
+                "record_federation_cycle",
+                "record_refusal",
+                "refusal_disposition",
+                "required_node_state",
+                "resolve_federation_root",
+                "resolve_node_state_root"
+              ],
+              "signature_differs": [
+                "carrier_frame",
+                "collect_ecosystem_responses",
+                "consume_addressed_frames",
+                "consume_and_respond",
+                "dispatch",
+                "federation_root",
+                "federation_seen_frame_names",
+                "handle_control_message",
+                "ingest_frame",
+                "load_registry",
+                "mark_federation_frame_seen",
+                "persist_outbox",
+                "persist_work_request",
+                "publish_ecosystem_from_directory",
+                "publish_ecosystem_message",
+                "publish_frame",
+                "publish_packet",
+                "resident_status",
+                "scan_addressed_frames"
+              ],
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes"
+              ]
+            },
+            "org-runtime/runtime_boundary.py": {
+              "missing_baseline_symbols": [
+                "CAPABILITY_BINDING_KEY",
+                "EGRESS_EMITTING_OPERATION_ID",
+                "EGRESS_NON_AUTHORIZING_FLAGS",
+                "NON_AUTHORIZING_BINDING_FLAGS",
+                "capability_bindings_resolve",
+                "egress_destinations_resolve_from_the_directory",
+                "egress_emitting_operation",
+                "egress_refuses_an_unclosable_crossing",
+                "kernel_responded_request_classes",
+                "sdk_manifest_ingress_bound"
+              ],
+              "signature_differs": [],
+              "tests": [
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+              ]
+            }
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "THE_TARGETS_CLOSURE_FILES_EXPOSE_THE_API_THE_BASELINE_CALLS",
+          "failure_code": "BASELINE_CLOSURE_FILE_DIVERGENT",
+          "next_attempt": "rerun converge once those closure files expose the baseline API",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "each closure file in detail is the organization's own revision and lacks baseline symbols or signatures the converged files call; converge it as a further manifest unit with its own hunk reconciliation, or have the organization add the named symbols",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "baseline_tests": [],
+            "org_tests": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers",
+              "resident-runtime/tests/test_organization_egress_boundary.py"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "CONVERGED_CLOSE_IS_THE_INTR_PORT_FOR_THIS_ORGANIZATION",
+          "failure_code": "INTR_CLOSE_PORT_PENDING",
+          "next_attempt": "rerun converge on the target commit that carries the InTr close() port",
+          "owning_existing_goal": "StegVerse-org/.github#162 (Lane B, InTr), H52 per-org close() port",
+          "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "full_module_convergence_blocking": false
+    },
+    "StegVerse-002": {
+      "disposition": "FAIL_CLOSED",
+      "reconciliation": {
+        "ported": 34,
+        "ported_but_not_carried": 0,
+        "superseded": 27,
+        "undocumented": 0,
+        "unreconciled": 0
+      },
+      "extension": {
+        "imports": [],
+        "lines": 377,
+        "path": "resident-runtime/organization_egress_boundary.py",
+        "sha256": "fbd86d664d7fcfd01038504a4a626a7f3b6d9f9d325d0b4e9bb38e7eeabd6766",
+        "symbols": [
+          "OPERATION_ID",
+          "kernel",
+          "repository_ledger",
+          "organization_ledger",
+          "ANSWERED_REQUEST_CLASSES",
+          "_boundary",
+          "declared_capabilities",
+          "outbound_entries",
+          "select_outbound_binding",
+          "peer_capability_service",
+          "resolve_destination",
+          "closability_refusal",
+          "_unattested",
+          "emission_record",
+          "emit_refusal_record",
+          "closure_record",
+          "_record",
+          "_publish_epoch",
+          "_refusal_result",
+          "emit"
+        ]
+      },
+      "closure_added": [
+        {
+          "git_blob_sha": "2c70486ca6f242bf9ceb0a04f34b8f3934e3eb5b",
+          "path": "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
+          "sha256": "398c794b3d1c617787a5cf1edd59d3420584800aec01f718b9e9611f5f9b7bab"
+        },
+        {
+          "git_blob_sha": "b99a65edd3c0b33da095ed64f433edefd786e44d",
+          "path": "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+          "sha256": "1003399b44ed8a44fbb2fa77be73fbc8f0eefa2c17ab9187b8d41b5dc1991c46"
+        },
+        {
+          "git_blob_sha": "8d9171c6f2ff83991b7c0da0e06ecbb7fb08ce5c",
+          "path": "org-boundary/runtime/manifest_selection.py",
+          "sha256": "188601c5c2adf86353e4ccfbc808b00f186398ca7cdda17ede4a263992ac76db"
+        },
+        {
+          "git_blob_sha": "504ad7f2e726a57b96427531462814814adfdd94",
+          "path": "org-boundary/runtime/node_standing.py",
+          "sha256": "a24b7d2cc546fa57e4467e55d075e717249e20c2624b4299b36dca08f307ac8e"
+        },
+        {
+          "git_blob_sha": "b6dc84cf1f5c0dc8709e23c2673df720ae1df13f",
+          "path": "org-boundary/runtime/origin_attestation.py",
+          "sha256": "d736f10892c6b1666fd525879eebda48d194adc51b33e3357bfe7d2a04533647"
+        },
+        {
+          "git_blob_sha": "20eeeef6b2dd03e3b091f661c9dc1db6ecbc1f8f",
+          "path": "org-kernel/node_store.py",
+          "sha256": "fb125119a6b8783fcc810f79719e989702565aacfd027308aeeece2e29367874"
+        },
+        {
+          "git_blob_sha": "5f989e6eb95d8a495902ee7821bf6200976d2ea1",
+          "path": "tests/peer_organization.py",
+          "sha256": "fb47e1aef438988008e9a12e57e1c348faad7f0a4ded52783ccd383264290bc1"
+        }
+      ],
+      "config_added": [
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/peer_destination_resolution",
+          "value_sha256": "sha256:07d1e9907ce8346b58f209184b0db4c534b5f742cad15a13bd861b9e001f99bc"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/origin_attestation",
+          "value_sha256": "sha256:df72f08940c2e1bb1ca1a0fefcd21c148c8333f41c9394ce7e8689eb2aaec696"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/emitting_operation_rule",
+          "value_sha256": "sha256:a0ddb713ffcf5b2e3ece780ab70eb43ba414802b2f4df8fff0ba0a99d9211da8"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/closable_crossing_precondition",
+          "value_sha256": "sha256:efd434bd6fb90c9e1c75b9f5204db3b6346c5cee08aad01de5b03036fbfe3803"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "c585f6c79b915aec803ae41555d94507f076ef92e693e94806a1ea8ac7af51f6",
+          "after_sha256": "e8d163a597fb59426144472968552d8d62056275ec09db79d595d5fe01eacdf0",
+          "after_lines": 1341,
+          "baseline_prefix_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_sha256": "e789bdaf535d810f6e61674eb18075e9377cdd93ba7da10b404fd80ae49c466c"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "after_sha256": "cd9a06c9429be07c15e5b11180dbe27d5cac60113344c06c0f7e310c599172eb",
+          "after_lines": 732,
+          "baseline_prefix_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_sha256": "d871882a684eb15826eb4258f8424a18f14777263696cd327008c1be8acd5b2c"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "after_sha256": "4c974aef9b14695d23e2555b9cd18e233cbe062300231ca52239b950bf16d5a1",
+          "after_lines": 208,
+          "baseline_prefix_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_sha256": "1535f0ee3cac0bdf8ec5dfae3ee9228f176866b6a9aa0d88f3b7aa643bc7c316"
+        }
+      ],
+      "closure_still_absent": [],
+      "tests_before_round2": {
+        "tests_run": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ]
+      },
+      "tests_after": {
+        "tests_run": 52,
+        "passed": 13,
+        "failures": 4,
+        "errors": 35,
+        "by_cause": {
+          "DIVERGENT_CLOSURE_FILE:org-boundary/registry/federation.json": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-kernel/kernel.py": [
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_answering_set_is_the_kernels_own",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-runtime/runtime_boundary.py": [
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_unbound_egress_still_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+          ],
+          "UNATTRIBUTED": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_below_the_declared_kernel_requirement_is_not_refused",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_ordinary_peer_resolves_at_its_organization_control_service",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+          ]
+        }
+      },
+      "org_tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "before_passed": true,
+          "after_passed": false,
+          "after_failures_by_cause": {
+            "PENDING_INTR_CLOSE_PORT": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          }
+        }
+      ],
+      "refusals": [
+        {
+          "detail": {
+            "path": "org-runtime/interlock-intr.json",
+            "pointer": "/egress/capability_destination_bindings"
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "ORG_CONFIG_KEY_THE_BASELINE_READS_IS_DECLARED_BY_THE_ORGANIZATION",
+          "failure_code": "ORG_CONFIG_KEY_UNDECIDABLE",
+          "next_attempt": "rerun converge once the organization's overlay declares egress.capability_destination_bindings (or this manifest records that it declares none)",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4) for H52; routing declared by the target organization's own overlay",
+          "required_evidence_or_repair": "org-runtime/interlock-intr.json/egress/capability_destination_bindings: the baseline value is StegVerse-org's routing policy (which capability goes to which destination organization and decision authority). ORRD conformance item 2: the manifest determines the destination, so this organization declares its own bindings; it is not copied",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "AssertionError",
+              "AttributeError",
+              "KeyError",
+              "TypeError"
+            ],
+            "import_failed": false,
+            "tests_run": 52,
+            "unattributed": [
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_below_the_declared_kernel_requirement_is_not_refused",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_ordinary_peer_resolves_at_its_organization_control_service",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_sv_011_is_a_declared_peer_of_this_organization",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the unattributed failures named in detail (evidence/tests.out); each is a divergence between a carried org extension or org-owned closure file and the baseline contract",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "org-boundary/registry/federation.json": {
+              "missing_baseline_symbols": null,
+              "signature_differs": null,
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there"
+              ]
+            },
+            "org-kernel/kernel.py": {
+              "missing_baseline_symbols": [
+                "CROSSING_CONSUMED_CLASS",
+                "CROSSING_REFUSED_CLASS",
+                "CUSTODY_REFUSALS",
+                "DETERMINISTIC_REFUSALS",
+                "PosixStateStore",
+                "RESPONDED_REQUEST_CLASSES",
+                "_own_module",
+                "_store_spec",
+                "addressed_node_state_store",
+                "carried_standing",
+                "crossing_custody",
+                "federation_cycles",
+                "ingest_recorded",
+                "manifest_selection",
+                "mesh_store",
+                "node_standing",
+                "node_state_provenance",
+                "node_state_store",
+                "node_store_module",
+                "record_crossing",
+                "record_federation_cycle",
+                "record_refusal",
+                "refusal_disposition",
+                "required_node_state",
+                "resolve_federation_root",
+                "resolve_node_state_root",
+                "validate_hb_reference"
+              ],
+              "signature_differs": [
+                "build_ecosystem_packets",
+                "build_packet",
+                "carrier_frame",
+                "consume_addressed_frames",
+                "consume_and_respond",
+                "dispatch",
+                "federation_root",
+                "federation_seen_frame_names",
+                "handle_control_message",
+                "hb_reference",
+                "ingest_frame",
+                "load_registry",
+                "mark_federation_frame_seen",
+                "persist_outbox",
+                "persist_work_request",
+                "publish_ecosystem_message",
+                "publish_frame",
+                "publish_packet",
+                "resident_status",
+                "scan_addressed_frames"
+              ],
+              "tests": [
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_answering_set_is_the_kernels_own",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy"
+              ]
+            },
+            "org-runtime/runtime_boundary.py": {
+              "missing_baseline_symbols": [
+                "ATTESTATION_MODULE",
+                "CAPABILITY_BINDING_KEY",
+                "EGRESS_EMITTING_OPERATION_ID",
+                "EGRESS_NON_AUTHORIZING_FLAGS",
+                "NON_AUTHORIZING_BINDING_FLAGS",
+                "capability_bindings_resolve",
+                "egress_destinations_resolve_from_the_directory",
+                "egress_emitting_operation",
+                "egress_emitting_operation_bound",
+                "egress_refuses_an_unclosable_crossing",
+                "kernel_responded_request_classes",
+                "origin_attestation_is_bound",
+                "sdk_manifest_ingress_bound"
+              ],
+              "signature_differs": [],
+              "tests": [
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_unbound_egress_still_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_located_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+              ]
+            }
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "THE_TARGETS_CLOSURE_FILES_EXPOSE_THE_API_THE_BASELINE_CALLS",
+          "failure_code": "BASELINE_CLOSURE_FILE_DIVERGENT",
+          "next_attempt": "rerun converge once those closure files expose the baseline API",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "each closure file in detail is the organization's own revision and lacks baseline symbols or signatures the converged files call; converge it as a further manifest unit with its own hunk reconciliation, or have the organization add the named symbols",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "baseline_tests": [],
+            "org_tests": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "CONVERGED_CLOSE_IS_THE_INTR_PORT_FOR_THIS_ORGANIZATION",
+          "failure_code": "INTR_CLOSE_PORT_PENDING",
+          "next_attempt": "rerun converge on the target commit that carries the InTr close() port",
+          "owning_existing_goal": "StegVerse-org/.github#162 (Lane B, InTr), H52 per-org close() port",
+          "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "full_module_convergence_blocking": false
+    },
+    "SV-LLM": {
+      "disposition": "FAIL_CLOSED",
+      "reconciliation": {
+        "ported": 28,
+        "ported_but_not_carried": 0,
+        "superseded": 26,
+        "undocumented": 0,
+        "unreconciled": 0
+      },
+      "extension": {
+        "imports": [
+          "import os"
+        ],
+        "lines": 366,
+        "path": "resident-runtime/organization_egress_boundary.py",
+        "sha256": "ecde075295177a2c2d505374feb90488c89bb85ac7229aeef5e1b0a339adacac",
+        "symbols": [
+          "kernel",
+          "repository_ledger",
+          "organization_ledger",
+          "_boundary",
+          "declared_capabilities",
+          "outbound_entries",
+          "select_outbound_binding",
+          "peer_capability_service",
+          "resolve_destination",
+          "closability_refusal",
+          "_unattested",
+          "emission_record",
+          "emit_refusal_record",
+          "closure_record",
+          "_record",
+          "_custody",
+          "_refusal_result",
+          "emit"
+        ]
+      },
+      "closure_added": [
+        {
+          "git_blob_sha": "b99a65edd3c0b33da095ed64f433edefd786e44d",
+          "path": "docs/ORGANIZATION_EGRESS_BOUNDARY_MIRROR_HANDOFF.md",
+          "sha256": "1003399b44ed8a44fbb2fa77be73fbc8f0eefa2c17ab9187b8d41b5dc1991c46"
+        },
+        {
+          "git_blob_sha": "b6dc84cf1f5c0dc8709e23c2673df720ae1df13f",
+          "path": "org-boundary/runtime/origin_attestation.py",
+          "sha256": "d736f10892c6b1666fd525879eebda48d194adc51b33e3357bfe7d2a04533647"
+        },
+        {
+          "git_blob_sha": "5f989e6eb95d8a495902ee7821bf6200976d2ea1",
+          "path": "tests/peer_organization.py",
+          "sha256": "fb47e1aef438988008e9a12e57e1c348faad7f0a4ded52783ccd383264290bc1"
+        }
+      ],
+      "config_added": [
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/peer_destination_resolution",
+          "value_sha256": "sha256:07d1e9907ce8346b58f209184b0db4c534b5f742cad15a13bd861b9e001f99bc"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/origin_attestation",
+          "value_sha256": "sha256:df72f08940c2e1bb1ca1a0fefcd21c148c8333f41c9394ce7e8689eb2aaec696"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/emitting_operation_rule",
+          "value_sha256": "sha256:a0ddb713ffcf5b2e3ece780ab70eb43ba414802b2f4df8fff0ba0a99d9211da8"
+        },
+        {
+          "path": "org-runtime/interlock-intr.json",
+          "pointer": "/egress/closable_crossing_precondition",
+          "value_sha256": "sha256:efd434bd6fb90c9e1c75b9f5204db3b6346c5cee08aad01de5b03036fbfe3803"
+        }
+      ],
+      "files": [
+        {
+          "role": "module",
+          "path": "resident-runtime/organization_egress_boundary.py",
+          "before_sha256": "b5e019bf4f2e86755ba83210cf7cde9d70b0e7c3d71f26003990bfce566e5861",
+          "after_sha256": "273085946721de9bcd3953c6d486c9f36ed5b7116fdf85e0eed054d9987206d9",
+          "after_lines": 1330,
+          "baseline_prefix_normalized_sha256": "dc70c6fee11cc2dc873659c7019c134fe6a30b1f9d61dc90c6465048fd2a913d",
+          "diff_sha256": "38d2e498cb25587422e6800b0bb45a92bfee5803e8d9151b0896dc40a5b82fcd"
+        },
+        {
+          "role": "tests",
+          "path": "tests/test_organization_egress_boundary.py",
+          "before_sha256": "ABSENT",
+          "after_sha256": "c05d1d63fc7f5d059c1cd5446c0e95e0d78dbde2fa58770be037464d3181d3f1",
+          "after_lines": 732,
+          "baseline_prefix_normalized_sha256": "12f4f4ec551db55cc80193878454aabeac833826682864af5584539cb2ea0111",
+          "diff_sha256": "2aceaf9ecfbf2a1e3a9ddd59e0d5040553088290fcabf8460eb101b9466c8f80"
+        },
+        {
+          "role": "workflow",
+          "path": ".github/workflows/organization-egress-boundary-validation.yml",
+          "before_sha256": "ABSENT",
+          "after_sha256": "7ff466ac9e52989fa0c2e7cb096c666e61e866fe1a55ea53a1f61e520ddfc0a0",
+          "after_lines": 208,
+          "baseline_prefix_normalized_sha256": "914bc59490270313e6f3e8ab1e39e248d1cf1c64e38130c0ba1766502963fcf3",
+          "diff_sha256": "0d34032acff4cea2dcc38edb6961720bb1d17df5dd18a40334c58cc77db2a81f"
+        }
+      ],
+      "closure_still_absent": [
+        "resident-runtime/activation-manifest.json"
+      ],
+      "tests_before_round2": {
+        "tests_run": 0,
+        "passed": false,
+        "error_kinds": [
+          "FileNotFoundError"
+        ]
+      },
+      "tests_after": {
+        "tests_run": 52,
+        "passed": 10,
+        "failures": 12,
+        "errors": 30,
+        "by_cause": {
+          "DIVERGENT_CLOSURE_FILE:org-kernel/kernel.py": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes"
+          ],
+          "DIVERGENT_CLOSURE_FILE:org-runtime/runtime_boundary.py": [
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+          ],
+          "PENDING_INTR_CLOSE_PORT": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_absence_is_not_recorded_as_anything"
+          ],
+          "UNATTRIBUTED": [
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_below_the_declared_kernel_requirement_is_not_refused",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_ordinary_peer_resolves_at_its_organization_control_service",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_destination_comes_from_this_organizations_own_peer_directory",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_records_the_digest_the_far_side_will_bind",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_organization_consumes_the_repository_receipt_it_did_not_author",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_record_carries_digests_rather_than_the_payload",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_replayed_emission_at_a_supplied_epoch_publishes_and_records_once",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emitted_crossing_is_recorded_at_both_levels",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+            "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_record_says_a_boundary_was_crossed",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+            "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+          ]
+        }
+      },
+      "org_tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "before_passed": true,
+          "after_passed": false,
+          "after_failures_by_cause": {
+            "PENDING_INTR_CLOSE_PORT": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          }
+        }
+      ],
+      "refusals": [
+        {
+          "detail": {
+            "path": "org-runtime/interlock-intr.json",
+            "pointer": "/egress/capability_destination_bindings"
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "ORG_CONFIG_KEY_THE_BASELINE_READS_IS_DECLARED_BY_THE_ORGANIZATION",
+          "failure_code": "ORG_CONFIG_KEY_UNDECIDABLE",
+          "next_attempt": "rerun converge once the organization's overlay declares egress.capability_destination_bindings (or this manifest records that it declares none)",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4) for H52; routing declared by the target organization's own overlay",
+          "required_evidence_or_repair": "org-runtime/interlock-intr.json/egress/capability_destination_bindings: the baseline value is StegVerse-org's routing policy (which capability goes to which destination organization and decision authority). ORRD conformance item 2: the manifest determines the destination, so this organization declares its own bindings; it is not copied",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "absent": [
+              "resident-runtime/activation-manifest.json"
+            ],
+            "absent_org_owned": [
+              "resident-runtime/activation-manifest.json"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "EVERY_FILE_THE_BASELINE_LOADS_EXISTS_IN_THE_TARGET",
+          "failure_code": "BASELINE_DEPENDENCY_CLOSURE_ABSENT",
+          "next_attempt": "rerun converge once the closure resolves in the target",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "declare each absent closure file (detail) as a closure addition of baseline bytes, or, where it is that organization's own configuration, have the organization author it",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "error_kinds": [
+              "AssertionError",
+              "AttributeError",
+              "KeyError",
+              "ValueError"
+            ],
+            "import_failed": false,
+            "tests_run": 52,
+            "unattributed": [
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_below_the_declared_kernel_requirement_is_not_refused",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_peer_declaring_a_non_control_service_is_addressed_there",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_ordinary_peer_resolves_at_its_organization_control_service",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_destination_comes_from_this_organizations_own_peer_directory",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_records_the_digest_the_far_side_will_bind",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_organization_consumes_the_repository_receipt_it_did_not_author",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_peers_kernel_generation_is_not_proven_at_resolution",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_recomputation_uses_only_inputs_this_organization_holds",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_record_carries_digests_rather_than_the_payload",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_the_refusal_reads_the_profiles_own_set_rather_than_a_second_copy",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_operation_claiming_it_attested_the_origin",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+              "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_declaration_to_claim_reconstruction",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_replayed_emission_at_a_supplied_epoch_publishes_and_records_once",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emission_without_a_supplied_epoch_fails_closed_and_records_nothing",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_emitted_crossing_is_recorded_at_both_levels",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_organization_that_is_not_a_declared_peer_is_refused_and_recorded",
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_record_says_a_boundary_was_crossed",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+              "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_what_the_check_does_not_establish_is_stated"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "BASELINE_EGRESS_TESTS_PASS_ON_THE_CONVERGED_TREE",
+          "failure_code": "BASELINE_EGRESS_TESTS_FAIL_ON_CONVERGED_TREE",
+          "next_attempt": "rerun converge; the test step reruns on the converged tree",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "repair the unattributed failures named in detail (evidence/tests.out); each is a divergence between a carried org extension or org-owned closure file and the baseline contract",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "org-kernel/kernel.py": {
+              "missing_baseline_symbols": [
+                "build_endpoint_response",
+                "node_state_store"
+              ],
+              "signature_differs": [
+                "dispatch",
+                "ingest_frame",
+                "ingest_recorded",
+                "load_registry",
+                "publish_ecosystem_from_directory",
+                "publish_ecosystem_message",
+                "publish_frame",
+                "publish_packet"
+              ],
+              "tests": [
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_crossing_with_no_emission_record_here_cannot_be_closed",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_response_answering_another_packet_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_a_terminal_receipt_that_does_not_recompute_refuses_the_closure",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_every_record_states_that_the_origin_is_asserted_and_not_attested",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_reconstructs_the_far_side_chain_rather_than_trusting_it",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_closure_record_states_what_reconstruction_does_not_establish",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_emission_and_the_closure_are_two_transitions_on_one_chain",
+                "tests.test_organization_egress_boundary.EgressBoundaryTests.test_the_full_round_trip_closes_and_is_recorded",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes",
+                "tests.test_organization_egress_boundary.UnclosableCrossingTests.test_every_request_class_the_profile_answers_closes"
+              ]
+            },
+            "org-runtime/runtime_boundary.py": {
+              "missing_baseline_symbols": [
+                "ATTESTATION_MODULE",
+                "CAPABILITY_BINDING_KEY",
+                "EGRESS_EMITTING_OPERATION_ID",
+                "EGRESS_NON_AUTHORIZING_FLAGS",
+                "NON_AUTHORIZING_BINDING_FLAGS",
+                "capability_bindings_resolve",
+                "egress_destinations_resolve_from_the_directory",
+                "egress_emitting_operation",
+                "egress_refuses_an_unclosable_crossing",
+                "kernel_responded_request_classes",
+                "origin_attestation_is_bound",
+                "sdk_manifest_ingress_bound"
+              ],
+              "signature_differs": [],
+              "tests": [
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_an_absent_precondition_declaration_fails_closed",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_declared_operation_is_the_one_this_change_installs",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_organization_validator_requires_the_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_claiming_it_reads_a_peers_set",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_declaration_that_drifts_from_the_kernel",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_directory_it_does_not_own",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_a_destination_resolved_from_the_caller",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_refuses_an_authorizing_emitting_operation",
+                "tests.test_organization_egress_boundary.BoundaryDocumentDeclaresEgressTests.test_the_validator_requires_the_unclosable_crossing_refusal"
+              ]
+            }
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "THE_TARGETS_CLOSURE_FILES_EXPOSE_THE_API_THE_BASELINE_CALLS",
+          "failure_code": "BASELINE_CLOSURE_FILE_DIVERGENT",
+          "next_attempt": "rerun converge once those closure files expose the baseline API",
+          "owning_existing_goal": "StegVerse-org/.github#166 (P4 maintenance lane), for H52 under StegVerse-org/.github#162",
+          "required_evidence_or_repair": "each closure file in detail is the organization's own revision and lacks baseline symbols or signatures the converged files call; converge it as a further manifest unit with its own hunk reconciliation, or have the organization add the named symbols",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        },
+        {
+          "detail": {
+            "baseline_tests": [
+              "tests.test_organization_egress_boundary.EgressBoundaryTests.test_an_absence_is_not_recorded_as_anything"
+            ],
+            "org_tests": [
+              "tests.test_intr_destination_capability.AddressedAndClosedTests.test_a_diagnostic_crossing_closes_only_when_the_far_side_answers"
+            ]
+          },
+          "disposition": "FAIL_CLOSED",
+          "failed_predicate": "CONVERGED_CLOSE_IS_THE_INTR_PORT_FOR_THIS_ORGANIZATION",
+          "failure_code": "INTR_CLOSE_PORT_PENDING",
+          "next_attempt": "rerun converge on the target commit that carries the InTr close() port",
+          "owning_existing_goal": "StegVerse-org/.github#162 (Lane B, InTr), H52 per-org close() port",
+          "required_evidence_or_repair": "InTr's per-organization close() port (H52), with the names it needs, lands in this target; these tests fail only with a traceback through close()",
+          "retry_entrypoint": "resident-runtime/resident_runtime_convergence.py::converge"
+        }
+      ],
+      "full_module_convergence_blocking": false
+    }
+  },
+  "predicates": [
+    {
+      "id": "ORG_EGRESS_CLOSE_NEVER_RETURNS_PENDING_AND_ITS_NAMES_RESOLVE",
+      "status": "DECLARED",
+      "basis": "docs/ORGANIZATION_ROLE_RUNTIME_REALITY_DEPLOYMENT.md L59 (unavailable receiver answered by DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION; nothing waits) and L61 (non-ALLOW carries the six fields; a bare PENDING is not a finding)",
+      "evaluated_by": "resident-runtime/resident_runtime_convergence.py::evaluate_close_predicate (static, module bytes) plus close_predicate_targets.<org>.tests at the pinned head",
+      "checks": [
+        "close() is defined",
+        "close() neither returns nor builds PENDING",
+        "every global name close() reads is bound in the module or is a builtin",
+        "the six ORRD L61 fields are spelled in close() or a module function it calls"
+      ],
+      "state_on_hold": "CONVERGED_ON_CLOSE_PREDICATE"
+    },
+    {
+      "id": "ORG_EGRESS_MODULE_BASELINE_PREFIX_NORMALIZED_SHA256",
+      "status": "PROPOSED_JOINT_DISCOVERY_NOT_SETTLED",
+      "statement": "with the declared {repository} parameter lines (OWNER_REPOSITORY in the module; source_repository in the test and the workflow) substituted back and any declared org extension block removed, the module's sha256 equals the baseline's (dc70c6fe... pre-#186; 951437ce... post-#186). Byte equality to StegVerse-org's file is not the predicate: it cannot hold for any other organization",
+      "parameters": [
+        "OWNER_REPOSITORY = \"StegVerse-org/.github\"",
+        "self.assertEqual(organization[\"source_repository\"], \"StegVerse-org/.github\")",
+        "assert all(o[\"source_repository\"] == \"StegVerse-org/.github\" for o in organization)"
+      ],
+      "replaces_proposed": "ORG_EGRESS_MODULE_BYTE_IDENTICAL_TO_STEGVERSE_ORG_MAIN_PRE_FIX (InTr #162 6245649963)",
+      "result_field": "files[].baseline_prefix_normalized_sha256",
+      "decided_by": "INDEX JOINT DISCOVERY QUEUE; this manifest declares the proposal and decides nothing",
+      "blocking": false
+    }
+  ],
+  "scope": {
+    "as_of": "2026-10-18T04:55Z (Coordination)",
+    "close_predicate": "evaluated against InTr's six close() port heads; that is the H52 convergence that counts",
+    "full_module_convergence": "recorded (hunk reconciliation, org extension, closure and config additions); per-org bundles stay HOLD as reference, no per-org PRs are built from them, and their remaining FAIL_CLOSED records do not block"
+  },
+  "close_predicate": {
+    "SV-011": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "5aca9cc21b6a001de8adfc0865cbf82a997d35de",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "SV-011/.github#13",
+        "repository": "SV-011/.github"
+      },
+      "module_sha256": "cb484ed94eecab1ca1182500a69402034c837ee10c5771841ebe6d476d0db969",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "352cc780ec835f5eef9d37d05bb9e839f773b51d5acf5f287203c2b7d32ed335",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 37,
+          "output_sha256": "3edad3839612dc18fa98cb89efc46b8a785659ecac6452512f27dfde2877c9f0"
+        }
+      ],
+      "refusals": []
+    },
+    "GCAT-BCAT-Engine": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "8a0190eb541543c880596bde7c70f969ab5542b3",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "GCAT-BCAT-Engine/.github#14",
+        "repository": "GCAT-BCAT-Engine/.github"
+      },
+      "module_sha256": "ca8f5392dac9858abaf6e01d6b4997e56f1efed422e2e536cddcde745cabc112",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "246eae05bb34c1c4c02967e070e55944c9590b0a5b4a7ce244995c54db40e905",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 33,
+          "output_sha256": "3f58e387cf880e86667d2d4e86ccfcf2ad3235f71179144a1df77f05d694232b"
+        }
+      ],
+      "refusals": []
+    },
+    "Admissible-Existence": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "8f0825e2f7ec0fadc6a9d117494d1fcd482f3a72",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "Admissible-Existence/.github#96",
+        "repository": "Admissible-Existence/.github"
+      },
+      "module_sha256": "053c01fd52e90c97249e90f7591c6996fe21f3cab8d65afaa09cf6953eb65683",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "246eae05bb34c1c4c02967e070e55944c9590b0a5b4a7ce244995c54db40e905",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 33,
+          "output_sha256": "09e7ad67b8799c1541f4a5c2982284107b9e49c815c25c9b0813ecf1f4297dd8"
+        }
+      ],
+      "refusals": []
+    },
+    "StegGhost": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "fc73dd5d5aeeae2bc0918eefcb7aa0816bce3f05",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "StegGhost/.github#22",
+        "repository": "StegGhost/.github"
+      },
+      "module_sha256": "3d4832c4e9d100df0722c8a543eed1afde9030577c3130f69da958f14d793931",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "f26e24651c7a83bb43b8c3fd161542e5b178d3272eb6c66e3527e0b43f1c0440",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 38,
+          "output_sha256": "2f85e1e1617728b5c53d1c6cc92014e9d7ea23a2a783c1ba01a7b57651dab7f8"
+        },
+        {
+          "id": "resident-runtime/tests/test_organization_egress_boundary.py",
+          "passed": true,
+          "tests_run": null,
+          "output_sha256": "48f057da9e7fe1e5c87229813d4be071179223f48d49d31cfd4927c9da0c43b2"
+        }
+      ],
+      "refusals": []
+    },
+    "StegVerse-002": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "a3eeab45607d8be3b097fd0e8a82a09792ae1148",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "StegVerse-002/.github#48",
+        "repository": "StegVerse-002/.github"
+      },
+      "module_sha256": "894ea72242cdbd3e567702016a84806eb7afa11542bef7b99c2035074cd537de",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "246eae05bb34c1c4c02967e070e55944c9590b0a5b4a7ce244995c54db40e905",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 33,
+          "output_sha256": "7477a1ab9562bc1ea12dd8f10fe0822fdd49ec8b45c87acee57a819cd1bf9600"
+        }
+      ],
+      "refusals": []
+    },
+    "SV-LLM": {
+      "state": "CONVERGED_ON_CLOSE_PREDICATE",
+      "evidence": {
+        "head_sha": "f3637474e753997a7f755a7c2963300db4f62dbb",
+        "module_path": "resident-runtime/organization_egress_boundary.py",
+        "pull_request": "SV-LLM/.github#44",
+        "repository": "SV-LLM/.github"
+      },
+      "module_sha256": "aa75a7af9cee0ead86bed2f374a4f4b4beab03829b9292534a96c9550e71e0b0",
+      "checks": {
+        "close_defined": true,
+        "close_mentions_pending": false,
+        "close_sha256": "246eae05bb34c1c4c02967e070e55944c9590b0a5b4a7ce244995c54db40e905",
+        "module_still_defines_pending": true,
+        "returns_carrying_pending": [],
+        "six_fields_missing": [],
+        "unresolved_names": []
+      },
+      "tests": [
+        {
+          "id": "tests.test_intr_destination_capability",
+          "passed": true,
+          "tests_run": 39,
+          "output_sha256": "62ac008da6c8e4289feb8b6746e8e9fedc51eef7abe5671ba31e9be8a3c6d480"
+        }
+      ],
+      "refusals": []
+    }
+  }
+}

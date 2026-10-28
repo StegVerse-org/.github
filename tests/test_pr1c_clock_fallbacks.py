@@ -130,6 +130,101 @@ class OrganizationAppendTests(SixFields, unittest.TestCase):
         self.assertTrue(hashlib.sha256(shared.encode()).hexdigest().startswith("7f36f0e6"))
 
 
+class SourceEpochTests(SixFields, unittest.TestCase):
+    """Repair (a): the two-level binders pass the repository receipt's epoch."""
+
+    def append(self, root, source, hb_epoch=EPOCH):
+        with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
+            return org.append(source, "REPO_STATE_PROPAGATION", STATE_BEFORE, STATE_AFTER,
+                              {}, "NONE", hb_epoch=hb_epoch)
+
+    def source(self, reference):
+        body = {"schema": "stegverse.repo-transition-receipt/v1",
+                "repository": "StegVerse-org/StegVerse-SDK", "transition_id": "pr1c-source",
+                "hb_reference": reference}
+        return {**body, "receipt_sha256": org.sha(body)}
+
+    def test_a_clock_derived_source_epoch_is_refused_and_writes_nothing(self):
+        # The repository receipt was stamped from the clock (emit.py with no
+        # epoch, as in P1's HB:478117838 reproduction); its epoch is not a
+        # supplied one, so the organization append refuses it.
+        derived = {"epoch": 478117838, "derived_from_clock": True, "sampled_unix_ns": 1}
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(org.OrgLedgerEpochRefused) as refused:
+                self.append(root, self.source(derived), hb_epoch=478117838)
+            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_INVALID")
+            self.assertEqual(list(Path(root).iterdir()), [])
+
+    def test_a_source_reference_that_is_not_an_object_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(org.OrgLedgerEpochRefused) as refused:
+                self.append(root, self.source("HB:4128"))
+            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_INVALID")
+
+    def test_a_supplied_source_epoch_is_admitted(self):
+        with tempfile.TemporaryDirectory() as root:
+            receipt = self.append(root, self.source({"epoch": EPOCH, "derived_from_clock": False}))
+            self.assertIs(receipt["hb_reference"]["derived_from_clock"], False)
+
+    def test_the_two_level_pattern_with_no_epoch_appends_no_organization_receipt(self):
+        with tempfile.TemporaryDirectory() as work:
+            emit = _load("pr1c_emit", ".stegverse/transition-ledger/emit.py")
+            env = {"STEGVERSE_REPO_LEDGER_ROOT": str(Path(work) / "repo"),
+                   "STEGVERSE_ORG_LEDGER_ROOT": str(Path(work) / "org")}
+            with patch.dict(os.environ, env):
+                repository_receipt = emit.append("PR1C-TWO-LEVEL", "DEMO", STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                self.assertIs(repository_receipt["hb_reference"]["derived_from_clock"], True)
+                with self.assertRaises(org.OrgLedgerEpochRefused) as refused:
+                    org.append(repository_receipt, "REPO_STATE_PROPAGATION", org.GENESIS, STATE_AFTER,
+                               {}, "NONE", hb_epoch=repository_receipt["hb_reference"]["epoch"])
+            self.assertSixFieldRefusal(refused.exception.refusal, "HB_EPOCH_INVALID")
+            self.assertFalse((Path(work) / "org").exists())
+
+
+class FederationCyclePropagationTests(SixFields, unittest.TestCase):
+    """The cycle at main 40a5d235 (d6b117b6) supplies its epoch to propagation, or records the six-field refusal."""
+
+    def cycle(self, hb_epoch):
+        work = Path(tempfile.mkdtemp())
+        self.addCleanup(__import__("shutil").rmtree, work, True)
+        repository = "StegVerse-org/StegVerse-SDK"
+        body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": repository,
+                "transition_id": "NODE_INGRESS_ADMITTED:pr1c", "transition_class": "NODE_INGRESS_ADMITTED",
+                "predecessor_state_sha256": STATE_BEFORE, "successor_state_sha256": STATE_AFTER,
+                "evidence": {}, "authority_effect": "NONE",
+                "hb_reference": {"epoch": 32, "progression_dependency": "OSCILLATOR_ONLY"},
+                "ordering": "OSCILLATOR_HEARTBEAT_EPOCH_ONLY", "previous_receipt_sha256": None}
+        digest = org.sha(body)
+        receipts = work / "homes" / repository / "receipts"
+        receipts.mkdir(parents=True)
+        (receipts / (digest.split(":", 1)[1] + ".json")).write_text(json.dumps({**body, "receipt_sha256": digest}))
+        (receipts.parent / "HEAD.json").write_text(json.dumps({"repository": repository, "receipt_sha256": digest}))
+        env = {"STEGVERSE_REPO_LEDGER_HOME": str(work / "homes"), "STEGVERSE_ORG_LEDGER_ROOT": str(work / "org")}
+        with patch.dict(os.environ, env):
+            cycle = _load("pr1c_federation_cycle", "resident-runtime/federation_cycle.py")
+            with patch("sys.stdout"):
+                reported = cycle.main(mesh_root=work / "mesh", node_state_root=work / "node", hb_epoch=hb_epoch)
+        return reported["repository_propagation"], work
+
+    def test_no_epoch_records_a_six_field_refusal_instead_of_stopping(self):
+        propagation, work = self.cycle(None)
+        self.assertSixFieldRefusal(propagation, "HB_EPOCH_NOT_SUPPLIED")
+        self.assertIs(propagation["consequence_committed"], False)
+        self.assertFalse((work / "org" / "HEAD.json").exists())
+
+    def test_an_invalid_epoch_records_hb_epoch_invalid(self):
+        # At main 40a5d235 (c3f9fbee) the cycle hands the epoch to propagation as
+        # given, so the organization append's shared rule names it invalid.
+        propagation, _ = self.cycle("+33")
+        self.assertSixFieldRefusal(propagation, "HB_EPOCH_INVALID")
+        self.assertIs(propagation["consequence_committed"], False)
+
+    def test_a_supplied_epoch_carries_the_receipt(self):
+        propagation, _ = self.cycle(4200)
+        self.assertEqual(propagation["disposition"], "ALLOW")
+        self.assertEqual(propagation["receipts_propagated"], 1)
+
+
 class ObservationWindowTests(SixFields, unittest.TestCase):
     def open(self, epoch):
         return OW.open_window([], countdown_hb=300, epoch=epoch, observed_through="test:pr1c")
