@@ -111,6 +111,14 @@ class RefusedCrossingTests(unittest.TestCase):
         refused, = self.by_class(self.k.CROSSING_REFUSED_CLASS)
         self.assertIsNone(refused["evidence"]["retry_entrypoint"])
 
+    def test_an_adapter_that_fails_to_execute_is_fail_closed_retried_and_recorded_once(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule treated an adapter that fails to
+        execute as a retried FAIL_CLOSED. #207 (PB-EXIT-SPLIT) makes it terminal: recorded and
+        marked, never retried. Only the boundary's own write fault (75) is non-terminal.
+        """
+        self.test_an_adapter_that_fails_to_execute_is_terminal_recorded_and_marked()
+
     def test_a_crossing_refused_then_admitted_is_two_transitions(self):
         self.publish(ENDPOINT, {"processing": {"capability": "ecosystem_diagnostic", "route_id": ROUTE}},
                      packet_id="adapter-2")
