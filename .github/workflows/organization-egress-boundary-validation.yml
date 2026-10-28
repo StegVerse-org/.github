@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout organization boundary
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
 
@@ -205,4 +205,4 @@ jobs:
       - name: Declare what an outbound crossing does not prove
         run: |
           echo 'origin_attestation_state=NOT_PROVEN; credential_authority=TV/TVC'
-          echo 'far_side_receipt_reconstructed_here=false; authority_effect=NONE_EGRESS_RECORD_ONLY'
+          echo 'far_side_receipt_reconstructed_here=true; authority_effect=NONE_EGRESS_RECORD_ONLY'

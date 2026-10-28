@@ -35,7 +35,7 @@ crossing = _load("sdk_manifest_crossing_six_fields", "resident-runtime/sdk_manif
 d6 = _load("d6_far_side_registry", "tests/fixtures/d6_far_side_registry.py")
 
 
-def manifest(name="unadmitted-capability-to-llm-adapter"):
+def manifest(name="unadmitted-capability-to-task-registry-disclosure"):
     return json.loads((MANIFESTS / (name + ".json")).read_text(encoding="utf-8"))
 
 
@@ -156,12 +156,12 @@ class FarSideResultCarriesSixFieldsTests(SixFieldAssertions):
         """`cross` keeps its surface fallback; the ingress, not `cross`, applies D7."""
         result = crossing.cross(manifest(), registry=REGISTRY, standing=GENESIS, packet_id="d6-fallback")
         self.assertIs(result["crossing_completed"], False)
-        self.assertEqual(result["resolved_service_id"], "stegverse-org.llm-adapter")
+        self.assertEqual(result["resolved_service_id"], "stegverse-org.task-registry-disclosure")
         self.assert_six_fields(result)
         self.assertEqual(result["failure_code"], "FAR_SIDE_REFUSED_THE_CROSSING")
 
     def test_a_completed_crossing_carries_none_of_the_refusal_fields(self):
-        result = crossing.cross(manifest("task-registry-disclosure-to-llm-adapter"), registry=REGISTRY,
+        result = crossing.cross(manifest("task-registry-disclosure"), registry=REGISTRY,
                                 standing=GENESIS, packet_id="d6-allow")
         self.assertIs(result["crossing_completed"], True)
         for field in SIX_FIELDS + ("disposition", "receiver_unavailable_disposition"):

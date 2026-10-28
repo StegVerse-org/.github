@@ -48,7 +48,7 @@ ingress = _load("organization_manifest_ingress_d7", "resident-runtime/organizati
 d6 = _load("d6_far_side_registry_d7", "tests/fixtures/d6_far_side_registry.py")
 
 
-def manifest(name="unadmitted-capability-to-llm-adapter"):
+def manifest(name="unadmitted-capability-to-task-registry-disclosure"):
     return json.loads((MANIFESTS / (name + ".json")).read_text(encoding="utf-8"))
 
 
@@ -151,7 +151,7 @@ class D7IngressTests(unittest.TestCase):
                     self.assertEqual(repository["evidence"][field], out[field], field)
 
     def test_a_matched_route_is_still_admitted(self):
-        out = self.receive(manifest("task-registry-disclosure-to-llm-adapter"))
+        out = self.receive(manifest("task-registry-disclosure"))
         self.assertEqual(out["disposition"], "ALLOW", out.get("detail"))
 
     def test_routes_bound_to_another_runtime_keep_the_surface_fallback(self):
@@ -165,7 +165,7 @@ class D7IngressTests(unittest.TestCase):
                 self.assertIsNone(ingress.processing_service_precheck(value, REGISTRY))
                 crossed = ingress.crossing_module.cross(value, registry=REGISTRY, standing=GENESIS,
                                                         packet_id="d7-fallback")
-                self.assertEqual(crossed["resolved_service_id"], "stegverse-org.llm-adapter")
+                self.assertEqual(crossed["resolved_service_id"], "stegverse-org.task-registry-disclosure")
 
     def test_a_completion_return_only_manifest_keeps_the_surface_fallback(self):
         value = {key: item for key, item in manifest("governance-to-boundary-diagnostic").items()
