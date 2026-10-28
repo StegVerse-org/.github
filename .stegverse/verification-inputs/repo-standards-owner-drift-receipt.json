@@ -1,0 +1,37 @@
+{
+ "schema": "stegverse.verification-input.repo-standards-owner-drift-receipt/v1",
+ "authority_effect": "NONE",
+ "owning_existing_goal": "StegVerse-org/.github#164 (GITHUB-UNIVERSAL-GOVERNANCE-PRODUCT-001)",
+ "ruling": "Same receipt_consumer route as input tvc (StegVerse-Labs/TVC#539): repo-standards' own CI runs OwnerDriftTests against its schema at an exact public org commit and seals a test receipt; this repository consumes that receipt from its organization ledger chain and never reads repo-standards source. Replaces the private-source read (REPO_STANDARDS_ROOT, TVC-PRIVATE-SOURCE-READ-001), whose credential grant is not activated (TVC docs/PRIVATE_SOURCE_READ_MIRROR_HANDOFF.md, 'credential/grant activation: NOT OBSERVED').",
+ "input": "repo-standards",
+ "producer": {
+  "repository": "StegVerse-Labs/repo-standards",
+  "run_block": "tools/tasks/task_catalog.json group org-owner-drift-receipt (hosted by .github/workflows/test-suite.yml job owner-drift-receipt; G17: no workflow file of its own)",
+  "script": "tools/org_owner_drift_receipt.py --config config/org_owner_drift_source.json",
+  "introduced_by": "StegVerse-Labs/repo-standards#83"
+ },
+ "receipt": {
+  "schema": "stegverse.test-suite-skip-receipt/v1",
+  "receipt_kind": "REPO_STANDARDS_ORG_OWNER_DRIFT_TEST_RECEIPT",
+  "suite": "REPO_STANDARDS_ORG_OWNER_DRIFT",
+  "repository": "StegVerse-Labs/repo-standards",
+  "seal": "receipt_sha256 = sha256 of the canonical JSON body (organization_ledger_readback.self_verifies)"
+ },
+ "ledger": {
+  "ref": "refs/stegverse/organization-ledger",
+  "retained_as": "source-receipts/<receipt_sha256>.json consumed by an organization transition receipt",
+  "appended_by": "this organization's ledger writer only; neither repo-standards CI nor the full-suite job appends"
+ },
+ "tests": [
+  "tests/test_task_registry_schema_conformance.py"
+ ],
+ "surface_paths": [
+  "orchestration/schemas/PROVENANCE.json",
+  "orchestration/schemas/task-registry.schema.json",
+  "tests/test_task_registry_schema_conformance.py"
+ ],
+ "surface_paths_observed_at": {
+  "org_commit": "9068270814013ebd4893fd833635f2816b94828f",
+  "method": "the producer's configured binding_paths, each of which its audit-hook trace must show opened (repo-standards tools/org_owner_drift_receipt.py run)"
+ }
+}

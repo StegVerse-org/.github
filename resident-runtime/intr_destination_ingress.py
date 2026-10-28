@@ -105,6 +105,10 @@ organization_ledger = _module("aggregate_repo_transition",
                               "resident-runtime/aggregate_repo_transition.py")
 
 INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
+#: The shared supplied-epoch rule (P1-FC-8, PR-1b), as on the kernel path.
+capability_epoch = _module("capability_ingress_epoch", "org-boundary/runtime/capability_ingress.py")
+RECEIVE_ENTRYPOINT = "resident-runtime/intr_destination_ingress.py::receive"
+CLOSURE_ENTRYPOINT = "resident-runtime/intr_destination_ingress.py::closure"
 
 
 #: P1 interface (#163): where the ledger writers load from and where their
@@ -417,8 +421,13 @@ def _result(evidence: Mapping[str, Any], appended: Mapping[str, Any] | None, *,
 
 
 def _append(transition_class: str, packet_id: str, evidence: Mapping[str, Any],
-            hb_epoch: int | None) -> tuple[dict[str, Any], bool]:
-    """Append at both levels. A replay of the same packet returns the recorded pair."""
+            hb_epoch: int | None, *, operation: str = OPERATION_ID, profile_id: str = PROFILE_ID,
+            boundary_extra: Mapping[str, Any] | None = None) -> tuple[dict[str, Any], bool]:
+    """Append at both levels. A replay of the same packet returns the recorded pair.
+
+    ``operation``, ``profile_id`` and ``boundary_extra`` name another operation
+    on the same two-level append (resident-runtime/merge_transfer.py); their
+    defaults are this ingress, so its receipts are unchanged."""
     predecessor = evidence["payload_sha256"]
     successor = sha({"disposition": evidence["disposition"], "packet_id": packet_id,
                      "communication_id": evidence.get("communication_id"),
@@ -431,14 +440,17 @@ def _append(transition_class: str, packet_id: str, evidence: Mapping[str, Any],
         transition_id, transition_class, predecessor, successor, dict(evidence),
         "NONE", hb_epoch=hb_epoch,
         idempotent_on=("communication_id", "payload_sha256", "disposition"))
-    # The organization receipt takes the repository receipt's epoch, so a replay
-    # rebuilds the same organization receipt rather than one stamped later.
-    epoch = repository_receipt["hb_reference"]["epoch"]
+    # The organization receipt takes the epoch this append was supplied, which
+    # the repository writer has just admitted. It used to be read back from the
+    # repository receipt, which a replay returns as recorded: a receipt stamped
+    # from a clock would then pass its epoch on as supplied. A replay is still
+    # one organization receipt -- the idempotent append returns the recorded one.
+    epoch = int(str(hb_epoch))
     organization_receipt = _ledger_write(organization_ledger.append,
         repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
-        {"operation": OPERATION_ID, "profile_id": PROFILE_ID,
+        {"operation": operation, "profile_id": profile_id,
          "disposition": evidence["disposition"],
-         "communication_id": evidence.get("communication_id")},
+         "communication_id": evidence.get("communication_id"), **dict(boundary_extra or {})},
         "NONE", hb_epoch=epoch, idempotent=True)
     return ({"repository_receipt": repository_receipt,
              "organization_receipt": organization_receipt}, prior is not None)
@@ -473,6 +485,24 @@ def receive(payload: Any, *, registry: Mapping[str, Any], standing: Mapping[str,
     A diagnostic does not leave, so the mesh is not used.
     """
     del standing, mesh_root
+    # PR-1b: no epoch, or one the shared rule refuses, is FAIL_CLOSED before
+    # anything is appended; the host clock is never the fallback.
+    epoch_refused = capability_epoch.direct_epoch_refusal(hb_epoch, RECEIVE_ENTRYPOINT)
+    if epoch_refused is not None:
+        return {
+            "schema": RESULT_SCHEMA,
+            "organization": organization_ledger.C["organization"],
+            "receiving_operation": OPERATION_ID,
+            "profile_id": PROFILE_ID,
+            **epoch_refused,
+            "received": False,
+            "communication_acknowledged": False,
+            "repository_receipt_observed": False,
+            "organization_receipt_observed": False,
+            "refusal_recorded": False,
+            "authority_effect": "NONE_REFUSAL_ONLY",
+        }
+    hb_epoch = capability_epoch.supplied_epoch(hb_epoch)
     if not isinstance(registry, Mapping):
         return _recorded(DENY, payload, packet_id, hb_epoch,
                          failed_predicate="CAPABILITY_MAP_IS_A_MAPPING",
@@ -580,6 +610,19 @@ def closure(communication_id: Any, *, registry: Mapping[str, Any], packet_id: An
     chain is extended: the predecessor link is the published HEAD, and an empty
     chain is not reopened over receipts that are already there.
     """
+    epoch_refused = capability_epoch.direct_epoch_refusal(hb_epoch, CLOSURE_ENTRYPOINT)
+    if epoch_refused is not None:
+        return {
+            "schema": CLOSURE_SCHEMA,
+            "organization": organization_ledger.C["organization"],
+            "receiving_operation": OPERATION_ID,
+            "self_closure": True,
+            "communication_id": communication_id if isinstance(communication_id, str) else None,
+            **epoch_refused,
+            "received": False,
+            "communication_acknowledged": False,
+            "authority_effect": "NONE_REFUSAL_ONLY",
+        }
     address = _served_address(registry)
     communication_id = _token(communication_id, "COMMUNICATION_ID_REQUIRED")
     packet_id = _token(packet_id, "PACKET_ID_REQUIRED")
@@ -840,4 +883,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/intr_destination_ingress.py", inputs=('--payload', '--registry', '--closure', '--org-contract')))

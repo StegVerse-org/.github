@@ -28,7 +28,7 @@ def run_cycle(work, **extra):
     mesh = Path(work) / "mesh"
     mesh.mkdir(exist_ok=True)
     return subprocess.run([sys.executable, "-B", str(CYCLE), "--mesh-root", str(mesh),
-                           "--node-state-root", str(Path(work) / "state")],
+                           "--node-state-root", str(Path(work) / "state"), "--hb-epoch", "4096"],
                           capture_output=True, text=True, env=env, cwd=work, timeout=120)
 
 

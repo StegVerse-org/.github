@@ -3,12 +3,11 @@
 
 `organization_scope_rule` is that every state transition occurring within the
 organization emits an organization receipt. Repositories in this organization
-append their own transitions to their own ledgers -- the LLM-adapter records a
-node's arrival at its ingress boundary -- and nothing carried those receipts up,
+append their own transitions to their own ledgers, and nothing carried those receipts up,
 so the organization's record began at its own boundary and the whole front half
 of the path was absent from it.
 
-Nothing about this is a crossing. The adapter and this repository are both in
+Nothing about this is a crossing. A declared repository and this one are both in
 `StegVerse-org`, so there is no organization boundary between them and no
 Interlock/InTr involved; InTr is the inter-organization transport, and the hop
 that needs it is organization to `master-records/.github`. A repository ledger
@@ -222,6 +221,9 @@ def propagate_all(*, hb_epoch: int | None = None) -> dict[str, Any]:
     }
 
 
+CLI_ENTRYPOINT = "resident-runtime/propagate_repository_receipts.py (--hb-epoch)"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Carry repository transition receipts onto the organization chain.")
@@ -229,18 +231,26 @@ def main() -> int:
                         help="one declared repository; omit to sweep every declared repository")
     parser.add_argument("--repository-ledger-root", type=Path, default=None,
                         help="address of that repository's ledger; derived from the ledger home when absent")
-    parser.add_argument("--hb-epoch", type=int, default=None,
-                        help="heartbeat epoch; derived from the host clock, and marked as derived, when absent")
+    parser.add_argument("--hb-epoch", type=str, default=None,
+                        help="heartbeat epoch, as supplied (ASCII digits >= 32); absent or invalid is "
+                             "refused FAIL_CLOSED and nothing is propagated")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
+    # Checked as typed, before any ledger is read, by the organization
+    # writer's rule: argparse's int() would admit "+33" or " 33" as 33.
+    refused = organization_ledger.epoch_refusal(args.hb_epoch)
+    if refused is not None:
+        print(json.dumps({**refused, "retry_entrypoint": CLI_ENTRYPOINT}, sort_keys=True))
+        return 1
+    hb_epoch = int(str(args.hb_epoch))  # admitted as ASCII digits by the shared rule
 
     if args.repository:
         result = propagate(args.repository, repository_root=args.repository_ledger_root,
-                           hb_epoch=args.hb_epoch)
+                           hb_epoch=hb_epoch)
     else:
         if args.repository_ledger_root is not None:
             raise SystemExit("--repository-ledger-root names one repository's ledger; pass --repository")
-        result = propagate_all(hb_epoch=args.hb_epoch)
+        result = propagate_all(hb_epoch=hb_epoch)
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -251,4 +261,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/propagate_repository_receipts.py"))

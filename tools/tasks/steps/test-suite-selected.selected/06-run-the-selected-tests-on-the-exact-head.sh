@@ -1,0 +1,1 @@
+python scripts/unittest_junit.py --tests-from "$RUNNER_TEMP/selected.txt" --out "$RUNNER_TEMP/head-junit.xml"

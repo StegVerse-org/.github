@@ -153,6 +153,8 @@ def supplied_epoch_failure(hb_epoch: Any, reference: Any = None) -> tuple[str, s
             and reference["derived_from_clock"] is not False:
         return "HB_EPOCH_INVALID", ("the carrier's derived_from_clock is not exactly false; "
                                     "a clock-derived epoch is not a supplied one")
+    if reference is not None and "sampled_unix_ns" in reference: return "HB_EPOCH_INVALID", "the carrier's heartbeat reference carries sampled_unix_ns; a sampled clock value is CLOCK, never a supplied epoch"
+    if reference is not None and "derived_from_clock" not in reference: return "HB_EPOCH_PROVENANCE_UNMARKED", "the carrier's heartbeat reference carries no derived_from_clock; an unmarked clock value is laundering, and a carrier cannot self-assert CARRIED provenance"
     return None
 
 
@@ -175,6 +177,58 @@ def epoch_refusal(hb_epoch: Any) -> dict[str, Any] | None:
         "next_attempt": "offer the same frame again with its epoch; the receiving operation was "
                         "not loaded and nothing was appended",
     }
+
+
+def direct_epoch_refusal(hb_epoch: Any, entrypoint: str) -> dict[str, Any] | None:
+    """The six-field FAIL_CLOSED refusal of a direct call's epoch, or None (PR-1b, P1-FC-8).
+
+    A receiving operation called directly, not through `ingest_frame`, is
+    checked by the same rule (`supplied_epoch_failure`). An absent epoch is
+    HB_EPOCH_NOT_SUPPLIED rather than an epoch read from the host clock.
+    Nothing has been appended when this returns a refusal.
+    """
+    failure = supplied_epoch_failure(hb_epoch)
+    if failure is None:
+        return None
+    code, detail = failure
+    return {
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": HB_EPOCH_PREDICATE,
+        "detail": detail,
+        "required_evidence_or_repair": (
+            "call " + entrypoint + " with hb_epoch= (or --hb-epoch) as supplied: ASCII digits "
+            "with value >= " + str(HB_ANCHOR_EPOCH) + "; it is never derived from a clock"),
+        "retry_entrypoint": entrypoint,
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": "call again with the supplied epoch; nothing was received or appended",
+    }
+
+
+#: Refusal precedence for every capability-ingress entrypoint (Q-N-2): input
+#: refusals precede state refusals, and within inputs the supplied epoch is
+#: checked first. A call missing both an epoch and some other input is refused
+#: HB_EPOCH_NOT_SUPPLIED, and no refusal on this list appends anything. The
+#: egress `close` declares the same order as CLOSE_REFUSAL_PRECEDENCE.
+INGRESS_REFUSAL_PRECEDENCE = (
+    (HB_EPOCH_PREDICATE, "INPUT"),
+    ("ENTRYPOINT_INPUTS_ARE_WELL_FORMED", "INPUT"),
+    ("RECEIVING_OPERATION_STATE_ADMITS_THE_SUBMISSION", "STATE"),
+)
+
+#: The entrypoints held to INGRESS_REFUSAL_PRECEDENCE; each checks its epoch
+#: before any other input or state.
+INGRESS_ENTRYPOINTS = (
+    "org-boundary/runtime/capability_ingress.py::receive",
+    "resident-runtime/organization_manifest_ingress.py::receive",
+    "resident-runtime/intr_destination_ingress.py::receive",
+    "resident-runtime/intr_destination_ingress.py::closure",
+)
+
+
+def supplied_epoch(hb_epoch: Any) -> int:
+    """The admitted epoch as an int (call only after `direct_epoch_refusal` returned None)."""
+    return int(str(hb_epoch))
 
 
 def boundary(root: Path) -> dict[str, Any]:

@@ -31,6 +31,7 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ledger_store import HEAD_KEY, RECEIPT_PREFIX, SOURCE_PREFIX, open_store, parse_locator, receipt_key, source_key  # noqa: E402
@@ -41,6 +42,53 @@ C = json.loads((ROOT / ".stegverse/transition-ledger/org-contract.json").read_te
 _spec = importlib.util.spec_from_file_location("kernel", ROOT / "org-kernel/kernel.py")
 kernel = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(kernel)  # noqa: E402
+
+#: The shared supplied-epoch rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH),
+#: vendored byte-identical from org-boundary/runtime/capability_ingress.py
+#: (PR-1c). This module is also bound from a standalone ledger component
+#: (`bind_ledger_writers`), where the capability boundary is not present, so
+#: the rule is carried here rather than loaded from it.
+HB_EPOCH_PREDICATE = "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+HB_ANCHOR_EPOCH = 32
+INTR_PROTOCOL_GOAL = "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001"
+
+
+def supplied_epoch_failure(hb_epoch: Any, reference: Any = None) -> tuple[str, str] | None:
+    """The shared supplied-epoch rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH).
+
+    Byte-identical in StegVerse-org/.github#185 and StegVerse-Labs/.github#3212
+    and #3213. `hb_epoch` absent (None) is HB_EPOCH_NOT_SUPPLIED. Otherwise it
+    must be ASCII [0-9]+ only -- an int is read as its decimal text; a bool, a
+    float or anything coerced ('+33', ' 33', '3_3', '33.0') is refused -- with
+    integer value >= 32 (the HB32 anchor). `reference`, the carrier frame's
+    heartbeat reference when there is one, must be an object, and a
+    `derived_from_clock` it carries must be exactly false. Any failure is
+    HB_EPOCH_INVALID. Returns (failure_code, detail), or None when the epoch is
+    supplied. No clock is read.
+    """
+    if reference is not None and not isinstance(reference, dict):
+        return "HB_EPOCH_INVALID", "the carrier's heartbeat reference is not an object"
+    if hb_epoch is None:
+        return "HB_EPOCH_NOT_SUPPLIED", "no hb_epoch was supplied and no clock is read"
+    if isinstance(hb_epoch, bool):
+        text = None
+    elif isinstance(hb_epoch, int):
+        text = str(hb_epoch)
+    elif isinstance(hb_epoch, str):
+        text = hb_epoch
+    else:
+        text = None
+    if text is None or not text.isascii() or not text.isdigit():
+        return "HB_EPOCH_INVALID", "hb_epoch " + repr(hb_epoch) + " is not ASCII [0-9]+"
+    if int(text) < 32:
+        return "HB_EPOCH_INVALID", "hb_epoch " + text + " is below the HB32 anchor (32)"
+    if reference is not None and "derived_from_clock" in reference \
+            and reference["derived_from_clock"] is not False:
+        return "HB_EPOCH_INVALID", ("the carrier's derived_from_clock is not exactly false; "
+                                    "a clock-derived epoch is not a supplied one")
+    if reference is not None and "sampled_unix_ns" in reference: return "HB_EPOCH_INVALID", "the carrier's heartbeat reference carries sampled_unix_ns; a sampled clock value is CLOCK, never a supplied epoch"
+    if reference is not None and "derived_from_clock" not in reference: return "HB_EPOCH_PROVENANCE_UNMARKED", "the carrier's heartbeat reference carries no derived_from_clock; an unmarked clock value is laundering, and a carrier cannot self-assert CARRIED provenance"
+    return None
 
 
 
@@ -64,6 +112,111 @@ class OrgLedgerAppendRefused(SystemExit):
         super().__init__(failed_predicate)
         self.disposition = disposition
         self.failed_predicate = failed_predicate
+
+
+class OrgLedgerLocatorRefused(OrgLedgerAppendRefused):
+    """An append refused because the supplied ledger root names a remote (P1-FC-12 step b).
+
+    `refusal` is ledger_store's six-field FAIL_CLOSED LEDGER_LOCATOR_INVALID, re-raised with this
+    writer's own retry entrypoint. Raised before anything is opened, verified or written.
+    """
+
+    def __init__(self, refusal):
+        super().__init__(refusal["disposition"], refusal["failed_predicate"])
+        self.refusal = dict(refusal, retry_entrypoint=OrgLedgerAppendRefused.retry_entrypoint)
+
+
+class OrgLedgerEpochRefused(OrgLedgerAppendRefused):
+    """An append refused because its epoch was not supplied or is invalid.
+
+    `refusal` carries the six-field FAIL_CLOSED. Raised before the store is
+    opened, so nothing is written and no clock is read.
+    """
+
+    def __init__(self, refusal):
+        super().__init__(refusal["disposition"], refusal["failed_predicate"])
+        self.code = refusal["failure_code"] + ":" + refusal["detail"]
+        self.refusal = dict(refusal)
+
+
+def epoch_refusal(hb_epoch, reference=None):
+    """The six-field FAIL_CLOSED refusal of an append's epoch, or None.
+
+    `reference` is the source receipt's own heartbeat reference when it carries
+    one. A two-level binder passes the repository receipt's epoch here; when
+    that epoch was derived from a clock (`derived_from_clock` not exactly
+    false) it is not a supplied one and is HB_EPOCH_INVALID (P1 #163
+    CLOCK_DERIVED_EPOCH_ADMITTED_BY_ORG_APPEND, repair (a)).
+    """
+    failure = supplied_epoch_failure(hb_epoch, reference)
+    if failure is None:
+        return None
+    code, detail = failure
+    return {
+        "disposition": "FAIL_CLOSED",
+        "failure_code": code,
+        "failed_predicate": HB_EPOCH_PREDICATE,
+        "detail": detail,
+        "required_evidence_or_repair": (
+            "append with hb_epoch= (or --hb-epoch) as supplied: ASCII digits with value >= "
+            + str(HB_ANCHOR_EPOCH) + "; it is never derived from a clock"),
+        "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
+        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+        "next_attempt": ("append again with the supplied epoch, from a source receipt whose own epoch "
+                         "was supplied rather than derived from a clock; nothing was written"),
+    }
+
+
+def carried_provenance_failure(provenance, hb_epoch, head_store):
+    """(failure_code, detail) when a CARRIED claim does not verify, or None. No clock is read.
+
+    A writer handed CARRIED provenance -- {"source": "CARRIED:<origin>",
+    "head_receipt_sha": <sha>} -- records it only when that sha is the
+    current head of `head_store`, and that head receipt is itself supplied
+    (derived_from_clock false, no sample) at the same epoch. Otherwise the
+    claim is CARRIED_PROVENANCE_UNVERIFIED: it is never recorded, and never
+    stripped to read as SUPPLIED.
+    """
+    def unverified(detail):
+        return "CARRIED_PROVENANCE_UNVERIFIED", detail
+    if not isinstance(provenance, dict) or set(provenance) != {"source", "head_receipt_sha"} \
+            or not str(provenance.get("source")).startswith("CARRIED:"):
+        return unverified("CARRIED provenance names exactly source CARRIED:<origin> and head_receipt_sha")
+    if head_store is None:
+        return unverified("no ledger is named whose head the CARRIED claim can be verified against")
+    head = head_store.get(HEAD_KEY)
+    head_sha = head.get("receipt_sha256") if isinstance(head, dict) else None
+    if head_sha is None or provenance["head_receipt_sha"] != head_sha:
+        return unverified("head_receipt_sha " + repr(provenance["head_receipt_sha"])
+                          + " is not the ledger's current head " + repr(head_sha))
+    receipt = head_store.get(receipt_key(head_sha))
+    reference = receipt.get("hb_reference") if isinstance(receipt, dict) else None
+    if not (isinstance(reference, dict) and reference.get("derived_from_clock") is False
+            and "sampled_unix_ns" not in reference and reference.get("epoch") == int(str(hb_epoch))):
+        return unverified("the head receipt " + head_sha + " is not supplied at epoch " + str(hb_epoch))
+    return None
+
+
+def carried_heartbeat(hb_epoch, provenance):
+    """The heartbeat reference of a verified CARRIED epoch: supplied, plus its provenance."""
+    return {**kernel.hb_reference(epoch=int(str(hb_epoch))),
+            "source": provenance["source"], "head_receipt_sha": provenance["head_receipt_sha"]}
+
+
+def clock_provenance(reference):
+    """True when a receipt's heartbeat reference is CLOCK: flagged, or a bare legacy sample."""
+    return isinstance(reference, dict) and (
+        reference.get("derived_from_clock") is True
+        or ("sampled_unix_ns" in reference and reference.get("derived_from_clock") is not False))
+
+
+class SourceReceiptRefused(OrgLedgerAppendRefused):
+    """A source receipt the organization writer will not consume; `.refusal` is six-field."""
+
+    def __init__(self, refusal):
+        super().__init__(refusal["disposition"], refusal["failed_predicate"])
+        self.code = refusal["failure_code"] + ":" + refusal["detail"]
+        self.refusal = dict(refusal)
 
 
 def require_state_digest(field, value):
@@ -213,6 +366,42 @@ def verify_source(receipt):
         body.pop("receipt_sha256", None)
         if claimed != sha(body):
             raise SystemExit("repo receipt hash mismatch")
+        # A repository receipt stamped from a clock (minted before the writers
+        # required a supplied epoch) is not consumed: its organization receipt
+        # would order the chain by that host's clock. Refused before anything is
+        # written; the receipt itself is never mutated.
+        reference = receipt.get("hb_reference")
+        # F5: a source reference that marks no provenance (no flag, no sample)
+        # is refused like a clock one: its epoch cannot be told from a clock's.
+        if not clock_provenance(reference) and (not isinstance(reference, dict)
+                                                or "derived_from_clock" not in reference):
+            raise SourceReceiptRefused({
+                "disposition": "FAIL_CLOSED",
+                "failure_code": "HB_EPOCH_PROVENANCE_UNMARKED",
+                "failed_predicate": "SOURCE_RECEIPT_CARRIES_A_SUPPLIED_EPOCH",
+                "detail": "repository receipt " + str(claimed) + " has no marked hb_reference",
+                "required_evidence_or_repair": (
+                    "a WU-B13 migration transition that rebinds the legacy repo receipt under a supplied "
+                    "epoch with provenance CARRIED:LEGACY_CLOCK_RECEIPT + source sha; existing receipts "
+                    "are never mutated"),
+                "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
+                "owning_existing_goal": INTR_PROTOCOL_GOAL,
+                "next_attempt": "on the WU-B13 migration transition; nothing was written",
+            })
+        if clock_provenance(reference):
+            raise SourceReceiptRefused({
+                "disposition": "FAIL_CLOSED",
+                "failure_code": "SOURCE_RECEIPT_IS_CLOCK_PROVENANCE",
+                "failed_predicate": "SOURCE_RECEIPT_CARRIES_A_SUPPLIED_EPOCH",
+                "detail": "repository receipt " + str(claimed) + " has a clock-derived hb_reference",
+                "required_evidence_or_repair": (
+                    "a WU-B13 migration transition that rebinds the legacy repo receipt under a supplied "
+                    "epoch with provenance CARRIED:LEGACY_CLOCK_RECEIPT + source sha; existing receipts "
+                    "are never mutated"),
+                "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
+                "owning_existing_goal": INTR_PROTOCOL_GOAL,
+                "next_attempt": "on the WU-B13 migration transition; nothing was written",
+            })
         return {
             "source_receipt_schema": schema,
             "source_transition_sha256": claimed,
@@ -237,7 +426,43 @@ def verify_source(receipt):
     }
 
 
+def _complete_pending_head(store):
+    """Finish a torn append (B-P36q): a receipt written whose HEAD publication was not.
+
+    `append_transaction` writes the documents and then HEAD, last. A fault
+    between the two leaves exactly one receipt off the chain, extending the
+    current HEAD (or opening an empty chain). It is the receipt that append
+    would have published, so HEAD is published for it now, idempotently, under
+    the same lock -- instead of the ledger refusing itself for good. Anything
+    else unreachable is still a recovery refusal below. No clock is read.
+    """
+    head = store.get(HEAD_KEY)
+    previous = (head or {}).get("receipt_sha256") if isinstance(head, dict) else None
+    reachable, cursor = set(), previous
+    while isinstance(cursor, str) and cursor not in reachable:
+        record = store.get(receipt_key(cursor))
+        if not isinstance(record, dict):
+            return
+        reachable.add(cursor)
+        cursor = record.get("previous_receipt_sha256")
+    orphans = sorted(store.list_prefix(RECEIPT_PREFIX) - {receipt_key(d) for d in reachable})
+    if len(orphans) != 1:
+        return
+    pending = store.get(orphans[0])
+    if not isinstance(pending, dict):
+        return
+    digest = pending.get("receipt_sha256")
+    body = {k: v for k, v in pending.items() if k != "receipt_sha256"}
+    if (sha(body) != digest or receipt_key(digest) != orphans[0]
+            or pending.get("organization") != C["organization"]
+            or pending.get("previous_receipt_sha256") != previous):
+        return
+    store.put(HEAD_KEY, {"organization": C["organization"], "receipt_sha256": digest,
+                         "receipt_path": store.locator(orphans[0])})
+
+
 def _validate_existing_head(store):
+    _complete_pending_head(store)
     head = store.get(HEAD_KEY)
     if head is None:
         # A missing HEAD with existing receipts requires explicit recovery;
@@ -274,13 +499,29 @@ def _validate_existing_head(store):
     if store.list_prefix(RECEIPT_PREFIX) != {receipt_key(digest) for digest in reachable}:
         raise SystemExit("ORG_LEDGER_UNPUBLISHED_OR_ORPHAN_RECEIPTS_RECOVERY_REQUIRED")
     # A retained source copy is published only through the receipt that names
-    # it. Ledgers written before retention existed simply have none.
-    sources = {source_key(store.get(receipt_key(digest))["source_transition_sha256"])
-               for digest in reachable
-               if isinstance(store.get(receipt_key(digest)).get("source_transition_sha256"), str)}
-    if not store.list_prefix(SOURCE_PREFIX) <= sources:
-        raise SystemExit("ORG_LEDGER_ORPHAN_SOURCE_RECEIPTS_RECOVERY_REQUIRED")
+    # it. Ledgers written before retention existed simply have none. A copy no
+    # receipt names yet is a torn append's pending document (B-P36q): it is not
+    # published by anything, and the retried append rewrites it byte-identically
+    # (a different document at its key is still a collision there). Only one that
+    # is not a document at all is a recovery refusal.
+    named = {source_key(store.get(receipt_key(digest))["source_transition_sha256"])
+             for digest in reachable
+             if isinstance(store.get(receipt_key(digest)).get("source_transition_sha256"), str)}
+    for key in store.list_prefix(SOURCE_PREFIX) - named:
+        if not _pending_source_copy(store, key):
+            raise SystemExit("ORG_LEDGER_ORPHAN_SOURCE_RECEIPTS_RECOVERY_REQUIRED")
     return previous
+
+
+def _pending_source_copy(store, key):
+    """True when an unnamed source copy is a verifiable source receipt at its own address."""
+    document = store.get(key)
+    if not isinstance(document, dict):
+        return False
+    try:
+        return source_key(verify_source(document)["source_transition_sha256"]) == key
+    except (SystemExit, ValueError, KeyError, TypeError):
+        return False
 
 
 def recorded(store, head, source_transition_sha256):
@@ -297,7 +538,18 @@ def recorded(store, head, source_transition_sha256):
 
 
 def append(source_receipt, org_transition_class, predecessor_state, successor_state,
-           boundary_evidence, authority_effect, hb_epoch=None, store=None, idempotent=False):
+           boundary_evidence, authority_effect, hb_epoch=None, store=None, idempotent=False,
+           hb_provenance=None):
+    # The supplied ledger root is resolved first: a remote locator is refused in six fields
+    # (P1-FC-12 step b) before anything is verified, opened or written.
+    location = None
+    if store is None:
+        try:
+            location = ledger_root()
+        except ValueError as exc:
+            if getattr(exc, "refusal", None):
+                raise OrgLedgerLocatorRefused(exc.refusal) from exc
+            raise
     # Admission is decided before the append lock is taken; an inadmissible
     # source receipt never contends for the organization ledger.
     source = verify_source(source_receipt)
@@ -305,20 +557,26 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
         require_state_digest("predecessor_org_state_sha256", predecessor_state)
     require_state_digest("successor_org_state_sha256", successor_state)
     retained = {source_key(source["source_transition_sha256"]): source_receipt}
-    # Ordering is a heartbeat count, not a clock reading. A supplied tick keeps
-    # the receipt reproducible; deriving one from the host clock is permitted
-    # but marks itself so the two can be told apart.
-    heartbeat = kernel.hb_reference(epoch=hb_epoch) if hb_epoch is not None else kernel.hb_reference()
-    target = store or open_store(ledger_root())
+    # Ordering is a heartbeat count, not a clock reading. The tick is supplied
+    # and checked by the shared rule; an absent or invalid one is refused
+    # six-field FAIL_CLOSED before the store is opened (PR-1c). It used to be
+    # derived from the host clock and marked as derived.
+    refusal = epoch_refusal(hb_epoch, source_receipt.get("hb_reference"))
+    if refusal is not None:
+        raise OrgLedgerEpochRefused(refusal)
+    heartbeat = (kernel.hb_reference(epoch=int(str(hb_epoch))) if hb_provenance is None
+                 else carried_heartbeat(hb_epoch, hb_provenance))
+    target = store or open_store(location)
     target.initialize()
     # The storage substrate owns serialization. A lost comparison writes
     # nothing, so a retry cannot strand an orphan receipt.
     for _attempt in range(128):
         guard = target.exclusive() if hasattr(target, "exclusive") else nullcontext()
         with guard:
+            # Validated (and a torn append completed) before HEAD is read for comparison.
+            _validate_existing_head(target)
             expected_head = target.get(HEAD_KEY)
             previous = (expected_head or {}).get("receipt_sha256")
-            _validate_existing_head(target)
             # A source receipt is consumed once. With `idempotent` the chain is
             # read at the HEAD this attempt compares against: a receipt already
             # consuming this exact source is returned instead of a second one
@@ -329,6 +587,29 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
                     if prior.get("org_transition_class") != org_transition_class:
                         raise ValueError("ledger_receipt_collision")
                     return prior
+            # A CARRIED epoch is recorded as CARRIED only when its claim names
+            # this ledger's current supplied head (B-P36m); nothing is written
+            # otherwise. A source receipt that itself claims CARRIED provenance
+            # is held to the same check (F4).
+            source_reference = source_receipt.get("hb_reference") if isinstance(source_receipt, dict) else None
+            source_claim = ({k: source_reference.get(k) for k in ("source", "head_receipt_sha")}
+                            if isinstance(source_reference, dict)
+                            and ("source" in source_reference or "head_receipt_sha" in source_reference) else None)
+            for claim, claim_epoch in ((hb_provenance, hb_epoch),
+                                       (source_claim, (source_reference or {}).get("epoch"))):
+                if claim is None:
+                    continue
+                failed = carried_provenance_failure(claim, claim_epoch, target)
+                if failed is not None:
+                    raise OrgLedgerEpochRefused({
+                        "disposition": "FAIL_CLOSED", "failure_code": failed[0],
+                        "failed_predicate": HB_EPOCH_PREDICATE, "detail": failed[1],
+                        "required_evidence_or_repair": (
+                            "a CARRIED claim names this ledger's current head, itself supplied at the same epoch"),
+                        "retry_entrypoint": OrgLedgerAppendRefused.retry_entrypoint,
+                        "owning_existing_goal": INTR_PROTOCOL_GOAL,
+                        "next_attempt": "append again with a verifiable CARRIED claim or a supplied epoch; "
+                                        "nothing was written"})
             # Resolved against the HEAD this attempt will compare against, so a
             # retry after a lost comparison re-resolves rather than reusing it.
             if predecessor_state == FROM_HEAD:
@@ -337,6 +618,12 @@ def append(source_receipt, org_transition_class, predecessor_state, successor_st
                 predecessor = previous
             elif predecessor_state == GENESIS:
                 if expected_head is not None:
+                    # The exact retry of a genesis append that a fault tore (and the
+                    # next append completed) is that genesis receipt, not a refusal.
+                    genesis = recorded(target, expected_head, source["source_transition_sha256"])
+                    if (genesis is not None and genesis.get("previous_receipt_sha256") is None
+                            and genesis.get("org_transition_class") == org_transition_class):
+                        return genesis
                     raise OrgLedgerAppendRefused("DENY", "ORG_LEDGER_GENESIS_ON_NON_EMPTY_LEDGER")
                 predecessor = None
             else:
@@ -378,8 +665,10 @@ def main():
     parser.add_argument("--successor-org-state-sha256", required=True)
     parser.add_argument("--boundary-evidence-json", default="{}")
     parser.add_argument("--authority-effect", default="NONE")
-    parser.add_argument("--hb-epoch", type=int, default=None,
-                        help="heartbeat epoch; derived from the host clock, and marked as derived, when absent")
+    # The epoch is read as typed: argparse's int() would admit "+33", " 33"
+    # or fullwidth digits as 33 before the shared rule ever saw them.
+    parser.add_argument("--hb-epoch", default=None,
+                        help="heartbeat epoch, supplied; absent or invalid is refused HB_EPOCH_NOT_SUPPLIED/HB_EPOCH_INVALID")
     args = parser.parse_args()
     source_path = args.transition_receipt or args.repo_receipt
     if not source_path:
@@ -392,12 +681,20 @@ def main():
         result = append(receipt, args.org_transition_class or default_class,
                         args.predecessor_org_state_sha256, args.successor_org_state_sha256,
                         json.loads(args.boundary_evidence_json), args.authority_effect,
-                        hb_epoch=args.hb_epoch)
+                        # An exact rerun returns the receipt that already consumed this
+                        # source (F-POST-HEAD), never a second one.
+                        hb_epoch=args.hb_epoch, idempotent=True)
     except LedgerLocationRequired as exc:
         print(json.dumps(location_refusal(exc), sort_keys=True))
+        raise SystemExit(1)
+    except OrgLedgerEpochRefused as exc:
+        print(json.dumps(exc.refusal, sort_keys=True))
         raise SystemExit(1)
     print(json.dumps(result, sort_keys=True))
 
 
 if __name__ == "__main__":
-    main()
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    raise SystemExit(_writer.run(main, "resident-runtime/aggregate_repo_transition.py", inputs=('--repo-receipt', '--transition-receipt')))

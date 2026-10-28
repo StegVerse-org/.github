@@ -32,7 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json"
-MANIFEST = "tests/fixtures/sdk-manifests/task-registry-disclosure-to-llm-adapter.json"
+MANIFEST = "tests/fixtures/sdk-manifests/task-registry-disclosure.json"
 STANDING = "tests/fixtures/crossing-standing-genesis.json"
 
 PROFILE_ID = "sdk-manifest-ingress"
@@ -73,7 +73,7 @@ def standing():
 
 def submission(body=None, digest=True):
     payload = {"schema": "stegverse.sdk-manifest-crossing-payload/v1",
-               "declared_transition_surface": "LLM_ADAPTER"}
+               "declared_transition_surface": "TASK_REGISTRY_DISCLOSURE"}
     if body is not None:
         payload["manifest"] = body
         if digest:
@@ -202,7 +202,7 @@ class PeerSubmissionReachesTheOperationTests(unittest.TestCase):
             payload=payload, standing=standing(),
             transition_reference="intr:transition:" + packet_id,
             authority_effect="NONE", packet_id=packet_id)
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=4096)
         return packet
 
     def consume(self):
@@ -225,7 +225,7 @@ class PeerSubmissionReachesTheOperationTests(unittest.TestCase):
         self.assertEqual(application["receiving_operation_id"], OPERATION_ID)
         operation = application["receiving_operation_result"]
         self.assertIs(operation["organization_receipt_observed"], True)
-        self.assertEqual(operation["resolved_service_id"], "stegverse-org.llm-adapter")
+        self.assertEqual(operation["resolved_service_id"], "stegverse-org.task-registry-disclosure")
 
     def test_both_ledger_levels_record_the_submission(self):
         self.publish(submission(manifest()))

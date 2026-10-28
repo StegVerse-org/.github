@@ -22,9 +22,11 @@ absent from it. No row in that registry resolved to
 ```text
 stegverse-org.org-control             BOUNDARY_LOCAL_CONTROL
 stegverse-org.boundary-diagnostic     BOUNDARY_LOCAL_DIAGNOSTIC
-stegverse-org.llm-adapter             INTERNAL_ENDPOINT
+stegverse-org.task-registry-disclosure INTERNAL_ENDPOINT
 ...18 rows, none of them the manifest ingress
 ```
+
+(Registry as it stood then. On main `40a5d23` it has 23 rows, two of them `BOUNDARY_LOCAL_CAPABILITY_INGRESS`: `stegverse-org.sdk-manifest-ingress` and `stegverse-org.intr-destination`.)
 
 So the binding resolved a destination that **transport could not reach**. The
 receiving operation could only be entered by running its CLI inside a checkout
@@ -125,7 +127,7 @@ every capability crossing unclosable.
 
 ## Enforced, not just declared
 
-`org-runtime/runtime_boundary.py validate` is 15 checks, two of them new:
+`org-runtime/runtime_boundary.py validate` was 15 checks at this change (17 on main `40a5d23`), two of them new here:
 
 * `capability_addresses_resolve` — `capability_address_rule` holds: every bound
   capability's addressed service exists in the registry, carries the role whose
@@ -150,7 +152,7 @@ destination  StegVerse-org  / stegverse-org.sdk-manifest-ingress
 dispatch     CONSUMED   processing_selection BOUNDARY_LOCAL_NO_PROCESSOR_SELECTED
 address      capability_received true   profile sdk-manifest-ingress
 operation    ORGANIZATION_SDK_MANIFEST_INGRESS
-             resolved_service_id             stegverse-org.llm-adapter
+             resolved_service_id             stegverse-org.task-registry-disclosure
              intr_admission_observed         true
              far_side_transition_observed    true
              repository_receipt_observed     true
@@ -159,14 +161,17 @@ operation    ORGANIZATION_SDK_MANIFEST_INGRESS
 ```
 
 `tests.test_capability_ingress_address` 24 cases.
-`org-runtime/runtime_boundary.py validate` 15/15.
+`org-runtime/runtime_boundary.py validate` 15/15 (at the time; 17 checks today).
 Every CI step extracted verbatim and run locally. `actionlint` clean.
 
 ## What this does not close
 
-Origin remains asserted rather than attested. A frame in a shared mesh carries
-whatever origin its writer put in it, and `credential_authority` is TV/TVC with
-`origin_attestation_state: NOT_PROVEN`. Giving the capability an address does
+When this landed, origin was asserted rather than attested. A frame in a shared mesh carries
+whatever origin its writer put in it, and an unattested crossing still records
+`origin_attestation_state: NOT_PROVEN`. Origin attestation has since been bound
+(`org-boundary/runtime/origin_attestation.py`, `egress.origin_attestation` in
+`org-runtime/interlock-intr.json`; `docs/ORIGIN_ATTESTATION_MIRROR_HANDOFF.md`), so a crossing
+emitted with a credential authority records `PROVEN`. Giving the capability an address does
 not change that, and it is the one dimension the receipt-disorder measurement
 scores non-zero. What the address changes is reachability, not identity.
 

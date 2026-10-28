@@ -13,7 +13,7 @@ Status: `ACTIVE / WORKSPACE ENDPOINT BINDING MERGED-VALIDATED / PROVIDER AUTHORI
 
 ## Completed generic dispatch repair
 
-`org-kernel/kernel.py::dispatch` and `org-boundary/runtime/process_boundary.py` execute a registry-declared `endpoint_adapter` generically for any `INTERNAL_ENDPOINT`. Adapter paths must resolve inside the organization repository root and exist as files. Missing adapters, paths outside the organization root, failed adapter execution, and invalid output remain fail-closed.
+`org-kernel/kernel.py::dispatch` and `org-boundary/runtime/process_boundary.py` execute a registry-declared `endpoint_adapter` generically for any `INTERNAL_ENDPOINT`. Admission is the registry's disposition, not the path: `process_boundary.py::resolve_adapter` runs an adapter only when the service declares `endpoint_adapter_disposition: ALLOW_DECLARED_ADAPTER`, and otherwise refuses with that disposition or `FAIL_CLOSED_ENDPOINT_ADAPTER_UNDECLARED`. A declared adapter must name a path (`FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_INSTALLED`) that exists as a file (`FAIL_CLOSED_ENDPOINT_ADAPTER_NOT_MATERIALIZED`). A relative path resolves against the organization repository root; filesystem containment is not checked, because it is not admissibility. Failed adapter execution and invalid output remain fail-closed.
 
 The generic boundary preserves:
 
@@ -21,7 +21,7 @@ The generic boundary preserves:
 registry selects service
 service boundary_role == INTERNAL_ENDPOINT
 registry endpoint_adapter selects organization-local adapter
-adapter path constrained to organization repository root
+registry endpoint_adapter_disposition ALLOW_DECLARED_ADAPTER admits the adapter
 boundary processor retains receipt generation
 adapter does not gain transport/governance/credential/transition authority
 ```

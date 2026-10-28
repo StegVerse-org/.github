@@ -1,0 +1,1 @@
+python3 -m unittest discover -s tests -p 'test_merge_transfer_gitstore*.py' -v

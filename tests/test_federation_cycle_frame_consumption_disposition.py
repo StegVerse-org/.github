@@ -44,7 +44,8 @@ def run_cycle(results):
             mock.patch.object(FC.K, "record_federation_cycle", return_value=Path(work) / "cycle.json"), \
             contextlib.redirect_stdout(io.StringIO()):
         return FC.main(mesh_root=Path(work) / "mesh", node_state_root=Path(work) / "state",
-                       repo_ledger_root=Path(work) / "repo", org_ledger_root=Path(work) / "org")
+                       repo_ledger_root=Path(work) / "repo", org_ledger_root=Path(work) / "org",
+                       hb_epoch=4096)
 
 
 class FrameConsumptionDispositionTests(unittest.TestCase):

@@ -1,0 +1,1 @@
+python -m unittest tests.test_intr_destination_capability -v

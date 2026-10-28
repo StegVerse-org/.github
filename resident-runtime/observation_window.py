@@ -126,6 +126,18 @@ class WindowRefused(SystemExit):
     """A window that cannot be opened on the terms declared."""
 
 
+class WindowEpochRefused(WindowRefused):
+    """A window refused because its epoch was not supplied or is invalid.
+
+    `refusal` carries the six-field FAIL_CLOSED. No clock is read and no
+    snapshot or receipt is produced.
+    """
+
+    def __init__(self, refusal: Mapping[str, Any]):
+        super().__init__("observation-window-refused:" + refusal["failure_code"] + ":" + refusal["detail"])
+        self.refusal = dict(refusal)
+
+
 def _module(name: str, relative: str):
     spec = importlib.util.spec_from_file_location(name, ROOT / relative)
     module = importlib.util.module_from_spec(spec)
@@ -138,6 +150,9 @@ lineage = _module("receipt_lineage_projection",
                   "resident-runtime/receipt_lineage_projection.py")
 repository_ledger = _module("repo_transition_emit",
                             ".stegverse/transition-ledger/emit.py")
+# The shared supplied-epoch rule, reused rather than reimplemented (PR-1c).
+epoch_rule = _module("capability_ingress_epoch_rule",
+                     "org-boundary/runtime/capability_ingress.py")
 
 OPENED_CLASS = "OBSERVATION_WINDOW_OPENED"
 CLOSED_CLASS = "OBSERVATION_WINDOW_CLOSED"
@@ -184,10 +199,26 @@ def _reference(epoch: int | None) -> dict[str, Any]:
     """The heartbeat reference for a boundary of this window.
 
     Supplied epochs go through the kernel unchanged, so a window declared from
-    the carrier is reproducible. A window with no epoch samples, and the
-    reference it gets back says it sampled.
+    the carrier is reproducible. A window with no epoch, or an invalid one, is
+    refused six-field FAIL_CLOSED by the shared rule (PR-1c); it used to sample
+    the host clock and say so.
     """
-    return kernel.hb_reference(epoch=epoch) if epoch is not None else kernel.hb_reference()
+    failure = epoch_rule.supplied_epoch_failure(epoch)
+    if failure is not None:
+        code, detail = failure
+        raise WindowEpochRefused({
+            "disposition": "FAIL_CLOSED",
+            "failure_code": code,
+            "failed_predicate": epoch_rule.HB_EPOCH_PREDICATE,
+            "detail": detail,
+            "required_evidence_or_repair": (
+                "open the window with epoch= as supplied: ASCII digits with value >= "
+                + str(epoch_rule.HB_ANCHOR_EPOCH) + "; it is never derived from a clock"),
+            "retry_entrypoint": "resident-runtime/observation_window.py::open_window",
+            "owning_existing_goal": epoch_rule.INTR_PROTOCOL_GOAL,
+            "next_attempt": "open the window again with the supplied epoch; no snapshot was taken",
+        })
+    return kernel.hb_reference(epoch=int(str(epoch)))
 
 
 def open_window(chain: Sequence[Mapping[str, Any]], *, countdown_hb: int,

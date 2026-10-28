@@ -30,6 +30,8 @@ REPO = "stegverse.repo-transition-receipt/v1"
 # The emitter requires a digest in every *_sha256 field.
 STATE_BEFORE = "sha256:" + "a" * 64
 STATE_AFTER = "sha256:" + "b" * 64
+# A supplied heartbeat epoch: an append without one is refused (PR-1c).
+HB_EPOCH = 4128
 
 spec = importlib.util.spec_from_file_location("org_append_role", EMITTER)
 module = importlib.util.module_from_spec(spec)
@@ -42,7 +44,7 @@ def load_json(path):
 
 def repo_receipt(number=1):
     body = {
-        "schema": REPO,
+        "schema": REPO, "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
         "repository": ORGANIZATION + "/StegVerse-SDK",
         "transition_id": "repo-" + str(number),
     }
@@ -376,7 +378,7 @@ class EmitterAdmissionTests(unittest.TestCase):
                     module.append({"schema": "stegverse.not-consumed/v1",
                                    "transition_id": "x"},
                                   "ORGANIZATION_STATE_TRANSITION",
-                                  STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                                  STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
             self.assertFalse(root.exists())
 
 
@@ -386,7 +388,7 @@ class EmitterAppendTests(unittest.TestCase):
             with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
                 receipt = canonical_receipt(1)
                 record = module.append(receipt, "ORGANIZATION_STATE_TRANSITION",
-                                       STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                                       STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
                 self.assertEqual(record["schema"],
                                  "stegverse.organization-transition-receipt/v1")
                 self.assertEqual(record["organization"], ORGANIZATION)
@@ -402,10 +404,10 @@ class EmitterAppendTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             with patch.dict(os.environ, {"STEGVERSE_ORG_LEDGER_ROOT": root}):
                 first = module.append(repo_receipt(1), "REPO_STATE_PROPAGATION",
-                                      STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                                      STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
                 second = module.append(canonical_receipt(2),
                                        "ORGANIZATION_STATE_TRANSITION",
-                                       STATE_BEFORE, STATE_AFTER, {}, "NONE")
+                                       STATE_BEFORE, STATE_AFTER, {}, "NONE", hb_epoch=HB_EPOCH)
                 self.assertIsNone(first["previous_receipt_sha256"])
                 self.assertEqual(second["previous_receipt_sha256"],
                                  first["receipt_sha256"])
@@ -462,9 +464,13 @@ class MasterRecordsRoleAuditTests(unittest.TestCase):
                 if pattern.search(line):
                     measured.append((rel.as_posix(), line.strip()[:240]))
         declared = [(e["file"], e["text"]) for e in self.audit["occurrences"] if e["line"] is not None]
-        self.assertEqual(sorted(measured), sorted(declared),
+        from collections import Counter
+        newly_observed = list((Counter(measured) - Counter(declared)).elements())
+        stale_declared = list((Counter(declared) - Counter(measured)).elements())
+        self.assertEqual((newly_observed, stale_declared), ([], []),
                          "the Master Records role audit has drifted from the tree; "
-                         "re-measure data/master-records-role-audit.json")
+                         "re-measure data/master-records-role-audit.json. "
+                         "newly_observed=" + repr(newly_observed) + " stale_declared=" + repr(stale_declared))
 
     def test_the_completion_evidence_class_is_classified_not_renamed(self):
         entries = [e for e in self.audit["occurrences"] if "MASTER_RECORDS_RECONSTRUCTED" in e["text"]]

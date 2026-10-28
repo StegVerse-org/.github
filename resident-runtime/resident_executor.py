@@ -14,8 +14,7 @@ submission (resident-runtime/run_sv002_self_characterization_roundtrip.py),
 invoked as its own action.
 """
 from __future__ import annotations
-import argparse, json, os, subprocess, sys
-from datetime import datetime, timezone
+import argparse, importlib.util, json, os, subprocess, sys
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -43,11 +42,23 @@ def run_json(cmd, timeout):
             pass
     return p,payload
 
-def cycle(mesh_root, node_state_root):
+def epoch_refusal(hb_epoch):
+    """The six-field refusal of the executor's --hb-epoch by the shared rule, or None."""
+    spec=importlib.util.spec_from_file_location("resident_executor_epoch_rule",ROOT/"resident-runtime"/"aggregate_repo_transition.py")
+    rule=importlib.util.module_from_spec(spec); spec.loader.exec_module(rule)
+    refused=rule.epoch_refusal(hb_epoch)
+    return None if refused is None else {**refused,"retry_entrypoint":"resident-runtime/resident_executor.py --hb-epoch",
+                                          "consequence_committed":False}
+
+def cycle(mesh_root, node_state_root, hb_epoch=None):
     script=ROOT/"resident-runtime"/"federation_cycle.py"
-    p,result=run_json([sys.executable,str(script),"--mesh-root",str(mesh_root),"--node-state-root",str(node_state_root)],120)
+    # The cycle takes a supplied epoch and refuses without one; the executor
+    # passes on what its materializer supplied and reads none from a clock.
+    epoch=[] if hb_epoch is None else ["--hb-epoch",hb_epoch]
+    p,result=run_json([sys.executable,str(script),"--mesh-root",str(mesh_root),"--node-state-root",str(node_state_root),*epoch],120)
     if p.returncode!=0:
-        raise RuntimeError("federation cycle failed: "+p.stderr[-1024:])
+        # A refused cycle prints its six-field refusal; it is carried, not just stderr.
+        raise RuntimeError("federation cycle failed: "+(json.dumps(result,sort_keys=True) if result else p.stderr[-1024:]))
     return result
 
 # The cycle records each attempted transition with its own disposition and
@@ -75,13 +86,21 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--mesh-root",type=Path,required=True)
     ap.add_argument("--node-state-root",type=Path,required=True)
+    ap.add_argument("--hb-epoch",default=None,help="supplied heartbeat epoch, passed to the federation cycle")
     a=ap.parse_args()
     bad=[k for k in HOSTED if truthy(os.getenv(k))]
     if bad:
         raise SystemExit("hosted runtime prohibited: "+",".join(bad))
+    # The cycle needs a supplied epoch, and the executor has none of its own:
+    # an absent or invalid one is refused here, six-field, before anything runs
+    # or is written (F7).
+    refused=epoch_refusal(a.hb_epoch)
+    if refused is not None:
+        print(json.dumps(refused,sort_keys=True),flush=True)
+        return 1
     error=None
     try:
-        fed=cycle(a.mesh_root,a.node_state_root)
+        fed=cycle(a.mesh_root,a.node_state_root,a.hb_epoch)
     except Exception as exc:
         fed=None
         error=str(exc)
@@ -90,7 +109,10 @@ def main():
     state={
         "schema":"stegverse.organization-resident-executor/v2",
         "organization":"StegVerse-org",
-        "observed_at":datetime.now(timezone.utc).isoformat(),
+        # The cycle's supplied heartbeat reference, not a host-clock reading
+        # (an unmarked wall-clock timestamp used to be stamped here). A refused
+        # cycle has none, and the record says so with null.
+        "heartbeat_reference":(fed or {}).get("heartbeat_reference"),
         "materialization":"ONE_CYCLE_PER_INVOCATION",
         "disposition":"ALLOW" if allowed else "FAIL_CLOSED",
         "failed_predicate":(None if allowed else
@@ -111,4 +133,7 @@ def main():
     return 0 if state["disposition"]=="ALLOW" else 2
 
 if __name__=="__main__":
-    raise SystemExit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    raise SystemExit(_writer.run(main, "resident-runtime/resident_executor.py"))
