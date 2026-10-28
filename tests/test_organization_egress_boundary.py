@@ -362,14 +362,16 @@ class EgressBoundaryTests(EgressHarness):
     # --- closure -----------------------------------------------------------
 
     def test_an_absence_is_not_recorded_as_anything(self):
-        """Nothing crossed, so there is no disposition -- polling is not a transition."""
+        """Nothing crossed: FAIL_CLOSED with the six fields, and nothing recorded."""
         emitted = self.emit()
         before = len(self.repo_receipts())
-        pending = egress.close(PEER, emitted["packet_id"], "egress-test-001",
-                               mesh_root=self.mesh, hb_epoch=32)
-        self.assertEqual(pending["disposition"], "PENDING")
-        self.assertIs(pending["closure_recorded"], False)
-        self.assertIs(pending["absence_is_not_a_transition"], True)
+        absent = egress.close(PEER, emitted["packet_id"], "egress-test-001",
+                              mesh_root=self.mesh, hb_epoch=32)
+        self.assertEqual(absent["disposition"], "FAIL_CLOSED")
+        self.assertEqual(absent["failure_code"], "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION")
+        self.assertIs(absent["closure_recorded"], False)
+        self.assertIs(absent["refusal_recorded"], False)
+        self.assertIs(absent["absence_is_not_a_transition"], True)
         self.assertEqual(len(self.repo_receipts()), before)
 
     def test_the_full_round_trip_closes_and_is_recorded(self):

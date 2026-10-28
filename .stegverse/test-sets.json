@@ -251,6 +251,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_egress_close_response_absent_fail_closed.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_egress_close_response_absent_fail_closed.py"
+   ],
+   "tests": [
+    "tests.test_egress_close_response_absent_fail_closed"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_federation_cycle_frame_consumption_disposition.py",
    "inputs": [],
    "surfaces": [
@@ -3888,6 +3900,9 @@
   ],
   "tests/test_ecosystem_ai_reuse.py": [
    "orchestration/ecosystem_ai_reuse.py"
+  ],
+  "tests/test_egress_close_response_absent_fail_closed.py": [
+   "resident-runtime/organization_egress_boundary.py"
   ],
   "tests/test_federation_cycle_frame_consumption_disposition.py": [
    "resident-runtime/federation_cycle.py",
