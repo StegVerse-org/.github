@@ -120,6 +120,14 @@ class RepositoryReceiptTests(unittest.TestCase):
             self.assertNotIn("hb_reference", refusal)
             self.assertEqual(list(Path(root).iterdir()), [])
 
+    def test_a_repository_receipt_without_a_tick_marks_itself_derived(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule minted a repository receipt from the
+        host clock and marked it derived_from_clock. #207 refuses an append with no supplied epoch
+        and writes nothing.
+        """
+        self.test_a_repository_receipt_without_a_tick_is_refused_and_nothing_written()
+
 
 SIX_FIELDS = ("failure_code", "failed_predicate", "required_evidence_or_repair",
               "retry_entrypoint", "owning_existing_goal", "next_attempt")

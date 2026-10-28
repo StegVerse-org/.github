@@ -84,6 +84,14 @@ class FederationCycleSuppliedEpochTests(unittest.TestCase):
         consume.assert_not_called()
         record.assert_not_called()
 
+    def test_no_epoch_records_no_reference_and_six_fields(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule recorded the cycle with no reference
+        and still consumed the frames. #207 refuses an epoch-less cycle with six fields before
+        anything is consumed or recorded.
+        """
+        self.test_no_epoch_is_refused_with_six_fields_and_nothing_consumed()
+
     def test_coerced_or_low_epochs_are_invalid(self):
         for value in ("+33", " 33", "3_3", "31", "33.0", ""):
             with self.subTest(value=value):
@@ -108,6 +116,14 @@ class FederationCycleSuppliedEpochTests(unittest.TestCase):
                         repo_ledger_root=Path(work) / "repo", org_ledger_root=Path(work) / "org",
                         hb_epoch=supplied)
                 propagate.assert_called_once_with(hb_epoch=expected)
+
+    def test_the_supplied_epoch_reaches_propagation_unchanged(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule passed the raw text (absent or
+        invalid included) through to the writer. #207 admits the epoch by the shared rule first, so
+        propagation receives the admitted integer and an absent or invalid one never reaches it.
+        """
+        self.test_the_supplied_epoch_reaches_propagation_as_admitted()
 
     def test_the_cycle_and_executor_sources_hold_no_clock_read(self):
         for rel in ("resident-runtime/federation_cycle.py", "resident-runtime/resident_executor.py"):

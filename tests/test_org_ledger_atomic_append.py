@@ -112,6 +112,15 @@ class OrgLedgerAppendTests(unittest.TestCase):
                                  first["receipt_sha256"])
                 self.assertEqual(len(list((Path(root) / "receipts").glob("*.json"))), 1)
 
+    def test_missing_head_with_existing_receipt_fails_closed(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule refused a ledger whose single receipt
+        had no HEAD. #207 (B-P36q) treats that as a torn genesis append and completes it. A missing
+        HEAD over a longer chain still fails closed
+        (test_missing_head_with_existing_receipts_fails_closed).
+        """
+        self.test_a_torn_genesis_append_is_completed_not_refused()
+
     def test_a_torn_append_on_a_chain_is_completed_and_the_chain_continues(self):
         """B-P36q: an OSError on the HEAD write after the receipt write; the next appends complete once."""
         with tempfile.TemporaryDirectory() as root:

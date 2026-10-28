@@ -425,6 +425,14 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertFalse(hasattr(returning, "EXIT_PENDING_OBSERVATION"))
         self.assertEqual(self.return_decision(emitted)["authority_effect"], "NONE_REFUSAL_ONLY")
 
+    def test_a_pending_observation_does_not_exit_as_a_returned_decision(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule answered an unanswered close with a
+        PENDING observation and its own exit code. #186 answers it FAIL_CLOSED
+        DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION with the six fields, exiting as not allowed.
+        """
+        self.test_an_unanswered_return_does_not_exit_as_a_returned_decision()
+
     def test_a_returned_decision_exits_as_returned_whatever_the_governance_disposition(self):
         emitted = self.receive()
         self.answer(emitted)
