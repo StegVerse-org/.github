@@ -487,5 +487,24 @@ class Consume(unittest.TestCase):
         self.six(refused)
 
 
+class WriterVerifyStepReadsSourcesAnonymously(unittest.TestCase):
+    """Authoring-Session: lane-b-91117956 (#162). The writer's verify step must observe source inclusion itself.
+
+    Without STEGVERSE_INTR_PUBLIC_LEDGERS the verify step answers INTR_PATH_SOURCE_INCLUSION_UNOBSERVED for a
+    destination receipt that recorded the inclusion as unobserved, although the source ledger is public."""
+
+    def test_the_verify_step_reads_each_source_ledger_anonymously_before_verify(self):
+        writer = (ROOT / ".github" / "workflows" / "organization-ledger-writer.yml").read_text(encoding="utf-8")
+        start = writer.index("      - name: Verify each inbound row from a fresh fetch of the published ref")
+        end = writer.index("      - name: Retain the run's evidence", start)
+        step = writer[start:end]
+        self.assertEqual(step.count('bash tools/tasks/intr_public_ledgers.sh "$RUNNER_TEMP/public-ledgers-verify"'), 1)
+        self.assertEqual(step.count('export STEGVERSE_INTR_PUBLIC_LEDGERS="$RUNNER_TEMP/public-ledgers-verify"'), 1)
+        self.assertLess(step.index("intr_public_ledgers.sh"), step.index("intr_path_ingress.py verify"))
+        self.assertLess(step.index("STEGVERSE_INTR_PUBLIC_LEDGERS"), step.index("intr_path_ingress.py verify"))
+        for token in ("secrets.", "FEDERATION_HOP_TOKEN", "FEDERATION_READ_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"):
+            self.assertNotIn(token, step, token)
+
+
 if __name__ == "__main__":
     unittest.main()
