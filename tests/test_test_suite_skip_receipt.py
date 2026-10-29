@@ -8,6 +8,9 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -364,6 +367,58 @@ class LedgerReceiptSatisfactionTests(unittest.TestCase):
                     "--junit", str(junit_path), "--head", "h", "--out", str(out), "--retry-entrypoint", "e",
                     "--owning-goal", "g", "--skip-items", str(items), "--root", str(self.head),
                     "--receipt-consumption", f"tvc={path}"]), rc)
+
+    def test_an_item_with_no_reason_contains_fails_closed_with_the_six_fields(self):
+        record = self.consumption([self.tvc_receipt()])
+        for want in ({k: v for k, v in TVC_ITEM["satisfiable_by_receipt"].items() if k != "reason_contains"},
+                     dict(TVC_ITEM["satisfiable_by_receipt"], reason_contains=""),
+                     dict(TVC_ITEM["satisfiable_by_receipt"], reason_contains=None)):
+            with self.subTest(reason_contains=want.get("reason_contains", "<absent>")):
+                item = dict(TVC_ITEM, satisfiable_by_receipt=want)
+                self.assert_fails_closed(self.receipt(self.tvc_skips(), {"tvc": record}, items=[item]),
+                                         "declares no reason_contains")
+
+    def test_a_planted_allow_record_does_not_survive_a_consumer_that_crashes_in_the_step(self):
+        """Step 08 removes any earlier consumption file; a consumer that raises before --out satisfies nothing."""
+        repo, tmp = self.dir / "repo", self.dir / "runner-temp"
+        for rel in ("scripts/test_suite_skip_receipt.py", "data/test-suite-skip-items.json"):
+            (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / rel, repo / rel)
+        shutil.copytree(ROOT / "resident-runtime", repo / "resident-runtime",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        # no .stegverse/verification-inputs contract: each consumer raises before it writes --out
+        (repo / TVC_FILE).parent.mkdir(parents=True)
+        (repo / TVC_FILE).write_bytes(b"t = 1\n")
+        git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        subprocess.run(git + ["add", "-A"], check=True)
+        subprocess.run(git + ["commit", "-qm", "fixture"], check=True)
+        head = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
+                              capture_output=True, text=True).stdout.strip()
+        tmp.mkdir()
+        (tmp / "head-junit.xml").write_text(junit(self.tvc_skips()), encoding="utf-8")
+        (tmp / "test-selection.json").write_text(json.dumps(
+            {"selected_tests": [TVC_FILE], "not_selected_for_this_change": []}), encoding="utf-8")
+        want = TVC_ITEM["satisfiable_by_receipt"]
+        planted = {"schema": want["consumption_schema"], "disposition": "ALLOW", "refusals": [],
+                   "bound_receipt_sha256": "sha256:" + "f" * 64, "bound_event": "push",
+                   "bound_ledger_candidate": True, "bound_surface": {TVC_FILE: sha(b"t = 1\n")},
+                   "bound_test_ids": [f"{TVC_CLASS}::test_a", f"{TVC_CLASS}::test_b"]}
+        (tmp / "consumption-tvc.json").write_text(json.dumps(planted), encoding="utf-8")
+        bindir = self.dir / "bin"
+        bindir.mkdir()
+        for name in ("python", "python3"):
+            (bindir / name).symlink_to(sys.executable)
+        env = {"PATH": f"{bindir}:/usr/bin:/bin", "RUNNER_TEMP": str(tmp), "HEAD_SHA": head, "HOME": str(self.dir)}
+        step = ROOT / "tools/tasks/steps/test-suite-selected.selected/08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh"
+        run = subprocess.run(["sh", str(step)], cwd=repo, env=env, capture_output=True, text=True)
+        self.assertNotEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertFalse((tmp / "consumption-tvc.json").exists())
+        r = json.loads((tmp / "test-suite-skip-receipt.json").read_text(encoding="utf-8"))
+        self.assertEqual(r["disposition"], "FAIL_CLOSED")
+        self.assertEqual(r["counts"]["skipped_satisfied_by_ledger_receipt"], 0)
+        self.assertEqual(r["refusals"][0]["failure_code"], "TEST_SUITE_SKIPPED_ON_HEAD")
+        self.assertTrue(all(r["refusals"][0][k] for k in SIX))
 
     def test_the_selected_tests_step_runs_both_consumers_at_the_exact_head_and_passes_them(self):
         step = (ROOT / "tools" / "tasks" / "steps" / "test-suite-selected.selected"

@@ -4,7 +4,10 @@ if [ -n "${DIFF_BASE:-}" ]; then base_args="--base-junit $RUNNER_TEMP/base-junit
 # #162 D2 option (d), a draft for the owner to ratify or revert: read the TVC and repo-standards ledger receipts at
 # this exact head with the consumers required-verification.full-suite already runs (read-only, the ledger ref step 02
 # fetched). A refusal or an error here satisfies nothing; the receipt below then fails closed exactly as before.
+# Any consumption file already in RUNNER_TEMP (written by earlier steps' code) is removed first, so a consumer that
+# raises before it writes --out leaves no record at all, and an absent record satisfies nothing.
 test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+rm -f "$RUNNER_TEMP"/consumption-*.json
 python3 resident-runtime/tvc_conformance_receipt.py consume --ledger "git+$PWD#refs/stegverse/organization-ledger" \
   --head-root . --out "$RUNNER_TEMP/consumption-tvc.json" || true
 python3 resident-runtime/repo_standards_owner_drift_receipt.py consume --ledger "git+$PWD#refs/stegverse/organization-ledger" \

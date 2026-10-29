@@ -152,8 +152,11 @@ def receipt_satisfaction(row: dict, item: dict, consumptions: dict, root: Path) 
     name = want.get("input")
     if not name:
         return None, ["the skip's recorded item declares no receipt input"]
-    if want.get("reason_contains") and want["reason_contains"] not in row["reason"]:
-        return None, [f"the skip reason is not the private-input skip {want['reason_contains']!r}"]
+    reason = want.get("reason_contains")
+    if not (isinstance(reason, str) and reason):
+        return None, ["the skip's recorded item declares no reason_contains; no skip reason is relaxed without one"]
+    if reason not in row["reason"]:
+        return None, [f"the skip reason is not the private-input skip {reason!r}"]
     record = consumptions.get(name)
     if not isinstance(record, dict):
         return None, [f"no readable {name} ledger consumption record for this head"]
