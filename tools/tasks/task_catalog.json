@@ -2606,6 +2606,47 @@
         "artifact_name": "test-suite-skip-receipt",
         "artifact_if_no_files_found": "error"
       }
+    },
+    {
+      "id": "sv-change-admission-genesis-validation.unit",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#234 (Grok Lane C, #164), ported onto G17 by the Claude worker",
+        "note": "Carries #234's .github/workflows/sv-change-admission-genesis-validation.yml job unit as a catalog group (G17: a new check is a catalog group, never a workflow file). Run bodies byte for byte from da5842fa; the checkout step is the dispatcher's (fetch_depth 0). The workflow itself is retained verbatim at tools/tasks/retired/sv-change-admission-genesis-validation.yml: the provisional Q-SV-NATIVE-BOOTSTRAP resolution names it as the genesis event, which is FAIL_CLOSED pending in control/workflow-surface-registry.json.",
+        "name": "Validate SV Change Admission Genesis",
+        "folded_from_commit": "da5842fac19b41a34fe0d3abd6634c98b814a360",
+        "triggers_before": [
+          "pull_request"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request"
+      ],
+      "env": {
+        "LEDGER_REF": "refs/stegverse/organization-ledger"
+      },
+      "steps": [
+        {
+          "name": "Fetch the ledger ref read-only (the fixtures pin a commit on it)",
+          "run_file": "tools/tasks/steps/sv-change-admission-genesis-validation.unit/01-fetch-the-ledger-ref-read-only-the-fixtures-pin-.sh",
+          "run_sha256": "23d3ba4d4667391d4c731e9630fbf7fda623b69e7164369665c88cf283b947cc"
+        },
+        {
+          "name": "E0 gates, append at gen+1, verify, replay (temp ledgers from the pinned tip)",
+          "run_file": "tools/tasks/steps/sv-change-admission-genesis-validation.unit/02-e0-gates-append-at-gen-1-verify-replay-temp-le.sh",
+          "run_sha256": "eff7e185b1e7ea2bf310f71760355719efe752b5ce9b9d617f896a24b8cd726c"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "true",
+        "timeout_minutes": 360
+      }
     }
   ]
 }

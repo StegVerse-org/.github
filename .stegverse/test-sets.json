@@ -3000,6 +3000,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_provisional_resolutions.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_provisional_resolutions.py"
+   ],
+   "tests": [
+    "tests.test_provisional_resolutions"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_push_receipt_session_binder.py",
    "inputs": [],
    "surfaces": [
@@ -3268,6 +3280,18 @@
    ],
    "tests": [
     "tests.test_stdlib_json_schema_agreement"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sv_change_admission_genesis.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sv_change_admission_genesis.py"
+   ],
+   "tests": [
+    "tests.test_sv_change_admission_genesis"
    ]
   },
   {
@@ -3614,6 +3638,12 @@
    "org-boundary/runtime/**",
    "org-boundary/runtime/intr_transport.py"
   ],
+  "resident-runtime/org_registry_generation_genesis.py": [
+   "data/sv-merge-admission/**",
+   "data/sv-merge-admission/provisional-resolutions.json",
+   "resident-runtime/admission_predicate.py",
+   "resident-runtime/merge_transfer.py"
+  ],
   "resident-runtime/organization_egress_boundary.py": [
    ".stegverse/transition-ledger/emit.py",
    "org-boundary/registry/federation.json",
@@ -3716,6 +3746,15 @@
   "resident-runtime/submit_org_transition_to_master_records.py": [
    "org-kernel/kernel.py",
    "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "resident-runtime/sv_change_admission_genesis.py": [
+   "data/sv-merge-admission/**",
+   "data/sv-merge-admission/genesis-contract.json",
+   "data/sv-merge-admission/provisional-resolutions.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/admission_predicate.py",
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/org_registry_generation_genesis.py"
   ],
   "resident-runtime/task_registry_disclosure_endpoint.py": [
    "orchestration/task-registry.json"
@@ -4275,6 +4314,14 @@
    "resident-runtime/federation_cycle.py",
    "resident-runtime/observation_window.py"
   ],
+  "tests/test_provisional_resolutions.py": [
+   "control/workflow-surface-registry.json",
+   "data/sv-merge-admission/provisional-resolutions.json",
+   "orchestration/task-registry.json",
+   "resident-runtime/org_registry_generation_genesis.py",
+   "tests/test_sv_change_admission_genesis.py",
+   "tools/tasks/retired/**"
+  ],
   "tests/test_push_receipt_session_binder.py": [
    "resident-runtime/push_receipt_session_binder.py"
   ],
@@ -4422,6 +4469,19 @@
    "orchestration/task-registry.json",
    "resident-runtime/pinned_labs.py",
    "tests/workflow_surface.py"
+  ],
+  "tests/test_sv_change_admission_genesis.py": [
+   ".github/workflows/**",
+   "orchestration/task-registry.json",
+   "resident-runtime/sv_change_admission_genesis.py",
+   "scripts/test_suite_skip_receipt.py",
+   "tests/fixtures/**",
+   "tests/fixtures/admission-predicate/base-state-readback/labs-main-978b8880-producer-7ad6d81f.json",
+   "tests/fixtures/admission-predicate/base-state-readback/org-main-40a5d235-producer-78a0c78e.json",
+   "tests/fixtures/sv-change-admission-genesis/**",
+   "tests/test_merge_transfer.py",
+   "tools/tasks/retired/sv-change-admission-genesis-validation.yml",
+   "tools/tasks/task_catalog.json"
   ],
   "tests/test_task_registry.py": [
    "control/task-vector-index.json",

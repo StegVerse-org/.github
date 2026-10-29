@@ -1,0 +1,50 @@
+{
+  "schema": "stegverse.merge-admission-genesis-request/v1",
+  "operation": "SV_CHANGE_ADMISSION_GENESIS",
+  "append_mode": "FROM_HEAD",
+  "ledger_ref": "refs/stegverse/organization-ledger",
+  "generation_rule": "registry_generation == from_registry_generation + 1 (both read from the ledger head at append time, never declared here)",
+  "manifest": {
+    "path": "config/sv-merge-admission/manifest.json",
+    "repository": "StegVerse-Labs/TVC (private; never vendored into a public repository)",
+    "schema": "stegverse.merge-admission-manifest/v2.2",
+    "git_blob_sha": "4eff64d66f333dcfd2255e8952f4272bc390b24a",
+    "file_sha256": "8d673e8824704c2e9ca273c7815d55644447888d8b66bd901f313d04c110d496"
+  },
+  "admission_manifest_sha256": "sha256:9f0e58ec71438b65fae7a739530ce11fd59eeca04a3e56b8243432fb24bb7217",
+  "digest_rule": "admission_manifest_sha256 = 'sha256:' + sha256 of the canonical JSON bytes (sorted keys, no whitespace, UTF-8) of this whole manifest; the manifest carries no status or digest of itself, so declaring the genesis needs no manifest edit and no merge",
+  "e0_checks_by_the_appender": [
+    "the request is this schema, operation SV_CHANGE_ADMISSION_GENESIS, append_mode FROM_HEAD, ledger_ref refs/stegverse/organization-ledger, and admission_manifest_sha256 is a sha256 ref",
+    "the genesis-request PR is open, same-repository (head repository == base repository) and changes only control/sv-merge-admission/genesis-request.json",
+    "no SV_CHANGE_ADMISSION_GENESIS is already on the ledger, unless this request supersedes exactly the declared one (DENY GENESIS_ALREADY_DECLARED otherwise)",
+    "registry_generation == from_registry_generation + 1, both from the sealed base-state readback receipt (StegVerse-Labs/.github#3266), never declared here; the epoch is the ledger head's",
+    "Lane B's selected-tests receipt (stegverse.test-suite-skip-receipt/v1) at the genesis-request exact head: disposition ALLOW, counts.skipped 0, no refusal, its producer read at the base by byte pin; recorded as selected_tests_receipt {head_sha, receipt_sha256, disposition, skipped, tests, selected_files}",
+    "mode E0..E3 and, at E1+, a declared cross_llm_confirmation form (E0_CHECKS_PLUS_LATER_RECEIPTED_REVIEW with the review PENDING is enough)"
+  ],
+  "verified_by_tvc": "TVC's SV_CHANGE_ADMISSION_GENESIS_DECLARED recomputes admission_manifest_sha256 from its own committed manifest on every evaluation; the appender never needs the private manifest bytes (no pin-match against vendored bytes)",
+  "cross_llm_confirmation_at_e1": {
+    "form": "E0_CHECKS_PLUS_LATER_RECEIPTED_REVIEW",
+    "later_review": {
+      "lane": "C",
+      "reviewer": "Claude",
+      "receipt_sha256": "PENDING"
+    },
+    "rule": "degrades, never stops (manifest operating_modes.cross_llm_confirmation); the later review is appended as its own receipt; a DENY becomes an admission miss and a successor genesis"
+  },
+  "optional_inputs_e1_to_e3": "LLM verifier receipts (pinned verifier digest), recorded as llm_verifier_receipts; never required",
+  "status_until_appended": "every MERGE_ADMISSION evaluation is FAIL_CLOSED SV_CHANGE_ADMISSION_GENESIS_NOT_DECLARED with the six fields",
+  "supersedes": {
+    "admission_manifest_sha256": "sha256:7b7a1b74b2e164792d0b2ff66092b519e6460ee758f3d9cc1304428d416b36bc",
+    "manifest_schema": "stegverse.merge-admission-manifest/v2.1",
+    "git_blob_sha": "29b426c9c30e063911d3f6140a862deb6b4634b6",
+    "file_sha256": "5fffb737dd7dab975fe80663907e08c3d1f03de7c7d032cb073820fd5dd2f902",
+    "rule": "the v2.1 request was never appended; this request replaces it (and, through it, the v2 request 7370db40). Only one genesis is appended, for the digest above; a receipt declaring a superseded digest is SV_CHANGE_ADMISSION_GENESIS_MISMATCH",
+    "supersedes": {
+      "admission_manifest_sha256": "sha256:7370db4088ea0fa5621f64ddd4f8c77778ce28358a1841254b3b6e28c58bf4e3",
+      "manifest_schema": "stegverse.merge-admission-manifest/v2",
+      "git_blob_sha": "bf2762440b0987e36a239c0776acb1820fce1510",
+      "file_sha256": "09166c4cbfce8a55461134ca02a4fa155ed95c20e1449bfbcdd92a24883159e2",
+      "rule": "the v2 request was never appended; this request replaces it for StegVerse-org/.github#167 ask (v). Only one genesis is appended, for the digest above; a receipt declaring the superseded digest is SV_CHANGE_ADMISSION_GENESIS_MISMATCH"
+    }
+  }
+}

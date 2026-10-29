@@ -916,6 +916,17 @@
       "retry_entrypoint": "tools/tasks/task_catalog.json group main-change-receipt.receipt (validation-dispatcher.yml, push to main); writer resident-runtime/main_change_receipt.py sha256 884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf unchanged",
       "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
       "next_attempt": "#238 owner (G17 lane) accepts or amends the default on StegVerse-org/.github#238; the receipts are produced and retained on every push to main from now on, and appended after genesis"
+    },
+    {
+      "surface": "sv-change-admission-genesis-validation.yml (#234; on: pull_request; contents: read). The provisional E1 resolution of Q-SV-NATIVE-BOOTSTRAP (data/sv-merge-admission/provisional-resolutions.json, C-review PENDING) names this workflow's pull_request event on the genesis-request PR as the event that runs sv_change_admission_genesis.py append",
+      "now": "retained verbatim as a non-executing record at tools/tasks/retired/sv-change-admission-genesis-validation.yml; its unit job is catalog group sv-change-admission-genesis-validation.unit; the resolution is unchanged, so resident-runtime/sv_change_admission_genesis.py check_event refuses every event GENESIS_EVENT_NOT_THE_DECLARED_EVENT",
+      "disposition": "FAIL_CLOSED",
+      "failure_code": "GENESIS_EVENT_WORKFLOW_NOT_ON_A_REGISTERED_SURFACE",
+      "failed_predicate": "THE_DECLARED_GENESIS_EVENT_WORKFLOW_IS_A_REGISTERED_SURFACE",
+      "required_evidence_or_repair": "a successor Q-SV-NATIVE-BOOTSTRAP resolution (naming this one under supersedes) that declares a registered surface, e.g. validation-dispatcher.yml's pull_request event with a catalog group, or organization-ledger-writer.yml; or a registered exception surface (the repository is at exception_repository_workflow_count_max 3)",
+      "retry_entrypoint": "data/sv-merge-admission/provisional-resolutions.json Q-SV-NATIVE-BOOTSTRAP",
+      "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); StegVerse-org/.github#164 (Lane C) and #166",
+      "next_attempt": "Grok Lane C (RATIFY-OR-REVERT on #234) or the C-review answers with a successor resolution; nothing is appended until then"
     }
   ],
   "transfer_pending": [],
@@ -923,7 +934,8 @@
     "3rd-workflow exception: .github/workflows/organization-egress-boundary-validation.yml",
     "FEDERATION_HOP_TOKEN handling for the InTr hop",
     "dispatch-only writer modes (dispatched return locators; the self-closure is retired by Rigel's rule of 2026-10-25, not an open decision)",
-    "main-change-receipt.yml (P4 #222): default proposed on #238 = catalog group main-change-receipt.receipt + manifest-directed append by organization-ledger-writer.yml (no 4th workflow); #238 owner accepts or amends"
+    "main-change-receipt.yml (P4 #222): default proposed on #238 = catalog group main-change-receipt.receipt + manifest-directed append by organization-ledger-writer.yml (no 4th workflow); #238 owner accepts or amends",
+    "sv-change-admission-genesis-validation.yml (#234): Q-SV-NATIVE-BOOTSTRAP's declared genesis event workflow is not a G17 surface; successor resolution or registered exception (FAIL_CLOSED pending)"
   ],
   "catalog_additions": [
     {
@@ -988,6 +1000,12 @@
         "test-suite-selected.selected"
       ],
       "reason": "Lane B #231 (StegVerse-org/.github#162) ported onto G17 #238 via #239: .github/workflows/test-suite-selected.yml was a workflow file #231 added; its one job is this catalog group run by validation-dispatcher.yml"
+    },
+    {
+      "catalog_groups": [
+        "sv-change-admission-genesis-validation.unit"
+      ],
+      "reason": "StegVerse-org/.github#234 (Grok Lane C, #164): .github/workflows/sv-change-admission-genesis-validation.yml was a workflow file #234 added; its one job is this catalog group run by validation-dispatcher.yml"
     }
   ]
 }
