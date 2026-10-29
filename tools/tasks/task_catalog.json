@@ -631,9 +631,9 @@
       },
       "steps": [
         {
-          "name": "Verify, append, refuse, diverge (temp ledgers from the pinned snapshot)",
-          "run_file": "tools/tasks/steps/merge-transfer-gitstore-validation.unit/01-verify-append-refuse-diverge-temp-ledgers-from-t.sh",
-          "run_sha256": "1ffe8dbb44b359fc95397c32c48ad0621ce8540982e7d29aa855c5ba395a9276"
+          "name": "Verify, append (main merge and operation-parametric), refuse, diverge (temp ledgers from the pinned snapshot)",
+          "run_file": "tools/tasks/steps/merge-transfer-gitstore-validation.unit/01-verify-append-main-merge-and-operation-parametri.sh",
+          "run_sha256": "03f754a03471a9c263d000862ab2f15f15deb24bbec55747ce0767b6e83c6a51"
         }
       ],
       "artifacts": [],
@@ -1137,8 +1137,7 @@
         "pull_request"
       ],
       "env": {
-        "LEDGER_REF": "refs/stegverse/organization-ledger",
-        "DRY_RUN_REF": "refs/dry-run/organization-ledger"
+        "LEDGER_REF": "refs/stegverse/organization-ledger"
       },
       "steps": [
         {
@@ -1179,24 +1178,23 @@
       ],
       "env": {
         "LEDGER_REF": "refs/stegverse/organization-ledger",
-        "DRY_RUN_REF": "refs/dry-run/organization-ledger",
         "BASE_SHA": "${{ github.event.pull_request.base.sha }}"
       },
       "steps": [
         {
-          "name": "Copy the published ledger to a scratch ref",
-          "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/01-copy-the-published-ledger-to-a-scratch-ref.sh",
-          "run_sha256": "e5214886176524699e81be48e23c210d8d8201cd864cc423615746223c6f4b92"
+          "name": "Copy the published ledger into a scratch git dir at the declared ref",
+          "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/01-copy-the-published-ledger-into-a-scratch-git-dir.sh",
+          "run_sha256": "d43bb24372f7e2fc688907b8996d7484b708cf5fb35dc5ebd6853d62dcc839a0"
         },
         {
           "name": "Real state, read-only: each selected merge is VERIFIED or FAIL_CLOSED with six fields, never DENY",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/02-real-state-read-only-each-selected-merge-is-veri.sh",
-          "run_sha256": "ebf7eba1aa182ad1b73ce3d245c359250e4fa5f4cea84d5d7d0dadff17f24bc7"
+          "run_sha256": "4aae1b043db1d4fe3ba3059feeefa9a9b78b2490d1d587234d5753369a83ba1a"
         },
         {
-          "name": "The writer's append on the scratch ref, then VERIFIED, then an idempotent replay",
-          "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-then-veri.sh",
-          "run_sha256": "7513c299fb395bea28383e0bb797f56978d677d3c3a0e21d564c0e3f54adc2ec"
+          "name": "The writer's append on the scratch copy, then VERIFIED, then an idempotent replay",
+          "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-copy-then-ver.sh",
+          "run_sha256": "6f6c97c152b6edeac5451ce00da801509be4126a8ce0807b46ab4c59b6c5d803"
         }
       ],
       "artifacts": [],
