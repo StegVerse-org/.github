@@ -152,17 +152,14 @@ class WorkflowBinding(unittest.TestCase):
         self.assertNotIn("STEGVERSE_ORG_FEDERATION_ROOT", self.workflow)
 
     def test_dispatch_selects_only_committed_transition_request_paths(self):
+        # workflow_dispatch is removed, so the request input and its path checks were dead
+        # (#166 P4): the only selection is the push diff under .stegverse/transition-requests/.
         selection = self.workflow.split("Select committed transition requests")[1].split("- name:")[0]
-        self.assertIn('.stegverse/transition-requests/*.json)', selection)
-        self.assertIn('git ls-files --error-unmatch -- "$INPUT_REQUEST"', selection)
-        self.assertIn('DISPATCH_REQUEST_OUTSIDE_COMMITTED_TRANSITION_REQUESTS', selection)
-        self.assertIn('DISPATCH_REQUEST_NOT_COMMITTED', selection)
-        self.assertIn('DISPATCH_REQUEST_PATH_INVALID', selection)
-        self.assertIn('DISPATCH_REQUEST_CONTROL_CHARACTER', selection)
-        self.assertIn('all(32 <= ord(c) <= 126 for c in p)', selection)
-        self.assertNotIn("*'\\n'*)", selection)
-        self.assertIn("*../*|*/../*|*' '*)", selection)
-        self.assertIn('printf \'%s\\n\' "$INPUT_REQUEST"', selection)
+        self.assertIn("git diff --name-only --diff-filter=AM \"$BEFORE\" \"$GITHUB_SHA\" -- '.stegverse/transition-requests/*.json'",
+                      selection)
+        for dead in ("INPUT_REQUEST", "github.event.inputs", "workflow_dispatch", "DISPATCH_REQUEST_", "re-dispatch"):
+            self.assertNotIn(dead, selection)
+        self.assertNotIn("re-dispatch", self.workflow)
 
     def test_dispatch_mesh_input_is_not_interpolated_into_shell_source(self):
         # GitHub input is data, never shell code; quotes and newlines in a

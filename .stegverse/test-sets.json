@@ -4484,7 +4484,17 @@
    "resident-runtime/test_suite_baseline_refresh.py"
   ],
   "tests/test_test_suite_skip_receipt.py": [
-   "scripts/test_suite_skip_receipt.py"
+   ".stegverse/verification-inputs/**",
+   ".stegverse/verification-inputs/tvc-conformance-receipt.json",
+   "data/test-suite-skip-items.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/tvc_conformance_receipt.py",
+   "scripts/test_suite_skip_receipt.py",
+   "tests/test_origin_attestation_tvc_conformance.py",
+   "tests/test_task_registry_schema_conformance.py",
+   "tools/tasks/**",
+   "tools/tasks/steps/test-suite-selected.selected/**",
+   "tools/tasks/steps/test-suite-selected.selected/08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh"
   ],
   "tests/test_transition_console.py": [
    "orchestration/task-registry.json",

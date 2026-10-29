@@ -2591,7 +2591,7 @@
         {
           "name": "Receipt the selected set; a skip in it, or a new failure, fails closed",
           "run_file": "tools/tasks/steps/test-suite-selected.selected/08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh",
-          "run_sha256": "65827c508f617343ce2e6b5c472f91827963e413165a87b6eacc887edc45071c",
+          "run_sha256": "b134b3cb7f5c10dcc545a72625f6f9404acc5c4fd3c64f61d491baa87a925f17",
           "if": "${{ !cancelled() }}"
         }
       ],
