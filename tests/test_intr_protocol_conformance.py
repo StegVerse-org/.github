@@ -15,14 +15,12 @@ spec.loader.exec_module(intr)
 
 ORGS = ["StegVerse-org", "StegVerse-Labs", "SV-011", "GCAT-BCAT-Engine",
         "Admissible-Existence", "StegGhost", "StegVerse-002", "SV-LLM",
-        "AaCT-E", "AdmittedCode", "Data-Continuation", "ECAT-ICAT-Formal", "Triad-Test"]
-# The other three organizations of the federation directory
-# (org-boundary/registry/federation.json, denominator 16). None installs the
-# receiving operation or the ledger, so each fails closed at its first
-# unobserved predicate (class B: missing capability). AaCT-E, AdmittedCode,
-# Data-Continuation, ECAT-ICAT-Formal and Triad-Test installed the component
-# (snapshots refreshed from their main, StegVerse-org/.github#162 Lane B).
-UNINSTALLED = ["Infrastructure-Continuity-Ventures", "formalism-tests", "master-records"]
+        "AaCT-E", "AdmittedCode", "Data-Continuation", "ECAT-ICAT-Formal", "Triad-Test",
+        "Infrastructure-Continuity-Ventures", "formalism-tests", "master-records"]
+# All sixteen organizations of the federation directory (org-boundary/registry/federation.json, denominator 16)
+# installed the component: Infrastructure-Continuity-Ventures, formalism-tests and master-records snapshots
+# refreshed from their main (StegVerse-org/.github#162 Lane B).
+UNINSTALLED = []
 EXPECTED = {org: ("ALLOW", None) for org in ORGS}
 EXPECTED.update({org: ("FAIL_CLOSED", "PEER_ADDRESS_FORM_IS_SLUG_DOT_PROFILE") for org in UNINSTALLED})
 
@@ -83,7 +81,7 @@ class MeshSnapshot(unittest.TestCase):
         got = {r["subject"]["organization"]: (r["disposition"], r.get("failed_predicate"))
                for r in report["results"]}
         self.assertEqual(got, EXPECTED)
-        self.assertEqual(report["counts"], {"ALLOW": 13, "DENY": 0, "FAIL_CLOSED": 3})
+        self.assertEqual(report["counts"], {"ALLOW": 16, "DENY": 0, "FAIL_CLOSED": 0})
         for row in report["results"]:
             if row["disposition"] != "ALLOW":
                 for field in intr.load_contract()["non_allow_fields"]:
