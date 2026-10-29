@@ -80,7 +80,7 @@ class ResidentMaterializationTests(unittest.TestCase):
             # here is the cycle's own outcome, not a summary over a refusal.
             env = node_env(work, STEGVERSE_REPO_LEDGER_HOME=str(Path(work) / "repo-ledger-home"))
             completed = subprocess.run([sys.executable, "-B", str(EXECUTOR), "--mesh-root", str(mesh),
-                                        "--node-state-root", str(state)],
+                                        "--node-state-root", str(state), "--hb-epoch", "4096"],
                                        capture_output=True, text=True, env=env, cwd=work, timeout=180)
             self.assertEqual(completed.returncode, 0, completed.stderr[-800:])
             record = json.loads(completed.stdout.strip().splitlines()[-1])
@@ -101,7 +101,7 @@ class ResidentMaterializationTests(unittest.TestCase):
             mesh.mkdir()
             env = {k: v for k, v in node_env(work).items() if "LEDGER" not in k}
             completed = subprocess.run([sys.executable, "-B", str(EXECUTOR), "--mesh-root", str(mesh),
-                                        "--node-state-root", str(state)],
+                                        "--node-state-root", str(state), "--hb-epoch", "4096"],
                                        capture_output=True, text=True, env=env, cwd=work, timeout=180)
             record = json.loads(completed.stdout.strip().splitlines()[-1])
             self.assertEqual(completed.returncode, 2, completed.stderr[-800:])
@@ -124,7 +124,7 @@ class ResidentMaterializationTests(unittest.TestCase):
             fake_sdk(sdk)
             mesh.mkdir()
             completed = subprocess.run([sys.executable, "-B", str(SUBMISSION), "--sdk-root", str(sdk),
-                                        "--mesh-root", str(mesh), "--state-root", str(state)],
+                                        "--mesh-root", str(mesh), "--state-root", str(state), "--hb-epoch", "4200"],
                                        capture_output=True, text=True, env=node_env(work), cwd=work, timeout=180)
             self.assertEqual(completed.returncode, 0, completed.stderr[-800:])
             receipt = json.loads(completed.stdout.strip().splitlines()[-1])
@@ -140,7 +140,7 @@ class ResidentMaterializationTests(unittest.TestCase):
             mesh = Path(work) / "mesh"
             mesh.mkdir()
             completed = subprocess.run([sys.executable, "-B", str(SUBMISSION), "--sdk-root", str(Path(work) / "none"),
-                                        "--mesh-root", str(mesh), "--state-root", str(Path(work) / "sv002")],
+                                        "--mesh-root", str(mesh), "--state-root", str(Path(work) / "sv002"), "--hb-epoch", "4200"],
                                        capture_output=True, text=True, env=node_env(work), cwd=work, timeout=180)
             self.assertEqual(completed.returncode, 1)
             receipt = json.loads(completed.stdout.strip().splitlines()[-1])

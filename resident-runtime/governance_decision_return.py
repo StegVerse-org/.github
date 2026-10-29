@@ -105,7 +105,8 @@ def answered_decision(answer: Any, request: Mapping[str, Any], governance_reques
 
 
 def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communication_id: str,
-                    mesh_root: Path | None, hb_epoch: int | None = None) -> dict[str, Any]:
+                    mesh_root: Path | None, hb_epoch: int | None = None,
+                    hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Observe the decision's return, record it, and hand it to the SDK."""
     request = derive_execution_request(manifest, ingress.boundary())
     binding = governance_binding()
@@ -126,7 +127,7 @@ def return_decision(manifest: Mapping[str, Any], *, packet_id: str, communicatio
                 "authority_effect": "NONE_REFUSAL_ONLY"}
 
     closed = egress.close(binding["destination_organization"], packet_id, communication_id,
-                          mesh_root=mesh_root, hb_epoch=hb_epoch)
+                          mesh_root=mesh_root, hb_epoch=hb_epoch, hb_epoch_source=hb_epoch_source)
     if closed["disposition"] == egress.PENDING:
         return {**base, "disposition": "PENDING", "decision_returned": False,
                 "absence_is_not_a_transition": True, "observation_only": True,
@@ -245,7 +246,8 @@ def retained_manifest(request_sha256: str) -> tuple[dict[str, Any] | None, str |
 
 
 def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path | None,
-                          hb_epoch: int | None = None) -> dict[str, Any] | None:
+                          hb_epoch: int | None = None,
+                          hb_epoch_source: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
     """Materialize the return when the deciding organization's answer is consumed.
 
     Called for a frame this organization has just consumed. Answers to anything
@@ -293,7 +295,7 @@ def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path
                 "retry_entrypoint": RETRY_ENTRYPOINT, "authority_effect": "NONE_REFUSAL_ONLY"}
     returned = return_decision(manifest, packet_id=request_packet_id,
                                communication_id=communication_id,
-                               mesh_root=mesh_root, hb_epoch=hb_epoch)
+                               mesh_root=mesh_root, hb_epoch=hb_epoch, hb_epoch_source=hb_epoch_source)
     return {**returned, "trigger": "DECISION_FRAME_CONSUMED",
             "response_packet_id": response_packet.get("packet_id")}
 
@@ -305,9 +307,16 @@ def main() -> int:
     parser.add_argument("--communication-id", required=True)
     parser.add_argument("--mesh-root", type=Path, required=True,
                         help="federation mesh this node was materialized with")
-    parser.add_argument("--hb-epoch", type=int, default=None)
+    parser.add_argument("--hb-epoch", default=None,
+                        help="carrier heartbeat epoch as ASCII digits; the shared rule sees the raw text")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
+    # Checked as typed, by the egress boundary's rule, before anything is read
+    # or closed: argparse's int() would hand "+33" to egress.close as 33.
+    refused = egress.epoch_refusal(args.hb_epoch, "resident-runtime/governance_decision_return.py (--hb-epoch)")
+    if refused is not None:
+        print(json.dumps(refused, sort_keys=True))
+        return EXIT_NOT_ALLOWED
     result = return_decision(json.loads(args.manifest.read_text(encoding="utf-8")),
                              packet_id=args.packet_id, communication_id=args.communication_id,
                              mesh_root=args.mesh_root, hb_epoch=args.hb_epoch)
@@ -320,4 +329,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/governance_decision_return.py", inputs=('--manifest',)))

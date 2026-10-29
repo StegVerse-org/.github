@@ -106,7 +106,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         response = kernel.build_control_response(
             packet, {"application_result": decision,
                      "reconstruction": {"terminal_receipt_id": terminal or chain[-1]}})
-        kernel.publish_packet(response, root=self.mesh)
+        kernel.publish_packet(response, root=self.mesh, epoch=4096)
         return packet
 
     def return_decision(self, emitted, **overrides):
@@ -146,7 +146,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
                      "manifest": body, "manifest_sha256": kernel.sha(body)},
             standing=GENESIS, transition_reference="intr:transition:capability-address-mesh",
             authority_effect="NONE", packet_id="capability-address-mesh")
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=4096)
         results = kernel.consume_addressed_frames(
             ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
             org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
@@ -326,15 +326,42 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertIs(returned["decision_returned"], False)
         self.assertEqual(returned["closure_transition_class"], "ORGANIZATION_EGRESS_CLOSURE_REFUSED")
 
-    def run_cli(self, emitted):
+    def run_cli(self, emitted, hb_epoch="33", out=None):
         path = Path(self._work.name) / "manifest.json"
         path.write_text(json.dumps(manifest()), encoding="utf-8")
         argv = ["governance_decision_return.py", "--manifest", str(path),
                 "--packet-id", emitted["governance_request_packet_id"],
                 "--communication-id", emitted["governance_communication_id"],
-                "--mesh-root", str(self.mesh), "--hb-epoch", "33"]
-        with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()):
+                "--mesh-root", str(self.mesh)]
+        if hb_epoch is not None:
+            argv += ["--hb-epoch", hb_epoch]
+        with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(out or io.StringIO()):
             return returning.main()
+
+    def written(self):
+        work = Path(self._work.name)
+        return sorted(str(p.relative_to(work)) for p in work.rglob("*")
+                      if p.is_file() and p.name != "manifest.json")
+
+    def test_the_cli_epoch_is_read_as_typed_and_a_refusal_writes_nothing(self):
+        """argparse's int() used to hand "+33" to egress.close as 33."""
+        six = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+               "retry_entrypoint", "owning_existing_goal", "next_attempt")
+        emitted = self.receive()
+        self.answer(emitted)
+        before = self.written()
+        for epoch in ("+33", "\uff13\uff13", " 33", "True", "abc", "33.7", "", None):
+            with self.subTest(epoch=epoch):
+                out = io.StringIO()
+                self.assertEqual(self.run_cli(emitted, hb_epoch=epoch, out=out), returning.EXIT_NOT_ALLOWED)
+                refusal = json.loads(out.getvalue().splitlines()[-1])
+                self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+                self.assertEqual(refusal["failure_code"],
+                                 "HB_EPOCH_NOT_SUPPLIED" if epoch is None else "HB_EPOCH_INVALID")
+                for field in six:
+                    self.assertTrue(refusal[field], field)
+                self.assertEqual(self.written(), before)
+        self.assertEqual(self.run_cli(emitted, hb_epoch="4096"), returning.EXIT_RETURNED)
 
     def test_a_pending_observation_does_not_exit_as_a_returned_decision(self):
         emitted = self.receive()

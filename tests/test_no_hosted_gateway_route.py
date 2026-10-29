@@ -63,7 +63,8 @@ class NoHostedGatewayRouteTests(unittest.TestCase):
             env = {"STEGVERSE_ORG_LEDGER_ROOT": str(Path(work) / "org-ledger"),
                    "STEGVERSE_REPO_LEDGER_ROOT": str(Path(work) / "repo-ledger")}
             completed = _run("resident-runtime/federation_cycle.py", "--mesh-root", str(mesh),
-                             "--node-state-root", str(state), env_extra=env, home=work)
+                             "--node-state-root", str(state), "--hb-epoch", "4096",
+                             env_extra=env, home=work)
             self.assertEqual(completed.returncode, 0, completed.stderr[-800:])
             receipt = json.loads(completed.stdout.strip().splitlines()[-1])
             self.assertEqual(receipt["transport"], "INTERLOCK_INTR_SUPPLIED_MESH")
@@ -82,12 +83,12 @@ class NoHostedGatewayRouteTests(unittest.TestCase):
             standing = str(ROOT / "tests/fixtures/crossing-standing-genesis.json")
             sent = _run("resident-runtime/ecosystem_control.py", "--mesh-root", str(mesh), "send-message",
                         "--subject", "carrier", "--body-json", "{}", "--communication-id", "carrier-test",
-                        "--standing", standing, home=work)
+                        "--standing", standing, "--hb-epoch", "4200", home=work)
             self.assertEqual(sent.returncode, 0, sent.stderr[-800:])
             self.assertGreater(json.loads(sent.stdout)["published_count"], 0)
             self.assertTrue(list((mesh / "frames.d").glob("*.json")))
             refused = _run("resident-runtime/ecosystem_control.py", "send-message", "--subject", "carrier",
-                           "--body-json", "{}", "--standing", standing, home=work)
+                           "--body-json", "{}", "--standing", standing, "--hb-epoch", "4200", home=work)
             self.assertNotEqual(refused.returncode, 0)
             self.assertIn("mesh_location_required_from_materializer", refused.stderr)
 

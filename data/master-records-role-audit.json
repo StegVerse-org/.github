@@ -19,12 +19,12 @@
       "total": 124
     },
     "after": {
-      "PROPER": 176,
+      "PROPER": 180,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 37,
-      "NAMING_ONLY": 40,
-      "total": 253
+      "NAMING_ONLY": 44,
+      "total": 261
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1708,56 +1708,63 @@
     },
     {
       "file": ".stegverse/test-sets.json",
-      "line": 1646,
-      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "line": 3661,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
       "classification": "NAMING_ONLY",
       "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": ".stegverse/test-sets.json",
-      "line": 1706,
+      "line": 3738,
       "text": "\"resident-runtime/submit_org_transition_to_master_records.py\": [",
       "classification": "NAMING_ONLY",
       "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": ".stegverse/test-sets.json",
-      "line": 1881,
+      "line": 3936,
       "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
       "classification": "NAMING_ONLY",
       "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": ".stegverse/test-sets.json",
-      "line": 2088,
+      "line": 4172,
       "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
       "classification": "NAMING_ONLY",
       "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": ".stegverse/test-sets.json",
-      "line": 2127,
+      "line": 4220,
       "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
       "classification": "NAMING_ONLY",
       "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": ".stegverse/test-sets.json",
-      "line": 2142,
+      "line": 4235,
       "text": "\"data/master-records-role-audit.json\",",
       "classification": "NAMING_ONLY",
       "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. The audit file's own path; no role statement."
     },
     {
       "file": ".stegverse/test-sets.json",
-      "line": 2189,
+      "line": 4282,
       "text": "\"resident-runtime/submit_org_transition_to_master_records.py\"",
       "classification": "NAMING_ONLY",
       "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     },
     {
       "file": ".stegverse/test-sets.json",
-      "line": 2333,
+      "line": 4347,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": ".stegverse/test-sets.json",
+      "line": 4471,
       "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
       "classification": "NAMING_ONLY",
       "reason": "Generated test-set manifest (StegVerse-org/.github#166): the path names a surface a test set verifies, listed so a change to it selects the sets that run it. Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
@@ -1838,6 +1845,55 @@
       "text": "- The three still-internal organizations (Infrastructure-Continuity-Ventures, formalism-tests, master-records) are not conformant, so no path to or from them is declared. Any path to them stays FAIL_CLOSED with the six fields on #162.",
       "classification": "NAMING_ONLY",
       "reason": "Names the master-records organization only as one of the three still-internal, non-conformant organizations to which no InTr path is declared (StegVerse-org/.github#162, Lane B 13-org reseal). It asserts no role."
+    },
+    {
+      "file": "resident-runtime/activation-manifest.json",
+      "line": 78,
+      "text": "\"verified_by\": \"resident-runtime/submit_org_transition_to_master_records.py::verified_in_ledger\",",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 55,
+      "text": "\"RELEASED_SEGMENT_HEAD_CARRIES_A_SUPPLIED_EPOCH\":(\"MASTER_RECORDS_RELEASE_HEAD_EPOCH_NOT_CARRIED\",\"release a segment whose head receipt carries a supplied epoch (hb_reference.epoch an int >= 32, derived_from_clock false); a clock-derived or",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 56,
+      "text": "\"ORGANIZATION_LEDGER_LOCATION_SUPPLIED\":(\"MASTER_RECORDS_RELEASE_LEDGER_LOCATION_NOT_SUPPLIED\",\"supply --org-ledger-root (or STEGVERSE_ORG_LEDGER_ROOT), the organization ledger the segment was appended to; the segment is verified against it",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "resident-runtime/submit_org_transition_to_master_records.py",
+      "line": 188,
+      "text": "sys.exit(_writer.run(main, \"resident-runtime/submit_org_transition_to_master_records.py\", inputs=('--org-receipt', '--standing')))",
+      "classification": "PROPER",
+      "reason": "Consistent with the canonical role: downstream recorder of released organization batch receipts; non-gating, not awaited, no authority or custody."
+    },
+    {
+      "file": "tests/test_receipt_time_base.py",
+      "line": 827,
+      "text": "SUBMITTER = ROOT / \"resident-runtime/submit_org_transition_to_master_records.py\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": "tests/test_receipt_time_base.py",
+      "line": 1374,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\": [\"--org-receipt\", \"--standing\"]}",
+      "classification": "NAMING_ONLY",
+      "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
+    },
+    {
+      "file": "tests/test_receipt_time_base.py",
+      "line": 1422,
+      "text": "\"resident-runtime/submit_org_transition_to_master_records.py\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Path of the Master Records publisher. Renaming changes external contracts: the manifest-ingress result field master_records_propagation_entrypoint, workflow path filters, the peer-kernel migration's admitted out-of-kernel caller list and the cross-org migration patch. The name describes the downstream destination only; no rename."
     }
   ],
   "remeasured": [

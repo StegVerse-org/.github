@@ -38,6 +38,8 @@ _peer_spec.loader.exec_module(peers)
 PEER = "Kernel-Peer"
 CONTROL = "kernel-peer.org-control"
 TICK = kernel.HB_ANCHOR_UNIX_NS + 1_000_000_000
+#: A supplied epoch: a frame stamped from a clock sample is quarantined, not consumed.
+EPOCH = kernel.HB_ANCHOR_EPOCH + 100
 REFUSED = "node_state_location_required_from_materializer"
 
 
@@ -77,7 +79,7 @@ class SuppliedNodeStateTests(unittest.TestCase):
 
     def publish(self, message_class, communication_id="c-1"):
         return kernel.publish_packet(self.packet(message_class, communication_id),
-                                     root=self.mesh, now_ns=TICK)
+                                     root=self.mesh, epoch=EPOCH)
 
     def test_a_node_without_supplied_state_consumes_nothing(self):
         self.publish("ecosystem.communication")
@@ -154,7 +156,7 @@ class OrganizationCheckoutTests(unittest.TestCase):
             destination_org=organization, destination_service=control,
             payload={"communication_id": "checkout-1", "message_class": "ecosystem.work.request",
                      "subject": "s", "body": {}},
-            standing=GENESIS, packet_id="checkout-1:work"), root=mesh, now_ns=TICK)
+            standing=GENESIS, packet_id="checkout-1:work"), root=mesh, epoch=EPOCH)
         before = snapshot(ROOT / "resident-runtime")
         ledgers = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, ledgers, True)
