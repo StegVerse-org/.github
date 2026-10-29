@@ -3578,7 +3578,8 @@
    ".stegverse/intr-path-transfer/inbound.json",
    "org-kernel/kernel.py",
    "resident-runtime/intr_path_ledger.py",
-   "resident-runtime/intr_path_tvc_read.py"
+   "resident-runtime/intr_path_tvc_read.py",
+   "tools/tasks/intr_public_ledgers.sh"
   ],
   "resident-runtime/intr_path_ledger.py": [
    ".stegverse/transition-ledger/contract.json",
