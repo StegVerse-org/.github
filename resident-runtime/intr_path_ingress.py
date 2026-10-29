@@ -49,6 +49,20 @@ FAIL_CLOSED with the six fields. A path whose newest receipt recorded the
 inclusion as unobserved gets one successor receipt (packet suffix
 #source-inclusion) that records it, and ``verify`` refuses a newest receipt
 that does not record an observed inclusion.
+
+The only successor declared for a destination pair is that #source-inclusion one
+(c71f23c): ``verify_inbound`` refuses FAIL_CLOSED a newest receipt whose transition
+id is neither the pair's own nor the pair's own plus #source-inclusion, never
+skipping to an older receipt; ``readback`` of this ledger's own destination
+receipts applies the same check, and ``verify_end_to_end`` returns its refusal.
+``verify_inbound`` also refuses a #source-inclusion successor whose predecessor
+(the receipt with the pair's own transition id) is absent or already recorded an
+observed inclusion: the successor exists only to record an unobserved one.
+No reader re-reads the recorded inclusion: ``verify_inbound`` checks only its
+shape (state, 40-hex source ledger tip). ``verify_end_to_end`` checks that the
+carried source receipts are on the source ledger readback's chain and that the
+destination receipts are on this ledger's chain and link them by seal; it never
+compares the destination's recorded source_ledger_tip with anything.
 """
 from __future__ import annotations
 
@@ -118,6 +132,8 @@ CREDENTIAL_NOT_ISSUED = "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"
 SOURCE_NOT_LEDGERED = "INTR_PATH_RECEIPT_NOT_LEDGERED"
 SOURCE_LINK_UNVERIFIED = "INTR_PATH_RECEIPT_LINK_UNVERIFIED"
 INCLUSION_UNOBSERVED = "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"
+SUCCESSOR_UNDECLARED = "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"
+SUCCESSOR_PREDECESSOR_OBSERVED = "INTR_PATH_DESTINATION_SUCCESSOR_PREDECESSOR_OBSERVED"
 PUBLIC_LEDGERS_ENV = "STEGVERSE_INTR_PUBLIC_LEDGERS"
 LEDGER_REF = "refs/stegverse/organization-ledger"
 PUBLIC_STATE = "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ"
@@ -413,6 +429,43 @@ def find_destination(path_id: str, communication_id: str, organization_store: An
     return None, None, None
 
 
+def declared_transition_id(path_id: Any, communication_id: Any) -> str:
+    return TRANSITION_CLASS + ":" + str(path_id) + "@" + str(communication_id)
+
+
+def successor_refusal(path_id: Any, communication_id: Any, org_receipt: Any, repo_receipt: Any) -> dict[str, Any] | None:
+    """None when this ledger's destination receipt has the pair's own transition id or its one declared successor
+    (the pair's own + #source-inclusion); else FAIL_CLOSED. This organization's own receipts only: other
+    organizations' readbacks are not held to it."""
+    declared = declared_transition_id(path_id, communication_id)
+    transition_id = repo_receipt.get("transition_id") if isinstance(repo_receipt, Mapping) else None
+    if transition_id in (declared, declared + SOURCE_INCLUSION_PACKET_SUFFIX):
+        return None
+    return refusal(FAIL_CLOSED, SUCCESSOR_UNDECLARED, "DESTINATION_RECEIPT_IS_THE_PAIR_OR_ITS_DECLARED_SUCCESSOR",
+                   "the newest destination receipt for " + str(path_id) + " must have transition id " + declared
+                   + " or its declared successor " + declared + SOURCE_INCLUSION_PACKET_SUFFIX + "; it has "
+                   + repr(transition_id),
+                   "an owner decision on #162 declares or retires this successor; nothing was verified",
+                   path_id=path_id, communication_id=communication_id, half="destination",
+                   organization_receipt_sha256=org_receipt.get("receipt_sha256") if isinstance(org_receipt, Mapping) else None)
+
+
+def find_predecessor(path_id: str, communication_id: str) -> tuple[Any, Any]:
+    """The destination receipt pair carrying the pair's own transition id (the one a #source-inclusion successor
+    succeeds), or (None, None)."""
+    declared = declared_transition_id(path_id, communication_id)
+    organization_store, repository_store = ledger.readers()
+    for _, receipt in ledger.chain(organization_store):
+        if not sealed(receipt):
+            return None, None
+        b = ledger.boundary(receipt)
+        if b.get("operation") == OPERATION and b.get("path_id") == path_id and b.get("communication_id") == communication_id:
+            repo_receipt = ledger.receipt(repository_store, receipt.get("repo_receipt_sha256"))
+            if isinstance(repo_receipt, Mapping) and repo_receipt.get("transition_id") == declared:
+                return receipt, repo_receipt
+    return None, None
+
+
 def consume(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
     rows = load_inbound(inbound)
     if not rows:
@@ -496,6 +549,8 @@ def verify_inbound(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
             out.append({**exc.result, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
             continue
         result = verify_destination_pair(found, found_repo, checked)
+        if result["disposition"] == ALLOW:
+            result = successor_refusal(pid, cid, found, found_repo) or result
         unobserved = recorded_inclusion(found_repo) if result["disposition"] == ALLOW else None
         if unobserved is not None:
             result = refusal(FAIL_CLOSED, INCLUSION_UNOBSERVED, "DESTINATION_RECEIPT_RECORDS_AN_OBSERVED_SOURCE_INCLUSION",
@@ -504,6 +559,18 @@ def verify_inbound(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
                              "the next push-triggered writer run reads the source ledger anonymously and appends the "
                              "successor receipt; then re-verify", path_id=pid, communication_id=cid, half="destination",
                              organization_receipt_sha256=found.get("receipt_sha256"))
+        declared = declared_transition_id(pid, cid)
+        if result["disposition"] == ALLOW and found_repo.get("transition_id") == declared + SOURCE_INCLUSION_PACKET_SUFFIX:
+            _, predecessor = find_predecessor(pid, cid)
+            if predecessor is None or recorded_inclusion(predecessor) is None:
+                result = refusal(FAIL_CLOSED, SUCCESSOR_PREDECESSOR_OBSERVED,
+                                 "DECLARED_SUCCESSOR_SUCCEEDS_A_RECEIPT_THAT_RECORDED_INCLUSION_UNOBSERVED",
+                                 "a " + declared + SOURCE_INCLUSION_PACKET_SUFFIX + " receipt is valid only over a "
+                                 + declared + " receipt that recorded the source inclusion as unobserved; that "
+                                 "receipt is " + ("absent" if predecessor is None else "already observed"),
+                                 "an owner decision on #162 retires this successor; nothing was verified",
+                                 path_id=pid, communication_id=cid, half="destination",
+                                 organization_receipt_sha256=found.get("receipt_sha256"))
         out.append({**result, "detail": broken} if broken else result)
     return out
 
@@ -571,6 +638,8 @@ def verify_end_to_end(path_id: str, communication_id: str, source_readback: Any,
             ends = str(path_id).split(":")[0].split("->")
             org = ends[0] if name == "source" else (ends[1] if len(ends) > 1 else "<destination>")
             return {**inclusion_refusal(org + "/.github", path_id, communication_id), "half": name, "path": "UNVERIFIED"}
+        if isinstance(rb.get("refused"), Mapping):   # set by ``readback`` of this organization's own ledger
+            return {**rb["refused"], "path": "UNVERIFIED"}
         readbacks.append(rb)
     src, dst = readbacks
     s_org, s_rep = src.get("organization_receipt"), src.get("repository_receipt")
@@ -600,7 +669,9 @@ def verify_end_to_end(path_id: str, communication_id: str, source_readback: Any,
 
 
 def readback(path_id: str, communication_id: str, operation: str, ledger_tip: str | None = None) -> dict[str, Any]:
-    """Read this repository's own ledger (the bound stores) into a stegverse.intr-path-ledger-readback/v1 object."""
+    """Read this repository's own ledger (the bound stores) into a stegverse.intr-path-ledger-readback/v1 object.
+    For this organization's destination receipts, a newest receipt that is neither the pair's own nor its declared
+    successor is carried as ``refused`` (FAIL_CLOSED), which ``verify_end_to_end`` returns."""
     org, rep = ledger.readers()
     chain = [r for _, r in ledger.chain(org) if isinstance(r, Mapping)]
     found = next((r for r in chain if ledger.boundary(r).get("operation") == operation
@@ -610,10 +681,13 @@ def readback(path_id: str, communication_id: str, operation: str, ledger_tip: st
     if found is not None:
         cut = [r for r in chain]
         chain = cut[:cut.index(found) + 1]
-    return {"schema": READBACK_SCHEMA, "repository": repository(), "ledger_tip": ledger_tip,
-            "head_receipt_sha256": head, "chain": chain if found is not None else [],
-            "organization_receipt": found,
-            "repository_receipt": ledger.receipt(rep, found.get("repo_receipt_sha256")) if found else None}
+    found_repo = ledger.receipt(rep, found.get("repo_receipt_sha256")) if found else None
+    out = {"schema": READBACK_SCHEMA, "repository": repository(), "ledger_tip": ledger_tip,
+           "head_receipt_sha256": head, "chain": chain if found is not None else [],
+           "organization_receipt": found, "repository_receipt": found_repo}
+    refused = successor_refusal(path_id, communication_id, found, found_repo) \
+        if operation == OPERATION and found is not None else None
+    return {**out, "refused": refused} if refused else out
 
 
 def end_to_end_via_tvc(path_id: str, communication_id: str, directory: Path | str | None = None,
