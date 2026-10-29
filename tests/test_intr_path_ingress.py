@@ -269,7 +269,9 @@ class Consume(unittest.TestCase):
                             "source_repository_receipt_sha256": repo["receipt_sha256"]})
         return appended["organization_receipt"]["receipt_sha256"], legacy
 
-    def test_a_crossing_that_has_a_receipt_never_gets_a_second_one(self):
+    def test_an_unobserved_inclusion_gets_one_successor_receipt_that_records_it(self):
+        # The name is kept because the required-verification baseline pins it (a base test may not be removed or
+        # renamed). The successor it once described was the defect: an unobserved inclusion gets NO successor.
         # Rigel (2026-10-29): "This shouldn't be possible without being a literal duplicate." One receipt per
         # crossing: consume answers from the ledger and appends nothing, even when the receipt recorded the source
         # inclusion as unobserved and the source ledger is readable now.
@@ -287,6 +289,12 @@ class Consume(unittest.TestCase):
         # and again: still nothing written
         (again,) = pi.consume(inbound)
         self.assertEqual(again["failure_code"], "INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED")
+        self.assertEqual(self.ledger.files(), before)
+        # the verifier observes the inclusion itself and reports it next to what was recorded
+        (verified,) = pi.verify_inbound(inbound)
+        self.assertEqual(verified["disposition"], "ALLOW", verified)
+        self.assertEqual(verified["organization_receipt_sha256"], first)
+        self.assertIn("source_inclusion_observed_at_verification", verified)
         self.assertEqual(self.ledger.files(), before)
 
     def test_an_observed_receipt_is_answered_from_the_ledger_and_nothing_is_appended(self):
