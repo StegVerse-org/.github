@@ -3,27 +3,23 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "DESTINATION_HAS_INTR_PATH_INGRESS",
-   "failure_code": "INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN",
-   "next_attempt": "re-run seal and replay after the port is admitted",
+   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on Infrastructure-Continuity-Ventures/.github main",
-   "retry_entrypoint": "a Lane B port draft to Infrastructure-Continuity-Ventures/.github (laneb/ branch)"
-  },
-  {
-   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "seal, then replay after the row lands",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an inbound row for SV-011->Infrastructure-Continuity-Ventures:intr-destination on Infrastructure-Continuity-Ventures/.github main carrying the source receipt pair",
-   "retry_entrypoint": "Infrastructure-Continuity-Ventures/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+   "required_evidence_or_repair": "nothing to write: Infrastructure-Continuity-Ventures/.github's ledger (read anonymously at 41fba313f9ac60dcc11a92a40169c10b4617f47b) holds destination receipt sha256:e2c4d1f5d0172fa7824ee5d111e85398136001e23180570bd8f6b883e5a3ca75; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
- "cls": "DESTINATION_INGRESS_NOT_ON_MAIN",
+ "cls": "DESTINATION_RECEIPT_LEDGERED",
  "communication_id": "intr-path-v1:SV-011->Infrastructure-Continuity-Ventures",
  "destination": "Infrastructure-Continuity-Ventures",
+ "destination_receipts": {
+  "destination_ledger_tip_observed": "41fba313f9ac60dcc11a92a40169c10b4617f47b",
+  "destination_organization_receipt_sha256": "sha256:e2c4d1f5d0172fa7824ee5d111e85398136001e23180570bd8f6b883e5a3ca75"
+ },
  "e0_terminal": true,
- "expected_at_genesis": "FAIL_CLOSED",
+ "expected_at_genesis": "ALLOW",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "SV-011->Infrastructure-Continuity-Ventures:intr-destination",
@@ -43,11 +39,11 @@
    },
    "message_sha256": "sha256:4fe66ba4d150def7c5d46f00e738adf5d4e491caa1a8f1475947aa87d946ac79",
    "path_id": "SV-011->Infrastructure-Continuity-Ventures:intr-destination",
-   "payload_sha256": "sha256:6589f4d7fe042b5d3e6484abf0ead2b54f56196e266d10a54b21d1ed3470a510",
+   "payload_sha256": "sha256:113f16da1ad19574d782e248f7826b5313a3094fbc144276720a39f7217cb824",
    "repository": "Infrastructure-Continuity-Ventures/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "8ddbec78f0a8eec17e990c0061c3f70b22191c97",
+    "source_ledger_tip": "c6dbd1e6b35761842a5c78ed45155bb92d230e7f",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -81,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:4c872b411fa2202cdfc4f1dfa0b3e12ae37e27dda92977178f4b5a84744b82d1",
+ "record_sha256": "sha256:1baa5b492bcc3bd82b6d52e463bd9262c576de608fef6705a5c8977c02137e3e",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "SV-011",
  "source_receipts": {
@@ -170,14 +166,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:SV-011->Infrastructure-Continuity-Ventures:intr-destination@intr-path-v1:SV-011->Infrastructure-Continuity-Ventures"
   },
-  "source_ledger_tip_observed": "8ddbec78f0a8eec17e990c0061c3f70b22191c97"
+  "source_ledger_tip_observed": "c6dbd1e6b35761842a5c78ed45155bb92d230e7f"
  },
  "status": {
-  "failed_predicate": "DESTINATION_HAS_INTR_PATH_INGRESS",
-  "failure_code": "INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN",
-  "next_attempt": "re-run seal and replay after the port is admitted",
+  "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+  "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on Infrastructure-Continuity-Ventures/.github main",
-  "retry_entrypoint": "a Lane B port draft to Infrastructure-Continuity-Ventures/.github (laneb/ branch)"
+  "required_evidence_or_repair": "nothing to write: Infrastructure-Continuity-Ventures/.github's ledger (read anonymously at 41fba313f9ac60dcc11a92a40169c10b4617f47b) holds destination receipt sha256:e2c4d1f5d0172fa7824ee5d111e85398136001e23180570bd8f6b883e5a3ca75; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: StegGhost/.github's ledger (read anonymously at f0f10257f85b5c7cf6142e48fd30a7cb32fa8544) holds destination receipt sha256:10b63d386e547f7131e612f4c3f6e64b8af8f9f7ad090d50173820aaede3313a; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: StegGhost/.github's ledger (read anonymously at 85ba46b3f55dafba3460959052a87c0261ec95b2) holds destination receipt sha256:10b63d386e547f7131e612f4c3f6e64b8af8f9f7ad090d50173820aaede3313a; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:Admissible-Existence->StegGhost",
  "destination": "StegGhost",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "f0f10257f85b5c7cf6142e48fd30a7cb32fa8544",
+  "destination_ledger_tip_observed": "85ba46b3f55dafba3460959052a87c0261ec95b2",
   "destination_organization_receipt_sha256": "sha256:10b63d386e547f7131e612f4c3f6e64b8af8f9f7ad090d50173820aaede3313a"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:d05dae28abf37afef9ec28ee4048af3e4f06092c0ef2da72dce5347c8240afea",
    "path_id": "Admissible-Existence->StegGhost:intr-destination",
-   "payload_sha256": "sha256:8c0e87c6e1521feec57581be8bbad2b42e2deb8a3b7cab1be4d006c0da17bd34",
+   "payload_sha256": "sha256:3e4426fe37631c52290771024a501620cff66947ff709ae535abbb3b59ae4613",
    "repository": "StegGhost/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "8e523a7f5c68cbbc4b268c0c0cd970b6a1985182",
+    "source_ledger_tip": "5a0166d463c823f24619211aa80fc8d1fb57a982",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:d93547f42c271a268ba4d74e9605b240ac050fcc9a9d413a39449a3f61927b40",
+ "record_sha256": "sha256:180400e3295ecc8b1c4c8357e6d1a913e582a9297f5fa1785d3d0c5f350780fa",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Admissible-Existence",
  "source_receipts": {
@@ -162,14 +162,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Admissible-Existence->StegGhost:intr-destination@intr-path-v1:Admissible-Existence->StegGhost"
   },
-  "source_ledger_tip_observed": "8e523a7f5c68cbbc4b268c0c0cd970b6a1985182"
+  "source_ledger_tip_observed": "5a0166d463c823f24619211aa80fc8d1fb57a982"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: StegGhost/.github's ledger (read anonymously at f0f10257f85b5c7cf6142e48fd30a7cb32fa8544) holds destination receipt sha256:10b63d386e547f7131e612f4c3f6e64b8af8f9f7ad090d50173820aaede3313a; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: StegGhost/.github's ledger (read anonymously at 85ba46b3f55dafba3460959052a87c0261ec95b2) holds destination receipt sha256:10b63d386e547f7131e612f4c3f6e64b8af8f9f7ad090d50173820aaede3313a; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

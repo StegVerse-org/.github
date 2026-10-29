@@ -3,33 +3,175 @@
  "authority_effect": "NONE",
  "blockers": [
   {
-   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
-   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-   "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination SV-011",
+   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for Infrastructure-Continuity-Ventures->SV-011:intr-destination on Infrastructure-Continuity-Ventures/.github's ledger (read anonymously at cc1b3b04b7568e94bd094bd72a073c4ee319cf73: none)",
-   "retry_entrypoint": "Infrastructure-Continuity-Ventures/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+   "required_evidence_or_repair": "nothing to write: SV-011/.github's ledger (read anonymously at c6dbd1e6b35761842a5c78ed45155bb92d230e7f) holds destination receipt sha256:12379dfb8b844eaa26b94e178a05f87f6ac0d615bafa5fa2b0515cf1abdaa2be; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
- "cls": "SOURCE_RECEIPT_NOT_LEDGERED",
+ "cls": "DESTINATION_RECEIPT_LEDGERED",
  "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
  "destination": "SV-011",
+ "destination_receipts": {
+  "destination_ledger_tip_observed": "c6dbd1e6b35761842a5c78ed45155bb92d230e7f",
+  "destination_organization_receipt_sha256": "sha256:12379dfb8b844eaa26b94e178a05f87f6ac0d615bafa5fa2b0515cf1abdaa2be"
+ },
  "e0_terminal": true,
- "expected_at_genesis": "FAIL_CLOSED",
+ "expected_at_genesis": "ALLOW",
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "Infrastructure-Continuity-Ventures->SV-011:intr-destination",
- "payload": null,
- "record_sha256": "sha256:72f21ddcb3e6922fe2ca6a5ea0256293247789b413a7c92796f467e3af024f80",
+ "payload": {
+  "evidence_at_observed_source_tip": {
+   "addressed_service": "sv-011.intr-destination",
+   "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
+   "disposition": "ALLOW",
+   "message": {
+    "body": {
+     "path_id": "Infrastructure-Continuity-Ventures->SV-011:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "fae470a29784af301f920463158b9197e9e75825"
+    },
+    "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:d5f229d5278e1139641d898a1ba71d792ab4526be794aeeb846425da6c46dd04",
+   "path_id": "Infrastructure-Continuity-Ventures->SV-011:intr-destination",
+   "payload_sha256": "sha256:bd65a20299942a60f2124d566b3529b75623cc1a445c133a78079485f9f48e93",
+   "repository": "SV-011/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_inclusion": {
+    "source_ledger_tip": "41fba313f9ac60dcc11a92a40169c10b4617f47b",
+    "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+    "tvc_read_receipt": null
+   },
+   "source_organization_receipt_sha256": "sha256:7fecc8289529121d8fc2f37df8ff50383d827718f9d39cb630ce77399fae6a74",
+   "source_repository": "Infrastructure-Continuity-Ventures/.github",
+   "source_repository_receipt_sha256": "sha256:bf3fe998cf46c93bd119957e61f6b09668c920e81ee7aadbb260102ebcdd73f9"
+  },
+  "evidence_invariant": {
+   "addressed_service": "sv-011.intr-destination",
+   "message": {
+    "body": {
+     "path_id": "Infrastructure-Continuity-Ventures->SV-011:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "fae470a29784af301f920463158b9197e9e75825"
+    },
+    "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:d5f229d5278e1139641d898a1ba71d792ab4526be794aeeb846425da6c46dd04",
+   "path_id": "Infrastructure-Continuity-Ventures->SV-011:intr-destination",
+   "repository": "SV-011/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_organization_receipt_sha256": "sha256:7fecc8289529121d8fc2f37df8ff50383d827718f9d39cb630ce77399fae6a74",
+   "source_repository": "Infrastructure-Continuity-Ventures/.github",
+   "source_repository_receipt_sha256": "sha256:bf3fe998cf46c93bd119957e61f6b09668c920e81ee7aadbb260102ebcdd73f9"
+  },
+  "evidence_invariant_sha256": "sha256:1a98d0da27de591f08e8ea3e309cba61dceb36f08939592b912a85a3415c6923",
+  "source_inclusion_rule": {
+   "source_ledger_tip": "the source ledger tip read at consume time; its chain must include source_organization_receipt_sha256",
+   "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+   "tvc_read_receipt": null
+  }
+ },
+ "record_sha256": "sha256:2f00ac13b229f6a98f3b5c1ea0f3b8ab0b15fc6bfb77e8135a030b6cc689f926",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Infrastructure-Continuity-Ventures",
- "source_receipts": null,
+ "source_receipts": {
+  "organization_receipt": {
+   "authority_effect": "NONE",
+   "boundary_evidence": {
+    "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
+    "destination_organization": "SV-011",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "Infrastructure-Continuity-Ventures->SV-011:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "Infrastructure-Continuity-Ventures/.github",
+    "transfer_commit": "fae470a29784af301f920463158b9197e9e75825"
+   },
+   "canonical_state_transition_receipt_sha256": null,
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469411750,
+    "frequency_hz": 100,
+    "generation": 469411750,
+    "heartbeat_id": "HB:469411750",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "org_transition_class": "REPO_STATE_PROPAGATION",
+   "organization": "Infrastructure-Continuity-Ventures",
+   "predecessor_org_state_sha256": "sha256:842edaebeb056c7c270198dd01d9b82bb5755408e8cef42b7e78b4a04c7850d4",
+   "previous_receipt_sha256": "sha256:8c99bb69ab1dfd1686ac83478e8a6fef198c6c06ff8a4a559f387db84d89ba59",
+   "receipt_sha256": "sha256:7fecc8289529121d8fc2f37df8ff50383d827718f9d39cb630ce77399fae6a74",
+   "repo_receipt_sha256": "sha256:bf3fe998cf46c93bd119957e61f6b09668c920e81ee7aadbb260102ebcdd73f9",
+   "repo_transition_id": "INTR_MESH_PATH_TRANSFER:Infrastructure-Continuity-Ventures->SV-011:intr-destination@intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
+   "schema": "stegverse.organization-transition-receipt/v1",
+   "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+   "source_repository": "Infrastructure-Continuity-Ventures/.github",
+   "source_transition_id": "INTR_MESH_PATH_TRANSFER:Infrastructure-Continuity-Ventures->SV-011:intr-destination@intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
+   "source_transition_sha256": "sha256:bf3fe998cf46c93bd119957e61f6b09668c920e81ee7aadbb260102ebcdd73f9",
+   "subject_or_correlation_id": null,
+   "successor_org_state_sha256": "sha256:a6463532a9a27e9184d32cb5506eb6b7c50c1497d294c6a801a7d2af883a5317"
+  },
+  "repository_receipt": {
+   "authority_effect": "NONE",
+   "evidence": {
+    "capability": "intr-destination",
+    "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
+    "destination_address": "sv-011.intr-destination",
+    "destination_organization": "SV-011",
+    "disposition": "ALLOW",
+    "merge_transfer_organization_receipt_sha256": "sha256:982362cfa758af83d4984fb26c9d5439d2b5cea6184676aa60f599dddb58595a",
+    "message": {
+     "body": {
+      "path_id": "Infrastructure-Continuity-Ventures->SV-011:intr-destination",
+      "schema": "stegverse.org-intr-destination-diagnostic/v1",
+      "transfer_commit": "fae470a29784af301f920463158b9197e9e75825"
+     },
+     "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->SV-011",
+     "message_class": "ecosystem.communication"
+    },
+    "message_sha256": "sha256:d5f229d5278e1139641d898a1ba71d792ab4526be794aeeb846425da6c46dd04",
+    "path_id": "Infrastructure-Continuity-Ventures->SV-011:intr-destination",
+    "payload_sha256": "sha256:842edaebeb056c7c270198dd01d9b82bb5755408e8cef42b7e78b4a04c7850d4",
+    "repository": "Infrastructure-Continuity-Ventures/.github",
+    "schema": "stegverse.intr-path-transfer-evidence/v1",
+    "source_organization": "Infrastructure-Continuity-Ventures",
+    "transfer_commit": "fae470a29784af301f920463158b9197e9e75825"
+   },
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469411750,
+    "frequency_hz": 100,
+    "generation": 469411750,
+    "heartbeat_id": "HB:469411750",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "predecessor_state_sha256": "sha256:842edaebeb056c7c270198dd01d9b82bb5755408e8cef42b7e78b4a04c7850d4",
+   "previous_receipt_sha256": "sha256:28c2a6ccec1ea0ffaa4c2a9876a359ead827ea56f5281e1322b3352a5c9ceb37",
+   "receipt_sha256": "sha256:bf3fe998cf46c93bd119957e61f6b09668c920e81ee7aadbb260102ebcdd73f9",
+   "repository": "Infrastructure-Continuity-Ventures/.github",
+   "schema": "stegverse.repo-transition-receipt/v1",
+   "successor_state_sha256": "sha256:a6463532a9a27e9184d32cb5506eb6b7c50c1497d294c6a801a7d2af883a5317",
+   "transition_class": "INTR_MESH_PATH_TRANSFER",
+   "transition_id": "INTR_MESH_PATH_TRANSFER:Infrastructure-Continuity-Ventures->SV-011:intr-destination@intr-path-v1:Infrastructure-Continuity-Ventures->SV-011"
+  },
+  "source_ledger_tip_observed": "41fba313f9ac60dcc11a92a40169c10b4617f47b"
+ },
  "status": {
-  "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
-  "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
-  "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination SV-011",
+  "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
+  "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
+  "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for Infrastructure-Continuity-Ventures->SV-011:intr-destination on Infrastructure-Continuity-Ventures/.github's ledger (read anonymously at cc1b3b04b7568e94bd094bd72a073c4ee319cf73: none)",
-  "retry_entrypoint": "Infrastructure-Continuity-Ventures/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+  "required_evidence_or_repair": "nothing to write: SV-011/.github's ledger (read anonymously at c6dbd1e6b35761842a5c78ed45155bb92d230e7f) holds destination receipt sha256:12379dfb8b844eaa26b94e178a05f87f6ac0d615bafa5fa2b0515cf1abdaa2be; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at 02fca879bf50618f601055f5af531e12a1915266) holds destination receipt sha256:51246aa9debb904a8431d2e131602a728485ed7e2d2eea2a509b39834dd4ab38; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at bfff95ce3e6c4d1576e0b6e3582a4a1aa7ae483c) holds destination receipt sha256:51246aa9debb904a8431d2e131602a728485ed7e2d2eea2a509b39834dd4ab38; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:SV-011->ECAT-ICAT-Formal",
  "destination": "ECAT-ICAT-Formal",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "02fca879bf50618f601055f5af531e12a1915266",
+  "destination_ledger_tip_observed": "bfff95ce3e6c4d1576e0b6e3582a4a1aa7ae483c",
   "destination_organization_receipt_sha256": "sha256:51246aa9debb904a8431d2e131602a728485ed7e2d2eea2a509b39834dd4ab38"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:99ad0ca770d8e53cdb9442846923aeaff0ad7756f49e6dfed61137459827543c",
    "path_id": "SV-011->ECAT-ICAT-Formal:intr-destination",
-   "payload_sha256": "sha256:a91181da99e031468679bed77b925d74e7506cbd328d6b1278207b8c60ead106",
+   "payload_sha256": "sha256:939967abdf371de203f3cf73f7550ec4fe4c02b10a2c5ef1b462d1e3542175cc",
    "repository": "ECAT-ICAT-Formal/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "8ddbec78f0a8eec17e990c0061c3f70b22191c97",
+    "source_ledger_tip": "c6dbd1e6b35761842a5c78ed45155bb92d230e7f",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:528188735be2d95a40686cbcb8e6dc3b7c781018f918f520ac7b24f63ad2b215",
+ "record_sha256": "sha256:4c022f91e46c7dc43734181aa61839664d36aab27669800306ace0e6337283fc",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "SV-011",
  "source_receipts": {
@@ -166,14 +166,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:SV-011->ECAT-ICAT-Formal:intr-destination@intr-path-v1:SV-011->ECAT-ICAT-Formal"
   },
-  "source_ledger_tip_observed": "8ddbec78f0a8eec17e990c0061c3f70b22191c97"
+  "source_ledger_tip_observed": "c6dbd1e6b35761842a5c78ed45155bb92d230e7f"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at 02fca879bf50618f601055f5af531e12a1915266) holds destination receipt sha256:51246aa9debb904a8431d2e131602a728485ed7e2d2eea2a509b39834dd4ab38; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: ECAT-ICAT-Formal/.github's ledger (read anonymously at bfff95ce3e6c4d1576e0b6e3582a4a1aa7ae483c) holds destination receipt sha256:51246aa9debb904a8431d2e131602a728485ed7e2d2eea2a509b39834dd4ab38; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }
