@@ -19,6 +19,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
+try:   # pytest: hold the organization to org-contract.json's own organization_ledger declaration
+    import pytest
+    pytestmark = pytest.mark.repository_ledger_locus
+except (ImportError, AttributeError):
+    pass
+
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures" / "intr-path-transfer"
 EXPECTED = json.loads((FIXTURES / "expected-real-state.json").read_text())
@@ -40,30 +46,19 @@ def load(name, relative):
 
 
 pt = load("intr_path_transfer_under_test", "resident-runtime/intr_path_transfer.py")
+sys.path.insert(0, str(ROOT / "tests"))
+from intr_path_temp_ledger import TempLedger  # noqa: E402
 
 
-class Ledger:
+class Ledger(TempLedger):
+    """A pinned tip (LEDGER_TIP unless named), bound as this organization's ledger binding reads it, plus
+    temp_merge_transfers."""
+
     def __init__(self, tip=LEDGER_TIP):
-        self.dir = tempfile.TemporaryDirectory()
-        self.root = Path(self.dir.name)
-        subprocess.run("git -C '%s' archive %s | tar -x -C '%s'" % (ROOT, tip, self.root), shell=True, check=True)
-        self.saved = {k: os.environ.get(k) for k in ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_REPO_LEDGER_ROOT")}
-        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = str(self.root)
-        os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = str(self.root / NAMESPACE)
+        super().__init__(ROOT, tip, NAMESPACE, git=pt.ledger.kind == "MERGE_TRANSFER_GITSTORE")
         for commit in EXPECTED.get("temp_merge_transfers") or []:   # temp copies only; not ledgered
-            result = pt.mt.append_merge_transfer(pt.mt.commit_facts(commit))
+            result = pt.ledger.append_merge_transfer(commit)
             assert result["disposition"] == "ALLOW", result
-
-    def files(self):
-        return {str(p.relative_to(self.root)): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
-
-    def close(self):
-        for k, v in self.saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
-        self.dir.cleanup()
 
 
 def reseal(receipt):
@@ -193,8 +188,8 @@ class Append(unittest.TestCase):
     def stores_with(self, edit):
         """Append, then rewrite the first path's repository receipt evidence, reseal it and relink the org receipt."""
         pt.append_transfers(TRANSFER)
-        org, rep = pt.mt.org_store(), pt.mt.repo_store()
-        key = pt.mt.store_module().receipt_key
+        org, rep = pt.ledger.readers()
+        key = pt.ledger.receipt_key
         p = mine()[0]
         found = pt.verify_source(p, cid(p))
         org_r = org.get(key(found["organization_receipt_sha256"]))
@@ -207,10 +202,8 @@ class Append(unittest.TestCase):
         new_org = reseal({**org_r, "repo_receipt_sha256": new_rep["receipt_sha256"]})
 
         class Store(dict):
-            def get(self, k):
-                if k not in self:
-                    raise KeyError(k)
-                return dict.__getitem__(self, k)
+            def get(self, k):   # absent is None, as both bindings' readers answer it
+                return dict.get(self, k)
         chain = pt._chain(org)
         o = Store()
         receipts = {d: r for d, r in chain}
@@ -225,7 +218,7 @@ class Append(unittest.TestCase):
             prev = r["receipt_sha256"]
         for r in receipts.values():
             o[key(r["receipt_sha256"])] = r
-        o[pt.mt.store_module().HEAD_KEY] = {"receipt_sha256": prev}
+        o[pt.ledger.head_key] = {"receipt_sha256": prev}
         rs = Store({key(new_rep["receipt_sha256"]): new_rep})
         return p, o, rs
 

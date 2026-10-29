@@ -481,6 +481,11 @@
           "name": "Cross-organization pair check through TV/TVC (TVC#528 fixture receipts; no token; real state FAIL_CLOSED at the TVC transition)",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.unit/04-cross-organization-pair-check-through-tv-tvc-tvc.sh",
           "run_sha256": "be7f7e67312319d91344228dbc9de1ec5434724a49a6fa3ee06e819fe4bfd18e"
+        },
+        {
+          "name": "Ledger binding per organization (protocol.json pin); git-store backend over Lane D's pinned modules",
+          "run_file": "tools/tasks/steps/intr-path-transfer-validation.unit/05-ledger-binding-per-organization-protocol-json-pin.sh",
+          "run_sha256": "39833e2162884daf40afb453ba702ca23343dbf1af7696d2a1122c2d59623e6d"
         }
       ],
       "artifacts": [],
@@ -511,24 +516,23 @@
         "push"
       ],
       "env": {
-        "LEDGER_REF": "refs/stegverse/organization-ledger",
-        "DRY_RUN_REF": "refs/dry-run/organization-ledger"
+        "LEDGER_REF": "refs/stegverse/organization-ledger"
       },
       "steps": [
         {
-          "name": "Copy the published ledger to a scratch ref",
+          "name": "Copy the published ledger into a scratch git dir",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.dry-run/01-copy-the-published-ledger-to-a-scratch-ref.sh",
-          "run_sha256": "3127ce8dcd732fe6e0a4e52018ab4e8fd862af9b57113ce7357fb6c95d982233"
+          "run_sha256": "9022f558690877456990a09f17b1d6fdb443da88fd24bfc73273eb60b416a41f"
         },
         {
           "name": "Real state, read-only: inspect actual source halves without assuming absent receipts",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.dry-run/02-real-state-read-only-inspect-actual-source-halve.sh",
-          "run_sha256": "72bdb9f0d84a8da48033238a8fda8faf39495a81a22b2b956f972079fff47cb8"
+          "run_sha256": "20a7017da93b516e519da8ba462744be598a6e2291175afc46bd125d6d3177b7"
         },
         {
-          "name": "The writer's append on the scratch ref, linked to the last ledgered main merge",
+          "name": "The writer's append on the scratch copy, linked to the last ledgered main merge",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-linked-to.sh",
-          "run_sha256": "963d2eaae5b994750a981b030fac14839cd1d5bda289e0f3172ecef7fd211b8e"
+          "run_sha256": "3b4127992080d30a0a290841ae323c3c8de1b42557b7a54a0f72b2227f7b3bcb"
         }
       ],
       "artifacts": [],

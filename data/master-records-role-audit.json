@@ -22,9 +22,9 @@
       "PROPER": 176,
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
-      "HISTORICAL_EVIDENCE": 37,
+      "HISTORICAL_EVIDENCE": 65,
       "NAMING_ONLY": 40,
-      "total": 253
+      "total": 281
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -1838,6 +1838,202 @@
       "text": "- The three still-internal organizations (Infrastructure-Continuity-Ventures, formalism-tests, master-records) are not conformant, so no path to or from them is declared. Any path to them stays FAIL_CLOSED with the six fields on #162.",
       "classification": "NAMING_ONLY",
       "reason": "Names the master-records organization only as one of the three still-internal, non-conformant organizations to which no InTr path is declared (StegVerse-org/.github#162, Lane B 13-org reseal). It asserts no role."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 105,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 114,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 117,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 123,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 135,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 162,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 177,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 186,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 189,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 192,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 195,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 201,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 213,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/0db6e0bd699ddd9f9cea1e0782f9356ce3aa3159.json",
+      "line": 240,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 0db6e0bd, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 208,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 232,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 247,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 256,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 271,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 316,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 361,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 385,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 400,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 403,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 406,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"canonicalization_profile\\\\\\\":\\\\\\\"steggate.jcs.v1\\\\\\\",\\\\\\\"completion\\\\\\\":{\\\\\\\"direction\\\\\\\":\\\\\\\"SOUTH\\\\\\\",\\\\\\\"",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 415,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 430,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
+    },
+    {
+      "file": "tests/fixtures/intr-path-ledger/snapshots/216487782daa161b886e608e64256877c14ca86f.json",
+      "line": 475,
+      "text": "\"text\": \"{\\n  \\\"authority_effect\\\": \\\"NONE\\\",\\n  \\\"evidence\\\": {\\n    \\\"canonical_manifest_json\\\": \\\"{\\\\\\\"attestation\\\\\\\":null,\\\\\\\"candidate\\\\\\\":{\\\\\\\"action\\\\\\\":\\\\\\\"decide_terminal_custody_authority\\\\\\\",\\\\\\\"actor_class\\\\\\\":\\\\\\\"sdk_validatio",
+      "classification": "HISTORICAL_EVIDENCE",
+      "reason": "Byte snapshot of a sealed receipt on this organization's ledger at tip 21648778, vendored as temp-ledger input for the InTr path tests (tests/intr_path_temp_ledger.py); the receipt already records Master Records as downstream and non-gating; never edited."
     }
   ],
   "remeasured": [

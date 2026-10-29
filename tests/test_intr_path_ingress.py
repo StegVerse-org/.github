@@ -19,6 +19,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
+try:   # pytest: hold the organization to org-contract.json's own organization_ledger declaration
+    import pytest
+    pytestmark = pytest.mark.repository_ledger_locus
+except (ImportError, AttributeError):
+    pass
+
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER_TIP = json.loads((ROOT / "tests/fixtures/intr-path-ingress/pin.json").read_text())["ledger_tip"]
 NAMESPACE = json.loads((ROOT / ".stegverse/transition-ledger/contract.json").read_text())[
@@ -34,6 +40,8 @@ def load(name, relative):
 
 
 pi = load("intr_path_ingress_under_test", "resident-runtime/intr_path_ingress.py")
+sys.path.insert(0, str(ROOT / "tests"))
+from intr_path_temp_ledger import TempLedger  # noqa: E402
 DESTINATION = pi.organization()
 SOURCE = "SV-011" if DESTINATION != "SV-011" else "StegVerse-org"
 OTHER = "SV-LLM" if DESTINATION != "SV-LLM" else "StegGhost"
@@ -64,32 +72,20 @@ def synthetic_source(path_id=PID, cid=CID, destination=DESTINATION, **evidence_o
     return org, repo
 
 
-class Ledger:
+class Ledger(TempLedger):
     def __init__(self, inbound=None):
-        self.dir = tempfile.TemporaryDirectory()
-        self.root = Path(self.dir.name)
-        subprocess.run("git -C '%s' archive %s | tar -x -C '%s'" % (ROOT, LEDGER_TIP, self.root), shell=True, check=True)
-        self.saved = {k: os.environ.get(k) for k in ("STEGVERSE_ORG_LEDGER_ROOT", "STEGVERSE_REPO_LEDGER_ROOT")}
-        os.environ["STEGVERSE_ORG_LEDGER_ROOT"] = str(self.root)
-        os.environ["STEGVERSE_REPO_LEDGER_ROOT"] = str(self.root / NAMESPACE)
-        self.inbound = Path(self.dir.name) / "inbound.json"
+        super().__init__(ROOT, LEDGER_TIP, NAMESPACE, git=pi.ledger.kind == "MERGE_TRANSFER_GITSTORE")
+        self.scratch = tempfile.TemporaryDirectory()
+        self.inbound = Path(self.scratch.name) / "inbound.json"
 
     def write_inbound(self, rows):
         self.inbound.write_text(json.dumps({"schema": pi.INBOUND_SCHEMA, "destination_repository": DESTINATION + "/.github",
                                             "transfers": rows}))
         return self.inbound
 
-    def files(self):
-        return {str(p.relative_to(self.root)): p.read_bytes() for p in self.root.rglob("*")
-                if p.is_file() and p.name != "inbound.json"}
-
     def close(self):
-        for k, v in self.saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
-        self.dir.cleanup()
+        super().close()
+        self.scratch.cleanup()
 
 
 FIXED = {"GIT_AUTHOR_NAME": "fixture", "GIT_AUTHOR_EMAIL": "fixture@invalid", "GIT_AUTHOR_DATE": "@0 +0000",
@@ -166,7 +162,7 @@ class Consume(unittest.TestCase):
             self.assertTrue(result.get(field), field)
 
     def test_no_inbound_file_is_no_transition(self):
-        self.assertEqual(pi.consume(self.ledger.root / "absent.json"), [])
+        self.assertEqual(pi.consume(Path(self.ledger.scratch.name) / "absent.json"), [])
 
     def test_carried_receipts_enter_ingress_and_link_by_seal(self):
         org, repo = synthetic_source()
@@ -181,8 +177,8 @@ class Consume(unittest.TestCase):
             if not name.endswith("HEAD.json"):
                 self.assertEqual(after[name], data, name)
         d_org, d_rep, _ = pi.find_destination(PID, CID)
-        self.assertEqual(pi.mt._boundary(d_org)["operation"], "ORGANIZATION_INTR_DESTINATION_INGRESS")
-        self.assertEqual(pi.mt._boundary(d_org)["source_organization_receipt_sha256"], org["receipt_sha256"])
+        self.assertEqual(pi.ledger.boundary(d_org)["operation"], "ORGANIZATION_INTR_DESTINATION_INGRESS")
+        self.assertEqual(pi.ledger.boundary(d_org)["source_organization_receipt_sha256"], org["receipt_sha256"])
         self.assertEqual(d_rep["evidence"]["source_repository_receipt_sha256"], repo["receipt_sha256"])
         self.assertEqual(d_rep["evidence"]["source_inclusion"],
                          {"state": pi.PUBLIC_STATE, "source_ledger_tip": tip, "tvc_read_receipt": None})
@@ -261,15 +257,15 @@ class Consume(unittest.TestCase):
     def test_an_unobserved_inclusion_gets_one_successor_receipt_that_records_it(self):
         org, repo = synthetic_source()
         checked = pi.check_source_pair(org, repo, PID, CID, DESTINATION)
-        epoch, failed = pi.mt.head_epoch(pi.mt.org_store())
+        epoch, failed = pi.ledger.head_epoch()
         self.assertIsNone(failed)
         legacy = pi.ingress_evidence(checked, None)   # what the writer recorded before it read the source ledger
         self.assertEqual(legacy["source_inclusion"], "UNOBSERVED_WITHOUT_A_CROSS_ORG_READ_CREDENTIAL")
-        pi.ingress._append(pi.TRANSITION_CLASS, PID + "@" + CID, legacy, epoch, operation=pi.OPERATION,
-                           profile_id=pi.ingress.PROFILE_ID,
-                           boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
-                                           "source_organization_receipt_sha256": org["receipt_sha256"],
-                                           "source_repository_receipt_sha256": repo["receipt_sha256"]})
+        pi.ledger.append(pi.TRANSITION_CLASS, PID + "@" + CID, legacy, epoch, operation=pi.OPERATION,
+                         profile_id=pi.ingress.PROFILE_ID,
+                         boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
+                                         "source_organization_receipt_sha256": org["receipt_sha256"],
+                                         "source_repository_receipt_sha256": repo["receipt_sha256"]})
         inbound = self.ledger.write_inbound([row(org, repo)])
         (unobserved,) = pi.verify_inbound(inbound)
         self.assertEqual((unobserved["disposition"], unobserved["failure_code"]),

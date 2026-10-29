@@ -477,6 +477,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_intr_path_ledger.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_path_ledger.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_ledger"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_intr_path_public_ledger_read.py",
    "inputs": [],
    "surfaces": [
@@ -3565,7 +3577,14 @@
    ".stegverse/intr-path-transfer/**",
    ".stegverse/intr-path-transfer/inbound.json",
    "org-kernel/kernel.py",
-   "resident-runtime/intr_path_tvc_read.py",
+   "resident-runtime/intr_path_ledger.py",
+   "resident-runtime/intr_path_tvc_read.py"
+  ],
+  "resident-runtime/intr_path_ledger.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "data/intr-protocol/v1/**",
+   "data/intr-protocol/v1/protocol.json",
+   "resident-runtime/intr_destination_ingress.py",
    "resident-runtime/merge_transfer.py"
   ],
   "resident-runtime/intr_path_transfer.py": [
@@ -3573,7 +3592,7 @@
    ".stegverse/intr-path-transfer/transfers.json",
    "org-runtime/intr_protocol.py",
    "resident-runtime/intr_path_ingress.py",
-   "resident-runtime/merge_transfer.py",
+   "resident-runtime/intr_path_ledger.py",
    "tests/fixtures/**",
    "tests/fixtures/intr-protocol/destinations/**",
    "tests/fixtures/intr-protocol/destinations/manifest.json"
@@ -3753,6 +3772,9 @@
   "tests/fixtures/sdk_manifest_fixture_build.py": [
    "tests/fixtures/sdk-manifest-build-spec.json",
    "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/intr_path_temp_ledger.py": [
+   "tests/fixtures/intr-path-ledger/snapshots/**"
   ],
   "tests/peer_organization.py": [
    ".stegverse/transition-ledger/contract.json",
@@ -3957,7 +3979,16 @@
    ".stegverse/transition-ledger/contract.json",
    "resident-runtime/intr_path_ingress.py",
    "tests/fixtures/intr-path-ingress/pin.json",
+   "tests/intr_path_temp_ledger.py",
    "tools/tasks/intr_public_ledgers.sh"
+  ],
+  "tests/test_intr_path_ledger.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
+   "resident-runtime/intr_path_transfer.py",
+   "resident-runtime/merge_transfer_gitstore.py",
+   "tests/fixtures/intr-path-transfer/expected-real-state.json",
+   "tests/intr_path_temp_ledger.py"
   ],
   "tests/test_intr_path_public_ledger_read.py": [
    ".stegverse/intr-path-transfer/inbound.json",
@@ -3972,6 +4003,7 @@
    "resident-runtime/intr_path_transfer.py",
    "tests/fixtures/**",
    "tests/fixtures/intr-path-transfer/**",
+   "tests/intr_path_temp_ledger.py",
    "tools/tasks/**",
    "tools/tasks/intr_public_ledgers.sh"
   ],
