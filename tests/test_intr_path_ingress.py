@@ -297,6 +297,23 @@ class Consume(unittest.TestCase):
         self.assertIn("source_inclusion_observed_at_verification", verified)
         self.assertEqual(self.ledger.files(), before)
 
+    def test_a_crossing_answered_from_the_ledger_keeps_the_writer_job_green(self):
+        # StegVerse-org/.github#162: the one-receipt rule refuses a second receipt for a crossing whose one receipt
+        # recorded the inclusion as unobserved. That refusal is the steady state on every push, so the writer job's
+        # exit code must not turn red for it; any other refusal still does.
+        org, repo = synthetic_source()
+        self._legacy_first_receipt(org, repo)
+        inbound = self.ledger.write_inbound([row(org, repo)])
+        self.public.publish(org, repo)
+        results = pi.consume(inbound)
+        self.assertEqual(results[0]["failure_code"], "INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED")
+        self.assertEqual(pi.consume_exit_code(results), 0)
+        self.assertEqual(pi.consume_exit_code([{"disposition": "FAIL_CLOSED", "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED"}]), 1)
+        self.assertEqual(pi.consume_exit_code([{"disposition": "FAIL_CLOSED",
+                                                "failure_code": "INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED",
+                                                "appended": True}]), 1)
+        self.assertEqual(pi.consume_exit_code([{"disposition": "ALLOW"}]), 0)
+
     def test_an_observed_receipt_is_answered_from_the_ledger_and_nothing_is_appended(self):
         org, repo = synthetic_source()
         self.public.publish(org, repo)

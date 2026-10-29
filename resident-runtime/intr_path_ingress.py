@@ -606,6 +606,15 @@ def consume(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
     return out
 
 
+def consume_exit_code(results: list[dict[str, Any]]) -> int:
+    """0 when every row is ALLOW, or is a crossing that already has its one receipt and was answered from the ledger
+    with nothing appended (CROSSING_RECORDED, appended False): that is the steady state of the one-receipt-per-crossing
+    rule, not a failure of the writer, so the push job stays green. The row's own result is still FAIL_CLOSED in the
+    output, with the six fields; any other refusal still exits 1."""
+    steady = lambda x: x.get("failure_code") == CROSSING_RECORDED and x.get("appended") is False
+    return 0 if all(x["disposition"] == ALLOW or steady(x) for x in results) else 1
+
+
 def verify_inbound(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
     """Each inbound row against this ledger: the destination pair must be ledgered and link the carried seals."""
     out = []
@@ -828,7 +837,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "consume":
         result: Any = consume(args.inbound)
-        code = 0 if all(x["disposition"] == ALLOW for x in result) else 1
+        code = consume_exit_code(result)
     elif args.command == "verify":
         result = verify_inbound(args.inbound)
         code = 0 if all(x["disposition"] == ALLOW for x in result) else 1
