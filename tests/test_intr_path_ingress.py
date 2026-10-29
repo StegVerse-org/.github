@@ -254,52 +254,128 @@ class Consume(unittest.TestCase):
         self.assertEqual(self.ledger.files(), before)
         self.assertEqual(pi.find_destination(PID, CID)[0], None)
 
-    def test_an_unobserved_inclusion_gets_one_successor_receipt_that_records_it(self):
-        org, repo = synthetic_source()
+    def _legacy_first_receipt(self, org, repo):
+        """What the writer recorded before it read the source ledger: the crossing's one receipt, inclusion unobserved."""
         checked = pi.check_source_pair(org, repo, PID, CID, DESTINATION)
         epoch, failed = pi.ledger.head_epoch()
         self.assertIsNone(failed)
-        legacy = pi.ingress_evidence(checked, None)   # what the writer recorded before it read the source ledger
+        legacy = pi.ingress_evidence(checked, None)
         self.assertEqual(legacy["source_inclusion"], "UNOBSERVED_WITHOUT_A_CROSS_ORG_READ_CREDENTIAL")
-        pi.ledger.append(pi.TRANSITION_CLASS, PID + "@" + CID, legacy, epoch, operation=pi.OPERATION,
-                         profile_id=pi.ingress.PROFILE_ID,
-                         boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
-                                         "source_organization_receipt_sha256": org["receipt_sha256"],
-                                         "source_repository_receipt_sha256": repo["receipt_sha256"]})
+        appended, _ = pi.ledger.append(
+            pi.TRANSITION_CLASS, PID + "@" + CID, legacy, epoch, operation=pi.OPERATION,
+            profile_id=pi.ingress.PROFILE_ID,
+            boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
+                            "source_organization_receipt_sha256": org["receipt_sha256"],
+                            "source_repository_receipt_sha256": repo["receipt_sha256"]})
+        return appended["organization_receipt"]["receipt_sha256"], legacy
+
+    def test_a_crossing_that_has_a_receipt_never_gets_a_second_one(self):
+        # Rigel (2026-10-29): "This shouldn't be possible without being a literal duplicate." One receipt per
+        # crossing: consume answers from the ledger and appends nothing, even when the receipt recorded the source
+        # inclusion as unobserved and the source ledger is readable now.
+        org, repo = synthetic_source()
+        first, _ = self._legacy_first_receipt(org, repo)
         inbound = self.ledger.write_inbound([row(org, repo)])
-        (unobserved,) = pi.verify_inbound(inbound)
-        self.assertEqual((unobserved["disposition"], unobserved["failure_code"]),
-                         ("FAIL_CLOSED", "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"), unobserved)
-        self.six(unobserved)
-        # the read fails: nothing is written and the row stays fail-closed
+        self.public.publish(org, repo)
         before = self.ledger.files()
         (refused,) = pi.consume(inbound)
-        self.assertEqual((refused["disposition"], refused["appended"]), ("FAIL_CLOSED", False), refused)
+        self.assertEqual((refused["disposition"], refused["failure_code"], refused["appended"]),
+                         ("FAIL_CLOSED", "INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED", False), refused)
+        self.assertEqual(refused["organization_receipt_sha256"], first)
         self.six(refused)
         self.assertEqual(self.ledger.files(), before)
-        # the read succeeds: one successor receipt records the observed inclusion
-        tip = self.public.publish(org, repo)
-        (result,) = pi.consume(inbound)
-        self.assertEqual((result["disposition"], result["source_inclusion"]["state"]), ("ALLOW", pi.PUBLIC_STATE), result)
-        d_org, d_rep, _ = pi.find_destination(PID, CID)
-        self.assertEqual(d_rep["evidence"]["source_inclusion"]["source_ledger_tip"], tip)
-        self.assertNotEqual(d_rep["evidence"]["payload_sha256"], legacy["payload_sha256"])
-        (verified,) = pi.verify_inbound(inbound)
-        self.assertEqual(verified["disposition"], "ALLOW", verified)
-        destination = pi.readback(PID, CID, pi.OPERATION, "temp")
-        self.assertEqual(destination["organization_receipt"]["receipt_sha256"], d_org["receipt_sha256"])
+        # and again: still nothing written
+        (again,) = pi.consume(inbound)
+        self.assertEqual(again["failure_code"], "INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED")
+        self.assertEqual(self.ledger.files(), before)
+
+    def test_an_observed_receipt_is_answered_from_the_ledger_and_nothing_is_appended(self):
+        org, repo = synthetic_source()
+        self.public.publish(org, repo)
+        inbound = self.ledger.write_inbound([row(org, repo)])
+        (first,) = pi.consume(inbound)
+        self.assertEqual((first["disposition"], first["replayed"]), ("ALLOW", False), first)
         after = self.ledger.files()
-        (again,) = pi.consume(inbound)   # answered from the ledger: no third receipt
+        (again,) = pi.consume(inbound)
         self.assertTrue(again["replayed"], again)
         self.assertEqual(self.ledger.files(), after)
         self.public.withdraw()
-        (still,) = pi.consume(inbound)   # an observed newest receipt needs no further read
+        (still,) = pi.consume(inbound)   # an observed receipt needs no further read
         self.assertTrue(still["replayed"], still)
+        self.assertEqual(self.ledger.files(), after)
+
+    def test_the_writer_guard_refuses_a_second_receipt_that_appears_after_the_row_was_read(self):
+        org, repo = synthetic_source()
+        self.public.publish(org, repo)
+        inbound = self.ledger.write_inbound([row(org, repo)])
+        real, calls = pi.find_destinations, []
+
+        def raced(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 1:
+                return real(*args, **kwargs)   # the row is read: no receipt yet
+            self._legacy_first_receipt(org, repo)   # another writer appended the crossing's receipt meanwhile
+            return real(*args, **kwargs)
+        pi.find_destinations = raced
+        try:
+            (refused,) = pi.consume(inbound)
+        finally:
+            pi.find_destinations = real
+        self.assertEqual((refused["disposition"], refused["failure_code"]),
+                         ("FAIL_CLOSED", "INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED"), refused)
+        self.six(refused)
+        pairs, _ = pi.find_destinations(PID, CID)
+        self.assertEqual(len(pairs), 1)   # only the other writer's receipt: the crossing still has exactly one
+
+    def test_a_historical_second_receipt_is_a_duplicate_of_the_same_crossing_and_grants_nothing(self):
+        # Ledger history is append-only: StegVerse-org's ledger holds, for ten crossings, a first receipt that
+        # recorded the inclusion as unobserved and a later #source-inclusion receipt. The later one is a duplicate
+        # of the same crossing. It is identified, it grants nothing, and it is not the crossing's receipt.
+        org, repo = synthetic_source()
+        first, legacy = self._legacy_first_receipt(org, repo)
+        self.public.publish(org, repo)
+        checked = pi.check_source_pair(org, repo, PID, CID, DESTINATION)
+        epoch, failed = pi.ledger.head_epoch()
+        observed = pi.ingress_evidence(checked, pi.source_inclusion(checked))
+        appended, _ = pi.ledger.append(
+            pi.TRANSITION_CLASS, PID + "@" + CID + pi.SOURCE_INCLUSION_PACKET_SUFFIX, observed, epoch,
+            operation=pi.OPERATION, profile_id=pi.ingress.PROFILE_ID,
+            boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
+                            "source_organization_receipt_sha256": org["receipt_sha256"],
+                            "source_repository_receipt_sha256": repo["receipt_sha256"]})
+        duplicate = appended["organization_receipt"]["receipt_sha256"]
+        inbound = self.ledger.write_inbound([row(org, repo)])
+        d_org, _, _ = pi.find_destination(PID, CID)
+        self.assertEqual(d_org["receipt_sha256"], first)   # the crossing's receipt is the first
+        (verified,) = pi.verify_inbound(inbound)
+        self.assertEqual(verified["disposition"], "ALLOW", verified)
+        self.assertEqual(verified["organization_receipt_sha256"], first)
+        self.assertEqual(verified["source_inclusion_recorded"][:len("source_inclusion is recorded as")],
+                         "source_inclusion is recorded as")
+        self.assertEqual(verified["source_inclusion_observed_at_verification"]["state"], pi.PUBLIC_STATE)
+        (finding,) = verified["duplicate_receipts"]
+        self.assertEqual((finding["finding"], finding["grants"], finding["organization_receipt_sha256"]),
+                         ("INTR_PATH_DESTINATION_DUPLICATE_OF_THE_SAME_CROSSING", "NOTHING", duplicate))
+        self.assertTrue(finding["declared"])
+        # the duplicate grants nothing: with the source ledger unreadable, the crossing's own receipt decides
+        self.public.withdraw()
+        (denied,) = pi.verify_inbound(inbound)
+        self.assertEqual((denied["disposition"], denied["failure_code"]),
+                         ("FAIL_CLOSED", "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"), denied)
+        self.assertEqual(denied["organization_receipt_sha256"], first)
+        self.six(denied)
+        # readback names the crossing's receipt and carries the duplicate
+        destination = pi.readback(PID, CID, pi.OPERATION, "temp")
+        self.assertEqual(destination["organization_receipt"]["receipt_sha256"], first)
+        self.assertEqual(destination["duplicate_receipts"][0]["organization_receipt_sha256"], duplicate)
+        whole = pi.verify_end_to_end(PID, CID, source_readback(org, repo), destination)
+        self.assertEqual(whole["disposition"], "ALLOW", whole)
+        self.assertEqual(whole["destination_organization_receipt_sha256"], first)
 
     def test_an_unauthorized_successor_is_refused(self):
         # StegVerse-org/.github#162: a successor on the same destination pair that is not the declared
-        # #source-inclusion successor, or that records no source-inclusion read, must not become the path's receipt. Readers walk newest-first, so it is refused, not skipped
-        # in favour of the older observed receipt.
+        # #source-inclusion successor, or that records no source-inclusion read, must not become the path's receipt.
+        # Any later receipt for the crossing is a duplicate of it: refused here, never granting anything.
         org, repo = synthetic_source()
         self.public.publish(org, repo)
         inbound = self.ledger.write_inbound([row(org, repo)])
@@ -316,12 +392,14 @@ class Consume(unittest.TestCase):
         absent = {**core, "payload_sha256": pi.sha(core), "disposition": "ALLOW", "communication_id": CID}
         forged = pi.ingress_evidence(checked, {"disposition": "ALLOW", "state": pi.PUBLIC_STATE,
                                                "source_ledger_tip": "c" * 40, "tvc_read_receipt": None})
+        first = authorized["organization_receipt_sha256"]
         cases = (("#unauthorized-unobserved", unobserved, "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"),
                  ("#unauthorized-absent", absent, "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"),
                  # claims an observed inclusion it never read: the suffix is not the declared one
                  ("#forged-claim", forged, "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"),
-                 # the declared suffix still has to record an observed inclusion
-                 (pi.SOURCE_INCLUSION_PACKET_SUFFIX, unobserved, "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"))
+                 # the declared suffix over a receipt that already recorded an observed inclusion is a duplicate of
+                 # the same crossing and is refused
+                 (pi.SOURCE_INCLUSION_PACKET_SUFFIX, unobserved, "INTR_PATH_DESTINATION_SUCCESSOR_PREDECESSOR_OBSERVED"))
         for suffix, evidence, code in cases:
             with self.subTest(suffix=suffix):
                 appended, _ = pi.ledger.append(
@@ -331,10 +409,10 @@ class Consume(unittest.TestCase):
                                     "source_organization_receipt_sha256": org["receipt_sha256"],
                                     "source_repository_receipt_sha256": repo["receipt_sha256"]})
                 d_org, _, _ = pi.find_destination(PID, CID)
-                self.assertEqual(d_org["receipt_sha256"], appended["organization_receipt"]["receipt_sha256"])
+                self.assertEqual(d_org["receipt_sha256"], first)   # the crossing's receipt stays the first
                 (refused,) = pi.verify_inbound(inbound)
                 self.assertEqual((refused["disposition"], refused["failure_code"]), ("FAIL_CLOSED", code), refused)
-                self.assertEqual(refused["organization_receipt_sha256"], d_org["receipt_sha256"])
+                self.assertEqual(refused["organization_receipt_sha256"], appended["organization_receipt"]["receipt_sha256"])
                 self.six(refused)
 
     def _successor(self, org, repo, suffix, evidence):
@@ -358,11 +436,12 @@ class Consume(unittest.TestCase):
         forged = self._successor(org, repo, "#forged-claim", lambda checked: pi.ingress_evidence(checked, {
             "disposition": "ALLOW", "state": pi.PUBLIC_STATE, "source_ledger_tip": "c" * 40, "tvc_read_receipt": None}))
         destination = pi.readback(PID, CID, pi.OPERATION, "temp")
-        self.assertEqual(destination["organization_receipt"]["receipt_sha256"], forged)
+        self.assertNotEqual(destination["organization_receipt"]["receipt_sha256"], forged)   # the first is the crossing's
         whole = pi.verify_end_to_end(PID, CID, source_readback(org, repo), destination)
         self.assertEqual((whole["disposition"], whole["failure_code"], whole["path"]),
                          ("FAIL_CLOSED", "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED", "UNVERIFIED"), whole)
         self.assertEqual(whole["organization_receipt_sha256"], forged)
+        self.assertEqual(whole["duplicate_receipts"][0]["organization_receipt_sha256"], forged)
         self.six(whole)
 
     def test_a_source_inclusion_successor_over_an_observed_predecessor_is_refused(self):
