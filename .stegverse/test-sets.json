@@ -439,18 +439,6 @@
   {
    "always": false,
    "exclude": [],
-   "id": "tests/test_intr_hop.py",
-   "inputs": [],
-   "surfaces": [
-    "tests/test_intr_hop.py"
-   ],
-   "tests": [
-    "tests.test_intr_hop"
-   ]
-  },
-  {
-   "always": false,
-   "exclude": [],
    "id": "tests/test_intr_org_crossing.py",
    "inputs": [],
    "surfaces": [
@@ -3553,14 +3541,6 @@
    "resident-runtime/organization_egress_boundary.py",
    "resident-runtime/organization_ledger_readback.py"
   ],
-  "resident-runtime/intr_hop.py": [
-   ".stegverse/transition-ledger/emit.py",
-   "org-boundary/registry/services.json",
-   "org-boundary/runtime/capability_ingress.py",
-   "org-runtime/interlock-intr.json",
-   "resident-runtime/ledger_store.py",
-   "resident-runtime/organization_egress_boundary.py"
-  ],
   "resident-runtime/intr_path_ingress.py": [
    ".stegverse/intr-path-transfer/**",
    ".stegverse/intr-path-transfer/inbound.json",
@@ -3938,14 +3918,6 @@
    "resident-runtime/organization_egress_boundary.py",
    "tests/fixtures/crossing-standing-genesis.json",
    "tests/workflow_surface.py"
-  ],
-  "tests/test_intr_hop.py": [
-   ".stegverse/transition-ledger/contract.json",
-   ".stegverse/transition-ledger/org-contract.json",
-   "org-boundary/registry/services.json",
-   "org-runtime/interlock-intr.json",
-   "resident-runtime/intr_hop.py",
-   "tools/tasks/retired/intr-destination-hop.yml"
   ],
   "tests/test_intr_org_crossing.py": [
    "org-boundary/registry/services.json",

@@ -401,43 +401,6 @@
       }
     },
     {
-      "id": "intr-destination-hop.validate",
-      "source": {
-        "workflow": ".github/workflows/intr-destination-hop.yml",
-        "workflow_name": "InTr Destination Hop",
-        "job": "validate",
-        "job_name": null,
-        "commit": "907f4305ddd4f39b16d96638744304de9ef0b67d",
-        "triggers_before": [
-          "pull_request",
-          "push",
-          "workflow_dispatch"
-        ],
-        "permissions_before": {
-          "contents": "read"
-        },
-        "job_if_before": "github.event_name != 'workflow_dispatch'"
-      },
-      "events": [
-        "pull_request",
-        "push"
-      ],
-      "env": {},
-      "steps": [
-        {
-          "name": "One-way hop phases against a fixture peer (fabricated, non-authentic)",
-          "run_file": "tools/tasks/steps/intr-destination-hop.validate/01-one-way-hop-phases-against-a-fixture-peer-fabric.sh",
-          "run_sha256": "65f524507e4d262bfce5a371d64d58dcc237ef2b0211e480895d27f095a1e115"
-        }
-      ],
-      "artifacts": [],
-      "runner": {
-        "fetch_depth": "1",
-        "persist_credentials": "false",
-        "timeout_minutes": 360
-      }
-    },
-    {
       "id": "intr-path-transfer-validation.unit",
       "source": {
         "workflow": ".github/workflows/intr-path-transfer-validation.yml",

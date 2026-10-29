@@ -35,11 +35,11 @@ under Rigel's 2026-10-24 direction (StegVerse-org/.github#166).
 - ledger-transition self-closure mode (was a `workflow_dispatch` mode): retired, not pending. It was an InTr hop inside one
   organization (Rigel's rule, 2026-10-25); its writer steps are removed (Lane B, as in SV-LLM/.github#62).
 - governance-return dispatched locators (was `workflow_dispatch` inputs).
-- InTr destination hop `hop` job (`workflow_dispatch` + `secrets.FEDERATION_HOP_TOKEN`); retained verbatim at
-  `tools/tasks/retired/intr-destination-hop.yml`, not executed. No secret added or moved.
+- InTr destination hop `hop` job (`workflow_dispatch` + `secrets.FEDERATION_HOP_TOKEN`): deleted with its retired copy,
+  its catalog group and `resident-runtime/intr_hop.py` (#160 C1/C2; the hop is served by the one transport component,
+  the writer's path-transfer/path-ingress jobs). No secret added or moved.
 
 ## Open decisions (Rigel)
 
 1. Approve or refuse the 3rd-workflow exception above.
-2. Token handling for the InTr hop (TV/TVC credential path).
-3. Manifest form of the dispatch-only writer modes.
+2. Manifest form of the dispatch-only writer modes.

@@ -303,30 +303,6 @@
       ]
     },
     {
-      "workflow": ".github/workflows/intr-destination-hop.yml",
-      "name": "InTr Destination Hop",
-      "triggers_before": [
-        "pull_request",
-        "push",
-        "workflow_dispatch"
-      ],
-      "permissions_before": {
-        "workflow": {
-          "contents": "read"
-        },
-        "jobs": {
-          "hop": {
-            "contents": "write"
-          }
-        }
-      },
-      "classification": "CONSOLIDATE_INTO_STABLE_DISPATCHER",
-      "into": ".github/workflows/validation-dispatcher.yml",
-      "catalog_groups": [
-        "intr-destination-hop.validate"
-      ]
-    },
-    {
       "workflow": ".github/workflows/intr-path-ingress.yml",
       "name": "InTr Mesh Path Ingress",
       "triggers_before": [
@@ -896,17 +872,6 @@
       "next_attempt": "owner decision on #166"
     },
     {
-      "surface": "intr-destination-hop.yml job hop (workflow_dispatch phases send/receive/close; secrets.FEDERATION_HOP_TOKEN)",
-      "now": "retained verbatim as a non-executing record at tools/tasks/retired/intr-destination-hop.yml; its validate job is catalog group intr-destination-hop.validate",
-      "disposition": "FAIL_CLOSED",
-      "failure_code": "FEDERATION_HOP_REQUIRES_NON_TV_TVC_TOKEN_AND_DISPATCH",
-      "failed_predicate": "HOP_RUNS_BY_MANIFEST_WITH_TV_TVC_CREDENTIAL_AUTHORITY",
-      "required_evidence_or_repair": "a TV/TVC-issued credential path and a manifest-driven (committed request) hop phase; no secret is added or moved by this change",
-      "retry_entrypoint": "tools/tasks/retired/intr-destination-hop.yml",
-      "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
-      "next_attempt": "Rigel decision on token handling (#166); the hop does not run until then"
-    },
-    {
       "surface": "main-change-receipt.yml (P4 #222; reusable on: workflow_call only; job contents: write appends refs/stegverse/main-change-receipts fast-forward in the CALLING repository)",
       "now": "retained verbatim as a non-executing record at tools/tasks/retired/main-change-receipt.yml; the default placement is catalog group main-change-receipt.receipt (validation-dispatcher.yml, push to main, read-only) producing the sealed receipts on a scratch copy, with the append a manifest-directed transition (resident-runtime/main-change-receipt.transition.json) carried by organization-ledger-writer.yml once admitted; no 4th workflow",
       "disposition": "FAIL_CLOSED",
@@ -921,7 +886,6 @@
   "transfer_pending": [],
   "open_decisions": [
     "3rd-workflow exception: .github/workflows/organization-egress-boundary-validation.yml",
-    "FEDERATION_HOP_TOKEN handling for the InTr hop",
     "dispatch-only writer modes (dispatched return locators; the self-closure is retired by Rigel's rule of 2026-10-25, not an open decision)",
     "main-change-receipt.yml (P4 #222): default proposed on #238 = catalog group main-change-receipt.receipt + manifest-directed append by organization-ledger-writer.yml (no 4th workflow); #238 owner accepts or amends"
   ],
