@@ -1149,7 +1149,7 @@
         {
           "name": "Append, verify, refuse (temp ledgers from the pinned tip)",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.unit/02-append-verify-refuse-temp-ledgers-from-the-pinne.sh",
-          "run_sha256": "6d8f81c5795a3d39a95b86211007e6f83188865023392f6a78b8666e90eb46dc"
+          "run_sha256": "da664b354c05ead09767097d3c32e5e4d032bed592096797e14e7cd976d39dff"
         }
       ],
       "artifacts": [],
@@ -1196,7 +1196,7 @@
         {
           "name": "The writer's append on the scratch ref, then VERIFIED, then an idempotent replay",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-then-veri.sh",
-          "run_sha256": "7513c299fb395bea28383e0bb797f56978d677d3c3a0e21d564c0e3f54adc2ec"
+          "run_sha256": "937d29a62870adabb82f204a82981839239758ee2891b8ccde80918702701fa0"
         }
       ],
       "artifacts": [],
@@ -2605,6 +2605,47 @@
         "timeout_minutes": 360,
         "artifact_name": "test-suite-skip-receipt",
         "artifact_if_no_files_found": "error"
+      }
+    },
+    {
+      "id": "organization-ledger-merge-admission-record-validation.unit",
+      "source": {
+        "workflow": null,
+        "job": null,
+        "added_by": "StegVerse-org/.github#227 (Grok Lane C, item 2), ported onto G17 by the Claude worker",
+        "note": "Carries #227's .github/workflows/organization-ledger-merge-admission-record-validation.yml job unit as a catalog group (G17: a new check is a catalog group, never a workflow file). Run bodies byte for byte from f819fd7d; the checkout step is the dispatcher's (fetch_depth 0). There is no writer workflow for this op: record delivery from TVC is a TV/TVC transition that does not exist yet.",
+        "name": "Validate Merge Admission Record Append",
+        "folded_from_commit": "f819fd7d8c1cc33d32c32f53af3802ac191babe1",
+        "triggers_before": [
+          "pull_request"
+        ],
+        "permissions_before": {
+          "contents": "read"
+        }
+      },
+      "events": [
+        "pull_request"
+      ],
+      "env": {
+        "LEDGER_REF": "refs/stegverse/organization-ledger"
+      },
+      "steps": [
+        {
+          "name": "Fetch the ledger ref read-only (the fixtures pin a commit on it)",
+          "run_file": "tools/tasks/steps/organization-ledger-merge-admission-record-validation.unit/01-fetch-the-ledger-ref-read-only-the-fixtures-pin-.sh",
+          "run_sha256": "23d3ba4d4667391d4c731e9630fbf7fda623b69e7164369665c88cf283b947cc"
+        },
+        {
+          "name": "Append, B2 checkpoint ALLOW, refusals (temp ledgers from the pinned tip)",
+          "run_file": "tools/tasks/steps/organization-ledger-merge-admission-record-validation.unit/02-append-b2-checkpoint-allow-refusals-temp-ledger.sh",
+          "run_sha256": "36bc9bd913fe34ebe423b60665345c12188f470034e13bf858c097cee52b93f5"
+        }
+      ],
+      "artifacts": [],
+      "runner": {
+        "fetch_depth": "0",
+        "persist_credentials": "true",
+        "timeout_minutes": 360
       }
     }
   ]

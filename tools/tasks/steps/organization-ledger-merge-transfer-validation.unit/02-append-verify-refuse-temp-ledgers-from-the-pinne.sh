@@ -1,1 +1,1 @@
-python3 -m unittest tests.test_merge_transfer tests.test_merge_transfer_range tests.test_merge_transfer_dry_run_check -v
+python3 -m unittest tests.test_merge_transfer tests.test_merge_transfer_range tests.test_merge_transfer_dry_run_check tests.test_merge_transfer_admission -v

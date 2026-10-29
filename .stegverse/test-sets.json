@@ -2609,6 +2609,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_merge_admission_record_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_admission_record_append.py"
+   ],
+   "tests": [
+    "tests.test_merge_admission_record_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_merge_transfer.py",
    "inputs": [
     "organization-ledger-ref"
@@ -2618,6 +2630,18 @@
    ],
    "tests": [
     "tests.test_merge_transfer"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_merge_transfer_admission.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_transfer_admission.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_admission"
    ]
   },
   {
@@ -3585,10 +3609,18 @@
    ".github/workflows/**",
    "resident-runtime/main_change_receipt.py"
   ],
+  "resident-runtime/merge_admission_record_append.py": [
+   "data/merge-admission/**",
+   "data/merge-admission/record-contract.json",
+   "resident-runtime/merge_transfer.py"
+  ],
   "resident-runtime/merge_transfer.py": [
    ".stegverse/merge-transfer/pending.json",
    "resident-runtime/intr_destination_ingress.py",
    "resident-runtime/ledger_store.py"
+  ],
+  "resident-runtime/merge_transfer_admission.py": [
+   "resident-runtime/merge_transfer.py"
   ],
   "resident-runtime/merge_transfer_dry_run_check.py": [
    "resident-runtime/merge_transfer.py",
@@ -4087,10 +4119,23 @@
   "tests/test_manifest_ingress_idempotent.py": [
    "tests/test_organization_manifest_ingress.py"
   ],
+  "tests/test_merge_admission_record_append.py": [
+   ".github/workflows/**",
+   "resident-runtime/merge_admission_record_append.py",
+   "resident-runtime/merge_transfer_admission.py",
+   "tests/fixtures/merge-admission-record/tvc-record-synthetic-pr200.json",
+   "tests/test_merge_transfer.py"
+  ],
   "tests/test_merge_transfer.py": [
    ".stegverse/merge-transfer/pending.json",
    "resident-runtime/merge_transfer.py",
    "tests/fixtures/merge-transfer/**",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_merge_transfer_admission.py": [
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/merge_transfer_admission.py",
+   "tests/test_merge_transfer.py",
    "tests/workflow_surface.py"
   ],
   "tests/test_merge_transfer_dry_run_check.py": [
