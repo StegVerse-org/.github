@@ -221,40 +221,7 @@ def propagate_all(*, hb_epoch: int | None = None) -> dict[str, Any]:
     }
 
 
-EPOCH_ENTRYPOINT = "resident-runtime/propagate_repository_receipts.py (--hb-epoch)"
-
-
-def cli_hb_epoch(text: str | None) -> tuple[int | None, dict[str, Any] | None]:
-    """--hb-epoch as typed, checked by the shared rule: (epoch, None) or (None, refusal).
-
-    argparse hands over the raw text (type=str), so the shared validator
-    (supplied_epoch_failure, the egress boundary's copy) sees it uncoerced.
-    type=int coerced ' 32', '+32', '3_2' and non-ASCII digits into an epoch
-    the rule refuses (P1-FC-10 HB_EPOCH_INVALID_COERCED); they are now
-    HB_EPOCH_INVALID, and '0033' is 33. An absent --hb-epoch stays None, as
-    before.
-    """
-    if text is None:
-        return None, None
-    rule = _module("organization_egress_boundary_cli_epoch",
-                   "resident-runtime/organization_egress_boundary.py").supplied_epoch_failure
-    failure = rule(text)
-    if failure is None:
-        return int(text), None  # admitted as ASCII digits
-    code, detail = failure
-    return None, {
-        "disposition": "FAIL_CLOSED",
-        "failure_code": code,
-        "failed_predicate": "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH",
-        "detail": detail,
-        "required_evidence_or_repair": ("pass --hb-epoch as the carrier supplied it: ASCII digits "
-                                        "with value >= 32"),
-        "retry_entrypoint": EPOCH_ENTRYPOINT,
-        "owning_existing_goal": "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001",
-        "next_attempt": "run again with the supplied epoch; nothing was propagated or appended",
-        "propagated": False,
-        "authority_effect": "NONE_REFUSAL_ONLY",
-    }
+CLI_ENTRYPOINT = "resident-runtime/propagate_repository_receipts.py (--hb-epoch)"
 
 
 def main() -> int:
@@ -265,15 +232,17 @@ def main() -> int:
     parser.add_argument("--repository-ledger-root", type=Path, default=None,
                         help="address of that repository's ledger; derived from the ledger home when absent")
     parser.add_argument("--hb-epoch", type=str, default=None,
-                        help="heartbeat epoch as supplied: ASCII digits with value >= 32; derived "
-                             "from the host clock, and marked as derived, when absent")
+                        help="heartbeat epoch, as supplied (ASCII digits >= 32); absent or invalid is "
+                             "refused FAIL_CLOSED and nothing is propagated")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
-    hb_epoch, epoch_refused = cli_hb_epoch(args.hb_epoch)
-    if epoch_refused is not None:
-        # Nothing is propagated, appended or written (no --out); the exit is 1.
-        print(json.dumps({"schema": RESULT_SCHEMA, **epoch_refused}, sort_keys=True))
+    # Checked as typed, before any ledger is read, by the organization
+    # writer's rule: argparse's int() would admit "+33" or " 33" as 33.
+    refused = organization_ledger.epoch_refusal(args.hb_epoch)
+    if refused is not None:
+        print(json.dumps({**refused, "retry_entrypoint": CLI_ENTRYPOINT}, sort_keys=True))
         return 1
+    hb_epoch = int(str(args.hb_epoch))  # admitted as ASCII digits by the shared rule
 
     if args.repository:
         result = propagate(args.repository, repository_root=args.repository_ledger_root,
@@ -292,4 +261,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/propagate_repository_receipts.py"))

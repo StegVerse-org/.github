@@ -106,7 +106,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         response = kernel.build_control_response(
             packet, {"application_result": decision,
                      "reconstruction": {"terminal_receipt_id": terminal or chain[-1]}})
-        kernel.publish_packet(response, root=self.mesh)
+        kernel.publish_packet(response, root=self.mesh, epoch=4096)
         return packet
 
     def return_decision(self, emitted, **overrides):
@@ -146,7 +146,7 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
                      "manifest": body, "manifest_sha256": kernel.sha(body)},
             standing=GENESIS, transition_reference="intr:transition:capability-address-mesh",
             authority_effect="NONE", packet_id="capability-address-mesh")
-        kernel.publish_packet(packet, root=self.mesh)
+        kernel.publish_packet(packet, root=self.mesh, epoch=4096)
         results = kernel.consume_addressed_frames(
             ROOT, mesh_root=self.mesh, repo_ledger_root=os.environ["STEGVERSE_REPO_LEDGER_ROOT"],
             org_ledger_root=os.environ["STEGVERSE_ORG_LEDGER_ROOT"])
@@ -189,10 +189,18 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertIs(emitted["awaits_the_decision"], False)
         self.assertNotIn("sdk_admitted_result", emitted)
         self.assertEqual(emitted["sdk_admission"], "AT_DECISION_RETURN")
-        pending = self.return_decision(emitted)
-        self.assertEqual(pending["disposition"], "PENDING")
-        self.assertIs(pending["decision_returned"], False)
-        self.assertIs(pending["absence_is_not_a_transition"], True)
+        absent = self.return_decision(emitted)
+        self.assertEqual(absent["disposition"], "FAIL_CLOSED")
+        self.assertEqual(absent["failure_code"], "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION")
+        self.assertEqual(absent["failed_predicate"],
+                         "EGRESS_RESPONSE_DURABLY_MATERIALIZED_BEFORE_CLOSE")
+        for field in ("required_evidence_or_repair", "retry_entrypoint",
+                      "owning_existing_goal", "next_attempt"):
+            self.assertTrue(absent[field], field)
+        self.assertEqual(absent["retry_entrypoint"], returning.RETRY_ENTRYPOINT)
+        self.assertIs(absent["decision_returned"], False)
+        self.assertIs(absent["absence_is_not_a_transition"], True)
+        self.assertIs(absent["refusal_recorded"], False)
 
     def consumed_answers(self):
         """This organization's federation cycle consuming its mesh, and the returns it materializes."""
@@ -326,22 +334,104 @@ class GovernanceInterOrgRouteTests(unittest.TestCase):
         self.assertIs(returned["decision_returned"], False)
         self.assertEqual(returned["closure_transition_class"], "ORGANIZATION_EGRESS_CLOSURE_REFUSED")
 
-    def run_cli(self, emitted):
+    def run_cli(self, emitted, hb_epoch="33", out=None):
         path = Path(self._work.name) / "manifest.json"
         path.write_text(json.dumps(manifest()), encoding="utf-8")
         argv = ["governance_decision_return.py", "--manifest", str(path),
                 "--packet-id", emitted["governance_request_packet_id"],
                 "--communication-id", emitted["governance_communication_id"],
-                "--mesh-root", str(self.mesh), "--hb-epoch", "33"]
-        with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()):
+                "--mesh-root", str(self.mesh)]
+        if hb_epoch is not None:
+            argv += ["--hb-epoch", hb_epoch]
+        with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(out or io.StringIO()):
             return returning.main()
 
-    def test_a_pending_observation_does_not_exit_as_a_returned_decision(self):
+    def written(self):
+        work = Path(self._work.name)
+        return sorted(str(p.relative_to(work)) for p in work.rglob("*")
+                      if p.is_file() and p.name != "manifest.json")
+
+    def test_the_cli_epoch_is_read_as_typed_and_a_refusal_writes_nothing(self):
+        """argparse's int() used to hand "+33" to egress.close as 33."""
+        six = ("failure_code", "failed_predicate", "required_evidence_or_repair",
+               "retry_entrypoint", "owning_existing_goal", "next_attempt")
         emitted = self.receive()
-        self.assertEqual(self.run_cli(emitted), returning.EXIT_PENDING_OBSERVATION)
-        self.assertNotEqual(returning.EXIT_PENDING_OBSERVATION, returning.EXIT_RETURNED)
-        self.assertNotEqual(returning.EXIT_PENDING_OBSERVATION, returning.EXIT_NOT_ALLOWED)
-        self.assertIs(self.return_decision(emitted)["observation_only"], True)
+        self.answer(emitted)
+        before = self.written()
+        for epoch in ("+33", "\uff13\uff13", " 33", "True", "abc", "33.7", "", None):
+            with self.subTest(epoch=epoch):
+                out = io.StringIO()
+                self.assertEqual(self.run_cli(emitted, hb_epoch=epoch, out=out), returning.EXIT_NOT_ALLOWED)
+                refusal = json.loads(out.getvalue().splitlines()[-1])
+                self.assertEqual(refusal["disposition"], "FAIL_CLOSED")
+                self.assertEqual(refusal["failure_code"],
+                                 "HB_EPOCH_NOT_SUPPLIED" if epoch is None else "HB_EPOCH_INVALID")
+                for field in six:
+                    self.assertTrue(refusal[field], field)
+                self.assertEqual(self.written(), before)
+        self.assertEqual(self.run_cli(emitted, hb_epoch="4096"), returning.EXIT_RETURNED)
+
+    def ledger_files(self):
+        """Every file under both ledger roots, so a refusal can be shown to append nothing."""
+        found = []
+        for name in self.LEDGER_ROOTS:
+            root = Path(os.environ[name])
+            if root.exists():
+                found += sorted(str(path) for path in root.rglob("*") if path.is_file())
+        return found
+
+    def assert_epoch_refusal_carried(self, returned, failure_code):
+        self.assertEqual(returned["disposition"], "FAIL_CLOSED")
+        self.assertEqual(returned["failure_code"], failure_code)
+        self.assertEqual(returned["failed_predicate"], "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH")
+        self.assertNotEqual(returned["failed_predicate"],
+                            "DECIDING_ORGANIZATIONS_ANSWER_VERIFIES_AGAINST_THE_EMISSION")
+        self.assertEqual(returned["retry_entrypoint"],
+                         "resident-runtime/organization_egress_boundary.py::close")
+        self.assertEqual(returned["owning_existing_goal"],
+                         "INTERLOCK-INTR-RUNTIME-INDEPENDENT-PROTOCOL-001")
+        for field in ("required_evidence_or_repair", "next_attempt"):
+            self.assertTrue(returned[field], field)
+        self.assertIs(returned["decision_returned"], False)
+        self.assertIs(returned["refusal_recorded"], False)
+        self.assertNotIn("closure_transition_class", returned)
+
+    def test_a_return_without_an_epoch_is_the_epoch_refusal_not_the_answer_verification(self):
+        emitted = self.receive()
+        for answered in (False, True):
+            with self.subTest(answered=answered):
+                if answered:
+                    self.answer(emitted)
+                before = self.ledger_files()
+                self.assert_epoch_refusal_carried(self.return_decision(emitted, hb_epoch=None),
+                                                  "HB_EPOCH_NOT_SUPPLIED")
+                self.assertEqual(self.ledger_files(), before)
+
+    # The CLI refuses its own --hb-epoch before return_decision runs (#207);
+    # test_the_cli_epoch_is_read_as_typed_and_a_refusal_writes_nothing covers it.
+    def test_a_return_with_an_invalid_epoch_is_hb_epoch_invalid(self):
+        emitted = self.receive()
+        before = self.ledger_files()
+        for invalid in (31, "+33", True):
+            with self.subTest(hb_epoch=invalid):
+                self.assert_epoch_refusal_carried(self.return_decision(emitted, hb_epoch=invalid),
+                                                  "HB_EPOCH_INVALID")
+        self.assertEqual(self.ledger_files(), before)
+
+    def test_an_unanswered_return_does_not_exit_as_a_returned_decision(self):
+        emitted = self.receive()
+        self.assertEqual(self.run_cli(emitted), returning.EXIT_NOT_ALLOWED)
+        self.assertNotEqual(returning.EXIT_NOT_ALLOWED, returning.EXIT_RETURNED)
+        self.assertFalse(hasattr(returning, "EXIT_PENDING_OBSERVATION"))
+        self.assertEqual(self.return_decision(emitted)["authority_effect"], "NONE_REFUSAL_ONLY")
+
+    def test_a_pending_observation_does_not_exit_as_a_returned_decision(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule answered an unanswered close with a
+        PENDING observation and its own exit code. #186 answers it FAIL_CLOSED
+        DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION with the six fields, exiting as not allowed.
+        """
+        self.test_an_unanswered_return_does_not_exit_as_a_returned_decision()
 
     def test_a_returned_decision_exits_as_returned_whatever_the_governance_disposition(self):
         emitted = self.receive()

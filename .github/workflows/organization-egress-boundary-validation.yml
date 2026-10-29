@@ -116,10 +116,13 @@ jobs:
           assert emitted["crossed_an_organization_boundary"] is True
           assert emitted["origin_attestation_state"] == "NOT_PROVEN"
 
-          # Nothing has answered yet, so there is nothing to dispose of.
+          # Nothing has answered yet: FAIL_CLOSED with the six fields, nothing recorded.
           pending = egress.close(PEER, emitted["packet_id"], "ci-egress-001",
                                  mesh_root=mesh, hb_epoch=32)
-          assert pending["disposition"] == "PENDING", pending
+          assert pending["disposition"] == "FAIL_CLOSED", pending
+          assert pending["failure_code"] == "DURABLE_QUEUE_OR_EVENT_EPHEMERAL_MATERIALIZATION", pending
+          assert all(pending[f] for f in ("failed_predicate", "required_evidence_or_repair",
+                                          "retry_entrypoint", "owning_existing_goal", "next_attempt"))
           assert pending["closure_recorded"] is False
 
           # The peer consumes through its own kernel into its own ledgers.

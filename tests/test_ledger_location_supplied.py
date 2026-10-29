@@ -71,7 +71,7 @@ class LedgerLocationIsSuppliedTests(unittest.TestCase):
 
     def test_the_append_command_records_its_refusal_and_commits_nothing(self):
         with tempfile.TemporaryDirectory() as home, tempfile.TemporaryDirectory() as work:
-            body = {"schema": "stegverse.repo-transition-receipt/v1",
+            body = {"schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
                     "repository": "StegVerse-org/StegVerse-SDK", "transition_id": "unsupplied-ledger"}
             receipt = Path(work) / "receipt.json"
             receipt.write_text(json.dumps({**body, "receipt_sha256": organization.sha(body)}))

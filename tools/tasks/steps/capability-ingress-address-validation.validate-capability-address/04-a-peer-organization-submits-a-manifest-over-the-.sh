@@ -33,7 +33,7 @@ packet = kernel.build_packet(
     standing=standing,
     transition_reference="intr:transition:ci-peer-manifest-submission",
     authority_effect="NONE", packet_id="ci-peer-manifest-submission")
-kernel.publish_packet(packet, root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]))
+kernel.publish_packet(packet, root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]), epoch=4096)
 
 consumed = kernel.consume_addressed_frames(Path.cwd(), mesh_root=Path(os.environ["STEGVERSE_ORG_FEDERATION_ROOT"]),
     repo_ledger_root=Path(os.environ["STEGVERSE_REPO_LEDGER_ROOT"]),

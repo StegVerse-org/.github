@@ -189,7 +189,7 @@ class FederationCycleCustodyTests(unittest.TestCase):
                      "subject": "s", "body": {}},
             standing=GENESIS)
         kernel.publish_packet(packet, root=mesh, epoch=kernel.HB_ANCHOR_EPOCH + 9)
-        report = self.cycle.main(mesh_root=mesh, node_state_root=node)
+        report = self.cycle.main(mesh_root=mesh, node_state_root=node, hb_epoch=4096)
         self.assertEqual(report["frames_consumed"], 0)
         self.assertEqual(report["consumption"]["disposition"], "FAIL_CLOSED")
         self.assertEqual(report["consumption"]["failed_predicate"],
@@ -208,7 +208,8 @@ class FederationCycleCustodyTests(unittest.TestCase):
             standing=GENESIS)
         kernel.publish_packet(packet, root=mesh, epoch=kernel.HB_ANCHOR_EPOCH + 10)
         report = self.cycle.main(mesh_root=mesh, node_state_root=node,
-                                 repo_ledger_root=ledgers / "repo", org_ledger_root=ledgers / "org")
+                                 repo_ledger_root=ledgers / "repo", org_ledger_root=ledgers / "org",
+                                 hb_epoch=4096)
         self.assertEqual(report["frames_consumed"], 1)
         self.assertEqual(report["consumption"]["disposition"], "ALLOW")
         self.assertEqual(report["organization_receipts_recorded"], 1)

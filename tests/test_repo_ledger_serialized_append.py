@@ -118,9 +118,11 @@ class RepositoryLedgerPublicationTests(unittest.TestCase):
             before = {p.name for p in (Path(root) / "receipts").glob("*.json")}
             second = json.loads(emit(root, "idem").stdout.splitlines()[-1])
             after = {p.name for p in (Path(root) / "receipts").glob("*.json")}
-            # The second append links onto the first rather than colliding.
-            self.assertEqual(second["previous_receipt_sha256"], first["receipt_sha256"])
-            self.assertEqual(len(after - before), 1)
+            # An exact rerun returns the recorded receipt rather than minting a second
+            # one linked onto it (F-POST-HEAD: a retry after a fault that landed after
+            # HEAD was published must not append the same transition twice).
+            self.assertEqual(second, first)
+            self.assertEqual(after, before)
 
 
 if __name__ == "__main__":

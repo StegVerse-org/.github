@@ -113,10 +113,19 @@ def intake(peer_locator, *, own_mesh_root, organization=None):
         peer_tip = resolved.stdout.strip()
         peer = kernel.mesh_store("git+" + str(peer_git) + "#" + ref)
         own = kernel.mesh_store(own_mesh_root)
-        addressed, findings = [], []
+        addressed, findings, unreadable = [], [], []
         for key in sorted(peer.list_prefix(node_store.MESH_FRAME_PREFIX)):
-            frame = peer.get(key)
-            if not isinstance(frame, dict) or frame.get("destination_org") != organization:
+            # The kernel's guarded read: an entry that is not a readable JSON object
+            # (unreadable, non-UTF-8, non-JSON, oversized, too deep) names no
+            # destination, so it is skipped and reported -- never an aborted intake
+            # and never a refusal of the frames beside it (F-SCAN-RECURSION).
+            try:
+                frame = kernel.read_frame_entry(peer, key)
+            except ValueError as exc:
+                unreadable.append({"key": key, "finding": "PEER_ENTRY_IS_NOT_A_READABLE_FRAME",
+                                   "detail": str(exc)[:200]})
+                continue
+            if frame.get("destination_org") != organization:
                 continue
             if node_store.frame_key(frame) != key:
                 findings.append({"key": key, "finding": "PEER_FRAME_KEY_DOES_NOT_ADDRESS_ITS_CONTENT"})
@@ -154,7 +163,8 @@ def intake(peer_locator, *, own_mesh_root, organization=None):
             taken.append(row)
         return {"schema": SCHEMA, "disposition": "ALLOW", "organization": organization, "peer": peer_locator,
                 "peer_tip": peer_tip, "own_mesh_root": str(own_mesh_root), "taken": taken,
-                "already_present": present, "authority_effect": "NONE_CARRIER_ONLY"}
+                "already_present": present, "skipped_unreadable": unreadable,
+                "authority_effect": "NONE_CARRIER_ONLY"}
 
 
 def main(argv=None):
