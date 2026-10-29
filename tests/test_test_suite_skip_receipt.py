@@ -4,9 +4,13 @@ Synthetic JUnit XML in a temporary directory only. Nothing here is skipped.
 """
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -15,6 +19,13 @@ SPEC = importlib.util.spec_from_file_location(
     "test_suite_skip_receipt", ROOT / "scripts" / "test_suite_skip_receipt.py")
 receipt_module = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(receipt_module)
+TVC_SPEC = importlib.util.spec_from_file_location(
+    "tvc_conformance_receipt", ROOT / "resident-runtime" / "tvc_conformance_receipt.py")
+tvc_module = importlib.util.module_from_spec(TVC_SPEC)
+TVC_SPEC.loader.exec_module(tvc_module)
+TVC_CONTRACT = json.loads(
+    (ROOT / ".stegverse" / "verification-inputs" / "tvc-conformance-receipt.json").read_text(encoding="utf-8"))
+SKIP_ITEMS = json.loads((ROOT / "data" / "test-suite-skip-items.json").read_text(encoding="utf-8"))["items"]
 
 SIX = receipt_module.SIX
 
@@ -149,6 +160,275 @@ class SkipReceiptTests(unittest.TestCase):
         r = receipt_module.build(self.write("h.xml", junit(ERR)), "h", "retry", "goal", [],
                                  selection=self.selection(["tests/test_d.py"]))
         self.assertEqual(r["failing_on_head"], ["tests.test_d"])
+
+
+def sha(data: bytes) -> str:
+    return "sha256:" + hashlib.sha256(data).hexdigest()
+
+
+def canon(value) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def sealed(body: dict) -> dict:
+    body = {k: v for k, v in body.items() if k != "receipt_sha256"}
+    return body | {"receipt_sha256": "sha256:" + hashlib.sha256(canon(body)).hexdigest()}
+
+
+def write_ledger(root: Path, sources: list[dict]) -> None:
+    """A POSIX organization ledger retaining the given source receipts, oldest first."""
+    previous = None
+    for i, source in enumerate(sources):
+        source = sealed(source)
+        (root / "source-receipts").mkdir(parents=True, exist_ok=True)
+        (root / "source-receipts" / (source["receipt_sha256"][7:] + ".json")).write_text(json.dumps(source))
+        org = sealed({"schema": "stegverse.organization-transition-receipt/v1", "authority_effect": "NONE",
+                      "previous_receipt_sha256": previous, "source_transition_sha256": source["receipt_sha256"],
+                      "source_receipt_schema": source.get("schema"), "source_transition_id": f"T{i}"})
+        (root / "receipts").mkdir(parents=True, exist_ok=True)
+        (root / "receipts" / (org["receipt_sha256"][7:] + ".json")).write_text(json.dumps(org))
+        previous = org["receipt_sha256"]
+    (root / "HEAD.json").write_text(json.dumps({"receipt_sha256": previous}))
+
+
+TVC_FILE = "tests/test_origin_attestation_tvc_conformance.py"
+TVC_CLASS = "tests.test_origin_attestation_tvc_conformance.TvcConformanceTests"
+TVC_REASON = "TV/TVC is not checked out; set STEGVERSE_TVC_ROOT to run the conformance exchange."
+TVC_ITEM = next(i for i in SKIP_ITEMS if i["failure_code"] == "TEST_SUITE_SKIP_TVC_SOURCE_PRIVATE")
+RS_ITEM = next(i for i in SKIP_ITEMS if i["failure_code"] == "TEST_SUITE_SKIP_REPO_STANDARDS_PRIVATE_CROSS_ORG")
+
+
+def skip_case(classname: str, name: str, reason: str) -> str:
+    return (f'<testcase classname="{classname}" name="{name}">'
+            f'<skipped type="unittest.skip" message="{reason}"/></testcase>')
+
+
+class LedgerReceiptSatisfactionTests(unittest.TestCase):
+    """#162 D2 option (d): only a sealed, push-sourced, surface-bound ledger receipt satisfies a private-input skip."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        self.head = self.dir / "head"
+        self.surface = {"org-kernel/kernel.py": b"k = 1\n", TVC_FILE: b"t = 1\n"}
+        for path, data in self.surface.items():
+            (self.head / path).parent.mkdir(parents=True, exist_ok=True)
+            (self.head / path).write_bytes(data)
+        self.contract = dict(TVC_CONTRACT, surface_paths=sorted(self.surface), tests=[TVC_FILE])
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def tvc_receipt(self, **over) -> dict:
+        body = {"schema": "stegverse.test-suite-skip-receipt/v1", "receipt_kind": "TVC_ORG_CONFORMANCE_TEST_RECEIPT",
+                "suite": "TVC_ORG_CONFORMANCE", "repository": "StegVerse-Labs/TVC", "head_sha": "c" * 40,
+                "event": "push", "disposition": "ALLOW", "refusals": [], "counts": {"tests": 2, "skipped": 0},
+                "test_ids": [f"{TVC_CLASS}::test_a", f"{TVC_CLASS}::test_b"],
+                "ledger_candidate": {"candidate": True, "appended_by_this_job": False},
+                "consumed_source": {"repository": "StegVerse-org/.github", "commit": "d" * 40,
+                                    "observed_surface": {p: sha(d) for p, d in self.surface.items()}}}
+        return body | over
+
+    def consumption(self, sources: list[dict] | None) -> dict:
+        """The real consumer's record over a fixture ledger (None: no ledger at all)."""
+        ledger = self.dir / "ledger"
+        if sources is not None:
+            write_ledger(ledger, sources)
+        return tvc_module.consume(self.contract, str(ledger), self.head, None)
+
+    def receipt(self, cases: str, consumptions: dict, items=(TVC_ITEM, RS_ITEM)) -> dict:
+        head = self.dir / "head.xml"
+        head.write_text(junit(cases), encoding="utf-8")
+        return receipt_module.build(head, "h" * 40, "retry", "goal", list(items),
+                                    consumptions=consumptions, root=self.head)
+
+    def assert_fails_closed(self, r: dict, why: str) -> None:
+        self.assertEqual(r["disposition"], "FAIL_CLOSED")
+        (row,) = r["refusals"]
+        self.assertEqual(tuple(row), SIX)
+        self.assertTrue(all(row[k] for k in SIX))
+        self.assertEqual(row["failure_code"], "TEST_SUITE_SKIPPED_ON_HEAD")
+        self.assertEqual(r["counts"]["skipped_satisfied_by_ledger_receipt"], 0)
+        self.assertIn(why, " ".join(r["skipped"][0].get("receipt_satisfaction_refused", ["<not eligible>"])))
+
+    def tvc_skips(self) -> str:
+        return (skip_case(TVC_CLASS, "test_a", TVC_REASON) + skip_case(TVC_CLASS, "test_b", TVC_REASON)
+                + PASS)
+
+    def test_an_allow_receipt_bound_to_this_surface_satisfies_the_tvc_skips_and_keeps_them_listed(self):
+        record = self.consumption([{"schema": "other/v1"}, self.tvc_receipt()])
+        self.assertEqual(record["disposition"], "ALLOW")
+        self.assertEqual(record["bound_surface"], {p: sha(d) for p, d in self.surface.items()})
+        self.assertEqual(record["bound_event"], "push")
+        r = self.receipt(self.tvc_skips(), {"tvc": record})
+        self.assertEqual(r["disposition"], "ALLOW")
+        self.assertEqual(r["refusals"], [])
+        self.assertEqual(r["counts"]["skipped"], 2)
+        self.assertEqual(r["counts"]["skipped_satisfied_by_ledger_receipt"], 2)
+        self.assertTrue(r["skips_are_never_converted_or_deselected"])
+        for row in r["skipped"]:
+            bound = row["satisfied_by_ledger_receipt"]
+            self.assertEqual(bound["input"], "tvc")
+            self.assertEqual(bound["bound_receipt_sha256"], record["bound_receipt_sha256"])
+            self.assertEqual(bound["surface_files_matched"], 2)
+
+    def test_a_receipt_from_a_pull_request_run_is_refused(self):
+        record = self.consumption([self.tvc_receipt(
+            event="pull_request", ledger_candidate={"candidate": False, "why": "a pull_request run"})])
+        self.assertEqual(record["disposition"], "FAIL_CLOSED")
+        self.assert_fails_closed(self.receipt(self.tvc_skips(), {"tvc": record}), "consumption disposition")
+        # and a record claiming ALLOW for a pull_request-sourced receipt is refused here too
+        forged = self.consumption([self.tvc_receipt()]) | {"bound_event": "pull_request",
+                                                           "bound_ledger_candidate": False}
+        self.assert_fails_closed(self.receipt(self.tvc_skips(), {"tvc": forged}),
+                                 "not a ledger candidate from a push")
+
+    def test_a_receipt_for_a_different_surface_is_refused(self):
+        other = dict(self.surface, **{"org-kernel/kernel.py": b"k = 2\n"})
+        receipt = self.tvc_receipt(consumed_source={"repository": "StegVerse-org/.github", "commit": "e" * 40,
+                                                    "observed_surface": {p: sha(d) for p, d in other.items()}})
+        record = self.consumption([receipt])
+        self.assertEqual(record["disposition"], "FAIL_CLOSED")
+        self.assert_fails_closed(self.receipt(self.tvc_skips(), {"tvc": record}), "consumption disposition")
+
+    def test_a_head_whose_bytes_moved_after_consumption_is_refused(self):
+        record = self.consumption([self.tvc_receipt()])
+        (self.head / "org-kernel/kernel.py").write_bytes(b"k = 3\n")
+        self.assert_fails_closed(self.receipt(self.tvc_skips(), {"tvc": record}),
+                                 "bound surface path(s) differ at this head (org-kernel/kernel.py)")
+
+    def test_an_absent_receipt_fails_closed_unchanged(self):
+        for consumptions in ({}, {"tvc": None}, {"tvc": self.consumption(None)},
+                             {"tvc": self.consumption([{"schema": "other/v1"}])}):
+            with self.subTest(consumptions=list(consumptions)):
+                r = self.receipt(self.tvc_skips(), consumptions)
+                self.assertEqual(r["disposition"], "FAIL_CLOSED")
+                self.assertEqual(r["refusals"][0]["failure_code"], "TEST_SUITE_SKIPPED_ON_HEAD")
+                self.assertEqual(r["counts"]["skipped"], 2)
+                self.assertEqual(r["counts"]["skipped_satisfied_by_ledger_receipt"], 0)
+
+    def test_a_skipped_test_the_receipt_did_not_run_is_refused(self):
+        record = self.consumption([self.tvc_receipt(test_ids=[f"{TVC_CLASS}::test_a"])])
+        r = self.receipt(self.tvc_skips(), {"tvc": record})
+        self.assertEqual(r["disposition"], "FAIL_CLOSED")
+        self.assertEqual(r["counts"]["skipped_satisfied_by_ledger_receipt"], 1)
+        refused = [row for row in r["skipped"] if "receipt_satisfaction_refused" in row]
+        self.assertEqual([row["test"] for row in refused], [f"{TVC_CLASS}::test_b"])
+        self.assertIn("1 skipped", r["refusals"][0]["required_evidence_or_repair"])
+
+    def test_another_inputs_record_or_another_reason_does_not_satisfy(self):
+        record = self.consumption([self.tvc_receipt()])
+        self.assert_fails_closed(self.receipt(self.tvc_skips(), {"repo-standards": record}), "no readable tvc")
+        wrong_schema = record | {"schema": "stegverse.repo-standards-owner-drift-receipt-consumption/v1"}
+        self.assert_fails_closed(self.receipt(self.tvc_skips(), {"tvc": wrong_schema}), "consumption schema")
+        other_reason = skip_case(TVC_CLASS, "test_a", "something else is missing")
+        self.assert_fails_closed(self.receipt(other_reason, {"tvc": record}), "not the private-input skip")
+
+    def test_the_gate_is_not_relaxed_for_any_other_skip(self):
+        record = self.consumption([self.tvc_receipt()])
+        r = self.receipt(self.tvc_skips() + SKIP, {"tvc": record})
+        self.assertEqual(r["disposition"], "FAIL_CLOSED")
+        self.assertEqual(r["counts"]["skipped"], 3)
+        self.assertEqual(r["counts"]["skipped_satisfied_by_ledger_receipt"], 2)
+        self.assertIn("1 skipped", r["refusals"][0]["required_evidence_or_repair"])
+        # an item that declares no receipt input is never satisfied, whatever record is supplied
+        bare = {k: v for k, v in TVC_ITEM.items() if k != "satisfiable_by_receipt"}
+        self.assertEqual(self.receipt(self.tvc_skips(), {"tvc": record}, items=[bare])["disposition"],
+                         "FAIL_CLOSED")
+        # failures are judged as before: a receipt-satisfied skip does not hide a failure
+        r = self.receipt(self.tvc_skips() + FAIL, {"tvc": record})
+        self.assertEqual(r["failing_on_head"], ["tests.test_c::test_bad"])
+
+    def test_a_class_level_skip_is_satisfied_only_when_the_receipt_ran_that_class(self):
+        rs_file = "tests/test_task_registry_schema_conformance.py"
+        rs_class = "tests.test_task_registry_schema_conformance.OwnerDriftTests"
+        (self.head / rs_file).write_bytes(b"rs = 1\n")
+        record = {"schema": RS_ITEM["satisfiable_by_receipt"]["consumption_schema"], "disposition": "ALLOW",
+                  "refusals": [], "bound_receipt_sha256": "sha256:" + "f" * 64, "bound_event": "push",
+                  "bound_ledger_candidate": True, "bound_surface": {rs_file: sha(b"rs = 1\n")},
+                  "bound_test_ids": [f"{rs_class}::test_the_copy_is_byte_identical_to_the_owners_schema"]}
+        case = skip_case(rs_class, "setUpClass", "repo-standards is not reachable here; attach it")
+        self.assertEqual(self.receipt(case, {"repo-standards": record})["disposition"], "ALLOW")
+        other = record | {"bound_test_ids": ["tests.test_task_registry_schema_conformance.ConformanceTests::t"]}
+        self.assert_fails_closed(self.receipt(case, {"repo-standards": other}), "not among the test ids")
+
+    def test_the_cli_reads_consumption_files_and_an_unreadable_one_satisfies_nothing(self):
+        record = self.consumption([self.tvc_receipt()])
+        good = self.dir / "c.json"
+        good.write_text(json.dumps(record), encoding="utf-8")
+        junit_path = self.dir / "j.xml"
+        junit_path.write_text(junit(self.tvc_skips()), encoding="utf-8")
+        items = self.dir / "items.json"
+        items.write_text(json.dumps({"items": [TVC_ITEM]}), encoding="utf-8")
+        for path, rc in ((good, 0), (self.dir / "absent.json", 1)):
+            with self.subTest(path=path.name):
+                out = self.dir / "r.json"
+                self.assertEqual(receipt_module.main([
+                    "--junit", str(junit_path), "--head", "h", "--out", str(out), "--retry-entrypoint", "e",
+                    "--owning-goal", "g", "--skip-items", str(items), "--root", str(self.head),
+                    "--receipt-consumption", f"tvc={path}"]), rc)
+
+    def test_an_item_with_no_reason_contains_fails_closed_with_the_six_fields(self):
+        record = self.consumption([self.tvc_receipt()])
+        for want in ({k: v for k, v in TVC_ITEM["satisfiable_by_receipt"].items() if k != "reason_contains"},
+                     dict(TVC_ITEM["satisfiable_by_receipt"], reason_contains=""),
+                     dict(TVC_ITEM["satisfiable_by_receipt"], reason_contains=None)):
+            with self.subTest(reason_contains=want.get("reason_contains", "<absent>")):
+                item = dict(TVC_ITEM, satisfiable_by_receipt=want)
+                self.assert_fails_closed(self.receipt(self.tvc_skips(), {"tvc": record}, items=[item]),
+                                         "declares no reason_contains")
+
+    def test_a_planted_allow_record_does_not_survive_a_consumer_that_crashes_in_the_step(self):
+        """Step 08 removes any earlier consumption file; a consumer that raises before --out satisfies nothing."""
+        repo, tmp = self.dir / "repo", self.dir / "runner-temp"
+        for rel in ("scripts/test_suite_skip_receipt.py", "data/test-suite-skip-items.json"):
+            (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / rel, repo / rel)
+        shutil.copytree(ROOT / "resident-runtime", repo / "resident-runtime",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        # no .stegverse/verification-inputs contract: each consumer raises before it writes --out
+        (repo / TVC_FILE).parent.mkdir(parents=True)
+        (repo / TVC_FILE).write_bytes(b"t = 1\n")
+        git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        subprocess.run(git + ["add", "-A"], check=True)
+        subprocess.run(git + ["commit", "-qm", "fixture"], check=True)
+        head = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
+                              capture_output=True, text=True).stdout.strip()
+        tmp.mkdir()
+        (tmp / "head-junit.xml").write_text(junit(self.tvc_skips()), encoding="utf-8")
+        (tmp / "test-selection.json").write_text(json.dumps(
+            {"selected_tests": [TVC_FILE], "not_selected_for_this_change": []}), encoding="utf-8")
+        want = TVC_ITEM["satisfiable_by_receipt"]
+        planted = {"schema": want["consumption_schema"], "disposition": "ALLOW", "refusals": [],
+                   "bound_receipt_sha256": "sha256:" + "f" * 64, "bound_event": "push",
+                   "bound_ledger_candidate": True, "bound_surface": {TVC_FILE: sha(b"t = 1\n")},
+                   "bound_test_ids": [f"{TVC_CLASS}::test_a", f"{TVC_CLASS}::test_b"]}
+        (tmp / "consumption-tvc.json").write_text(json.dumps(planted), encoding="utf-8")
+        bindir = self.dir / "bin"
+        bindir.mkdir()
+        for name in ("python", "python3"):
+            (bindir / name).symlink_to(sys.executable)
+        env = {"PATH": f"{bindir}:/usr/bin:/bin", "RUNNER_TEMP": str(tmp), "HEAD_SHA": head, "HOME": str(self.dir)}
+        step = ROOT / "tools/tasks/steps/test-suite-selected.selected/08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh"
+        run = subprocess.run(["sh", str(step)], cwd=repo, env=env, capture_output=True, text=True)
+        self.assertNotEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertFalse((tmp / "consumption-tvc.json").exists())
+        r = json.loads((tmp / "test-suite-skip-receipt.json").read_text(encoding="utf-8"))
+        self.assertEqual(r["disposition"], "FAIL_CLOSED")
+        self.assertEqual(r["counts"]["skipped_satisfied_by_ledger_receipt"], 0)
+        self.assertEqual(r["refusals"][0]["failure_code"], "TEST_SUITE_SKIPPED_ON_HEAD")
+        self.assertTrue(all(r["refusals"][0][k] for k in SIX))
+
+    def test_the_selected_tests_step_runs_both_consumers_at_the_exact_head_and_passes_them(self):
+        step = (ROOT / "tools" / "tasks" / "steps" / "test-suite-selected.selected"
+                / "08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh").read_text(encoding="utf-8")
+        self.assertIn('test "$(git rev-parse HEAD)" = "$HEAD_SHA"', step)
+        for item in (TVC_ITEM, RS_ITEM):
+            want = item["satisfiable_by_receipt"]
+            self.assertIn(f"python3 {want['consumer']} consume", step)
+            self.assertIn(f'--receipt-consumption "{want["input"]}=', step)
+            self.assertTrue((ROOT / want["consumer"]).is_file())
 
 
 if __name__ == "__main__":
