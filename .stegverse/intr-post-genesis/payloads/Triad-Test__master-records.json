@@ -1,0 +1,181 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "DESTINATION_HAS_INTR_PATH_INGRESS",
+   "failure_code": "INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN",
+   "next_attempt": "re-run seal and replay after the port is admitted",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on master-records/.github main",
+   "retry_entrypoint": "a Lane B port draft to master-records/.github (laneb/ branch)"
+  },
+  {
+   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_DESTINATION_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "seal, then replay after the row lands",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an inbound row for Triad-Test->master-records:intr-destination on master-records/.github main carrying the source receipt pair",
+   "retry_entrypoint": "master-records/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
+  }
+ ],
+ "cls": "DESTINATION_INGRESS_NOT_ON_MAIN",
+ "communication_id": "intr-path-v1:Triad-Test->master-records",
+ "destination": "master-records",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "Triad-Test->master-records:intr-destination",
+ "payload": {
+  "evidence_at_observed_source_tip": {
+   "addressed_service": "master-records.intr-destination",
+   "communication_id": "intr-path-v1:Triad-Test->master-records",
+   "disposition": "ALLOW",
+   "message": {
+    "body": {
+     "path_id": "Triad-Test->master-records:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "f1dc01e018a8825b5a849afe04ae78af82905ceb"
+    },
+    "communication_id": "intr-path-v1:Triad-Test->master-records",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:217fc26e702da88edccb0338ee6dde9fdc39d5b230fcda02f9d84941a1dab611",
+   "path_id": "Triad-Test->master-records:intr-destination",
+   "payload_sha256": "sha256:885e38119096693491649109571931d23a29a965a248a429c336e12e2b62d95d",
+   "repository": "master-records/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_inclusion": {
+    "source_ledger_tip": "be06a9ffb0025f4c5cc550070d7b0fe21342967e",
+    "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+    "tvc_read_receipt": null
+   },
+   "source_organization_receipt_sha256": "sha256:092d27ead3cee19cfdaaccface9beaf6d8ef7015d06173338ea319640e9c9b32",
+   "source_repository": "Triad-Test/.github",
+   "source_repository_receipt_sha256": "sha256:0ed6c5b2ff57b58d3b396c45c2b8dda1cee529091c6cf91cefeafc128a70b2dd"
+  },
+  "evidence_invariant": {
+   "addressed_service": "master-records.intr-destination",
+   "message": {
+    "body": {
+     "path_id": "Triad-Test->master-records:intr-destination",
+     "schema": "stegverse.org-intr-destination-diagnostic/v1",
+     "transfer_commit": "f1dc01e018a8825b5a849afe04ae78af82905ceb"
+    },
+    "communication_id": "intr-path-v1:Triad-Test->master-records",
+    "message_class": "ecosystem.communication"
+   },
+   "message_sha256": "sha256:217fc26e702da88edccb0338ee6dde9fdc39d5b230fcda02f9d84941a1dab611",
+   "path_id": "Triad-Test->master-records:intr-destination",
+   "repository": "master-records/.github",
+   "schema": "stegverse.intr-path-ingress-evidence/v1",
+   "source_organization_receipt_sha256": "sha256:092d27ead3cee19cfdaaccface9beaf6d8ef7015d06173338ea319640e9c9b32",
+   "source_repository": "Triad-Test/.github",
+   "source_repository_receipt_sha256": "sha256:0ed6c5b2ff57b58d3b396c45c2b8dda1cee529091c6cf91cefeafc128a70b2dd"
+  },
+  "evidence_invariant_sha256": "sha256:9e00335cc6b2a0066b1c1c9d666a82ff9688eb19429f276d04e7ce6ec0266842",
+  "source_inclusion_rule": {
+   "source_ledger_tip": "the source ledger tip read at consume time; its chain must include source_organization_receipt_sha256",
+   "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
+   "tvc_read_receipt": null
+  }
+ },
+ "record_sha256": "sha256:1929c7b744bd5342f51b8f232f1d482b24dc89884ccbfbe5dd5022d6fbcb1489",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "Triad-Test",
+ "source_receipts": {
+  "organization_receipt": {
+   "authority_effect": "NONE",
+   "boundary_evidence": {
+    "communication_id": "intr-path-v1:Triad-Test->master-records",
+    "destination_organization": "master-records",
+    "disposition": "ALLOW",
+    "operation": "INTR_MESH_PATH_TRANSFER",
+    "path_id": "Triad-Test->master-records:intr-destination",
+    "profile_id": "intr-mesh-path-transfer",
+    "repository": "Triad-Test/.github",
+    "transfer_commit": "f1dc01e018a8825b5a849afe04ae78af82905ceb"
+   },
+   "canonical_state_transition_receipt_sha256": null,
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469411750,
+    "frequency_hz": 100,
+    "generation": 469411750,
+    "heartbeat_id": "HB:469411750",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "org_transition_class": "REPO_STATE_PROPAGATION",
+   "organization": "Triad-Test",
+   "predecessor_org_state_sha256": "sha256:627781f2a5c87b7f9b6c3fac42695164ee309201a69a95c26a051782665943d8",
+   "previous_receipt_sha256": "sha256:5f946ef9cb0a27cb03214563fca4c73a85fb66996e2a92e4cb7eaadaf945d48b",
+   "receipt_sha256": "sha256:092d27ead3cee19cfdaaccface9beaf6d8ef7015d06173338ea319640e9c9b32",
+   "repo_receipt_sha256": "sha256:0ed6c5b2ff57b58d3b396c45c2b8dda1cee529091c6cf91cefeafc128a70b2dd",
+   "repo_transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->master-records:intr-destination@intr-path-v1:Triad-Test->master-records",
+   "schema": "stegverse.organization-transition-receipt/v1",
+   "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+   "source_repository": "Triad-Test/.github",
+   "source_transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->master-records:intr-destination@intr-path-v1:Triad-Test->master-records",
+   "source_transition_sha256": "sha256:0ed6c5b2ff57b58d3b396c45c2b8dda1cee529091c6cf91cefeafc128a70b2dd",
+   "subject_or_correlation_id": null,
+   "successor_org_state_sha256": "sha256:51764cfc1262a0480450b9cd2fef5ccce65f44a41aece385e764737f66b78885"
+  },
+  "repository_receipt": {
+   "authority_effect": "NONE",
+   "evidence": {
+    "capability": "intr-destination",
+    "communication_id": "intr-path-v1:Triad-Test->master-records",
+    "destination_address": "master-records.intr-destination",
+    "destination_organization": "master-records",
+    "disposition": "ALLOW",
+    "merge_transfer_organization_receipt_sha256": "sha256:3ecc9861a5e794498db0c4b30ec454d48792830cf9c571b742a28aa21811f68b",
+    "message": {
+     "body": {
+      "path_id": "Triad-Test->master-records:intr-destination",
+      "schema": "stegverse.org-intr-destination-diagnostic/v1",
+      "transfer_commit": "f1dc01e018a8825b5a849afe04ae78af82905ceb"
+     },
+     "communication_id": "intr-path-v1:Triad-Test->master-records",
+     "message_class": "ecosystem.communication"
+    },
+    "message_sha256": "sha256:217fc26e702da88edccb0338ee6dde9fdc39d5b230fcda02f9d84941a1dab611",
+    "path_id": "Triad-Test->master-records:intr-destination",
+    "payload_sha256": "sha256:627781f2a5c87b7f9b6c3fac42695164ee309201a69a95c26a051782665943d8",
+    "repository": "Triad-Test/.github",
+    "schema": "stegverse.intr-path-transfer-evidence/v1",
+    "source_organization": "Triad-Test",
+    "transfer_commit": "f1dc01e018a8825b5a849afe04ae78af82905ceb"
+   },
+   "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 469411750,
+    "frequency_hz": 100,
+    "generation": 469411750,
+    "heartbeat_id": "HB:469411750",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+   },
+   "predecessor_state_sha256": "sha256:627781f2a5c87b7f9b6c3fac42695164ee309201a69a95c26a051782665943d8",
+   "previous_receipt_sha256": "sha256:a237d2b396afdafa76bf9dc3a8e97c61b22f93d9e431dff49e9784b93ef42b2a",
+   "receipt_sha256": "sha256:0ed6c5b2ff57b58d3b396c45c2b8dda1cee529091c6cf91cefeafc128a70b2dd",
+   "repository": "Triad-Test/.github",
+   "schema": "stegverse.repo-transition-receipt/v1",
+   "successor_state_sha256": "sha256:51764cfc1262a0480450b9cd2fef5ccce65f44a41aece385e764737f66b78885",
+   "transition_class": "INTR_MESH_PATH_TRANSFER",
+   "transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->master-records:intr-destination@intr-path-v1:Triad-Test->master-records"
+  },
+  "source_ledger_tip_observed": "be06a9ffb0025f4c5cc550070d7b0fe21342967e"
+ },
+ "status": {
+  "failed_predicate": "DESTINATION_HAS_INTR_PATH_INGRESS",
+  "failure_code": "INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN",
+  "next_attempt": "re-run seal and replay after the port is admitted",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on master-records/.github main",
+  "retry_entrypoint": "a Lane B port draft to master-records/.github (laneb/ branch)"
+ }
+}
