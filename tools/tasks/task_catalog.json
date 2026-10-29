@@ -122,7 +122,7 @@
         {
           "name": "Produce the capability map from the demonstrations this run performs",
           "run_file": "tools/tasks/steps/capability-demonstration-projection-validation.validate-capability-demonstration/03-produce-the-capability-map-from-the-demonstratio.sh",
-          "run_sha256": "028f0cb417d0ac7282a42858758c0f337444887ffb24b5e09f84a4bca9f0a048",
+          "run_sha256": "f87f33068fc80cade714ca9b6c374b42c55420111c22d80ff0cfdcb95639830e",
           "env": {
             "STEGVERSE_REPO_LEDGER_ROOT": "${{ runner.temp }}/demo-repo-ledger",
             "STEGVERSE_ORG_LEDGER_ROOT": "${{ runner.temp }}/demo-org-ledger"
@@ -195,7 +195,7 @@
         {
           "name": "A peer organization submits a manifest over the mesh, end to end",
           "run_file": "tools/tasks/steps/capability-ingress-address-validation.validate-capability-address/04-a-peer-organization-submits-a-manifest-over-the-.sh",
-          "run_sha256": "539ff889580a6a68b83b07cfe2f4e09f7950718086dbe641d2de06fe83a02888",
+          "run_sha256": "4416b0bd3d9f2c696e084d14192405d9973245ee5257c02fbb47ed55fbd2f839",
           "env": {
             "STEGVERSE_REPO_LEDGER_ROOT": "${{ runner.temp }}/e2e-repo-ledger",
             "STEGVERSE_ORG_LEDGER_ROOT": "${{ runner.temp }}/e2e-org-ledger"
@@ -1409,7 +1409,7 @@
         {
           "name": "The resident cycle carries receipts without anyone naming them",
           "run_file": "tools/tasks/steps/organization-repository-propagation-validation.validate-repository-propagation/02-the-resident-cycle-carries-receipts-without-anyo.sh",
-          "run_sha256": "86bc7701123f711c8b4a03cda40ea9cbcc555c828351aba697d4e60fb06cb28d",
+          "run_sha256": "d871a6d3dd80bf3af13c77879801e387af9360cc876d2c6916dcac12ee5373ba",
           "env": {
             "STEGVERSE_REPO_LEDGER_HOME": "${{ runner.temp }}/cycle-repo-ledgers",
             "STEGVERSE_ORG_LEDGER_ROOT": "${{ runner.temp }}/cycle-org-ledger",

@@ -3,7 +3,7 @@
  "generated_from": {
   "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
   "spec": ".stegverse/test-set-spec.json",
-  "spec_sha256": "86c5e67cce079ec9f50459a2de56d4eca106c0aa38ddf349f2837d2018ab8c6e"
+  "spec_sha256": "99f407d236dab701d23955f385a710ce5c02f6876f0265b772f32ea1017e18e4"
  },
  "inputs": {
   "jsonschema": {
@@ -3042,7 +3042,49 @@
     "tests/test_receipt_time_base.py"
    ],
    "tests": [
-    "tests.test_receipt_time_base"
+    "tests.test_receipt_time_base.CliEpochParsingTests",
+    "tests.test_receipt_time_base.ClockProbeTests",
+    "tests.test_receipt_time_base.ClockSourceReceiptTests",
+    "tests.test_receipt_time_base.EgressCloseCliEpochTests",
+    "tests.test_receipt_time_base.FederationCycleEpochTests",
+    "tests.test_receipt_time_base.GovernanceReturnEpochTests",
+    "tests.test_receipt_time_base.IngressEpochProvenanceProbe",
+    "tests.test_receipt_time_base.MarkerVocabularyTests",
+    "tests.test_receipt_time_base.OrganizationReceiptTests",
+    "tests.test_receipt_time_base.ProcessBoundaryExitSplitTests",
+    "tests.test_receipt_time_base.ReleasedSegmentHeadEpochTests",
+    "tests.test_receipt_time_base.RepositoryAppendEpochTests",
+    "tests.test_receipt_time_base.RepositoryLedgerContractTests",
+    "tests.test_receipt_time_base.RepositoryReceiptTests",
+    "tests.test_receipt_time_base.RequestEpochResolutionTests",
+    "tests.test_receipt_time_base.ResidentDispatchTests",
+    "tests.test_receipt_time_base.ResidentExecutorEpochTests",
+    "tests.test_receipt_time_base.SharedRuleReferenceTests",
+    "tests.test_receipt_time_base.SourceReceiptProvenanceTests",
+    "tests.test_receipt_time_base.WorkflowEpochGateTests",
+    "tests.test_receipt_time_base.WorkflowTriggerProbeTests",
+    "tests.test_receipt_time_base.WriterCarriedProvenanceTests",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_a_fault_after_head_is_committed_is_retried_into_the_recorded_receipt",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_an_exact_rerun_returns_the_recorded_receipt_and_another_transition_collides",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_an_unusable_input_file_is_terminal_and_writes_nothing",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_the_repository_emitter",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_the_organization_writer",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_every_writer_cli_runs_through_the_six_field_wrapper",
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_the_wrapper_classifies_each_failure"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_receipt_time_base.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "surfaces": [
+    "tests/test_receipt_time_base.py"
+   ],
+   "tests": [
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_a_too_deep_inline_json_argument_is_a_terminal_input_refusal"
    ]
   },
   {
@@ -3439,8 +3481,10 @@
   ".stegverse/transition-ledger/emit.py": [
    ".stegverse/transition-ledger/contract.json",
    "org-kernel/kernel.py",
+   "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
-   "resident-runtime/organization_egress_boundary.py"
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/writer_cli.py"
   ],
   "org-boundary/runtime/capability_ingress.py": [
    "org-runtime/interlock-intr.json"
@@ -3465,7 +3509,8 @@
    "org-boundary/runtime/process_boundary.py",
    "org-kernel/node_store.py",
    "resident-runtime/activation-manifest.json",
-   "resident-runtime/aggregate_repo_transition.py"
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py"
   ],
   "org-kernel/node_store.py": [
    "resident-runtime/ledger_store.py"
@@ -3505,7 +3550,8 @@
   "resident-runtime/aggregate_repo_transition.py": [
    ".stegverse/transition-ledger/org-contract.json",
    "org-kernel/kernel.py",
-   "resident-runtime/ledger_store.py"
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/capability_demonstration_projection.py": [
    "org-runtime/interlock-intr.json",
@@ -3526,11 +3572,13 @@
    "resident-runtime/governance_return_cycle.py",
    "resident-runtime/ledger_store.py",
    "resident-runtime/mesh_locator_binding.py",
-   "resident-runtime/propagate_repository_receipts.py"
+   "resident-runtime/propagate_repository_receipts.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/governance_decision_return.py": [
    "resident-runtime/organization_egress_boundary.py",
-   "resident-runtime/organization_manifest_ingress.py"
+   "resident-runtime/organization_manifest_ingress.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/governance_endpoint.py": [
    "org-runtime/interlock-intr.json"
@@ -3540,7 +3588,8 @@
    "resident-runtime/peer_mesh_intake.py"
   ],
   "resident-runtime/governance_return_cycle.py": [
-   "resident-runtime/federation_cycle.py"
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/intr_destination_ingress.py": [
    ".stegverse/transition-ledger/contract.json",
@@ -3551,7 +3600,8 @@
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/merge_transfer.py",
    "resident-runtime/organization_egress_boundary.py",
-   "resident-runtime/organization_ledger_readback.py"
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/intr_hop.py": [
    ".stegverse/transition-ledger/emit.py",
@@ -3584,6 +3634,9 @@
   "resident-runtime/main_change_receipt_census.py": [
    ".github/workflows/**",
    "resident-runtime/main_change_receipt.py"
+  ],
+  "resident-runtime/manifest_directed_run_inputs.py": [
+   "resident-runtime/aggregate_repo_transition.py"
   ],
   "resident-runtime/merge_transfer.py": [
    ".stegverse/merge-transfer/pending.json",
@@ -3621,7 +3674,8 @@
    "org-kernel/kernel.py",
    "org-runtime/interlock-intr.json",
    "resident-runtime/aggregate_repo_transition.py",
-   "resident-runtime/ledger_store.py"
+   "resident-runtime/ledger_store.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/organization_ledger_ingest.py": [
    ".github/workflows/organization-ledger-writer.yml",
@@ -3646,7 +3700,8 @@
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/organization_egress_boundary.py",
    "resident-runtime/sdk_manifest_crossing.py",
-   "resident-runtime/submit_org_transition_to_master_records.py"
+   "resident-runtime/submit_org_transition_to_master_records.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/peer_mesh_intake.py": [
    "org-kernel/kernel.py",
@@ -3659,7 +3714,7 @@
    "org-boundary/registry/services.json",
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
-   "resident-runtime/organization_egress_boundary.py"
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/receipt_disorder_measurement.py": [
    ".stegverse/transition-ledger/emit.py",
@@ -3683,8 +3738,15 @@
   "resident-runtime/required_verification.py": [
    ".github/workflows/**"
   ],
+  "resident-runtime/resident_dispatch.py": [
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/writer_cli.py"
+  ],
   "resident-runtime/resident_executor.py": [
-   "resident-runtime/federation_cycle.py"
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/resident_runtime_convergence.py": [
    ".stegverse/transition-ledger/emit.py",
@@ -3694,7 +3756,8 @@
   "resident-runtime/run_once.py": [
    "org-boundary/registry/services.json",
    "org-boundary/runtime/process_boundary.py",
-   "resident-runtime/org_boundary_runtime.py"
+   "resident-runtime/org_boundary_runtime.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/run_sv002_self_characterization_roundtrip.py": [
    "resident-runtime/sdk_self_characterization_egress.py"
@@ -3702,7 +3765,8 @@
   "resident-runtime/sdk_manifest_crossing.py": [
    "org-boundary/registry/services.json",
    "org-boundary/runtime/intr_transport.py",
-   "org-boundary/runtime/process_boundary.py"
+   "org-boundary/runtime/process_boundary.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/sdk_self_characterization_egress.py": [
    "org-kernel/kernel.py"
@@ -3715,7 +3779,8 @@
   ],
   "resident-runtime/submit_org_transition_to_master_records.py": [
    "org-kernel/kernel.py",
-   "resident-runtime/aggregate_repo_transition.py"
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/writer_cli.py"
   ],
   "resident-runtime/task_registry_disclosure_endpoint.py": [
    "orchestration/task-registry.json"
@@ -3746,6 +3811,11 @@
   ],
   "scripts/select_tests_for_change.py": [
    "data/test-selection-map.json"
+  ],
+  "tests/fixtures/clock-probe/probe.py": [
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "tests/fixtures/write-fault/**"
   ],
   "tests/fixtures/d6_far_side_registry.py": [
    "tests/fixtures/d6-far-side-non-allow.json"
@@ -4293,9 +4363,35 @@
    "resident-runtime/receipt_lineage_projection.py"
   ],
   "tests/test_receipt_time_base.py": [
+   ".github/workflows/**",
    ".stegverse/transition-ledger/contract.json",
    ".stegverse/transition-ledger/emit.py",
-   "resident-runtime/aggregate_repo_transition.py"
+   "data/intr-protocol/v1/protocol.json",
+   "org-boundary/registry/services.json",
+   "org-boundary/runtime/process_boundary.py",
+   "org-kernel/kernel.py",
+   "resident-runtime/activation-manifest.json",
+   "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/federation_cycle.py",
+   "resident-runtime/governance_decision_return.py",
+   "resident-runtime/governance_return_cycle.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/manifest_directed_run_inputs.py",
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_manifest_ingress.py",
+   "resident-runtime/peer_mesh_intake.py",
+   "resident-runtime/propagate_repository_receipts.py",
+   "resident-runtime/resident_dispatch.py",
+   "resident-runtime/resident_executor.py",
+   "resident-runtime/run_once.py",
+   "resident-runtime/sdk_manifest_crossing.py",
+   "resident-runtime/submit_org_transition_to_master_records.py",
+   "resident-runtime/writer_cli.py",
+   "tests/fixtures/clock-probe/probe.py",
+   "tests/fixtures/sdk-manifests/task-registry-disclosure.json",
+   "tests/fixtures/write-fault/**",
+   "tests/test_p1_supplied_epoch_and_ledger_paths.py"
   ],
   "tests/test_refused_crossings_recorded.py": [
    "tests/peer_organization.py"

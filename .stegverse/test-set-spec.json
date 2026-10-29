@@ -241,6 +241,16 @@
    ]
   },
   {
+   "file": "tests/test_receipt_time_base.py",
+   "id": "tests/test_receipt_time_base.py[stegverse-sdk]",
+   "inputs": [
+    "stegverse-sdk"
+   ],
+   "tests": [
+    "tests.test_receipt_time_base.WriterCliTraceTests.test_a_too_deep_inline_json_argument_is_a_terminal_input_refusal"
+   ]
+  },
+  {
    "file": "tests/test_origin_attestation_tvc_conformance.py",
    "id": "tests/test_origin_attestation_tvc_conformance.py[tvc]",
    "inputs": [

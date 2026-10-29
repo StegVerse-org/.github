@@ -20,12 +20,19 @@ used unchanged; it is no longer required.
   `.stegverse/governance-return-requests/` declares `mesh_root` and `peer_mesh`,
   and optionally `sdk_ref` and `deciding_ledger`. One run returns for exactly
   one committed return request.
+- Both: a push is not a dispatcher that can supply an epoch, so the committed
+  request carries its own `hb_epoch`; a dispatch may supply it instead. It is
+  checked by the shared rule (SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH) before
+  anything is invoked, and an absent, invalid or disagreeing one fails closed
+  with six fields (`request_epoch`).
 
 Nothing here designates, binds or contacts a mesh. Each locator still goes
 through `mesh_locator_binding.py` or `peer_mesh_intake.py` exactly as a
 dispatched one would. Any refusal carries all six fields.
 """
 import argparse
+import hashlib
+import importlib.util
 import json
 import re
 import sys
@@ -52,6 +59,47 @@ def _refused(failure_code, failed_predicate, repair, retry_entrypoint, next_atte
         "authority_effect": "NONE_INPUT_RESOLUTION_ONLY",
         **detail,
     }
+
+
+def _shared_epoch_rule():
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location("manifest_directed_epoch_rule",
+                                                  root / "resident-runtime" / "aggregate_repo_transition.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def request_epoch(dispatch_epoch, request, retry_entrypoint):
+    """The supplied epoch one run carries, from its dispatch or its committed request.
+
+    An empty dispatch value is absent. When both are present they must be the
+    same supplied epoch: neither silently wins. No clock is read.
+    """
+    rule = _shared_epoch_rule()
+    declared = request.get("hb_epoch") if isinstance(request, dict) else None
+    supplied = dispatch_epoch if dispatch_epoch not in (None, "") else None
+    if supplied is not None and declared is not None and str(supplied) != str(declared):
+        return _refused("HB_EPOCH_INVALID", rule.HB_EPOCH_PREDICATE,
+                        "dispatch the run with the epoch the committed request declares, or without one",
+                        retry_entrypoint, "re-run with one epoch; nothing was invoked",
+                        detail="dispatch hb_epoch " + repr(supplied) + " is not the request's " + repr(declared))
+    epoch = supplied if supplied is not None else declared
+    failure = rule.supplied_epoch_failure(epoch)
+    if failure is not None:
+        return _refused(failure[0], rule.HB_EPOCH_PREDICATE,
+                        "the committed request declares hb_epoch (ASCII digits >= 32), or a dispatch supplies "
+                        "it; it is never derived from a clock",
+                        retry_entrypoint, "commit a successor request declaring hb_epoch; nothing was invoked",
+                        detail=failure[1])
+    source = "WORKFLOW_DISPATCH" if supplied is not None else "COMMITTED_REQUEST"
+    # The receipts record where the epoch came from, bound to the request's digest.
+    digest = "sha256:" + hashlib.sha256(json.dumps(request if isinstance(request, dict) else {}, sort_keys=True,
+                                                   separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+    return {"schema": SCHEMA, "disposition": "ALLOW", "hb_epoch": str(epoch), "source": source,
+            "request_sha256": digest,
+            "hb_epoch_source": {"source": source, "request_sha256": digest},
+            "authority_effect": "NONE_INPUT_RESOLUTION_ONLY"}
 
 
 def _printable(value):
@@ -167,6 +215,7 @@ def governance_return_inputs(dispatch, changed_paths):
     if dispatch.get("mesh_root") or dispatch.get("peer_mesh"):
         values = {name: dispatch.get(name) or "" for name in fields}
         source = "WORKFLOW_DISPATCH"
+        request = {}
     else:
         requests = [p for p in changed_paths if p.startswith(RETURN_REQUEST_DIR) and p.endswith(".json")]
         if len(requests) != 1:
@@ -190,6 +239,11 @@ def governance_return_inputs(dispatch, changed_paths):
             return _refused("RETURN_LOCATOR_MISSING", "RETURN_DECLARES_" + name.upper(),
                             "declare " + name + " as git+<repository>#refs/<name>", entrypoint,
                             "commit a corrected successor request", source=source)
+    epoch = request_epoch(dispatch.get("hb_epoch"), request, entrypoint)
+    if epoch["disposition"] != "ALLOW":
+        return {**epoch, "source": source}
+    values["hb_epoch"] = epoch["hb_epoch"]
+    values["hb_epoch_source_json"] = json.dumps(epoch["hb_epoch_source"], sort_keys=True, separators=(",", ":"))
     for name, value in values.items():
         if not _printable(value):
             return _refused("RETURN_INPUT_INVALID", "RETURN_INPUT_IS_PRINTABLE",
@@ -210,19 +264,34 @@ def main(argv=None):
     transition.add_argument("--dispatch-mesh-root", default="")
     transition.add_argument("--requests", dest="request_list", required=True, type=Path,
                             help="file listing this run's request paths")
+    epoch = sub.add_parser("request-epoch")
+    epoch.add_argument("--dispatch-hb-epoch", default="")
+    epoch.add_argument("--request", required=True, type=Path, help="the committed transition request")
     ret = sub.add_parser("governance-return")
-    for name in ("mesh-root", "peer-mesh", "sdk-ref", "deciding-ledger"):
+    for name in ("mesh-root", "peer-mesh", "sdk-ref", "deciding-ledger", "hb-epoch"):
         ret.add_argument("--dispatch-" + name, default="")
     ret.add_argument("--changed", required=True, type=Path, help="file listing the paths this push changed")
     args = parser.parse_args(argv)
     if args.command == "transition-mesh":
         paths = [line for line in args.request_list.read_text().splitlines() if line]
         result = transition_mesh_root(args.dispatch_mesh_root, paths)
+    elif args.command == "request-epoch":
+        entrypoint = ".github/workflows/organization-ledger-transition.yml (push: .stegverse/transition-requests/*.json)"
+        try:
+            request = _load(str(args.request))
+        except ValueError as exc:
+            request = None
+            result = _refused("TRANSITION_REQUEST_UNREADABLE", "COMMITTED_TRANSITION_REQUEST_IS_A_JSON_OBJECT",
+                              "commit the transition request as a JSON object", entrypoint,
+                              "commit a corrected successor request", request=str(args.request), detail=str(exc))
+        if request is not None:
+            result = request_epoch(args.dispatch_hb_epoch, request, entrypoint)
     else:
         changed = [line for line in args.changed.read_text().splitlines() if line]
         result = governance_return_inputs({"mesh_root": args.dispatch_mesh_root, "peer_mesh": args.dispatch_peer_mesh,
                                            "sdk_ref": args.dispatch_sdk_ref,
-                                           "deciding_ledger": args.dispatch_deciding_ledger}, changed)
+                                           "deciding_ledger": args.dispatch_deciding_ledger,
+                                           "hb_epoch": args.dispatch_hb_epoch}, changed)
     print(json.dumps(result, sort_keys=True))
     return 0 if result["disposition"] == "ALLOW" else 1
 

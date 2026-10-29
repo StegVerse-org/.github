@@ -916,6 +916,17 @@
       "retry_entrypoint": "tools/tasks/task_catalog.json group main-change-receipt.receipt (validation-dispatcher.yml, push to main); writer resident-runtime/main_change_receipt.py sha256 884168399f8ac54309aac86af6ab34481635de54426f635bb2229eb5073e2ebf unchanged",
       "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
       "next_attempt": "#238 owner (G17 lane) accepts or amends the default on StegVerse-org/.github#238; the receipts are produced and retained on every push to main from now on, and appended after genesis"
+    },
+    {
+      "surface": "resident-runtime-dispatch.yml workflow_dispatch (input hb_epoch, mesh_root, node_state_root), carried by StegVerse-org/.github#207",
+      "now": "not carried: removed when main was merged into #207; the gate and hand-over remain in resident-runtime/resident_dispatch.py (resident-runtime/activation-manifest.json epoch_binding.dispatcher)",
+      "disposition": "FAIL_CLOSED",
+      "failure_code": "DISPATCH_TRIGGER_REMOVED_BY_G17",
+      "failed_predicate": "NO_SURFACE_CARRIES_WORKFLOW_DISPATCH_UNLESS_ITS_REGISTERED_EXCEPTION_NAMES_IT",
+      "required_evidence_or_repair": "an owner decision admitting a dispatch surface for the resident cycle (a registered exception, or a manifest-directed committed request carrying hb_epoch); no workflow is added by this change",
+      "retry_entrypoint": "resident-runtime/resident_dispatch.py --hb-epoch",
+      "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); P4 maintenance StegVerse-org/.github#166",
+      "next_attempt": "owner decision on #166"
     }
   ],
   "transfer_pending": [],

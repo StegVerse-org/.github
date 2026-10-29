@@ -440,9 +440,12 @@ def _append(transition_class: str, packet_id: str, evidence: Mapping[str, Any],
         transition_id, transition_class, predecessor, successor, dict(evidence),
         "NONE", hb_epoch=hb_epoch,
         idempotent_on=("communication_id", "payload_sha256", "disposition"))
-    # The organization receipt takes the repository receipt's epoch, so a replay
-    # rebuilds the same organization receipt rather than one stamped later.
-    epoch = repository_receipt["hb_reference"]["epoch"]
+    # The organization receipt takes the epoch this append was supplied, which
+    # the repository writer has just admitted. It used to be read back from the
+    # repository receipt, which a replay returns as recorded: a receipt stamped
+    # from a clock would then pass its epoch on as supplied. A replay is still
+    # one organization receipt -- the idempotent append returns the recorded one.
+    epoch = int(str(hb_epoch))
     organization_receipt = _ledger_write(organization_ledger.append,
         repository_receipt, "REPO_STATE_PROPAGATION", predecessor, successor,
         {"operation": operation, "profile_id": profile_id,
@@ -880,4 +883,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import importlib.util as _writer_util
+    _writer_spec = _writer_util.spec_from_file_location("writer_cli", Path(__file__).resolve().parent / "writer_cli.py")
+    _writer = _writer_util.module_from_spec(_writer_spec); _writer_spec.loader.exec_module(_writer)
+    sys.exit(_writer.run(main, "resident-runtime/intr_destination_ingress.py", inputs=('--payload', '--registry', '--closure', '--org-contract')))
