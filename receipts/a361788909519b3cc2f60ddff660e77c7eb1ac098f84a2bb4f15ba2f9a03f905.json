@@ -1,0 +1,38 @@
+{
+  "authority_effect": "NONE",
+  "boundary_evidence": {
+    "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->StegVerse-org",
+    "disposition": "ALLOW",
+    "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+    "path_id": "Infrastructure-Continuity-Ventures->StegVerse-org:intr-destination",
+    "profile_id": "intr-destination",
+    "source_organization_receipt_sha256": "sha256:61f386302e7023d57d1c31059147925d2522882dde83fb1bfb9de7641c54cccd",
+    "source_repository": "Infrastructure-Continuity-Ventures/.github",
+    "source_repository_receipt_sha256": "sha256:2e86da64c788294c74f3b6f19feed0ecac63dbe92a24ad579206502d59e2b2f7"
+  },
+  "canonical_state_transition_receipt_sha256": null,
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 446655631,
+    "frequency_hz": 100,
+    "generation": 446655631,
+    "heartbeat_id": "HB:446655631",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+  },
+  "org_transition_class": "REPO_STATE_PROPAGATION",
+  "organization": "StegVerse-org",
+  "predecessor_org_state_sha256": "sha256:fcd65e4a5bf739ce284cba65bbaaf0d264d3dfe0f43baa9d8aa97db037f7ac0a",
+  "previous_receipt_sha256": "sha256:6bbea131a5a3642a718094edd6cb7f49ee6ce7e75e4c6be38018b8786460b04d",
+  "receipt_sha256": "sha256:a361788909519b3cc2f60ddff660e77c7eb1ac098f84a2bb4f15ba2f9a03f905",
+  "repo_receipt_sha256": "sha256:88c949becde3fb09d83117a25329b1f34c8c3f84e82081fd1a8655e618653596",
+  "repo_transition_id": "INTR_MESH_PATH_INGRESS:Infrastructure-Continuity-Ventures->StegVerse-org:intr-destination@intr-path-v1:Infrastructure-Continuity-Ventures->StegVerse-org",
+  "schema": "stegverse.organization-transition-receipt/v1",
+  "source_receipt_schema": "stegverse.repo-transition-receipt/v1",
+  "source_repository": "StegVerse-org/.github",
+  "source_transition_id": "INTR_MESH_PATH_INGRESS:Infrastructure-Continuity-Ventures->StegVerse-org:intr-destination@intr-path-v1:Infrastructure-Continuity-Ventures->StegVerse-org",
+  "source_transition_sha256": "sha256:88c949becde3fb09d83117a25329b1f34c8c3f84e82081fd1a8655e618653596",
+  "subject_or_correlation_id": null,
+  "successor_org_state_sha256": "sha256:c19a27c8efa2accc028717cd059869a2f93585af33f9b29266af60613752d164"
+}
