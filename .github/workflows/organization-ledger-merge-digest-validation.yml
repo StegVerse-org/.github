@@ -1,0 +1,63 @@
+name: Validate Main Change Digest
+
+# Read-only PR checks for the B3 consumer
+# (.github/workflows/organization-ledger-merge-digest.yml, workflow_run of the
+# main-merge transfer writer). Nothing here posts, writes or appends: the
+# unit tests run on temp ledgers, and the dry run builds the digest the
+# consumer would post for this PR's base commit from a read-only fetch of the
+# published ledger ref, then checks every entry is ALLOW or a six-field
+# FAIL_CLOSED, never DENY and never silent.
+on:
+  pull_request:
+    paths:
+      - resident-runtime/merge_digest.py
+      - tests/test_merge_digest.py
+      - .github/workflows/organization-ledger-merge-digest.yml
+      - .github/workflows/organization-ledger-merge-digest-validation.yml
+      - .github/workflows/organization-ledger-merge-transfer.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      LEDGER_REF: refs/stegverse/organization-ledger
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Unit tests (temp ledgers, workflow shape)
+        run: python3 -m unittest tests.test_merge_digest -v
+
+      - name: "Dry run, read-only: the digest for the base commit from the published ledger"
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/digest"; mkdir -p "$out"
+          fresh="$RUNNER_TEMP/readback.git"
+          git init -q --bare "$fresh"
+          auth_header=$(git config --local --get http.https://github.com/.extraheader || true)
+          git --git-dir="$fresh" -c "http.https://github.com/.extraheader=$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
+          python3 resident-runtime/merge_digest.py commits --head-sha "$BASE_SHA" > "$out/commits.txt"
+          namespace=$(python3 -c 'import json; print(json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]["namespace"])')
+          STEGVERSE_ORG_LEDGER_ROOT="git+$fresh#$LEDGER_REF" STEGVERSE_REPO_LEDGER_ROOT="git+$fresh#$LEDGER_REF:$namespace" \
+            python3 resident-runtime/merge_transfer.py verify --commits-file "$out/commits.txt" --out "$out/verify.json" > /dev/null || true
+          python3 resident-runtime/merge_digest.py build --repository "$GITHUB_REPOSITORY" --head-sha "$BASE_SHA" \
+            --run-id "dry-run-$GITHUB_RUN_ID" --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --run-conclusion dry-run --verify-json "$out/verify.json" --ledger-git-dir "$fresh" --ledger-ref "$LEDGER_REF" \
+            --out-json "$out/digest.json" --out-dir "$out/out" >> "$GITHUB_STEP_SUMMARY"
+          python3 - "$out/digest.json" <<'PY'
+          import json, sys
+          digest = json.load(open(sys.argv[1]))
+          six = ("failure_code", "failed_predicate", "required_evidence_or_repair", "retry_entrypoint", "owning_existing_goal", "next_attempt")
+          assert digest["entries"], "a digest is never empty"
+          for item in digest["entries"] + digest["projections"]:
+              assert item["disposition"] in ("ALLOW", "FAIL_CLOSED"), item
+              if item["disposition"] != "ALLOW":
+                  assert all(item.get(f) for f in six), item
+          print(json.dumps([[e["merged_head"][:12], e["disposition"], e.get("failure_code")] for e in digest["entries"]]))
+          PY
