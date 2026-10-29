@@ -4985,6 +4985,8 @@
    "resident-runtime/run_once.py"
   ],
   "tests/test_intr_path_ingress.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
    ".stegverse/transition-ledger/contract.json",
    "resident-runtime/intr_path_ingress.py",
    "tests/fixtures/intr-path-ingress/pin.json",
