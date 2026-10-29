@@ -1,7 +1,7 @@
 {
   "schema": "stegverse.test-suite-skip-items/v1",
   "authority_effect": "NONE",
-  "note": "Every skip the selected-tests job can still meet in CI, classified. An item here never hides, converts or deselects a skip: test_suite_skip_receipt.py still counts it and, when the test is in a change's selected set, still fails closed with TEST_SUITE_SKIPPED_ON_HEAD. It only names who owns making the skip go away. Skips CI can satisfy from an existing StegVerse source are satisfied in the job instead.",
+  "note": "Every skip the selected-tests job can still meet in CI, classified. An item here never hides, converts or deselects a skip: test_suite_skip_receipt.py still counts it and, when the test is in a change's selected set, still fails closed with TEST_SUITE_SKIPPED_ON_HEAD. It only names who owns making the skip go away. Skips CI can satisfy from an existing StegVerse source are satisfied in the job instead. An item with satisfiable_by_receipt (#162 D2 option (d), draft) names the one ledger receipt consumer whose ALLOW, bound to this head's exact surface sha256 and to the skipped test's own id in a receipt sealed from a push, satisfies that skip; the skip stays listed and counted, and any other skip, or a binding that does not hold, still fails closed.",
   "items": [
     {
       "test_prefix": "tests.test_origin_attestation_tvc_conformance.",
@@ -11,7 +11,14 @@
       "required_evidence_or_repair": "a read of StegVerse-Labs/TVC (private) supplied to CI through TV/TVC custody; this job's GITHUB_TOKEN cannot read another private repository and a bot may not hold a token for it",
       "retry_entrypoint": "StegVerse-Labs/TVC#532 / #535 (TV/TVC custody read), then this job on the next head",
       "owning_existing_goal": "StegVerse-org/.github#162 D2 (TV/TVC custody) / A4 TV/TVC origin attestation",
-      "next_attempt": "the next push to a pull request head after the custody read lands reruns this job; nothing is dispatched"
+      "next_attempt": "the next push to a pull request head after the custody read lands reruns this job; nothing is dispatched",
+      "satisfiable_by_receipt": {
+        "input": "tvc",
+        "consumer": "resident-runtime/tvc_conformance_receipt.py",
+        "consumption_schema": "stegverse.tvc-conformance-receipt-consumption/v1",
+        "reason_contains": "STEGVERSE_TVC_ROOT",
+        "ruling": "StegVerse-org/.github#162 D2 option (d), DRAFT pending the owner's ratification or revert"
+      }
     },
     {
       "test_prefix": "tests.test_ledger_store_remote_locator_refused.",
@@ -31,7 +38,14 @@
       "required_evidence_or_repair": "a read of StegVerse-Labs/repo-standards (private, another organization; checkout fails with git exit code 128, orchestration/schemas/PROVENANCE.json) supplied to CI through TV/TVC custody; a bot may not hold a token for it",
       "retry_entrypoint": "the custody read of repo-standards, then this job on the next head",
       "owning_existing_goal": "StegVerse-org/.github#162 D2 (TV/TVC custody) / repo-standards ST-021 task-registry schema owner",
-      "next_attempt": "the next push to a pull request head after the custody read lands reruns this job; nothing is dispatched"
+      "next_attempt": "the next push to a pull request head after the custody read lands reruns this job; nothing is dispatched",
+      "satisfiable_by_receipt": {
+        "input": "repo-standards",
+        "consumer": "resident-runtime/repo_standards_owner_drift_receipt.py",
+        "consumption_schema": "stegverse.repo-standards-owner-drift-receipt-consumption/v1",
+        "reason_contains": "repo-standards is not reachable here",
+        "ruling": "StegVerse-org/.github#162 D2 option (d), DRAFT pending the owner's ratification or revert"
+      }
     }
   ]
 }
