@@ -23,8 +23,8 @@
       "IMPROPER_CODE": 0,
       "IMPROPER_DOC": 0,
       "HISTORICAL_EVIDENCE": 65,
-      "NAMING_ONLY": 818,
-      "total": 1059
+      "NAMING_ONLY": 835,
+      "total": 1076
     }
   },
   "gate_only_master_records_code_removed": [],
@@ -7478,6 +7478,125 @@
       "file": "tests/test_intr_protocol_conformance.py",
       "line": 21,
       "text": "# installed the component: Infrastructure-Continuity-Ventures, formalism-tests and master-records snapshots",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1266,
+      "text": "\"communication_id\": \"intr-path-v1:master-records->StegVerse-org\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1270,
+      "text": "\"path_id\": \"master-records->StegVerse-org:intr-destination\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1272,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1287,
+      "text": "\"organization\": \"master-records\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1292,
+      "text": "\"repo_transition_id\": \"INTR_MESH_PATH_TRANSFER:master-records->StegVerse-org:intr-destination@intr-path-v1:master-records->StegVerse-org\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1295,
+      "text": "\"source_repository\": \"master-records/.github\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1296,
+      "text": "\"source_transition_id\": \"INTR_MESH_PATH_TRANSFER:master-records->StegVerse-org:intr-destination@intr-path-v1:master-records->StegVerse-org\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1305,
+      "text": "\"communication_id\": \"intr-path-v1:master-records->StegVerse-org\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1312,
+      "text": "\"path_id\": \"master-records->StegVerse-org:intr-destination\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1316,
+      "text": "\"communication_id\": \"intr-path-v1:master-records->StegVerse-org\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1320,
+      "text": "\"path_id\": \"master-records->StegVerse-org:intr-destination\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1322,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1324,
+      "text": "\"source_organization\": \"master-records\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1340,
+      "text": "\"repository\": \"master-records/.github\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1344,
+      "text": "\"transition_id\": \"INTR_MESH_PATH_TRANSFER:master-records->StegVerse-org:intr-destination@intr-path-v1:master-records->StegVerse-org\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1347,
+      "text": "\"communication_id\": \"intr-path-v1:master-records->StegVerse-org\",",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": ".stegverse/intr-path-transfer/inbound.json",
+      "line": 1348,
+      "text": "\"path_id\": \"master-records->StegVerse-org:intr-destination\",",
       "classification": "NAMING_ONLY",
       "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
     }
