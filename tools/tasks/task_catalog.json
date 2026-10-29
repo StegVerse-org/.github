@@ -1149,7 +1149,7 @@
         {
           "name": "Append, verify, refuse (temp ledgers from the pinned tip)",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.unit/02-append-verify-refuse-temp-ledgers-from-the-pinne.sh",
-          "run_sha256": "6d8f81c5795a3d39a95b86211007e6f83188865023392f6a78b8666e90eb46dc"
+          "run_sha256": "da664b354c05ead09767097d3c32e5e4d032bed592096797e14e7cd976d39dff"
         }
       ],
       "artifacts": [],
@@ -1196,7 +1196,7 @@
         {
           "name": "The writer's append on the scratch ref, then VERIFIED, then an idempotent replay",
           "run_file": "tools/tasks/steps/organization-ledger-merge-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-then-veri.sh",
-          "run_sha256": "7513c299fb395bea28383e0bb797f56978d677d3c3a0e21d564c0e3f54adc2ec"
+          "run_sha256": "937d29a62870adabb82f204a82981839239758ee2891b8ccde80918702701fa0"
         }
       ],
       "artifacts": [],

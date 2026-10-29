@@ -2623,6 +2623,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_merge_transfer_admission.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_merge_transfer_admission.py"
+   ],
+   "tests": [
+    "tests.test_merge_transfer_admission"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_merge_transfer_dry_run_check.py",
    "inputs": [],
    "surfaces": [
@@ -3590,6 +3602,9 @@
    "resident-runtime/intr_destination_ingress.py",
    "resident-runtime/ledger_store.py"
   ],
+  "resident-runtime/merge_transfer_admission.py": [
+   "resident-runtime/merge_transfer.py"
+  ],
   "resident-runtime/merge_transfer_dry_run_check.py": [
    "resident-runtime/merge_transfer.py",
    "tools/tasks/run_catalog.py"
@@ -4091,6 +4106,12 @@
    ".stegverse/merge-transfer/pending.json",
    "resident-runtime/merge_transfer.py",
    "tests/fixtures/merge-transfer/**",
+   "tests/workflow_surface.py"
+  ],
+  "tests/test_merge_transfer_admission.py": [
+   "resident-runtime/merge_transfer.py",
+   "resident-runtime/merge_transfer_admission.py",
+   "tests/test_merge_transfer.py",
    "tests/workflow_surface.py"
   ],
   "tests/test_merge_transfer_dry_run_check.py": [
