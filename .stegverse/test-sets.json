@@ -2485,6 +2485,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_ledger_gitstore.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_ledger_gitstore.py"
+   ],
+   "tests": [
+    "tests.test_ledger_gitstore"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_ledger_location_supplied.py",
    "inputs": [],
    "surfaces": [
@@ -3549,6 +3561,7 @@
    "org-boundary/runtime/capability_ingress.py",
    "org-kernel/kernel.py",
    "resident-runtime/aggregate_repo_transition.py",
+   "resident-runtime/ledger_gitstore.py",
    "resident-runtime/merge_transfer.py",
    "resident-runtime/organization_egress_boundary.py",
    "resident-runtime/organization_ledger_readback.py"
@@ -3580,6 +3593,9 @@
   ],
   "resident-runtime/intr_path_tvc_read.py": [
    ".stegverse/intr-path-transfer/**"
+  ],
+  "resident-runtime/ledger_gitstore.py": [
+   "resident-runtime/merge_transfer_gitstore.py"
   ],
   "resident-runtime/main_change_receipt_census.py": [
    ".github/workflows/**",
@@ -4038,6 +4054,11 @@
    "org-kernel/kernel.py",
    "resident-runtime/control/**",
    "tests/peer_organization.py"
+  ],
+  "tests/test_ledger_gitstore.py": [
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/ledger_gitstore.py",
+   "tests/test_merge_transfer_gitstore.py"
   ],
   "tests/test_ledger_location_supplied.py": [
    ".stegverse/transition-ledger/emit.py",
