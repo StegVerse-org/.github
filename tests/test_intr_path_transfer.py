@@ -79,7 +79,7 @@ class DeclaredPaths(unittest.TestCase):
     def test_paths_are_ordered_pairs_of_conformant_organizations(self):
         paths = pt.declared_paths()
         orgs = sorted({p["source"] for p in paths})
-        self.assertEqual(len(orgs), 13)
+        self.assertEqual(len(orgs), 16)
         self.assertEqual(len(paths), len(orgs) * (len(orgs) - 1))
         self.assertEqual(len({p["path_id"] for p in paths}), len(paths))
         for p in paths:
@@ -105,7 +105,7 @@ class RealState(unittest.TestCase):
             state = pt.real_state()
         finally:
             ledger.close()
-        self.assertEqual(state["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 156})
+        self.assertEqual(state["counts"], {"ALLOW": 0, "DENY": 0, "FAIL_CLOSED": 240})
         self.assertEqual(state["paths"], EXPECTED["paths"])
         self.assertEqual(state["counts"], EXPECTED["counts"])
 

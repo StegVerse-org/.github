@@ -1,0 +1,35 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination GCAT-BCAT-Engine",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for master-records->GCAT-BCAT-Engine:intr-destination on master-records/.github's ledger (read anonymously at 35b3edf72c908879ee8a0974e49131e523b4ed63: none)",
+   "retry_entrypoint": "master-records/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+  }
+ ],
+ "cls": "SOURCE_RECEIPT_NOT_LEDGERED",
+ "communication_id": "intr-path-v1:master-records->GCAT-BCAT-Engine",
+ "destination": "GCAT-BCAT-Engine",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "master-records->GCAT-BCAT-Engine:intr-destination",
+ "payload": null,
+ "record_sha256": "sha256:1b6fb9292d960a277bfdb6b1db24143ccc5d410e2203c75ec75482bfd5eede7e",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "master-records",
+ "source_receipts": null,
+ "status": {
+  "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination GCAT-BCAT-Engine",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for master-records->GCAT-BCAT-Engine:intr-destination on master-records/.github's ledger (read anonymously at 35b3edf72c908879ee8a0974e49131e523b4ed63: none)",
+  "retry_entrypoint": "master-records/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+ }
+}

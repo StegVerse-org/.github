@@ -1,0 +1,43 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination master-records",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for StegVerse-org->master-records:intr-destination on StegVerse-org/.github's ledger (read anonymously at e27b771ba17719dbcb5d597a1b1fc45678c85d60: none)",
+   "retry_entrypoint": "StegVerse-org/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+  },
+  {
+   "failed_predicate": "DESTINATION_HAS_INTR_PATH_INGRESS",
+   "failure_code": "INTR_PATH_DESTINATION_INGRESS_NOT_ON_MAIN",
+   "next_attempt": "re-run seal and replay after the port is admitted",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "resident-runtime/intr_path_ingress.py and .github/workflows/intr-path-ingress.yml on master-records/.github main",
+   "retry_entrypoint": "a Lane B port draft to master-records/.github (laneb/ branch)"
+  }
+ ],
+ "cls": "SOURCE_RECEIPT_NOT_LEDGERED",
+ "communication_id": "intr-path-v1:StegVerse-org->master-records",
+ "destination": "master-records",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "StegVerse-org->master-records:intr-destination",
+ "payload": null,
+ "record_sha256": "sha256:bb6d457388673679490b67df37d0347155082e11858f9364db551433abc45491",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "StegVerse-org",
+ "source_receipts": null,
+ "status": {
+  "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination master-records",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for StegVerse-org->master-records:intr-destination on StegVerse-org/.github's ledger (read anonymously at e27b771ba17719dbcb5d597a1b1fc45678c85d60: none)",
+  "retry_entrypoint": "StegVerse-org/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+ }
+}

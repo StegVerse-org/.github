@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at f4fe48e878fa363c54941ea703c331c3e949298b) holds destination receipt sha256:49655d0ab7662ded5a3159a17753dcc4d70a032cd723fece1b4a7715b0631abf; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at 8e523a7f5c68cbbc4b268c0c0cd970b6a1985182) holds destination receipt sha256:49655d0ab7662ded5a3159a17753dcc4d70a032cd723fece1b4a7715b0631abf; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:SV-011->Admissible-Existence",
  "destination": "Admissible-Existence",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "f4fe48e878fa363c54941ea703c331c3e949298b",
+  "destination_ledger_tip_observed": "8e523a7f5c68cbbc4b268c0c0cd970b6a1985182",
   "destination_organization_receipt_sha256": "sha256:49655d0ab7662ded5a3159a17753dcc4d70a032cd723fece1b4a7715b0631abf"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:2917eab652fc9d28d83a7bd96ae9c1526b76b213bafa5d501f76a0ca8732fe87",
    "path_id": "SV-011->Admissible-Existence:intr-destination",
-   "payload_sha256": "sha256:f570e66ce38776e5c9e1552fa6047f672b8540575c5fb72363bd9f31e1d26c9a",
+   "payload_sha256": "sha256:d5f0c31c3bbc13034b536d3258b0e2dac7be41d3aacdce6e4db06fbbe7d73757",
    "repository": "Admissible-Existence/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "bdef7a2b474dcca55fb829814a779a45dc1d8a74",
+    "source_ledger_tip": "8ddbec78f0a8eec17e990c0061c3f70b22191c97",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:7845adadf7b0a7fa6301f9117fcf40931d4a7bbadd64f14a841c404c313e0e24",
+ "record_sha256": "sha256:6f326de84a63fcc47c18524079d5b172222c7423431853a37a7ad5431f2e9f26",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "SV-011",
  "source_receipts": {
@@ -166,14 +166,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:SV-011->Admissible-Existence:intr-destination@intr-path-v1:SV-011->Admissible-Existence"
   },
-  "source_ledger_tip_observed": "bdef7a2b474dcca55fb829814a779a45dc1d8a74"
+  "source_ledger_tip_observed": "8ddbec78f0a8eec17e990c0061c3f70b22191c97"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at f4fe48e878fa363c54941ea703c331c3e949298b) holds destination receipt sha256:49655d0ab7662ded5a3159a17753dcc4d70a032cd723fece1b4a7715b0631abf; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at 8e523a7f5c68cbbc4b268c0c0cd970b6a1985182) holds destination receipt sha256:49655d0ab7662ded5a3159a17753dcc4d70a032cd723fece1b4a7715b0631abf; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

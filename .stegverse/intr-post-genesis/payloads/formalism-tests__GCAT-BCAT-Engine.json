@@ -1,0 +1,35 @@
+{
+ "authentic": false,
+ "authority_effect": "NONE",
+ "blockers": [
+  {
+   "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+   "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+   "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination GCAT-BCAT-Engine",
+   "owning_existing_goal": "StegVerse-org/.github#162",
+   "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for formalism-tests->GCAT-BCAT-Engine:intr-destination on formalism-tests/.github's ledger (read anonymously at a5f833f6b0cbe27d254b5cc0c6ce96fcfa756714: none)",
+   "retry_entrypoint": "formalism-tests/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+  }
+ ],
+ "cls": "SOURCE_RECEIPT_NOT_LEDGERED",
+ "communication_id": "intr-path-v1:formalism-tests->GCAT-BCAT-Engine",
+ "destination": "GCAT-BCAT-Engine",
+ "e0_terminal": true,
+ "expected_at_genesis": "FAIL_CLOSED",
+ "ledgered": false,
+ "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
+ "path_id": "formalism-tests->GCAT-BCAT-Engine:intr-destination",
+ "payload": null,
+ "record_sha256": "sha256:ef0df014d0f65a84439025ec99f3288ee7e96c10b8213e54160b6b16e136159c",
+ "schema": "stegverse.intr-post-genesis-path/v1",
+ "source": "formalism-tests",
+ "source_receipts": null,
+ "status": {
+  "failed_predicate": "PATH_HAS_A_SOURCE_LEDGER_RECEIPT",
+  "failure_code": "INTR_PATH_RECEIPT_NOT_LEDGERED",
+  "next_attempt": "read the source ledger back, then scripts/intr_post_genesis_replay.py carry --destination GCAT-BCAT-Engine",
+  "owning_existing_goal": "StegVerse-org/.github#162",
+  "required_evidence_or_repair": "an INTR_MESH_PATH_TRANSFER receipt for formalism-tests->GCAT-BCAT-Engine:intr-destination on formalism-tests/.github's ledger (read anonymously at a5f833f6b0cbe27d254b5cc0c6ce96fcfa756714: none)",
+  "retry_entrypoint": "formalism-tests/.github .github/workflows/intr-path-transfer.yml (workflow_run after the main-merge transfer of the push that lands transfers.json)"
+ }
+}
