@@ -1,0 +1,305 @@
+{
+  "schema": "stegverse.organization-transition-request/v1",
+  "request_id": "MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001",
+  "owning_existing_goal": "MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003",
+  "purpose": "Record the frozen MIR/SV Experiment 3 SDK diagnostic manifest (COSV 50000000100000; owner StegVerse-Labs/.github#2682) as an organization transition by manifest on this organization's ingress, so the Experiment 3 organization receipt is appended to refs/stegverse/organization-ledger and read back from a fresh fetch. The exact already-built manifest is submitted unchanged (StegVerse-org/StegVerse-SDK scripts/build_mir_sv_exp3_manifest.py; file sha256 e1b05a082ce19d3d254e3cde1dced03019174a94287724959672c9e65510c8f3, wire sha256 ad9b8b8aab2beeea04bff2aac34fd2e7bfa5915133bcaef9209c16de7d9bea68); read-only ecosystem_diagnostic, no Publisher distribution, no external egress or physical execution is claimed.",
+  "manifest": {
+    "attestation": null,
+    "canonicalization_profile": "steggate.jcs.v1",
+    "completion": {
+      "direction": "SOUTH",
+      "egress": {
+        "far_side_transition_required": true,
+        "final_stegverse_transition_surface": "LLM_ADAPTER",
+        "transport": "INTERLOCK_INTR"
+      },
+      "initiator": {
+        "class": "organization",
+        "ref": "StegVerse-Labs"
+      },
+      "publisher": {
+        "package_profile": "stegverse.publisher.evidence-report-package/v1",
+        "required": true,
+        "stage": "PUBLISHER"
+      }
+    },
+    "context_refs": [
+      "StegVerse-Labs/.github:docs/MIR_SV_CAPABILITY_BOUNDARY_EXPERIMENT_003_MIRROR_HANDOFF.md",
+      "MIR-original-PDF-SHA256:1e2f134ab60144bb4c5a4de135c6f76d460f22995a0e0b2df1ef071f7e8c8ffe"
+    ],
+    "created_at": "2026-09-24T00:00:00Z",
+    "declared_intent": "Produce the StegVerse-side four-dimension evidence assessment using the existing read-only diagnostic processor; preserve equal-weight limitations and unverified runtime states.",
+    "extensions": {
+      "manifest_builder": {
+        "builder_grants_authority": false,
+        "processing_capability": "ecosystem_diagnostic",
+        "profile": "stegverse.manifest-builder.v1",
+        "return_depth": "full-trace",
+        "route_id": "stegverse.route.ecosystem-diagnostic.v1",
+        "source_semantic_custody": "EXTERNAL"
+      },
+      "source_data_class": "stegverse.mir-sv-exp3.capability-boundary-input/v1",
+      "stegverse_ecosystem_diagnostic_request": {
+        "diagnostic_request_id": "MIR-SV-EXP3-CAPABILITY-BOUNDARY-20260924",
+        "expected_evidence_fields": [
+          "exact_source_or_receipt_reference",
+          "scope_and_ceiling",
+          "independent_recomputation_if_claimed"
+        ],
+        "mutation_permitted": false,
+        "schema": "stegverse.ecosystem-diagnostic-request.v1",
+        "scope": "ecosystem",
+        "tests": [
+          {
+            "authority_owner": "StegVerse-Labs/.github",
+            "component_id": "stegverse.observe",
+            "observation": {
+              "detail": "Only the existence and exact scope of the source-declared capability are verified, NOT its live realization.",
+              "evidence_refs": [
+                "https://github.com/StegVerse-Labs/.github/blob/main/docs/mir-exp3/STEGVERSE_SIDE_OBSERVE_DEMONSTRATE_RETAIN_RECONSTRUCT.md"
+              ],
+              "state": "PASS"
+            },
+            "predicate_id": "SOURCE_CONTRACT_DOCUMENTED_NOT_EXECUTION",
+            "test_id": "observe_source_contract"
+          },
+          {
+            "authority_owner": "Interlock/InTr",
+            "component_id": "stegverse.observe",
+            "observation": null,
+            "predicate_id": "AUTHENTIC_EXPERIMENT_3_CURRENT_RUNTIME_EVIDENCE",
+            "test_id": "observe_current_runtime"
+          },
+          {
+            "authority_owner": "StegVerse-Labs/.github",
+            "component_id": "stegverse.demonstrate",
+            "observation": {
+              "detail": "Only the existence and exact scope of the source-declared capability are verified, NOT its live realization.",
+              "evidence_refs": [
+                "https://github.com/StegVerse-Labs/.github/blob/main/docs/mir-exp3/STEGVERSE_SIDE_OBSERVE_DEMONSTRATE_RETAIN_RECONSTRUCT.md"
+              ],
+              "state": "PASS"
+            },
+            "predicate_id": "SOURCE_CONTRACT_DOCUMENTED_NOT_EXECUTION",
+            "test_id": "demonstrate_source_contract"
+          },
+          {
+            "authority_owner": "Master Records",
+            "component_id": "stegverse.demonstrate",
+            "observation": null,
+            "predicate_id": "AUTHENTIC_EXPERIMENT_3_CURRENT_RUNTIME_EVIDENCE",
+            "test_id": "demonstrate_current_runtime"
+          },
+          {
+            "authority_owner": "StegVerse-Labs/.github",
+            "component_id": "stegverse.retain",
+            "observation": {
+              "detail": "Only the existence and exact scope of the source-declared capability are verified, NOT its live realization.",
+              "evidence_refs": [
+                "https://github.com/StegVerse-Labs/.github/blob/main/docs/mir-exp3/STEGVERSE_SIDE_OBSERVE_DEMONSTRATE_RETAIN_RECONSTRUCT.md"
+              ],
+              "state": "PASS"
+            },
+            "predicate_id": "SOURCE_CONTRACT_DOCUMENTED_NOT_EXECUTION",
+            "test_id": "retain_source_contract"
+          },
+          {
+            "authority_owner": "Organization ledger",
+            "component_id": "stegverse.retain",
+            "observation": null,
+            "predicate_id": "AUTHENTIC_EXPERIMENT_3_CURRENT_RUNTIME_EVIDENCE",
+            "test_id": "retain_current_runtime"
+          },
+          {
+            "authority_owner": "StegVerse-Labs/.github",
+            "component_id": "stegverse.reconstruct",
+            "observation": {
+              "detail": "Only the existence and exact scope of the source-declared capability are verified, NOT its live realization.",
+              "evidence_refs": [
+                "https://github.com/StegVerse-Labs/.github/blob/main/docs/mir-exp3/STEGVERSE_SIDE_OBSERVE_DEMONSTRATE_RETAIN_RECONSTRUCT.md"
+              ],
+              "state": "PASS"
+            },
+            "predicate_id": "SOURCE_CONTRACT_DOCUMENTED_NOT_EXECUTION",
+            "test_id": "reconstruct_source_contract"
+          },
+          {
+            "authority_owner": "Master Records",
+            "component_id": "stegverse.reconstruct",
+            "observation": null,
+            "predicate_id": "AUTHENTIC_EXPERIMENT_3_CURRENT_RUNTIME_EVIDENCE",
+            "test_id": "reconstruct_current_runtime"
+          },
+          {
+            "authority_owner": "independent physical observer",
+            "component_id": "stegverse.physical_work",
+            "observation": null,
+            "predicate_id": "AUTHENTIC_EXP3_INDEPENDENT_EVIDENCE",
+            "test_id": "physical_work"
+          },
+          {
+            "authority_owner": "independent activity-side sampler",
+            "component_id": "stegverse.coverage_completeness",
+            "observation": null,
+            "predicate_id": "AUTHENTIC_EXP3_INDEPENDENT_EVIDENCE",
+            "test_id": "coverage_completeness"
+          },
+          {
+            "authority_owner": "independent joint reviewer",
+            "component_id": "stegverse.dissent_preservation",
+            "observation": null,
+            "predicate_id": "AUTHENTIC_EXP3_INDEPENDENT_EVIDENCE",
+            "test_id": "dissent_preservation"
+          },
+          {
+            "authority_owner": "Master Records",
+            "component_id": "stegverse.matched_master_records",
+            "observation": null,
+            "predicate_id": "AUTHENTIC_EXP3_INDEPENDENT_EVIDENCE",
+            "test_id": "matched_master_records"
+          }
+        ]
+      },
+      "stegverse_route": {
+        "containment": "READ_ONLY_DIAGNOSTIC",
+        "external_consequence_enabled": false,
+        "lane_class": "DIAGNOSTIC_OBSERVATION",
+        "route_id": "stegverse.route.ecosystem-diagnostic.v1",
+        "routing_surface": "ECOSYSTEM_DIAGNOSTIC",
+        "sandbox_required": false
+      }
+    },
+    "freshness": {},
+    "hashes": {
+      "payload_sha256": "c43dee27392ba76c32ea6a8556424c84ee6f71bf74c6f1f5972e593c599facc7"
+    },
+    "manifest_labels": {
+      "mode": "NONE"
+    },
+    "manifest_profile": "stegverse.ingress-manifest.v1",
+    "manifest_profile_version": "1",
+    "payload": {
+      "cosv": "50000000100000",
+      "coverage": {
+        "activity_side_sampling": "NOT_PERFORMED",
+        "externally_declared_obligation": "NOT_SUPPLIED",
+        "record_side_coverage_claim": "NOT_ESTABLISHED"
+      },
+      "dimensions": [
+        {
+          "capability": "Canonical registered-Node event, current Interlock/InTr transition and bounded execution can emit distinct, attributable receipts when actually exercised.",
+          "key": "observe",
+          "limit": "Source declarations and downstream receipts cannot observe an uninstrumented partner environment; an activity-side omission may never enter the ledger.",
+          "verification": "Match a sampled external activity source against exact registered-Node ingress, execution and organization-ledger receipts; report missing coverage separately from inaccessible evidence."
+        },
+        {
+          "capability": "Existing canonical source specifies exact state-transition and required-evidence digests with independently recomputable Master Records reconstruction.",
+          "key": "demonstrate",
+          "limit": "Source or CI conformance, self-issued hashes and documented API contracts do not establish real execution, physical truth, record completeness or independence of custody.",
+          "verification": "Fetch exact registered transition and its organization receipt and corresponding Master Records RECORDED/PASS/PASS response; recompute hashes and deliberately mutate evidence."
+        },
+        {
+          "capability": "Canonical source defines retention of exact state-transition receipts and each bound required-evidence item through authoritative organization-first and Master Records custody.",
+          "key": "retain",
+          "limit": "Retention code alone does not prove current resident durability, complete external-event coverage, third-party separation, recovery after loss or an immutable physical-world observation.",
+          "verification": "From authenticated resident organization HEAD enumerate all linked immutable receipts, query Master Records by exact transition and compare every retained evidence item and retention/loss policy."
+        },
+        {
+          "capability": "The canonical contract requires exact predecessor-linked state receipt and required evidence reconstruction before machine-owned successor progression.",
+          "key": "reconstruct",
+          "limit": "Reconstruction can recover only actually retained states; it cannot infer unreported actions, undisclosed blind spots, physical causation or reconcile disagreement as though consensus were observed.",
+          "verification": "Independently replay a complete sampled receipt window including interleaved organization transitions; require each immediate predecessor and exact digest equality; retain participant dissent and independent unknowns."
+        }
+      ],
+      "disagreement_policy": {
+        "consensus_may_not_erase_dissent": true,
+        "retain_each_observer_statement": true,
+        "retain_unknowns_first_class": true,
+        "shared_blind_spots_not_claimed_complete": true
+      },
+      "evidence_as_of": "2026-09-24",
+      "evidence_classes": [
+        "SOURCE_CONTRACT_DOCUMENTED",
+        "COUNTERPART_REPORTED",
+        "CURRENT_AUTHENTIC_RUNTIME",
+        "INDEPENDENTLY_RECOMPUTED",
+        "NOT_OBSERVED",
+        "UNKNOWN"
+      ],
+      "experiment_kind": "INDEPENDENT_CAPABILITY_AND_LIMITATION_ASSESSMENT_NOT_GOVERNED_EXECUTION",
+      "four_questions": [
+        {
+          "answer": "The retained source contracts describe governed event ingress, state-transition custody, evidence retention and predecessor-linked reconstruction; this source declaration is not runtime proof.",
+          "evidence_class": "SOURCE_CONTRACT_DOCUMENTED",
+          "question": "what_was_claimed",
+          "unknowns": [
+            "Exact current runtime deployment"
+          ]
+        },
+        {
+          "answer": "No authenticated current Exp3 organization-ledger event and matching Master Records response has been read back in this SDK manifest.",
+          "evidence_class": "NOT_OBSERVED",
+          "question": "what_was_independently_observed",
+          "unknowns": [
+            "Whether a qualifying resident transition exists outside accessible evidence"
+          ]
+        },
+        {
+          "answer": "No independently sampled physical outcome or activity-side measurement is bound to an Exp3 receipt.",
+          "evidence_class": "NOT_OBSERVED",
+          "question": "what_physical_work_occurred",
+          "unknowns": [
+            "Physical activity outside SDK or Node instrumentation"
+          ]
+        },
+        {
+          "answer": "Unknowns and disagreements are retained per observer rather than merged into presumed truth; undeclared shared blind spots are not exhaustively enumerable.",
+          "evidence_class": "UNKNOWN",
+          "question": "what_remains_unknown",
+          "unknowns": [
+            "Shared observability limits",
+            "Missing unreported activity",
+            "Physical causation",
+            "Current resident provenance",
+            "Independence of external custody"
+          ]
+        }
+      ],
+      "goal_task_id": "MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003",
+      "historical_separation": {
+        "future_third_framework_standing_test": "SEPARATE_NOT_STARTED",
+        "seam_experiment_1": "SEPARATE",
+        "seam_experiment_2_v08": "SEPARATE_NOT_FROZEN",
+        "sv_test_demo_3_40_second_worker": "SEPARATE",
+        "sv_test_demo_4_manifold": "SEPARATE"
+      },
+      "mir_counterpart_pdf_sha256": "1e2f134ab60144bb4c5a4de135c6f76d460f22995a0e0b2df1ef071f7e8c8ffe",
+      "schema": "stegverse.mir-sv-exp3.capability-boundary-input/v1",
+      "source_documents": [
+        "https://github.com/StegVerse-Labs/.github/blob/main/docs/MIR_SV_CAPABILITY_BOUNDARY_EXPERIMENT_003_MIRROR_HANDOFF.md",
+        "https://github.com/StegVerse-Labs/.github/blob/main/docs/mir-exp3/STEGVERSE_SIDE_OBSERVE_DEMONSTRATE_RETAIN_RECONSTRUCT.md",
+        "https://github.com/StegVerse-Labs/.github/blob/main/docs/mir-exp3/RICHARD_PRE_PDF_EXACT_MESSAGE.md"
+      ],
+      "source_scope": "CURRENT_REVIEWED_GITHUB_SOURCE_AND_COUNTERPART_DOCUMENTS_NOT_CURRENT_SOVEREIGN_RUNTIME"
+    },
+    "processing": {
+      "capability": "ecosystem_diagnostic",
+      "route_id": "stegverse.route.ecosystem-diagnostic.v1"
+    },
+    "requested_consequence": "Return a diagnostic evidence artifact with the declared Publisher stage and separately attributable unknowns; do not imply external egress or physical execution.",
+    "return_projection": {
+      "mode": "ALL",
+      "transition_classes": []
+    },
+    "source_framework": "StegVerse",
+    "source_instance": "MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003",
+    "source_output_id": "mir-sv-exp3-stegverse-assessment-source-20260924"
+  },
+  "expected_canonical_manifest_sha256": "f0fa715e6a25e7fbf57cf4075ff664751b7606cab93ecdbb59f560e90ae510c6",
+  "standing": {
+    "mode": "ESTABLISH_GENESIS",
+    "node_ref": "StegVerse-org/StegVerse-SDK",
+    "predecessor": null,
+    "_declared_not_authenticated": "A declared standing is not authenticated standing; the ingress decides the disposition and the organization ledger records it either way."
+  }
+}

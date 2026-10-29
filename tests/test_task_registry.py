@@ -270,6 +270,7 @@ class ReferencesResolveHereTests(unittest.TestCase):
     FOREIGN_REGISTRY_PATHS = {
         "resident-runtime/control/sv002-sdk-query.request.json",
         "resident-runtime/activation-manifest.json",
+        ".stegverse/transition-requests/MIR-SV-CAPABILITY-BOUNDARY-EXPERIMENT-003-001.json",  # goal owned by StegVerse-Labs/.github#2682
     }
 
     def _references(self):
