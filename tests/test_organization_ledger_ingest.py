@@ -58,7 +58,11 @@ def seal(body):
 
 def seed_receipt():
     body = {"schema": "stegverse.repo-transition-receipt/v1", "repository": "StegVerse-org/.github",
-            "transition_id": "ingest-test-genesis"}
+            "transition_id": "ingest-test-genesis",
+            # #207: the organization writer admits only a source receipt that
+            # carries its supplied epoch, marked not derived from a clock.
+            "hb_reference": {"epoch": EPOCH, "derived_from_clock": False,
+                             "progression_dependency": "OSCILLATOR_ONLY"}}
     return {**body, "receipt_sha256": org.sha(body)}
 
 

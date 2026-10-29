@@ -7,10 +7,11 @@ recorded nowhere, and stopping every frame queued behind it.
 - A deterministic refusal (standing, unknown service, undeclared or unadmitted
   processing, no installed adapter) is DENY: recorded at both levels and marked,
   so it is not offered again.
-- Anything else (an adapter that failed to execute) is FAIL_CLOSED: recorded at
-  both levels with a retry edge, left unmarked, offered again on the next pass,
-  and recorded once however many passes see it.
-- A crossing refused and later admitted is two transitions, not one.
+- The boundary processor failing for anything but its own write (an adapter
+  that failed to execute, exit 1, a crash -- PB-EXIT-SPLIT) is terminal too:
+  FRAME_INGEST_FAILED, recorded DENY at both levels and marked. Only its own
+  write fault (exit 75) is non-terminal (tests/test_receipt_time_base.py).
+- A crossing refused and later republished and admitted is two transitions.
 - A refusal does not stop the frames behind it.
 
 Source validation only. No authority effect is claimed.
@@ -98,24 +99,34 @@ class RefusedCrossingTests(unittest.TestCase):
         self.assertIn("PROCESSING_SELECTED_ONLY_BY_ADMITTED_PROCESSING_CAPABILITY_AND_ROUTE_ID",
                       refused["result"]["failed_predicate"])
 
-    def test_an_adapter_that_fails_to_execute_is_fail_closed_retried_and_recorded_once(self):
+    def test_an_adapter_that_fails_to_execute_is_terminal_recorded_and_marked(self):
         self.publish(ENDPOINT, {"processing": {"capability": "ecosystem_diagnostic", "route_id": ROUTE}},
                      packet_id="adapter-1")
         first, = self.consume()
-        self.assertEqual(first["result"]["disposition"], "FAIL_CLOSED")
-        self.assertIsNone(first["seen_marker"])
-        self.assertEqual(len(self.offered()), 1)
-        second, = self.consume()
-        self.assertEqual(second["organization_record"], first["organization_record"])
+        self.assertEqual((first["result"]["disposition"], first["result"]["failure_code"],
+                          first["result"]["terminal"]), ("DENY", "FRAME_INGEST_FAILED", True))
+        self.assertIsNotNone(first["seen_marker"])
+        self.assertEqual(self.offered(), [])
+        self.assertEqual(self.consume(), [])
         refused, = self.by_class(self.k.CROSSING_REFUSED_CLASS)
-        self.assertEqual(refused["evidence"]["retry_entrypoint"],
-                         "org-kernel/kernel.py::consume_and_respond")
+        self.assertIsNone(refused["evidence"]["retry_entrypoint"])
+
+    def test_an_adapter_that_fails_to_execute_is_fail_closed_retried_and_recorded_once(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule treated an adapter that fails to
+        execute as a retried FAIL_CLOSED. #207 (PB-EXIT-SPLIT) makes it terminal: recorded and
+        marked, never retried. Only the boundary's own write fault (75) is non-terminal.
+        """
+        self.test_an_adapter_that_fails_to_execute_is_terminal_recorded_and_marked()
 
     def test_a_crossing_refused_then_admitted_is_two_transitions(self):
         self.publish(ENDPOINT, {"processing": {"capability": "ecosystem_diagnostic", "route_id": ROUTE}},
                      packet_id="adapter-2")
         self.consume()
         (self.peer.root / "adapter.py").write_text(WORKING_ADAPTER)
+        # The refused frame is terminal; the sender republishes the request.
+        self.publish(ENDPOINT, {"processing": {"capability": "ecosystem_diagnostic", "route_id": ROUTE}},
+                     packet_id="adapter-2-republished")
         admitted, = self.consume()
         self.assertEqual(admitted["result"]["status"], "CONSUMED")
         self.assertEqual(len(self.by_class(self.k.CROSSING_REFUSED_CLASS)), 1)

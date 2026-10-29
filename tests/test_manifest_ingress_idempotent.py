@@ -121,8 +121,25 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         self.assertEqual(organization["repo_receipt_sha256"], repository["receipt_sha256"])
         self.assertEqual(completed["organization_receipt_sha256"], organization["receipt_sha256"])
 
-    def test_replay_completion_takes_its_epoch_from_the_retained_receipt(self):
-        """A retry carrying a different epoch still rebuilds the first attempt's records."""
+    def test_a_committed_request_epoch_is_recorded_with_its_source_and_digest(self):
+        """Push epochs (09:20Z ruling (b)): receipts record SUPPLIED, source COMMITTED_REQUEST and the request digest."""
+        source = {"source": "COMMITTED_REQUEST", "request_sha256": "sha256:" + "d" * 64}
+        self.receive(hb_epoch=32, hb_epoch_source=source)
+        repository, = self.receipts(REPO)
+        organization, = self.receipts(ORG)
+        self.assertEqual(repository["evidence"]["hb_epoch_source"], source)
+        self.assertEqual(organization["boundary_evidence"]["hb_epoch_source"], source)
+        for receipt in (repository, organization):
+            self.assertEqual(receipt["hb_reference"]["epoch"], 32)
+            self.assertIs(receipt["hb_reference"]["derived_from_clock"], False)
+
+    def test_replay_completion_takes_the_epoch_it_was_supplied(self):
+        """A retry completes the organization receipt at the epoch it was supplied.
+
+        It used to read the epoch back from the retained repository receipt;
+        the organization writer is now handed only a supplied epoch. The
+        repository receipt keeps the first attempt's.
+        """
         original = ingress.organization_ledger.append
         calls = {"n": 0}
 
@@ -137,8 +154,19 @@ class IdempotentIngressTests(base.ReceivingOperationTests):
         with self.assertRaises(organization_ledger.OrgLedgerAppendRefused):
             self.receive(hb_epoch=32)
         self.receive(hb_epoch=99)
+        repository, = self.receipts(REPO)
         organization, = self.receipts(ORG)
-        self.assertEqual(organization["hb_reference"]["epoch"], 32)
+        self.assertEqual(repository["hb_reference"]["epoch"], 32)
+        self.assertEqual(organization["hb_reference"]["epoch"], 99)
+        self.assertIs(organization["hb_reference"]["derived_from_clock"], False)
+
+    def test_replay_completion_takes_its_epoch_from_the_retained_receipt(self):
+        """Base name kept (required-verification TEST_PRESENT_AT_BASE_RUNS_AT_HEAD); it asserts the rule that
+        replaced the old one, never the old rule. The old rule read the replayed completion's epoch
+        back from the retained receipt. #207 removes that read-back hop: the completion carries the
+        epoch it was supplied.
+        """
+        self.test_replay_completion_takes_the_epoch_it_was_supplied()
 
     def test_replay_of_one_transition_id_over_another_manifest_refuses(self):
         first = self.receive()

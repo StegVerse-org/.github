@@ -101,7 +101,7 @@ class PortableRepositoryAppendTests(unittest.TestCase):
 class PortableOrganizationAppendTests(unittest.TestCase):
     def source_receipt(self, index):
         body = {
-            "schema": "stegverse.repo-transition-receipt/v1",
+            "schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
             "repository": "StegVerse-org/StegVerse-SDK",
             "transition_id": "portable-org-" + str(index),
         }
@@ -157,7 +157,7 @@ class GitRefSubstrateTests(unittest.TestCase):
     def test_organization_appenders_use_the_same_transaction_contract(self):
         errors = []
         def worker(index):
-            body = {"schema": "stegverse.repo-transition-receipt/v1",
+            body = {"schema": "stegverse.repo-transition-receipt/v1", "hb_reference": {"epoch": 4096, "generation": 4096, "heartbeat_id": "HB:4096", "phase_offset_ns": 0, "frequency_hz": 100, "progression_dependency": "OSCILLATOR_ONLY", "derived_from_clock": False, "authority_effect": "NONE"},
                     "repository": "StegVerse-org/StegVerse-SDK",
                     "transition_id": "portable-git-org-" + str(index)}
             try:
