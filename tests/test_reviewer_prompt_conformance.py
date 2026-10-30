@@ -157,6 +157,11 @@ class PromptClaimTests(unittest.TestCase):
     #: The exemption is named rather than pattern-matched so it stays visible,
     #: and a separate case fails if it ever stops being needed.
     SELF = "tests/test_reviewer_prompt_conformance.py"
+    #: P1's evaluator at f28c3a76 is vendored here, byte for byte and pinned by its contract manifest, for the
+    #: sv_change_admit writer (StegVerse-org/.github#163/#167). Its WorkerCoordinator projection is P1's code, read
+    #: but never run as a claim path by this organization; the directory is exempt by name, and the one writer
+    #: module that names its worker-claim script (as a pinned file) is listed below.
+    VENDORED_P1 = "tests/vendor/p1_f28c3a76/"
 
     def claim_surface_hits(self):
         hits = subprocess.run(
@@ -167,7 +172,8 @@ class PromptClaimTests(unittest.TestCase):
 
     def test_the_no_claim_surface_statement_is_still_true(self):
         """The prompt tells a reviewer they will find no claim surface."""
-        found = self.claim_surface_hits() - {self.SELF}
+        found = {path for path in self.claim_surface_hits() - {self.SELF}
+                 if not path.startswith(self.VENDORED_P1)}
         # The task vector names WorkerCoordinator only to disclaim it ("not a
         # WorkerCoordinator claim or fence"); it carries no claim.
         self.assertEqual(found, {
@@ -179,6 +185,7 @@ class PromptClaimTests(unittest.TestCase):
             "data/organization-role-runtime-reality-deployment.json",
             "tests/test_organization_role_runtime_reality_deployment.py",
             "tests/test_task_registry.py",
+            "resident-runtime/sv_change_admit_append.py",
         }, "a claim surface appeared or a declaration moved; the prompt now misleads")
 
     def test_the_self_exemption_is_still_needed(self):

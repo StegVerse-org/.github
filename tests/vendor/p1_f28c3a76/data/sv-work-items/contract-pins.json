@@ -1,0 +1,209 @@
+{
+  "consumer_contract": "pin this manifest's own blob and sha256; re-pin a listed file only when its entry changes",
+  "digest_rule": {
+    "blob": "git blob sha1 of the file bytes (git hash-object)",
+    "sha256": "sha256:<hex> of the file bytes"
+  },
+  "excludes": [
+    "data/sv-work-items/contract-pins.json (the manifest never lists itself)"
+  ],
+  "files": {
+    ".stegverse/transition-ledger/emit.py": {
+      "blob": "f2de8a1aa424eba64ea2ae96328bb9ecb5a625c9",
+      "sha256": "sha256:33a665ea35d3dc41c0844dcb6c67fb0fca301180846189632c0bfe815d456536"
+    },
+    "data/admission-scenarios/classes.jsonl": {
+      "blob": "ac7de68d4b512e7ee65982ae4f056bfd77b8a859",
+      "sha256": "sha256:1ba7f213db5eebc15bc75a7d9e684a5ea70208ce5e15ff367dd240a5b99b6d22"
+    },
+    "data/admission-scenarios/corpus.jsonl": {
+      "blob": "772c100847937725aada3d48d1b937667379a6d7",
+      "sha256": "sha256:0afa7bd5a90d117501a30a813be4763260aa2890b475da60c8b5c3f322a10b66"
+    },
+    "data/admission-scenarios/seed-append-outcomes.jsonl": {
+      "blob": "6aab786ed4e8d770ea2a097089de5cf3a33067d4",
+      "sha256": "sha256:3e067dd9742564b50aba97c27f09589b871596f6495ada1d45c815c722fc5211"
+    },
+    "data/admission-scenarios/tvc-replay/replay-map.jsonl": {
+      "blob": "051f33b22131471d058989792e8dfab0449f2579",
+      "sha256": "sha256:de8238419a2ad85a39ce989cc24e688a7a4a73f21e1d7d107b315b50200d866e"
+    },
+    "data/admission-scenarios/tvc-replay/signoff-receipts.jsonl": {
+      "blob": "b3c494fb31c3d469a1ce12871fd3864f86856e0e",
+      "sha256": "sha256:b8e483cd1d85708743bf273b26d2e54e896f6d1ed95135e3f22554daf0711fc7"
+    },
+    "data/admission-scenarios/tvc-replay/sv-changes.jsonl": {
+      "blob": "055fb25fe9f223435b8029f0f311df5d498f90fb",
+      "sha256": "sha256:008b05b5b4745e0a7af362561061f4eb95c2364e3f5dfdf035016f00ebfb049e"
+    },
+    "data/sv-work-items/invariants.json": {
+      "blob": "f1c5e7c1cf5797b9ad639d2a810b0a04466ea69f",
+      "sha256": "sha256:b44b13e7a6af3de947ad9a2d5c9e306c3e9261f4e702e3fc3db8bdf2512faab6"
+    },
+    "data/sv-work-items/lifecycle-transitions.json": {
+      "blob": "aed301bce950429788876a3c096d82326b9d3824",
+      "sha256": "sha256:b05ca55bef7f4ff994c859fbed0108129d155e392c3439397c0d85c62ca30611"
+    },
+    "data/sv-work-items/migration/sv-changes.jsonl": {
+      "blob": "78c7e77d478ce478282a290154b4b87d1b5e3df2",
+      "sha256": "sha256:12e0609db355b9fda438fee416813ee6c19895efebda53fb991a6278e3cd9293"
+    },
+    "data/sv-work-items/migration/sv-issues.jsonl": {
+      "blob": "2c17f71b12efc0d856f4a6a19ada2a133366f441",
+      "sha256": "sha256:184dd188da7073f3eebb12756a02af666f02520930f4b0f6b1e7e2b3ea4275b7"
+    },
+    "data/sv-work-items/required-checks.json": {
+      "blob": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+      "sha256": "sha256:468c08adc9f269f130217db51c8eb22260fbf2369fac48232fe9d3937e583110"
+    },
+    "data/sv-work-items/stages/NWI-S0.json": {
+      "blob": "040570b5eb77dc0e9ee8821277b80afada1d0739",
+      "sha256": "sha256:9d2289e2338f518b9a943a8b339a261c210b294e166f36c1836095133348e0a1"
+    },
+    "data/sv-work-items/stages/NWI-S1.json": {
+      "blob": "29ea5257327c6887fa92e366f2666b9207785cf4",
+      "sha256": "sha256:2f7a3b958442cf19d4d9c2bd38f9c223d8cc683bdd6c75510133251cbfc612e9"
+    },
+    "data/sv-work-items/stages/NWI-S2.json": {
+      "blob": "9a6f2f88eae67a0ea4293387a187caa25fd7076e",
+      "sha256": "sha256:309b800e73860bb7d72bbd1c1afe0c7a89818fb3731bc8b37bd6c52141121403"
+    },
+    "data/sv-work-items/stages/NWI-S3.json": {
+      "blob": "4eec7edf090a6e3536740428b181cf3b6905bec1",
+      "sha256": "sha256:692342a847efc88e782d84421be84f26e90886b152faadf41d3f5451b48380ec"
+    },
+    "data/sv-work-items/stages/NWI-S4.json": {
+      "blob": "199b03aed17c367e0d9c4203d18ac978afcfdb4f",
+      "sha256": "sha256:ec8a6a180e3af95c66ec869b3229a10f42d9283f790f80eaaff77430e5a3c80c"
+    },
+    "data/sv-work-items/surface-aliases.json": {
+      "blob": "debd7d7b0544b11bc1ac87d0b82bb21c22247c55",
+      "sha256": "sha256:00387d39d713942365248d628c4f4fff2715041c6e6c28eb0669a44dbb4e65e1"
+    },
+    "heartbeat_runtime/independent_oscillator.py": {
+      "blob": "3de31814cbc7a726dbe154c7cc7ff0e72a33d203",
+      "sha256": "sha256:837343e7fae10ed39b8d2bf63355dcfdcf02277f9b9f944b3dff34e986164fd6"
+    },
+    "org-kernel/kernel.py": {
+      "blob": "ffec5d648d7fa4aead1f44f76df936a2da21bb96",
+      "sha256": "sha256:3463f1659ec849caf77b32263fbce0711b9c869faade8da2fcd05191e33a4b1f"
+    },
+    "org-kernel/node_store.py": {
+      "blob": "10b9897847db7d734f47ccfe3c6422f02a7eee3b",
+      "sha256": "sha256:7424b384d6c1116a9ca64290ac1f4f301613086032eea3f2bc878c5b5302aed2"
+    },
+    "resident-runtime/admission_learning.py": {
+      "blob": "9405ef5184396ee93b3362edd98e843c5ba36d3d",
+      "sha256": "sha256:58e6ec82b168cb9db95361c1a2f68bacfac5a027dc6a218d99f84714e2ad21b7"
+    },
+    "resident-runtime/aggregate_repo_transition.py": {
+      "blob": "7660d2bc10231c68f9c8b1015caee558ee9423d8",
+      "sha256": "sha256:ff4a2dc76142988dffc63f3088ffe883fe526da03e323017aee4807d60ecd7f5"
+    },
+    "resident-runtime/ledger_store.py": {
+      "blob": "43d36e6adb2e10712c1db833dc0bb909b0abdb78",
+      "sha256": "sha256:e6e493a9a3c0d1c527ab118d406dbea5aa6f7b294bd476a540ee3f9881b898df"
+    },
+    "resident-runtime/organization_batch_custody.py": {
+      "blob": "0b86c0a9ac4b324e48eeb8b4916d63d0b809027b",
+      "sha256": "sha256:f40ba43cad6d25887c5b2fec0f4b478f4085db9cf73aecf8efae841251e06c2e"
+    },
+    "resident-runtime/schema_subset.py": {
+      "blob": "b29dfb33b0ccfe29b6a96862694f9fc4b9787a20",
+      "sha256": "sha256:ba6540678ef6263449eeb115c906d4907d1eff7ac6c7efa1c11222c2714feecf"
+    },
+    "resident-runtime/stage_gate.py": {
+      "blob": "129a16cecbf54ecf6a8495f621ff6e11b107d844",
+      "sha256": "sha256:4d829514f19cab9dbe26dbcd66ee814025de216074a254d68a59d02ef72b93f7"
+    },
+    "resident-runtime/sv_migration.py": {
+      "blob": "508ebf15b6882efa5a5420849773151f241e8cfe",
+      "sha256": "sha256:b3c56d21180e9a1bd749f9165072a757d765773c4dad384687f5c23abe84292b"
+    },
+    "resident-runtime/sv_push_receipt.py": {
+      "blob": "0ea4ff4cafd127bbd18b2ee62d51cd344a1488ef",
+      "sha256": "sha256:67e9d037a63fe46079c1fa59a7c2935a69946ded3e3945dbd58800de1f88993a"
+    },
+    "resident-runtime/sv_work_items.py": {
+      "blob": "9544c53b1237f8b0b89f14916aaf22bffa7aa5af",
+      "sha256": "sha256:97fd7b6db71b59410f80d6e8ab5a726c0279db2d4806c669b3e0b8d2823328ec"
+    },
+    "schemas/admission-corpus.v1.schema.json": {
+      "blob": "f846148f1fee596dd1cc50ba7ad197c4ca78e361",
+      "sha256": "sha256:92516e048ff250e366f6bcea19ece326aa0df2a1bca2c8ee6ad1443d63af2040"
+    },
+    "schemas/canonical-task-work-items.v1.schema.json": {
+      "blob": "92adebe15cbae5671b55bc30d89fc715fa288d51",
+      "sha256": "sha256:439c6819c17c409149fb0cd65b89ebd131b394a24f38b4b6ceb247e79c04f69c"
+    },
+    "schemas/sv-change-signoff-receipt.v0.1.schema.json": {
+      "blob": "7bd086e9784114aee095a3ece68b8725424e5af3",
+      "sha256": "sha256:be9a7afc594ed6696ce557b5fca2aaf0e66453491bc891a14c435499d996fd62"
+    },
+    "schemas/sv-change.v1.schema.json": {
+      "blob": "6b43b6ecfa22c2f178de00f5c14121cb27bf1c5a",
+      "sha256": "sha256:c96fdb5b9a0bd7d0e5e71b546b46c7a54f3cd444c9b604837af63e45e0d59a35"
+    },
+    "schemas/sv-check-receipt.v1.schema.json": {
+      "blob": "a4934cc1afb5f9c65d12f4ab5ae29f462b76b3f3",
+      "sha256": "sha256:8e4a821605a78903f9f55294de01111608384a8773c9940184f2453506092e46"
+    },
+    "schemas/sv-issue.v1.schema.json": {
+      "blob": "62ee530793a2aab6c87542d82e525e90b46d31fb",
+      "sha256": "sha256:ff2f4804cb1b603294f189e7a2351aee6f0a74957614be637bd0df2fe202946d"
+    },
+    "schemas/sv-push-receipt.v1.schema.json": {
+      "blob": "67b9f7d3b3536dd686f7703dff609283c6035af7",
+      "sha256": "sha256:5892048af26a166f3b53cfec6bbed7f8cb45f26c604fbe9b1dd1049c39d5cfea"
+    },
+    "schemas/sv-surface-aliases.v1.schema.json": {
+      "blob": "930261dfc23cb75607e3db55e6a1db3d3357647f",
+      "sha256": "sha256:38b4d32032cb96566f890906d2baa396913ff45c95c7bc7ae5f3ec4a1e0a805a"
+    },
+    "scripts/build_sv_native_fixtures.py": {
+      "blob": "7746ea48f319b5a639922089f41e85924eae5df1",
+      "sha256": "sha256:042143c1013932811bb3507384dd79a447d41f075c283e43a31aafd8cf87a3e1"
+    },
+    "scripts/project_worker_claim_into_canonical_task.py": {
+      "blob": "9573c5bb963d7c19f64a08173f7397f427ba32dd",
+      "sha256": "sha256:e99c34ec793719af945bb244084f41642b5a74a87d7d4500554557b26de007a2"
+    },
+    "tests/fixtures/base-state-readback/labs-main-978b8880-producer-7ad6d81f.json": {
+      "blob": "cfaaec20bbf05e12826be99a89b3befa1c3e30a7",
+      "sha256": "sha256:37c73795d5af8fafb2bc005744ace4ac923a756a83645bcc3b99506e7d42798c"
+    },
+    "tests/sv_ledger_fixtures.py": {
+      "blob": "30a9fe8980671e63348810c837882f3dab525459",
+      "sha256": "sha256:de648000ee6c5e1e5f476e8a0084d742a1c92348be3082cd599733b91fd232b3"
+    },
+    "workers/canonical_state_transition_custody.py": {
+      "blob": "e22a004882aeced9d276ccfeac6b894906cd46ce",
+      "sha256": "sha256:68d1d28812756ae53adbd9e0b2f906b7ced73cbc718b6123193c3e34378e0217"
+    }
+  },
+  "generated_by": "scripts/build_sv_native_fixtures.py (--check flags a stale manifest)",
+  "import_closure": {
+    "dispatch_root_loads_excluded": {
+      "org-kernel/kernel.py": [
+        "capability_ingress",
+        "manifest_selection",
+        "node_standing"
+      ]
+    },
+    "members": [
+      ".stegverse/transition-ledger/emit.py",
+      "heartbeat_runtime/independent_oscillator.py",
+      "org-kernel/kernel.py",
+      "org-kernel/node_store.py",
+      "resident-runtime/aggregate_repo_transition.py",
+      "resident-runtime/ledger_store.py",
+      "resident-runtime/organization_batch_custody.py",
+      "scripts/project_worker_claim_into_canonical_task.py",
+      "workers/canonical_state_transition_custody.py"
+    ],
+    "rule": "every repo-local module the listed Python files load (import, import_module, importlib spec_from_file_location with a statically resolvable path, eagerly or on call), transitively, is listed"
+  },
+  "invariant": "data/sv-work-items/invariants.json#CONTRACT_PINS_MANIFEST_IS_THE_CONSUMER_PIN",
+  "repository": "StegVerse-Labs/.github",
+  "schema": "stegverse.sv-contract-pins/v1"
+}

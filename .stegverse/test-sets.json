@@ -4305,6 +4305,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_sv_change_admit_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sv_change_admit_append.py"
+   ],
+   "tests": [
+    "tests.test_sv_change_admit_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_sv_push_receipt.py",
    "inputs": [],
    "surfaces": [
@@ -4785,6 +4797,12 @@
   "resident-runtime/submit_org_transition_to_master_records.py": [
    "org-kernel/kernel.py",
    "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "resident-runtime/sv_change_admit_append.py": [
+   "org-kernel/kernel.py",
+   "org-kernel/node_store.py",
+   "resident-runtime/sv_push_receipt.py",
+   "resident-runtime/sv_push_receipt_append.py"
   ],
   "resident-runtime/sv_push_receipt_append.py": [
    "resident-runtime/intr_destination_ingress.py",
@@ -5465,6 +5483,7 @@
    "docs/EXTERNAL_REVIEWER_NODE_STANDING_PROMPT.md",
    "docs/EXTERNAL_REVIEWER_TASK_REGISTRY_PROMPT.md",
    "orchestration/schemas/task-registry.schema.json",
+   "resident-runtime/sv_change_admit_append.py",
    "tests/test_organization_role_runtime_reality_deployment.py",
    "tests/test_task_registry.py",
    "tests/test_task_registry_schema_conformance.py"
@@ -5516,6 +5535,19 @@
    "orchestration/task-registry.json",
    "resident-runtime/pinned_labs.py",
    "tests/workflow_surface.py"
+  ],
+  "tests/test_sv_change_admit_append.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/**",
+   ".stegverse/organization-ledger-ingest/operations.json",
+   "resident-runtime/sv_change_admit_append.py",
+   "tests/fixtures/**",
+   "tests/fixtures/sv-change-admit/**",
+   "tests/fixtures/sv-change-admit/migrated-changes.jsonl",
+   "tests/test_sv_push_receipt_append.py",
+   "tools/tasks/**",
+   "tools/tasks/task_catalog.json"
   ],
   "tests/test_sv_push_receipt.py": [
    "resident-runtime/sv_push_receipt.py",

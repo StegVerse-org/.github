@@ -163,7 +163,7 @@
         ".stegverse/organization-ledger-ingest/**"
       ],
       "after": [],
-      "state_transition": "a committed organization ledger ingest request changed (a sealed test receipt naming this ledger, or one sv_push_receipt per push range; resident-runtime/organization_ledger_ingest.py, the route StegVerse-Labs/.github runs; operations in .stegverse/organization-ledger-ingest/operations.json)"
+      "state_transition": "a committed organization ledger ingest request changed (a sealed test receipt naming this ledger, one sv_push_receipt per push range, or one sv_change_admit outcome per change; resident-runtime/organization_ledger_ingest.py, the route StegVerse-Labs/.github runs; operations in .stegverse/organization-ledger-ingest/operations.json)"
     }
   ],
   "folded": [

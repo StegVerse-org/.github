@@ -1,7 +1,7 @@
 python -m py_compile resident-runtime/organization_ledger_ingest.py resident-runtime/aggregate_repo_transition.py \
   resident-runtime/organization_ledger_readback.py resident-runtime/merge_transfer.py tools/tasks/writer_plan.py \
-  resident-runtime/sv_push_receipt.py resident-runtime/sv_push_receipt_append.py
-python -m unittest tests.test_organization_ledger_ingest tests.test_sv_push_receipt tests.test_sv_push_receipt_append \
+  resident-runtime/sv_push_receipt.py resident-runtime/sv_push_receipt_append.py resident-runtime/sv_change_admit_append.py
+python -m unittest tests.test_organization_ledger_ingest tests.test_sv_push_receipt tests.test_sv_push_receipt_append tests.test_sv_change_admit_append \
   tests.test_writer_plan tests.test_git_ledger_store tests.test_organization_role_runtime_reality_deployment -v 2>&1 | tee "$RUNNER_TEMP/ingest-unit.log"
 status=${PIPESTATUS[0]}
 if grep -Eq '(skipped|expected failure)' "$RUNNER_TEMP/ingest-unit.log"; then
