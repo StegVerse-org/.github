@@ -1,0 +1,34 @@
+{
+  "authority_effect": "NONE",
+  "evidence": {
+    "hb_epoch": "574296107",
+    "new_sha": "7c8d750db7199837fe10c2b87b01d3631c0655f6",
+    "old_sha": "c50d29cee6b5e643ae636f513dd89e34ccfdbfe5",
+    "pushed_commits": [
+      "7c8d750db7199837fe10c2b87b01d3631c0655f6"
+    ],
+    "pusher_session": "p1-sandbox-and-hcb-20261024",
+    "ref": "refs/heads/p1/sdk-push-receipt-org-ledger",
+    "repository": "StegVerse-org/StegVerse-SDK",
+    "result_sha256": "sha256:e09f5f513f30207db7040c8fc00f3da3cdaf108719ee0cbe7c9712291702d9c0",
+    "schema": "stegverse.sv_push_receipt.v1"
+  },
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 574296107,
+    "frequency_hz": 100,
+    "generation": 574296107,
+    "heartbeat_id": "HB:574296107",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+  },
+  "predecessor_state_sha256": "sha256:9630d3b169eb84577cb6a985f530504d6240eb0333622f484e29fb355679b361",
+  "previous_receipt_sha256": "sha256:fec52ead4e64bd88c9f8ba2fe413c790d5da536245517fddfd086278afd83d3d",
+  "receipt_sha256": "sha256:4f47a815ea4e15c9b430fe3407cac5298819082eb1e0c3ff757431170dc8c4c7",
+  "repository": "StegVerse-org/.github",
+  "schema": "stegverse.repo-transition-receipt/v1",
+  "successor_state_sha256": "sha256:98589effdb0ac710a4968ee4a55bc2fd63b6bafc326cfc829f4beb3b8ef6f5c0",
+  "transition_class": "SV_PUSH_RECEIPT_APPEND",
+  "transition_id": "SV_PUSH_RECEIPT_APPEND:65b9d7ac96870306161350f39a324d048e520e61eaaf18526546608251e28c17"
+}
