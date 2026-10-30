@@ -1,0 +1,158 @@
+{
+  "entry_transition": "STAGE_NWI_S0_ADMITTED",
+  "exit_gate": [
+    {
+      "evidence": "receipt",
+      "predicate": "SV_WORK_ITEM_SCHEMAS_VALIDATE"
+    },
+    {
+      "evidence": "receipt",
+      "predicate": "EVERY_MIGRATION_FIXTURE_LOADS"
+    }
+  ],
+  "exit_gate_check": {
+    "appender": "org-ledger-writer (Labs#3255/#3270)",
+    "cadence": {
+      "in_required_checks_row": false,
+      "issue_derivation": "a failing nwi-s0-exit-gate receipt, once appended, derives exactly one NATIVE SV_ISSUE (derive_issue_from_check_receipt; ONE_RECEIPT_DERIVES_ONE_ISSUE); the same subject has the same digest, so it is not evaluated twice; a new commit, manifest blob or base is a new evaluation",
+      "not_per_head": true,
+      "one_failing_receipt_derives_one_issue": true,
+      "per": "STAGE_EVALUATION",
+      "receipts_per_evaluation": "one receipt per evidence producer and one nwi-s0-exit-gate receipt, all with change_digest = the subject digest and head_sha = evaluated_commit",
+      "transition": "STAGE_GATE",
+      "trigger": "a stage-gate evaluation from NWI-S0 to NWI-S1 (stage_gate.evaluate_gate) requested for one evaluation subject; never a push, a pull-request head or a schedule"
+    },
+    "check_id": "nwi-s0-exit-gate",
+    "command_paths": [],
+    "evaluation_subject": {
+      "carried_by": "the STAGE_GATE outcome (stage_gate.evaluate_gate(..., subject=...): evaluation_subject and evaluation_subject_digest) and its organization transition request; the receipt carries only change_digest and head_sha",
+      "digest": "sha256:<hex sha256(canon(subject))> over exactly these five fields",
+      "digest_function": "sv_work_items.stage_evaluation_digest",
+      "fields": {
+        "base_ref": "{registry_generation read at evaluated_commit, ledger_head = the observed head of the repository's own refs/stegverse/organization-ledger}",
+        "evaluated_commit": "the 40-hex commit of the repository the stage is evaluated at (the receipts' head_sha); it identifies the subject only and never supplies the gate manifest",
+        "manifest_blob": "the git blob the gate declaration's data/sv-work-items/contract-pins.json pins for data/sv-work-items/stages/NWI-S0.json (manifest_source CONTRACT_PINS; GATE_MANIFEST_IS_THE_CONTRACT_PINNED_MANIFEST); never the blob at evaluated_commit, which only identifies the subject. A subject whose manifest was read from itself is DENY GATE_MANIFEST_READ_FROM_SUBJECT",
+        "repository": "the repository the stage is evaluated in, e.g. StegVerse-Labs/.github",
+        "stage_id": "this manifest's stage_id (NWI-S0)"
+      },
+      "manifest_source": "CONTRACT_PINS",
+      "pairing": "a gate-derived issue is sourced by the base-side failing receipt (evaluated_commit = the change's base commit) and resolved by the head-side ALLOW receipt (evaluated_commit = the change's head commit); same repository, exactly the same contract-pinned manifest_blob, both ledgered at the change's base ledger_head (sv_work_items.verify_resolution_pair)",
+      "schema": "stegverse.nwi-stage-evaluation-subject/v1",
+      "serialization": "schemas/sv-change.v1.schema.json#/properties/change_id/x-canonical-serialization"
+    },
+    "evidence_producers": [
+      {
+        "check_id": "schema-validate",
+        "command_paths": [
+          "data/sv-work-items/required-checks.json",
+          "resident-runtime/admission_learning.py",
+          "resident-runtime/schema_subset.py",
+          "resident-runtime/sv_migration.py",
+          "resident-runtime/sv_work_items.py",
+          "schemas/sv-change.v1.schema.json",
+          "schemas/sv-issue.v1.schema.json",
+          "scripts/build_sv_native_fixtures.py"
+        ],
+        "covers": "scripts/build_sv_native_fixtures.py --check re-derives data/sv-work-items/migration/sv-issues.jsonl and sv-changes.jsonl and validates every record against schemas/sv-issue.v1.schema.json and schemas/sv-change.v1.schema.json with resident-runtime/schema_subset.py (FAIL_CLOSED SV_WORK_ITEM_SCHEMA_INVALID, exit 1, on any error), then checks the committed files are byte-identical",
+        "expected": {
+          "exit_code": 0,
+          "stdout_json_subset": {
+            "disposition": "ALLOW",
+            "stale": []
+          }
+        },
+        "offline_command": [
+          "python3",
+          "scripts/build_sv_native_fixtures.py",
+          "--check"
+        ],
+        "predicate": "SV_WORK_ITEM_SCHEMAS_VALIDATE",
+        "producer": "NWI-S1-verifier (SV-LLM/.github#46)"
+      },
+      {
+        "check_id": "unit-tests",
+        "command_paths": [
+          "resident-runtime/admission_learning.py",
+          "resident-runtime/stage_gate.py",
+          "resident-runtime/sv_migration.py",
+          "resident-runtime/sv_work_items.py",
+          "scripts/build_sv_native_fixtures.py",
+          "tests/__init__.py",
+          "tests/test_nwi_stage_gate.py",
+          "tests/test_sv_feedback_fb_tvc.py",
+          "tests/test_sv_native_work_items.py",
+          "tests/test_sv_record_modes.py"
+        ],
+        "covers": "tests.test_sv_native_work_items.MigrationFixtureTests loads every record of data/sv-work-items/migration/sv-issues.jsonl and sv-changes.jsonl and passes each through validate_issue / validate_change (and their schemas); tests.test_sv_record_modes checks each fixture's record mode and unknown_fields",
+        "expected": {
+          "exit_code": 0,
+          "stderr_last_line": "OK"
+        },
+        "offline_command": [
+          "python3",
+          "-m",
+          "unittest",
+          "tests.test_sv_native_work_items",
+          "tests.test_sv_record_modes",
+          "tests.test_nwi_stage_gate",
+          "tests.test_sv_feedback_fb_tvc"
+        ],
+        "predicate": "EVERY_MIGRATION_FIXTURE_LOADS",
+        "producer": "NWI-S1-verifier (SV-LLM/.github#46)"
+      }
+    ],
+    "expected": {
+      "disposition": "ALLOW"
+    },
+    "hb_epoch": {
+      "at": "evaluation_subject.base_ref.ledger_head",
+      "check": "sv_work_items.verify_admission_hb_epoch(receipt.hb_epoch, readback, ledger_head, target_repository=evaluation_subject.repository)",
+      "field": "$.hb_reference.epoch",
+      "readback_pin": {
+        "blob": "17ef44016411852dde7c142e3faaa803f4ee63bd",
+        "file": "resident-runtime/sv_change_base_state_readback.py",
+        "head": "7ad6d81fb6715b68b79dac6c3cbc2f484004ab2d",
+        "pull_request": 3266,
+        "repository": "StegVerse-Labs/.github",
+        "sha256": "c0365226ddc4fa2bf97ad2ebd1c089b2c8b51034df27783d99164e5f26d5c637"
+      },
+      "source": "the Labs#3266 base-state readback (stegverse.sv-change-base-state-readback/v1) of evaluation_subject.repository",
+      "unobserved": "no receipt is emitted (sv-check-receipt.v1 requires a well-formed hb_epoch and none is minted); the stage evaluation is FAIL_CLOSED STAGE_EVIDENCE_UNOBSERVED with no stage move"
+    },
+    "home": "this stage manifest: the required-checks row SV-CHANGE-REQUIRED-CHECKS-001 declares the checks an SV_CHANGE needs per touched surface; a stage gate is required of no change, so its check is declared where the gate is (stage_gate.py reads gates only from these manifests)",
+    "invariant": "STAGE_GATE_RECEIPT_DERIVES_NATIVE_ISSUE",
+    "minter": "NWI-S1-verifier (SV-LLM/.github#46)",
+    "offline_command": {
+      "predicate": "STAGE_GATE_PASSES over this manifest's exit_gate (stage_gate.evaluate_gate from NWI-S0 to NWI-S1): every exit predicate has a receipted ALLOW",
+      "verifier_builtin": "nwi-s0-exit-gate",
+      "verifier_ref": "SV-LLM/.github#46"
+    },
+    "receipt_form": {
+      "appended_by": "the org-ledger writer's sv_check_receipt operation (Labs#3255/#3270): the check receipt is the repo receipt's $.evidence",
+      "applies_to": "the nwi-s0-exit-gate receipt and each evidence producer's receipt of the same evaluation",
+      "change_digest": "evaluation_subject.digest",
+      "fields_beyond_schema": "none: sv-check-receipt.v1 is closed (additionalProperties false) and validates unchanged",
+      "hb_epoch": "hb_epoch",
+      "head_sha": "evaluation_subject.evaluated_commit",
+      "ledger": "evaluation_subject.repository",
+      "ledger_paths": [
+        "receipts/<org receipt sha256 hex>.json",
+        "source-receipts/<repo receipt sha256 hex>.json"
+      ],
+      "ledger_ref": "refs/stegverse/organization-ledger@<ledger commit>:receipts/<org receipt sha256 hex>.json of the evaluation subject's own repository (CHANGE_BINDS_TARGET_REPOSITORY_LEDGER; StegVerse-Labs/.github for Labs)",
+      "manifest_binding": "change_digest binds the subject, whose manifest_blob is the contract-pinned blob; validate_gate_receipt(..., contract_pins=) gives DENY GATE_MANIFEST_READ_FROM_SUBJECT otherwise",
+      "manifest_source": "CONTRACT_PINS",
+      "schema": "stegverse.sv_check_receipt.v1",
+      "six_fields": "on DENY and FAIL_CLOSED: failure_code, failed_predicate, required_evidence_or_repair, retry_entrypoint, owning_existing_goal, next_attempt",
+      "validator": "sv_work_items.validate_gate_receipt(receipt, subject, readback)",
+      "verifier_ref": "SV-LLM/.github#46@<verifier commit>"
+    },
+    "surface": "data/sv-work-items/stages/NWI-S0.json"
+  },
+  "name": "DEFINE",
+  "ordinal": 0,
+  "schema": "stegverse.nwi-stage-manifest/v1",
+  "source": "KV INDEX.md 'STEPWISE GROWTH' (Rigel 12:44Z) and 'STAGE VERIFICATION' (12:53Z)",
+  "stage_id": "NWI-S0",
+  "thresholds_source": "this manifest only; a null value is undeclared and the gate FAIL_CLOSES STAGE_THRESHOLD_UNDECLARED"
+}

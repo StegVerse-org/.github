@@ -1227,12 +1227,12 @@
         {
           "name": "Ingest unit tests (strict 0 skipped, exact head)",
           "run_file": "tools/tasks/steps/organization-ledger-ingest-validation.unit/01-ingest-unit-tests-strict-0-skipped.sh",
-          "run_sha256": "da1d19c8d26ead9b318e2f7e05bb2ce643bf83eebc7b7bc1e2faaaa7c721df7a"
+          "run_sha256": "c8d36e7da5303d815a6e1bd0cb1ccb46baebeca9a6c0a6089e1ea5b66857c13a"
         },
         {
           "name": "The committed request on a scratch copy of the published ledger",
           "run_file": "tools/tasks/steps/organization-ledger-ingest-validation.unit/02-the-committed-request-on-a-scratch-copy-of-the-published-ledger.sh",
-          "run_sha256": "86df81596c35c19d55da653595c243802289ada52f11ffb263018c96ca8dafa0"
+          "run_sha256": "505c0254c8788b355ee5868d5d3ecd53ec3ae84fc2f7480fb86615aca3614dba"
         }
       ],
       "artifacts": [],

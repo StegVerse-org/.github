@@ -1,0 +1,848 @@
+{
+  "admit_outcome_states": {
+    "ALLOW": "ADMITTED",
+    "DENY": "DENIED",
+    "FAIL_CLOSED": "FAIL_CLOSED"
+  },
+  "canonical_coordination_state": {
+    "SV_CHANGE": {
+      "ADMITTED": "IN_PROGRESS",
+      "APPLIED": "CLOSED",
+      "DENIED": "COMPLETION_REVOKED",
+      "FAIL_CLOSED": "IN_PROGRESS",
+      "PROPOSED": "PROPOSED",
+      "SUPERSEDED": "SUPERSEDED",
+      "VERIFIED": "COMPLETION_CLAIMED",
+      "WITHDRAWN": "SUPERSEDED"
+    },
+    "SV_ISSUE": {
+      "CLAIMED": "CLAIMED",
+      "CLOSED_BY_INVARIANT": "CLOSED",
+      "OPENED": "INGRESS_ADMITTED",
+      "RESOLVED": "CLOSED",
+      "SUPERSEDED": "SUPERSEDED"
+    }
+  },
+  "dispositions": [
+    "ALLOW",
+    "DENY",
+    "FAIL_CLOSED"
+  ],
+  "github": "ONE_WAY_PROJECTION_ONLY",
+  "host": {
+    "admitted_by": "Interlock/InTr disposition from the native predicate",
+    "applied_by": "manifest-directed organization-ledger append",
+    "claim_authority": "WorkerCoordinator (control/worker-registry.json, scripts/project_worker_claim_into_canonical_task.py::worker_projection)",
+    "handoff": "docs/CANONICAL_WORK_COORDINATION_SYSTEM_MIRROR_HANDOFF.md",
+    "pipeline": "STEGVERSE-CANONICAL-WORK-COORDINATION-001",
+    "schema_owner": "StegVerse-Labs/repo-standards schemas/task-registry.schema.json, bundled with StegVerse-org/.github#150"
+  },
+  "invariant": "WORK_ITEMS_ARE_TASK_REGISTRY_NATIVE",
+  "owning_existing_goal": "StegVerse-org/.github#163",
+  "predicate_modes": {
+    "checked_by": "tests/test_sv_change_push_receipt_writer.py",
+    "ladder": "data/sv-work-items/operating-modes.json (stegverse.nwi-operating-modes/v1, StegVerse-Labs/.github#3308 branch p1/operating-mode-ladder @81f8a8ca, not yet on main): referenced for the rung names and rules, not duplicated",
+    "owning_existing_goal": "StegVerse-org/.github#163",
+    "predicates": {
+      "ADMISSION_HB_EPOCH_IS_THE_BOUND_LEDGER_HEAD_EPOCH": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ADMITTED_RECORDS_ARE_NATIVE": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "AUTHORIZATION_BINDS_FULL_REQUEST": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "BASE_BOUND_TO_REGISTRY_GENERATION_AND_LEDGER_HEAD": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "BASE_IS_CURRENT": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "BRANCH_WRITER_IS_BRANCH_OWNER": {
+        "E0": "mechanical: sv_work_items.derive_branch_writer over a contiguous chain of sealed sv-push-receipt.v1 receipts (StegVerse-Labs/.github#3267 schema) read from the organization ledger: one repository (the change's target_repository) and one branch ref, from change_commits.base_commit to change_commits.head_commit, covering every pushed commit; the authoring session is DERIVED as the pusher_session of the receipt sealed at the head; every pusher and every named content[*].writer_session is that session or a receipted co-author grant. No PR body line, commit trailer or declared_session is read.",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none: the session is derived from receipts, not declared",
+        "lowest_supported_mode": "E0",
+        "unavailable": "no receipt chain or a gap in it: FAIL_CLOSED BRANCH_WRITER_UNOBSERVED (chain not at the head: FAIL_CLOSED WRITER_EVIDENCE_NOT_AT_HEAD); retry_entrypoint names the push-time producer (resident-runtime/sv_push_receipt.py::emit) and its org-ledger append (StegVerse-Labs/.github#3255)"
+      },
+      "CHANGE_DIGEST_COVERS_CONTENT": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "CHANGE_IDENTITY_IS_CONTENT_ADDRESSED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "CHANGE_NAMES_OWNING_GOAL": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "CHANGE_RESOLVES_CLAIMED_SV_ISSUES": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "CHECK_COMMAND_PATHS_PRESENT_AT_HEAD": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "CHECK_HAS_OFFLINE_COMMAND": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "CHECK_PASSES": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "CHECK_RECEIPT_DISPOSITION_IS_ALLOW": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "CLAIM_IS_A_WORKERCOORDINATOR_CLAIM_AND_FENCE": {
+        "E0": "mechanical: claim_projection over the WorkerCoordinator registry (claim and fence); no LLM",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "FROM_STATE_IS_DECLARED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "GATE_MANIFEST_IS_THE_CONTRACT_PINNED_MANIFEST": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "GATE_RECEIPT_PAIR_RESOLVES_GATE_DERIVED_ISSUE": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "INVARIANT_DETERMINATION_RECEIPT_NAMES_DECIDING_RULE": {
+        "E0": "mechanical: an INVARIANT_DETERMINATION ALLOW receipt naming deciding_rule and receipt_ref (a deterministic rule application)",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ISSUE_BODY_IS_SIX_FIELD_NON_ALLOW": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ISSUE_IDENTITY_IS_CONTENT_ADDRESSED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ISSUE_ID_IS_UNIQUE_IN_RECORD_SET": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ISSUE_NAMES_OWNING_GOAL": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ISSUE_NAMES_SOURCE_RECEIPT": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ISSUE_NAMES_SURFACE": {
+        "E0": "mechanical: sv_migration.derive_surface / surface-aliases.json over the record's retry_entrypoint",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ISSUE_NAMES_VIOLATED_INVARIANT": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ISSUE_RESOLUTION_CLASS_IS_A_B_C_OR_D": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "LEDGER_HEAD_COMPARE_AND_SWAP": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "LIFECYCLE_STATE_DECLARED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "MERGE_PROVENANCE_DECLARED": {
+        "E0": "mechanical: the admit receipt names the predicate digest and the corpus head (byte pins)",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "MERGE_READY_REQUIRES_EVERY_JOB_RAN_AND_PASSED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "MIGRATED_GAPS_ARE_FLAGGED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "MIGRATED_RECORD_NAMES_ITS_BASES": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "MIGRATED_UNKNOWN_ONLY_WHERE_LISTED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "NATIVE_RECORD_FIELDS_ARE_OBSERVED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "NATIVE_RECORD_HB_EPOCH_IS_BASE_LEDGER_HEAD_EPOCH": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "ONE_RECEIPT_DERIVES_ONE_ISSUE": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "PROJECTION_IS_ONE_WAY_AUTHORITY_NONE": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "PR_AUTHOR_SESSION_DECLARED": {
+        "E0": "RETIRED as an admission predicate: no transition evaluates it. The name survives only as the frozen corpus class id ASC-PR_AUTHOR_SESSION_DECLARED@schema (append-only); its one axis now asserts that a declared_session with no sv-push-receipt chain FAIL_CLOSEs BRANCH_WRITER_UNOBSERVED under BRANCH_WRITER_IS_BRANCH_OWNER",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0",
+        "retired_by": "BRANCH_WRITER_IS_DERIVED_FROM_THE_PUSH_RECEIPT_CHAIN"
+      },
+      "READBACK_SHAPE_MATCHES_PINNED_PRODUCER": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "RECEIPT_CHANGE_DIGEST_EQUALS_HEAD": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "RECEIPT_DERIVED_ISSUE_IS_RESOLVED_ONCE": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "RECORD_DIGEST_VERIFIES": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "RECORD_MODE_DECLARED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "RECORD_SCHEMA_IS_stegverse.sv_change.v1": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "RECORD_SCHEMA_IS_stegverse.sv_issue.v1": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "REGISTRY_GENERATION_ADVANCES_BY_EXACTLY_ONE": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "RELEASE_FOLLOWS_WORKERCOORDINATOR_RELEASE": {
+        "E0": "mechanical: claim_projection over the WorkerCoordinator registry shows no claim; no LLM",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "REQUIRED_CHECKS_ROW_RESOLVES": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "REQUIRED_CHECK_RECEIPTS_ARE_S1_VERIFIER_OUTPUTS_APPENDED_BY_ORG_WRITER": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "REQUIRED_SIGNOFF_RECORDED": {
+        "E0": "mechanical: sv_work_items.signoff_resolves over sealed sv-change-signoff-receipt.v0.1 receipts bound to the change_id and the head change_digest, one per required role (data/sv-work-items/required-checks.json); a deterministic receipt check",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none for evaluation; the receipt's signing session is whatever session the role names (no model or provider is required)",
+        "lowest_supported_mode": "E0",
+        "unavailable": "no receipt for a required role: FAIL_CLOSED SIGNOFF_RECEIPT_ABSENT; the predicate never waits on an LLM"
+      },
+      "RESOLVING_CHANGE_DID_NOT_SOURCE_ITS_ISSUE": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "RESOLVING_SV_CHANGE_IS_APPLIED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "SCENARIO_COVERAGE_FOR_EVERY_TOUCHED_SURFACE": {
+        "E0": "mechanical: coverage over the committed, contract-pinned classes.jsonl/corpus.jsonl (data/sv-work-items/contract-pins.json); every non-ALLOW is still emitted as a harvest candidate, so nothing is lost while no LLM generalizes",
+        "E1": "as E3 (one LLM suffices for the append)",
+        "E2": "as E3",
+        "E3": "E0 form; misses are generalized into new classes through SCENARIO_CORPUS_APPEND",
+        "llm_inputs": "only for growing the corpus (E1+); evaluation itself never needs one",
+        "lowest_supported_mode": "E0",
+        "unavailable": "an uncovered surface kind at E0: FAIL_CLOSED NO_SCENARIO_COVERAGE_FOR_SURFACE; retry_entrypoint names the E1 rung (SCENARIO_CORPUS_APPEND); every covered surface keeps being admitted"
+      },
+      "SESSION_OBSERVED_REGISTRY_GENERATION_EQUALS_CURRENT": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "STAGE_EVALUATION_SUBJECT_BINDS_RECEIPT": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "STAGE_GATE_DECLARATION_IS_COMPLETE": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "SUCCESSOR_CHANGE_IS_PROPOSED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "SUCCESSOR_ISSUE_IS_RECORDED": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "SURFACE_IS_A_REPOSITORY_PATH": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "TOUCHED_PATHS_EQUAL_CONTENT_PATHS": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "TRANSITION_IS_IN_LIFECYCLE_MANIFEST": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "UNKNOWN_NEVER_YIELDS_PASS": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "VALIDATION_RECEIPT_DIGEST_BINDS_LEDGER_RECEIPT": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "VALIDATION_RECEIPT_IS_DISPOSITION": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "VALIDATION_RECEIPT_REF_RESOLVES_ON_ORGANIZATION_LEDGER": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      },
+      "WITHDRAW_BY_DECLARED_SESSION": {
+        "E0": "lifecycle transition only: transition() evaluates no session predicate for SV_CHANGE_WITHDRAW today (deterministic state check)",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0",
+        "note": "the name predates push-receipt derivation; a withdraw-by-branch-writer predicate (derive_branch_writer) is a follow-up under StegVerse-org/.github#163 and is not claimed here"
+      },
+      "WORKERCOORDINATOR_HOLDS_EXACTLY_ONE_CLAIM": {
+        "E0": "mechanical: resident-runtime/sv_work_items.py evaluates it over the supplied record, receipts and ledger bytes (deterministic; no clock, no network, no LLM); a non-ALLOW is a six-field DENY or FAIL_CLOSED",
+        "E1": "E0 form",
+        "E2": "E0 form",
+        "E3": "E0 form",
+        "llm_inputs": "none at any rung: deterministic over observed state",
+        "lowest_supported_mode": "E0"
+      }
+    },
+    "rule": "every SV_ISSUE and SV_CHANGE predicate (lifecycle transitions, runtime refusals, corpus bindings) declares its lowest_supported_mode and its form at every rung down to E0 (TVC#531 manifest v2 'modes' shape); an E0 form may be a six-field FAIL_CLOSED terminal ('unavailable'), never an owner-must-act state"
+  },
+  "receipt": {
+    "authority_effect": "NONE_RECORD_ONLY",
+    "non_allow_is_recorded": true,
+    "organization_receipt": "stegverse.organization-transition-receipt/v1 via resident-runtime/aggregate_repo_transition.py, refs/stegverse/organization-ledger",
+    "repository_receipt": "stegverse.repo-transition-receipt/v1 via .stegverse/transition-ledger/emit.py::append (hb_epoch supplied)"
+  },
+  "schema": "stegverse.sv-work-item-lifecycle/v1",
+  "terminal_states": [
+    "RESOLVED",
+    "CLOSED_BY_INVARIANT",
+    "SUPERSEDED",
+    "WITHDRAWN"
+  ],
+  "transitions": [
+    {
+      "from_states": [
+        null
+      ],
+      "predicates": [
+        "ISSUE_BODY_IS_SIX_FIELD_NON_ALLOW",
+        "ISSUE_NAMES_VIOLATED_INVARIANT",
+        "ISSUE_NAMES_SOURCE_RECEIPT",
+        "ISSUE_IDENTITY_IS_CONTENT_ADDRESSED",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_ISSUE",
+      "to_state": "OPENED",
+      "transition_class": "SV_ISSUE_OPEN"
+    },
+    {
+      "from_states": [
+        "OPENED"
+      ],
+      "predicates": [
+        "CLAIM_IS_A_WORKERCOORDINATOR_CLAIM_AND_FENCE",
+        "SESSION_OBSERVED_REGISTRY_GENERATION_EQUALS_CURRENT",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_ISSUE",
+      "to_state": "CLAIMED",
+      "transition_class": "SV_ISSUE_CLAIM"
+    },
+    {
+      "from_states": [
+        "CLAIMED"
+      ],
+      "predicates": [
+        "RELEASE_FOLLOWS_WORKERCOORDINATOR_RELEASE",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_ISSUE",
+      "to_state": "OPENED",
+      "transition_class": "SV_ISSUE_RELEASE"
+    },
+    {
+      "from_states": [
+        "CLAIMED"
+      ],
+      "predicates": [
+        "RESOLVING_SV_CHANGE_IS_APPLIED",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_ISSUE",
+      "to_state": "RESOLVED",
+      "transition_class": "SV_ISSUE_RESOLVE"
+    },
+    {
+      "from_states": [
+        "OPENED",
+        "CLAIMED"
+      ],
+      "predicates": [
+        "INVARIANT_DETERMINATION_RECEIPT_NAMES_DECIDING_RULE",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_ISSUE",
+      "to_state": "CLOSED_BY_INVARIANT",
+      "transition_class": "SV_ISSUE_CLOSE_BY_INVARIANT"
+    },
+    {
+      "from_states": [
+        "OPENED",
+        "CLAIMED"
+      ],
+      "predicates": [
+        "SUCCESSOR_ISSUE_IS_RECORDED",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_ISSUE",
+      "to_state": "SUPERSEDED",
+      "transition_class": "SV_ISSUE_SUPERSEDE"
+    },
+    {
+      "from_states": [
+        null
+      ],
+      "predicates": [
+        "CHANGE_RESOLVES_CLAIMED_SV_ISSUES",
+        "BASE_BOUND_TO_REGISTRY_GENERATION_AND_LEDGER_HEAD",
+        "CHANGE_DIGEST_COVERS_CONTENT",
+        "BRANCH_WRITER_IS_BRANCH_OWNER",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_CHANGE",
+      "to_state": "PROPOSED",
+      "transition_class": "SV_CHANGE_PROPOSE"
+    },
+    {
+      "from_states": [
+        "PROPOSED",
+        "VERIFIED"
+      ],
+      "predicates": [
+        "REQUIRED_CHECKS_ROW_RESOLVES",
+        "MERGE_READY_REQUIRES_EVERY_JOB_RAN_AND_PASSED",
+        "UNKNOWN_NEVER_YIELDS_PASS",
+        "RECEIPT_CHANGE_DIGEST_EQUALS_HEAD",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_CHANGE",
+      "to_state": "VERIFIED",
+      "transition_class": "SV_CHANGE_VERIFY"
+    },
+    {
+      "from_states": [
+        "VERIFIED",
+        "FAIL_CLOSED"
+      ],
+      "predicates": [
+        "BASE_IS_CURRENT",
+        "AUTHORIZATION_BINDS_FULL_REQUEST",
+        "BRANCH_WRITER_IS_BRANCH_OWNER",
+        "MERGE_READY_REQUIRES_EVERY_JOB_RAN_AND_PASSED",
+        "REQUIRED_SIGNOFF_RECORDED",
+        "SCENARIO_COVERAGE_FOR_EVERY_TOUCHED_SURFACE",
+        "MERGE_PROVENANCE_DECLARED",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_CHANGE",
+      "to_state": "ADMITTED",
+      "transition_class": "SV_CHANGE_ADMIT"
+    },
+    {
+      "from_states": [
+        "ADMITTED"
+      ],
+      "predicates": [
+        "BASE_IS_CURRENT",
+        "REGISTRY_GENERATION_ADVANCES_BY_EXACTLY_ONE",
+        "LEDGER_HEAD_COMPARE_AND_SWAP",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_CHANGE",
+      "to_state": "APPLIED",
+      "transition_class": "SV_CHANGE_APPLY"
+    },
+    {
+      "from_states": [
+        "PROPOSED",
+        "VERIFIED",
+        "FAIL_CLOSED",
+        "DENIED"
+      ],
+      "predicates": [
+        "SUCCESSOR_CHANGE_IS_PROPOSED",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_CHANGE",
+      "to_state": "SUPERSEDED",
+      "transition_class": "SV_CHANGE_SUPERSEDE"
+    },
+    {
+      "from_states": [
+        "PROPOSED",
+        "VERIFIED",
+        "FAIL_CLOSED",
+        "DENIED"
+      ],
+      "predicates": [
+        "WITHDRAW_BY_DECLARED_SESSION",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_CHANGE",
+      "to_state": "WITHDRAWN",
+      "transition_class": "SV_CHANGE_WITHDRAW"
+    },
+    {
+      "from_states": [
+        "APPLIED"
+      ],
+      "predicates": [
+        "PROJECTION_IS_ONE_WAY_AUTHORITY_NONE",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_CHANGE",
+      "to_state": "APPLIED",
+      "transition_class": "SV_CHANGE_PROJECT_GITHUB"
+    },
+    {
+      "from_states": [
+        "APPLIED"
+      ],
+      "predicates": [
+        "CORRECTING_REF_IS_RECEIPTED",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "SV_CHANGE",
+      "to_state": "APPLIED",
+      "transition_class": "ADMISSION_MISS"
+    },
+    {
+      "from_states": [
+        null
+      ],
+      "predicates": [
+        "CLASS_FIRES_ON_EVERY_MUTATION_NEGATIVE",
+        "CLASS_ALLOWS_EVERY_KNOWN_GOOD_FIXTURE",
+        "CLASS_SUPERSEDE_CHAIN_LINEAR",
+        "CLASS_NAMES_PROVENANCE",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "ADMISSION_SCENARIO_CLASS",
+      "to_state": "APPENDED",
+      "transition_class": "SCENARIO_CORPUS_APPEND"
+    },
+    {
+      "from_states": [
+        "UNDECLARED",
+        "DERIVED"
+      ],
+      "predicates": [
+        "THRESHOLD_DERIVATION_IS_DECLARED_IN_STAGE_MANIFEST",
+        "STAGE_THRESHOLD_INPUT_IS_THE_PINNED_S1_CORPUS",
+        "STAGE_THRESHOLD_IS_DERIVED_FROM_OBSERVED_S1_BASELINE",
+        "SUBMISSION_CARRIES_THE_SUPPLIED_HB_EPOCH"
+      ],
+      "record_type": "STAGE_MANIFEST_THRESHOLD",
+      "to_state": "DERIVED",
+      "transition_class": "STAGE_THRESHOLD_DERIVE"
+    }
+  ]
+}

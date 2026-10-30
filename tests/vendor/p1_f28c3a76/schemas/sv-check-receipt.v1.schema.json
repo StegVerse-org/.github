@@ -1,0 +1,114 @@
+{
+  "$id": "stegverse.sv_check_receipt.v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "disposition": {
+            "enum": [
+              "DENY",
+              "FAIL_CLOSED"
+            ]
+          }
+        },
+        "required": [
+          "disposition"
+        ]
+      },
+      "then": {
+        "required": [
+          "failure_code",
+          "failed_predicate",
+          "required_evidence_or_repair",
+          "retry_entrypoint",
+          "owning_existing_goal",
+          "next_attempt"
+        ]
+      }
+    }
+  ],
+  "description": "REQUIRED_CHECK_RECEIPTS_ARE_S1_VERIFIER_OUTPUTS_APPENDED_BY_ORG_WRITER. The NWI-S1 verifier (SV-LLM/.github#46) runs a declared check offline at the exact head and emits this receipt; it becomes a LEDGER_RECEIPT only when the org-ledger writer transition (StegVerse-Labs/.github#3255) appends it to refs/stegverse/organization-ledger under the shared lock. Validator: sv_work_items.validate_check_receipt.",
+  "properties": {
+    "change_digest": {
+      "description": "equals head.change_digest of the SV_CHANGE checked; otherwise CHECK_SKIPPED_OR_UNOBSERVED / RECEIPT_CHANGE_DIGEST_EQUALS_HEAD",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "check_id": {
+      "description": "one of data/sv-work-items/required-checks.json#checks (row SV-CHANGE-REQUIRED-CHECKS-001) or a stage manifest's exit_gate_check.check_id (data/sv-work-items/stages/NWI-S*.json; STAGE_GATE_RECEIPT_DERIVES_NATIVE_ISSUE); any other id is CHECK_ID_UNDECLARED",
+      "enum": [
+        "mutation-negative-suite",
+        "nwi-s0-exit-gate",
+        "registry-generation-fence",
+        "schema-validate",
+        "supplied-epoch-binder-check",
+        "unit-tests",
+        "workflow-surface-registered"
+      ],
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "type": "string"
+    },
+    "disposition": {
+      "enum": [
+        "ALLOW",
+        "DENY",
+        "FAIL_CLOSED"
+      ]
+    },
+    "failed_predicate": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "failure_code": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "hb_epoch": {
+      "description": "supplied; ASCII digits, value >= 32 (org-kernel/kernel.py::supplied_epoch_failure); never from a clock",
+      "pattern": "^(?:3[2-9]|[4-9][0-9]|[1-9][0-9]{2,})$",
+      "type": "string"
+    },
+    "head_sha": {
+      "description": "the exact head commit the check ran at",
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "next_attempt": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "owning_existing_goal": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "required_evidence_or_repair": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "retry_entrypoint": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema": {
+      "const": "stegverse.sv_check_receipt.v1"
+    },
+    "verifier_ref": {
+      "description": "the NWI-S1 verifier run that emitted this receipt",
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "check_id",
+    "disposition",
+    "change_digest",
+    "head_sha",
+    "hb_epoch",
+    "verifier_ref"
+  ],
+  "title": "SV check receipt (emitted by the NWI-S1 verifier, appended by the org-ledger writer)",
+  "type": "object"
+}

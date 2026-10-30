@@ -13,6 +13,14 @@ if [ "$INGEST_OPERATION" = "sv_push_receipt" ]; then
     --hb-epoch "$HB_EPOCH"
   exit 0
 fi
+if [ "$INGEST_OPERATION" = "sv_change_admit" ]; then
+  # Recorded once per change, only by the writer's push-time job; the PR-facing check admits the committed request
+  # (shape, owning ledger, NATIVE successor, supplied epoch, P1 pins) and appends nothing, so it cannot go red once the
+  # writer has recorded the change.
+  python resident-runtime/sv_change_admit_append.py admit --predecessor "$RUNNER_TEMP/ingest/predecessor.json" \
+    --successor "$RUNNER_TEMP/ingest/successor.json" --admission "$RUNNER_TEMP/ingest/admission.json" --hb-epoch "$HB_EPOCH"
+  exit 0
+fi
 python resident-runtime/organization_ledger_ingest.py admit-sealed --ledger-repository "$GITHUB_REPOSITORY"
 scratch="$RUNNER_TEMP/ingest-scratch.git"
 git init -q --bare "$scratch"

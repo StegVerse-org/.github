@@ -1,6 +1,6 @@
 {
   "schema": "stegverse.organization-ledger-writer-operations/v1",
-  "note": "The operations the organization ledger writer (.github/workflows/organization-ledger-writer.yml, job ledger-ingest) runs from the committed ingest request beside this file. The job is selected by control/workflow-surface-registry.json writer_jobs[] (paths .stegverse/organization-ledger-ingest/**); the operation is read from the request by resident-runtime/organization_ledger_ingest.py. Same manifest as StegVerse-Labs/.github, which runs sv_check_receipt as well; this organization declares the two it runs.",
+  "note": "The operations the organization ledger writer (.github/workflows/organization-ledger-writer.yml, job ledger-ingest) runs from the committed ingest request beside this file. The job is selected by control/workflow-surface-registry.json writer_jobs[] (paths .stegverse/organization-ledger-ingest/**); the operation is read from the request by resident-runtime/organization_ledger_ingest.py. Same manifest as StegVerse-Labs/.github, which runs sv_check_receipt as well; this organization declares the operations it runs: sealed_test_receipt, sv_push_receipt and sv_change_admit.",
   "organization_ledger_writer_operations": [
     {
       "operation": "sealed_test_receipt",
@@ -41,6 +41,29 @@
       "epoch_tie": "append epoch or receipt hb_epoch (both epoch-source fields) absent, null, \"\", \"null\" or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED; any other malformed value or a differing value -> DENY HB_EPOCH_MISMATCH; a stored hb_reference that is unsealed or clock-derived -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED",
       "readback": "resident-runtime/sv_push_receipt_append.py readback on a fresh fetch of the published ref (sealed pair, linked, valid evidence, exactly one receipt for the range)",
       "verifier": "clock-free and network-free: reads the committed request, the receipt and the declared ledger store only",
+      "ingress_capability": false,
+      "addressable_from_the_service_registry": false,
+      "authority_effect": "NONE_DECLARATION_ONLY"
+    },
+    {
+      "operation": "sv_change_admit",
+      "operation_module": "resident-runtime/sv_change_admit_append.py",
+      "entrypoint": "resident-runtime/sv_change_admit_append.py::append_change_admit",
+      "append_path": "resident-runtime/sv_change_admit_append.py::append_change_admit (the change lookup, the P1 sv_work_items.transition chain SV_CHANGE_SUPERSEDE -> SV_CHANGE_VERIFY -> SV_CHANGE_ADMIT, then sv_work_items.record -> repository ledger .stegverse/transition-ledger/emit.py::append -> resident-runtime/aggregate_repo_transition.py::append, the two-level append sv_push_receipt_append.py uses, under ORGANIZATION_LEDGER_LOCK; intr_destination_ingress.py and aggregate_repo_transition.py unedited)",
+      "transition_class": "SV_CHANGE_ADMIT",
+      "evidence_schema": "stegverse.sv_change.v1 (the change record, in $.evidence.record, with the lifecycle outcome and its six fields)",
+      "evidence_schema_file": "tests/vendor/p1_f28c3a76/ (P1's sv_work_items.py validate_change and lifecycle-transitions.json, with the pinned kernel.py, node_store.py and worker-claim script, verified against data/sv-work-items/contract-pins.json sha256 5c0c98d4349274b547a7c4ba8154e77e930e55e0a8dc1827344229661957a4cb before use; this organization holds no sv_work_items.py of its own)",
+      "evidence_location": "repository receipt $.evidence (record, disposition, the six fields, invariant, and $.evidence.observed: the current base: ledger head read from the ledger, registry generation supplied in the request and labelled so, the push receipts read from the ledger, the step chain), retained beside the organization receipt at source-receipts/<hex>.json",
+      "organization_receipt_boundary_operation": "sv_change_admit",
+      "ledger_ref": "refs/stegverse/organization-ledger",
+      "invoked_by": ".github/workflows/organization-ledger-writer.yml job ledger-ingest (push to main touching .stegverse/organization-ledger-ingest/request.json with operation sv_change_admit, read by resident-runtime/organization_ledger_ingest.py; ORGANIZATION_LEDGER_LOCK); no dispatch input, no schedule, no new workflow",
+      "owning_ledger": "StegVerse-org: a change whose $.target_repository is a StegVerse-org repository (StegVerse-SDK included) is admitted on this ledger only (CHANGE_BINDS_TARGET_REPOSITORY_LEDGER); StegVerse-Labs changes are admitted on StegVerse-Labs/.github's own ledger by that repository's declaration of this operation; any other target -> six-field FAIL_CLOSED SV_CHANGE_TARGET_NOT_OWNED_BY_THIS_LEDGER before any write",
+      "one_admit_per_change": "the repository transition id is <change_id>:SV_CHANGE_ADMIT (sv_work_items.record); a second request for a change the ledger already records an admit for, byte-identical or not, -> six-field FAIL_CLOSED SV_CHANGE_ADMIT_ALREADY_RECORDED, nothing appended, confers nothing; the refusal is the green steady state",
+      "admission": "predecessor and successor stegverse.sv_change.v1 objects and admission {predicate_digest, corpus_head, actor_session, change_commits{base_commit, head_commit}, push_ranges[{repository, ref, old_sha, new_sha}], registry_generation (int)}; SV_CHANGE_ADMIT_REQUEST_MALFORMED otherwise, six fields, before any write. The push receipts and the ledger head are never taken from the request: each range is looked up as SV_PUSH_RECEIPT_APPEND:<range id> on the declared ledger and the current base ledger_head is the ledger ref commit. This checkout holds no task registry, so registry_generation is the one supplied base value and the recorded evidence says so (SUPPLIED_IN_REQUEST_NOT_OBSERVED_BY_THIS_CHECKOUT). A recorded outcome is whatever sv_work_items returned (ALLOW, DENY or FAIL_CLOSED, six fields on every non-ALLOW); required-check receipts, sign-offs and resolved SV_ISSUE facts are not supplied by this operation, so a change that needs them is recorded as refused, never as ALLOW",
+      "hb_reference": "supplied epoch only, from the committed ingest request (integer >= 32) and equal to the NATIVE successor's own hb_epoch; derived_from_clock false or the operation fails closed",
+      "epoch_rule": "resident-runtime/aggregate_repo_transition.py::supplied_epoch_failure, SHARED_RULE_SHA256 7f36f0e697cadc91acd27af121eee3fc460b887ec67cfa258727bfccec0ca5f8 (the sv_push_receipt operation's rule in this organization); the stored hb_reference.epoch is checked by sv_push_receipt_append._stored_epoch_refusal",
+      "readback": "resident-runtime/sv_change_admit_append.py readback on a fresh fetch of the published ref (sealed pair, linked, the recorded lifecycle outcome, exactly one SV_CHANGE_ADMIT receipt for the change)",
+      "verifier": "clock-free and network-free: reads the committed request, the declared ledger store and the vendored P1 files only",
       "ingress_capability": false,
       "addressable_from_the_service_registry": false,
       "authority_effect": "NONE_DECLARATION_ONLY"
