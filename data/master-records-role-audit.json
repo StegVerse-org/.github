@@ -5621,13 +5621,6 @@
     },
     {
       "file": "tests/test_intr_post_genesis_replay.py",
-      "line": 76,
-      "text": "# master-records, formalism-tests and Infrastructure-Continuity-Ventures joined the declared paths (240 over 16 organizations).",
-      "classification": "NAMING_ONLY",
-      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
-    },
-    {
-      "file": "tests/test_intr_post_genesis_replay.py",
       "line": 109,
       "text": "# master-records, formalism-tests and Infrastructure-Continuity-Ventures joined (StegVerse-org/.github#162):",
       "classification": "NAMING_ONLY",
@@ -9998,6 +9991,13 @@
       "file": ".stegverse/intr-post-genesis/payloads/master-records__formalism-tests.json",
       "line": 165,
       "text": "\"transition_id\": \"INTR_MESH_PATH_TRANSFER:master-records->formalism-tests:intr-destination@intr-path-v1:master-records->formalism-tests\"",
+      "classification": "NAMING_ONLY",
+      "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
+    },
+    {
+      "file": "tests/test_intr_post_genesis_replay.py",
+      "line": 76,
+      "text": "# master-records, formalism-tests and Infrastructure-Continuity-Ventures joined the declared paths (240 over 16 organizations)",
       "classification": "NAMING_ONLY",
       "reason": "Identifier, path, peer registry row, snapshot or payload field, failure code or test name for the sixteen-organization InTr mesh (StegVerse-org/.github#162); the name designates a peer organization or a publisher path and asserts no role."
     }
