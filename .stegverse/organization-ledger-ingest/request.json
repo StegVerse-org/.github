@@ -1,18 +1,239 @@
 {
- "hb_epoch": 574296107,
- "operation": "sv_push_receipt",
- "push_receipt": {
-  "hb_epoch": "574296107",
-  "new_sha": "7c8d750db7199837fe10c2b87b01d3631c0655f6",
-  "old_sha": "c50d29cee6b5e643ae636f513dd89e34ccfdbfe5",
-  "pushed_commits": [
-   "7c8d750db7199837fe10c2b87b01d3631c0655f6"
+ "admission": {
+  "actor_session": "p1-ecosystem-ai-lane",
+  "change_commits": {
+   "base_commit": "c50d29cee6b5e643ae636f513dd89e34ccfdbfe5",
+   "head_commit": "7c8d750db7199837fe10c2b87b01d3631c0655f6"
+  },
+  "corpus_head": "d0dad8aa763c776284ac36ea1912aef621d19f67",
+  "predicate_digest": "sha256:b05ca55bef7f4ff994c859fbed0108129d155e392c3439397c0d85c62ca30611",
+  "push_ranges": [
+   {
+    "new_sha": "7c8d750db7199837fe10c2b87b01d3631c0655f6",
+    "old_sha": "c50d29cee6b5e643ae636f513dd89e34ccfdbfe5",
+    "ref": "refs/heads/p1/sdk-push-receipt-org-ledger",
+    "repository": "StegVerse-org/StegVerse-SDK"
+   }
   ],
-  "pusher_session": "p1-sandbox-and-hcb-20261024",
-  "ref": "refs/heads/p1/sdk-push-receipt-org-ledger",
-  "repository": "StegVerse-org/StegVerse-SDK",
-  "result_sha256": "sha256:e09f5f513f30207db7040c8fc00f3da3cdaf108719ee0cbe7c9712291702d9c0",
-  "schema": "stegverse.sv_push_receipt.v1"
+  "registry_generation": 326
  },
- "schema": "stegverse.organization-ledger-ingest-request/v1"
+ "hb_epoch": 574296107,
+ "operation": "sv_change_admit",
+ "predecessor": {
+  "admission_order_slot": null,
+  "base_ref": {
+   "ledger_head": "655f5197c10ec61a968f28b1d518d1b12bc78875",
+   "registry_generation": 326
+  },
+  "change_id": "svc:a64fc9d79e386c11c2eb28175417e2a2d0dfa5e719660197b78763ee3a60fba9",
+  "content": [
+   {
+    "blob_digest": "sha256:4f0355dee51e806685f92adc058828958b2b20697a2fab26986aadeaa360f027",
+    "deleted": false,
+    "path": ".stegverse/governance-product/release-manifest.v1.json",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:e4edc964a5154889bd65daee778b6f44630c0a9e5905057c46d5d4f53ceabb01",
+    "deleted": false,
+    "path": "control/workflow-surface-registry.json",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:10fe4723bebb94938862d893fd2db119fe18e22c89cd0832da67a40985bac4b9",
+    "deleted": false,
+    "path": "docs/GOVERNANCE_PRODUCT_RELEASE_DEFAULTS.md",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:e5904bfb92430a1936f7d4eac54217bd9f7bdc0f38ff0eb6d0f87a70f5131544",
+    "deleted": false,
+    "path": "fixtures/governance_product_receipt_chain.json",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:7825644978ce47701d95e072b43e14dcc9f9dc4dac40992510a4aa07057baf20",
+    "deleted": false,
+    "path": "tests/test_governance_product_finish_point.py",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:85ce59899813dc58e76cb63d1d53a230bb6fa47d260c5dcff3dcbc81c645d263",
+    "deleted": false,
+    "path": "tools/governance_product_finish.py",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:055dc93aa40dfa48830f70f967cfafca1b12db9f97df0d4d741b65ad26e1eb93",
+    "deleted": false,
+    "path": "tools/tasks/folded/governance-product-finish-point.yml",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:de5d289e5ef373085c84eb6f9f2219bcbf1a70cc248d841cac36d182aa084daa",
+    "deleted": false,
+    "path": "tools/tasks/steps/governance-product-finish-point.finish-point/01-finish-point-non-allow-produces-no-effect-unittest-no-skips.sh",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:e371ee34b8c0c254d3202d12cc1decfe052904b3f5b2d9b54e2bf806738501db",
+    "deleted": false,
+    "path": "tools/tasks/steps/governance-product-finish-point.finish-point/02-finish-ref-from-the-tv-tvc-release-receipt.sh",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:4868ce04716f0d5c0e95a416dcedbce9ba7543c654fea6fdd6aec23f6fd74478",
+    "deleted": false,
+    "path": "tools/tasks/steps/governance-product-finish-point.finish-point/04-finish-verdict-six-field-fail-closed-until-every-receipt-exists.sh",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   },
+   {
+    "blob_digest": "sha256:848f0c79cd70f5c802844180fa87f55a58d6e6354d96d67a73bb082804f4d7fd",
+    "deleted": false,
+    "path": "tools/tasks/task_catalog.json",
+    "writer_session": {
+     "evidence_class": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+     "session": null
+    }
+   }
+  ],
+  "declared_session": "P1 Ecosystem AI Lane (StegVerse-org/.github#163): migration of StegVerse-org/StegVerse-SDK#567, authored by GitHub account StegVerse",
+  "governance_decision_ref": null,
+  "hb_epoch": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+  "head": {
+   "change_digest": "sha256:a64fc9d79e386c11c2eb28175417e2a2d0dfa5e719660197b78763ee3a60fba9"
+  },
+  "lifecycle_state": "PROPOSED",
+  "migration_flags": [
+   "RESOLVES_NOT_RECORDED"
+  ],
+  "migration_provenance": {
+   "migrated_at_base": {
+    "ledger_head": "655f5197c10ec61a968f28b1d518d1b12bc78875",
+    "registry_generation": 326
+   },
+   "original_base_observed": false,
+   "original_base_ref": null
+  },
+  "owning_goal": "GITHUB-UNIVERSAL-GOVERNANCE-PRODUCT-001 (StegVerse-org/.github#164; StegVerse-org/StegVerse-SDK#567)",
+  "projection": {
+   "base_ref": "main",
+   "base_sha": "56b1d0fef35a8b29cb21ebcb4acafb35ebbf05d9",
+   "branch_writer_is_branch_owner": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED",
+   "branch_writers_evidence": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED (JDQ Q-WRITER-IDENTITY)",
+   "github_ci": {
+    "authority": "PROJECTION_ONLY_NOT_A_VALIDATION_RECEIPT"
+   },
+   "github_state": "MERGED",
+   "head_ref": "claude/p2-governance-product-finish",
+   "head_sha": "202dc231889c8ca5339c4e5a6b3760a8b35a9f3e",
+   "pr": 567,
+   "repo": "StegVerse-org/StegVerse-SDK"
+  },
+  "record_mode": "MIGRATED_HISTORICAL",
+  "request_digest": "sha256:930cb0928a2d5fcd992dbe216996c4cac9345e5309d60d3eddb6a8a32c255cf8",
+  "required_checks_ref": {
+   "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+   "file": "data/sv-work-items/required-checks.json",
+   "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+  },
+  "resolves": [],
+  "schema": "stegverse.sv_change.v1",
+  "signoffs": [],
+  "supersedes": null,
+  "target_repository": "StegVerse-org/StegVerse-SDK",
+  "touched_paths": [
+   ".stegverse/governance-product/release-manifest.v1.json",
+   "control/workflow-surface-registry.json",
+   "docs/GOVERNANCE_PRODUCT_RELEASE_DEFAULTS.md",
+   "fixtures/governance_product_receipt_chain.json",
+   "tests/test_governance_product_finish_point.py",
+   "tools/governance_product_finish.py",
+   "tools/tasks/folded/governance-product-finish-point.yml",
+   "tools/tasks/steps/governance-product-finish-point.finish-point/01-finish-point-non-allow-produces-no-effect-unittest-no-skips.sh",
+   "tools/tasks/steps/governance-product-finish-point.finish-point/02-finish-ref-from-the-tv-tvc-release-receipt.sh",
+   "tools/tasks/steps/governance-product-finish-point.finish-point/04-finish-verdict-six-field-fail-closed-until-every-receipt-exists.sh",
+   "tools/tasks/task_catalog.json"
+  ],
+  "unknown_fields": [
+   "/hb_epoch"
+  ],
+  "validation_receipts": []
+ },
+ "schema": "stegverse.organization-ledger-ingest-request/v1",
+ "successor": {
+  "admission_order_slot": null,
+  "base_ref": {
+   "ledger_head": "655f5197c10ec61a968f28b1d518d1b12bc78875",
+   "registry_generation": 326
+  },
+  "change_id": "svc:5d98078828b534339a6dc5372bdd821f86e8512f4425a54bdae5a6c15249ad43",
+  "content": [
+   {
+    "blob_digest": "sha256:0787e038c4b9897dc3a1342e90406753fac184afaf40cd4f95038c4034c78d57",
+    "deleted": false,
+    "path": "docs/TRANSITION_LEDGER_MIRROR_HANDOFF.md",
+    "writer_session": {
+     "evidence_class": "DECLARED",
+     "session": "p1-sandbox-and-hcb-20261024"
+    }
+   }
+  ],
+  "declared_session": "P1 Ecosystem AI Lane (StegVerse-org/.github#163): StegVerse-org/StegVerse-SDK#579, superseding StegVerse-org/StegVerse-SDK#567",
+  "governance_decision_ref": null,
+  "hb_epoch": "574296107",
+  "head": {
+   "change_digest": "sha256:5d98078828b534339a6dc5372bdd821f86e8512f4425a54bdae5a6c15249ad43"
+  },
+  "lifecycle_state": "PROPOSED",
+  "owning_goal": "GITHUB-UNIVERSAL-GOVERNANCE-PRODUCT-001 (StegVerse-org/.github#164; StegVerse-org/StegVerse-SDK#567)",
+  "record_mode": "NATIVE",
+  "request_digest": "sha256:6874a8a53a0d52d5810bb2cab38d3d052037b887223516b635287de8358c8c9b",
+  "required_checks_ref": {
+   "blob_sha": "9c75778f0a88e0bb4c50a44a9d54a72bc40a496d",
+   "file": "data/sv-work-items/required-checks.json",
+   "row_id": "SV-CHANGE-REQUIRED-CHECKS-001"
+  },
+  "resolves": [
+   "svi:a21a96bdd1768cf2c0b23ebc8cefcbbfaa5486886ca51304c51c153290f4ac69"
+  ],
+  "schema": "stegverse.sv_change.v1",
+  "signoffs": [],
+  "supersedes": "sha256:930cb0928a2d5fcd992dbe216996c4cac9345e5309d60d3eddb6a8a32c255cf8",
+  "target_repository": "StegVerse-org/StegVerse-SDK",
+  "touched_paths": [
+   "docs/TRANSITION_LEDGER_MIRROR_HANDOFF.md"
+  ],
+  "validation_receipts": []
+ }
 }
