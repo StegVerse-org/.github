@@ -1,0 +1,50 @@
+{
+  "schema": "stegverse.organization-ledger-writer-operations/v1",
+  "note": "The operations the organization ledger writer (.github/workflows/organization-ledger-writer.yml, job ledger-ingest) runs from the committed ingest request beside this file. The job is selected by control/workflow-surface-registry.json writer_jobs[] (paths .stegverse/organization-ledger-ingest/**); the operation is read from the request by resident-runtime/organization_ledger_ingest.py. Same manifest as StegVerse-Labs/.github, which runs sv_check_receipt as well; this organization declares the two it runs.",
+  "organization_ledger_writer_operations": [
+    {
+      "operation": "sealed_test_receipt",
+      "operation_module": "resident-runtime/organization_ledger_ingest.py",
+      "entrypoint": "resident-runtime/organization_ledger_ingest.py::append_sealed",
+      "append_path": "resident-runtime/aggregate_repo_transition.py::append under the store's exclusive section (source bound by resident-runtime/organization_ledger_ingest.py::sealed_source)",
+      "transition_class": "ORGANIZATION_SEALED_TEST_RECEIPT_INGEST",
+      "evidence_schema": "stegverse.test-suite-skip-receipt/v1",
+      "evidence_location": "the producer's sealed receipt unchanged at source-receipts/<receipt_sha256>.json, consumed by one organization receipt whose source_transition_sha256 is that receipt_sha256",
+      "admission": ".stegverse/organization-ledger-ingest/accepted-sealed-receipts.json kinds only; seal over the canonical body; ALLOW, no refusals, tests >= 1 and skipped/failed/errors 0; ledger_candidate.target this organization's ledger; request provenance names the producer repository, head and run; any failure -> six-field FAIL_CLOSED before any write",
+      "organization_receipt_boundary_operation": "sealed_test_receipt",
+      "ledger_ref": "refs/stegverse/organization-ledger",
+      "invoked_by": ".github/workflows/organization-ledger-writer.yml job ledger-ingest (push to main touching .stegverse/organization-ledger-ingest/** with request operation sealed_test_receipt; ORGANIZATION_LEDGER_LOCK); no dispatch input, no schedule",
+      "hb_reference": "the supplied epoch the ledger head carries (merge_transfer.head_epoch); no clock",
+      "readback": "resident-runtime/organization_ledger_ingest.py readback-sealed on a fresh fetch of the published ref",
+      "ingress_capability": false,
+      "addressable_from_the_service_registry": false,
+      "authority_effect": "NONE_DECLARATION_ONLY"
+    },
+    {
+      "operation": "sv_push_receipt",
+      "operation_module": "resident-runtime/sv_push_receipt_append.py",
+      "entrypoint": "resident-runtime/sv_push_receipt_append.py::append_push_receipt",
+      "append_path": "resident-runtime/sv_push_receipt_append.py::_append_one (the range lookup, then repository ledger .stegverse/transition-ledger/emit.py::append, then resident-runtime/aggregate_repo_transition.py::append, the two-level append resident-runtime/merge_transfer.py uses; intr_destination_ingress.py and aggregate_repo_transition.py unedited)",
+      "transition_class": "SV_PUSH_RECEIPT_APPEND",
+      "evidence_schema": "stegverse.sv_push_receipt.v1",
+      "evidence_schema_file": "schemas/sv-push-receipt.v1.schema.json (emitted by resident-runtime/sv_push_receipt.py; the shape and seal check is that module's receipt_problem)",
+      "evidence_location": "repository receipt $.evidence (the complete push receipt, self-identified by $.evidence.schema), retained beside the organization receipt at source-receipts/<hex>.json",
+      "organization_receipt_boundary_operation": "sv_push_receipt",
+      "ledger_ref": "refs/stegverse/organization-ledger",
+      "ledger_ownership": "a push receipt is recorded on the ledger of the organization that owns the pushed repository (Coordination ruling, StegVerse-org/.github#167); this ledger records receipts for StegVerse-org repositories, and each organization keeps its own ledger",
+      "invoked_by": ".github/workflows/organization-ledger-writer.yml job ledger-ingest (push to main touching .stegverse/organization-ledger-ingest/request.json with operation sv_push_receipt, read by resident-runtime/organization_ledger_ingest.py; ORGANIZATION_LEDGER_LOCK); no dispatch input, no schedule",
+      "one_receipt_per_range": "the range is (repository, ref, old_sha, new_sha); the repository transition id is SV_PUSH_RECEIPT_APPEND:<sha256 of that range>, so one range has one receipt; a second receipt for a range the ledger already records, byte-identical or not, -> six-field FAIL_CLOSED SV_PUSH_RECEIPT_RANGE_ALREADY_RECORDED, nothing appended; one request carries one receipt, one request PR per receipt (batching needs a documented change proposal)",
+      "admission": "one object whose schema is stegverse.sv_push_receipt.v1 that passes sv_push_receipt.receipt_problem (closed field set, 40-hex shas, pushed_commits ending at new_sha, supplied hb_epoch, result_sha256 seal); LEDGER_EVIDENCE_NOT_A_PUSH_RECEIPT or SV_PUSH_RECEIPT_MALFORMED otherwise, six fields, before any write",
+      "hb_reference": "supplied epoch only, from the committed ingest request (integer >= 32) and equal to the receipt's own hb_epoch; derived_from_clock false or the operation fails closed",
+      "epoch_rule": "resident-runtime/aggregate_repo_transition.py::supplied_epoch_failure (byte-identical to resident-runtime/organization_egress_boundary.py::supplied_epoch_failure), source sha256 pinned as epoch_rule_sha256",
+      "epoch_rule_sha256": "7f36f0e697cadc91acd27af121eee3fc460b887ec67cfa258727bfccec0ca5f8",
+      "epoch_tie": "append epoch or receipt hb_epoch (both epoch-source fields) absent, null, \"\", \"null\" or UNKNOWN_NOT_AUTHENTICALLY_OBSERVED -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED; any other malformed value or a differing value -> DENY HB_EPOCH_MISMATCH; a stored hb_reference that is unsealed or clock-derived -> FAIL_CLOSED HB_EPOCH_SOURCE_UNOBSERVED",
+      "readback": "resident-runtime/sv_push_receipt_append.py readback on a fresh fetch of the published ref (sealed pair, linked, valid evidence, exactly one receipt for the range)",
+      "verifier": "clock-free and network-free: reads the committed request, the receipt and the declared ledger store only",
+      "ingress_capability": false,
+      "addressable_from_the_service_registry": false,
+      "authority_effect": "NONE_DECLARATION_ONLY"
+    }
+  ],
+  "authority_effect": "NONE_DECLARATION_ONLY"
+}

@@ -20,7 +20,10 @@ from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUEST = ROOT / ".stegverse/organization-ledger-ingest/request.json"
+REQUEST = ROOT / ".stegverse/organization-ledger-ingest/request.json"  # whichever request is committed now
+# The sealed_test_receipt request of run 40145286437 as committed by #246 and kept here, so these tests keep pinning
+# that receipt while another operation's request (sv_push_receipt) is the one committed.
+SEALED_REQUEST = ROOT / "tests/fixtures/organization-ledger-ingest/sealed-request.json"
 WRITER = ROOT / ".github/workflows/organization-ledger-writer.yml"
 REF = "refs/stegverse/organization-ledger"
 DIGEST = "sha256:6feec3f5634e2bea4a586cb427d4f1ff9c1a08f4386834e60ff0cc379bc4f60b"
@@ -47,7 +50,7 @@ writer_plan = _load("writer_plan_for_ingest", "tools/tasks/writer_plan.py")
 
 
 def committed():
-    return json.loads(REQUEST.read_text(encoding="utf-8"))
+    return json.loads(SEALED_REQUEST.read_text(encoding="utf-8"))
 
 
 def seal(body):
@@ -75,7 +78,7 @@ class Admission(unittest.TestCase):
         self.assertIs(result["consequence_committed"], False)
 
     def test_the_committed_request_is_the_repo_standards_owner_drift_receipt_of_run_40145286437(self):
-        read = ing.read_request(REQUEST)
+        read = ing.read_request(SEALED_REQUEST)
         self.assertEqual(read["disposition"], "ALLOW")
         self.assertEqual(self.receipt["receipt_sha256"], DIGEST)
         self.assertTrue(ing.seal_verifies(self.receipt))
@@ -216,9 +219,29 @@ class Trigger(unittest.TestCase):
         self.assertIn('git push origin "$LEDGER_REF:$LEDGER_REF"', job)
         self.assertNotIn("update-ref", job)
 
+    def test_the_committed_request_is_one_of_the_declared_operations(self):
+        declared = {e["operation"] for e in json.loads((ROOT / ".stegverse/organization-ledger-ingest/operations.json")
+                                                       .read_text(encoding="utf-8"))["organization_ledger_writer_operations"]}
+        self.assertEqual(declared, {ing.SEALED, ing.SV_PUSH})
+        self.assertEqual(set(ing.FIELDS), declared)
+        read = ing.read_request(REQUEST)
+        self.assertEqual(read["disposition"], "ALLOW", read)
+        self.assertIn(read["operation"], declared)
+
+    def test_the_sealed_commands_refuse_a_push_receipt_request(self):
+        with tempfile.TemporaryDirectory() as work:
+            path = Path(work) / "request.json"
+            path.write_text(json.dumps({"schema": ing.SCHEMA, "operation": ing.SV_PUSH, "push_receipt": {"schema": "x"},
+                                        "hb_epoch": 1024}), encoding="utf-8")
+            done = subprocess.run([sys.executable, str(ROOT / "resident-runtime/organization_ledger_ingest.py"),
+                                   "admit-sealed", "--request", str(path), "--ledger-repository", "StegVerse-org/.github"],
+                                  capture_output=True, text=True)
+            self.assertEqual(done.returncode, 1)
+            self.assertEqual(json.loads(done.stdout)["failure_code"], "INGEST_OPERATION_NOT_SEALED_TEST_RECEIPT")
+
     def test_the_cli_admits_the_committed_request_and_refuses_another_ledger(self):
         run = lambda repo: subprocess.run([sys.executable, str(ROOT / "resident-runtime/organization_ledger_ingest.py"),
-                                           "admit-sealed", "--request", str(REQUEST), "--ledger-repository", repo],
+                                           "admit-sealed", "--request", str(SEALED_REQUEST), "--ledger-repository", repo],
                                           capture_output=True, text=True)
         self.assertEqual(run("StegVerse-org/.github").returncode, 0)
         self.assertEqual(run("StegVerse-Labs/.github").returncode, 1)

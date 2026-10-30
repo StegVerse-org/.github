@@ -4305,6 +4305,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_sv_push_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sv_push_receipt.py"
+   ],
+   "tests": [
+    "tests.test_sv_push_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sv_push_receipt_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sv_push_receipt_append.py"
+   ],
+   "tests": [
+    "tests.test_sv_push_receipt_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_task_registry.py",
    "inputs": [],
    "surfaces": [
@@ -4666,6 +4690,7 @@
   "resident-runtime/organization_ledger_ingest.py": [
    ".github/workflows/organization-ledger-writer.yml",
    ".stegverse/organization-ledger-ingest/accepted-sealed-receipts.json",
+   ".stegverse/organization-ledger-ingest/operations.json",
    ".stegverse/organization-ledger-ingest/request.json",
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
@@ -4700,6 +4725,10 @@
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
    "resident-runtime/organization_egress_boundary.py"
+  ],
+  "resident-runtime/push_receipt_session_binder.py": [
+   "resident-runtime/sv_push_receipt.py",
+   "schemas/sv-push-receipt.v1.schema.json"
   ],
   "resident-runtime/receipt_disorder_measurement.py": [
    ".stegverse/transition-ledger/emit.py",
@@ -4756,6 +4785,10 @@
   "resident-runtime/submit_org_transition_to_master_records.py": [
    "org-kernel/kernel.py",
    "resident-runtime/aggregate_repo_transition.py"
+  ],
+  "resident-runtime/sv_push_receipt_append.py": [
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/sv_push_receipt.py"
   ],
   "resident-runtime/task_registry_disclosure_endpoint.py": [
    "orchestration/task-registry.json"
@@ -5235,11 +5268,13 @@
   ],
   "tests/test_organization_ledger_ingest.py": [
    ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/operations.json",
    ".stegverse/organization-ledger-ingest/request.json",
    "control/workflow-surface-registry.json",
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
    "resident-runtime/organization_ledger_ingest.py",
+   "tests/fixtures/organization-ledger-ingest/sealed-request.json",
    "tools/tasks/writer_plan.py"
   ],
   "tests/test_organization_manifest_ingress.py": [
@@ -5481,6 +5516,26 @@
    "orchestration/task-registry.json",
    "resident-runtime/pinned_labs.py",
    "tests/workflow_surface.py"
+  ],
+  "tests/test_sv_push_receipt.py": [
+   "resident-runtime/sv_push_receipt.py",
+   "schemas/sv-push-receipt.v1.schema.json"
+  ],
+  "tests/test_sv_push_receipt_append.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/**",
+   ".stegverse/organization-ledger-ingest/operations.json",
+   "control/workflow-surface-registry.json",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_ledger_ingest.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/sv_push_receipt_append.py",
+   "schemas/sv-push-receipt.v1.schema.json",
+   "tests/test_merge_transfer_gitstore.py",
+   "tools/tasks/**",
+   "tools/tasks/task_catalog.json",
+   "tools/tasks/writer_plan.py"
   ],
   "tests/test_task_registry.py": [
    "control/task-vector-index.json",
