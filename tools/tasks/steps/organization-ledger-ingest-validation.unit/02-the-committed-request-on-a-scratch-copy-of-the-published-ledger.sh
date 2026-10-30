@@ -13,6 +13,16 @@ if [ "$INGEST_OPERATION" = "sv_push_receipt" ]; then
     --hb-epoch "$HB_EPOCH"
   exit 0
 fi
+if [ "$INGEST_OPERATION" = "sv_check_receipt" ]; then
+  # Appended once per receipt, only by the writer's push-time job; the PR-facing check admits the committed receipt
+  # (pins, schema, supplied epoch, declared command, stage-gate binding) and appends nothing.
+  gate_args=()
+  if [ -f "$RUNNER_TEMP/ingest/evaluation-subject.json" ]; then gate_args+=(--subject "$RUNNER_TEMP/ingest/evaluation-subject.json"); fi
+  if [ -f "$RUNNER_TEMP/ingest/base-state-readback.json" ]; then gate_args+=(--readback "$RUNNER_TEMP/ingest/base-state-readback.json"); fi
+  python resident-runtime/sv_check_receipt_append.py admit --check-receipt "$RUNNER_TEMP/ingest/check-receipt.json" \
+    --hb-epoch "$HB_EPOCH" --ledger-repository "$GITHUB_REPOSITORY" "${gate_args[@]}"
+  exit 0
+fi
 if [ "$INGEST_OPERATION" = "sv_change_admit" ]; then
   # Recorded once per change, only by the writer's push-time job; the PR-facing check admits the committed request
   # (shape, owning ledger, NATIVE successor, supplied epoch, P1 pins) and appends nothing, so it cannot go red once the
