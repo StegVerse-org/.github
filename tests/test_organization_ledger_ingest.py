@@ -222,7 +222,7 @@ class Trigger(unittest.TestCase):
     def test_the_committed_request_is_one_of_the_declared_operations(self):
         declared = {e["operation"] for e in json.loads((ROOT / ".stegverse/organization-ledger-ingest/operations.json")
                                                        .read_text(encoding="utf-8"))["organization_ledger_writer_operations"]}
-        self.assertEqual(declared, {ing.SEALED, ing.SV_PUSH, ing.SV_ADMIT})
+        self.assertEqual(declared, {ing.SEALED, ing.SV_CHECK, ing.SV_PUSH, ing.SV_ADMIT})
         self.assertEqual(set(ing.FIELDS), declared)
         read = ing.read_request(REQUEST)
         self.assertEqual(read["disposition"], "ALLOW", read)

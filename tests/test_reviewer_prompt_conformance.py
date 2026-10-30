@@ -186,6 +186,7 @@ class PromptClaimTests(unittest.TestCase):
             "tests/test_organization_role_runtime_reality_deployment.py",
             "tests/test_task_registry.py",
             "resident-runtime/sv_change_admit_append.py",
+            "resident-runtime/sv_check_receipt_append.py",
         }, "a claim surface appeared or a declaration moved; the prompt now misleads")
 
     def test_the_self_exemption_is_still_needed(self):

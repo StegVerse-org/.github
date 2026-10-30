@@ -30,6 +30,7 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
+from tests import test_sv_check_receipt_append as appendtests
 from tests import test_sv_push_receipt_append as pushtests
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,10 +76,12 @@ def predecessor_record(index=0, target=SDK):
     return reseal_change(rec)
 
 
-def successor_record(predecessor, tip=None, **over):
-    """A NATIVE successor of `predecessor`, resealed; its base is the test ledger's tip when given."""
+def successor_record(predecessor, tip=None, resolves=None, **over):
+    """A NATIVE successor of `predecessor`, resealed; its base is the test ledger's tip when given and it cites `resolves`."""
     rec = {k: v for k, v in copy.deepcopy(predecessor).items() if k not in MIGRATION_KEYS}
     rec.update(record_mode="NATIVE", hb_epoch=str(EPOCH), supersedes=predecessor["request_digest"])
+    if resolves is not None:
+        rec["resolves"] = list(resolves)
     if "required_checks_ref" in rec:
         rec["required_checks_ref"] = {**rec["required_checks_ref"], "blob_sha": CHECKS_BLOB}
     if tip is not None:
@@ -101,8 +104,27 @@ def admission(**over):
 class AdmitBase(pushtests.AppendBase):
     def setUp(self):
         super().setUp()
+        # The one source of an issue is a failing sv_check_receipt this ledger retains: the sv_check_receipt operation appends
+        # it, and the issue is derived from it (nothing here writes an issue).
+        checked = appendtests.svc.append_check_receipt(appendtests.check_receipt(), hb_epoch=EPOCH)
+        self.assertEqual(checked["disposition"], "ALLOW", checked)
+        self.seed = self.tip()
+        self.issue = self.derived_issue(checked)
         self.pred = predecessor_record()
-        self.succ = successor_record(self.pred, self.tip())
+        self.succ = self.mk(self.pred)
+
+    def derived_issue(self, checked):
+        commit = self.tip()
+        objs = {commit + ":" + k: _git(self.bare, "show", commit + ":" + k) for k in
+                (checked["organization_receipt_key"], checked["repository_receipt_source_key"])}
+        ref = "%s@%s:%s" % (REF, commit, checked["organization_receipt_key"])
+        return wi.derive_issue_from_check_receipt(objs, ref, observed_base={"registry_generation": GENERATION,
+                                                                            "ledger_head": commit})
+
+    def mk(self, predecessor, tip=None, **over):
+        """A NATIVE successor on the ledger tip that cites the issue the ledger derives."""
+        over.setdefault("resolves", [self.issue["issue_id"]])
+        return successor_record(predecessor, tip or self.tip(), **over)
 
     def append(self, succ=None, adm=None, pred=None, epoch=EPOCH):
         return ca.append_change_admit(pred or self.pred, succ or self.succ, adm or admission(), hb_epoch=epoch)
@@ -146,6 +168,11 @@ class Accept(AdmitBase):
         self.assertEqual(observed["current_base_sources"]["registry_generation"], "SUPPLIED_IN_REQUEST_NOT_OBSERVED_BY_THIS_CHECKOUT")
         self.assertEqual(observed["predecessor_request_digest"], self.pred["request_digest"])
         self.assertIn("required-check ledger receipts", observed["not_supplied_by_this_operation"])
+        self.assertNotIn("resolved SV_ISSUE facts", observed["not_supplied_by_this_operation"])
+        derived = observed["resolved_issue_facts_derived_from_the_ledger"]
+        self.assertEqual(derived["ledger_commit"], self.seed)
+        self.assertEqual([i["issue_id"] for i in derived["issues"]], [self.issue["issue_id"]])
+        self.assertEqual(result["chain"][1].get("failure_code") != "SV_CHANGE_RESOLVES_NOTHING", True, result["chain"])
 
         reader = self.work / "reader.git"
         subprocess.run(["git", "init", "--bare", "-q", str(reader)], check=True)
@@ -164,7 +191,7 @@ class Accept(AdmitBase):
         for old, new in ((1, 2), (2, 3)):
             self.assertEqual(pa.append_push_receipt(push_receipt(old, new), hb_epoch=EPOCH)["disposition"], "ALLOW")
         tip = self.tip()
-        succ = successor_record(self.pred, tip)
+        succ = self.mk(self.pred)
         adm = admission(push_ranges=[{"repository": SDK, "ref": pushtests.BRANCH, "old_sha": oid(a), "new_sha": oid(b)}
                                      for a, b in ((1, 2), (2, 3), (3, 4))])
         result = self.append(succ, adm)
@@ -178,7 +205,7 @@ class Accept(AdmitBase):
     def test_another_change_is_appended_beside_the_first_and_the_chain_stays_whole(self):
         first = self.append()
         pred2 = predecessor_record(1)
-        other = self.append(successor_record(pred2, self.tip()), pred=pred2)
+        other = self.append(self.mk(pred2), pred=pred2)
         for result in (first, other):
             self.assertEqual(result["disposition"], "ALLOW", result)
         self.assertNotEqual(first["transition_id"], other["transition_id"])
@@ -231,6 +258,58 @@ class DuplicateChange(AdmitBase):
         self.assertEqual(self.tip(), tip)
 
 
+class IssueFacts(AdmitBase):
+    """The resolved SV_ISSUE is read from the ledger and never supplied; with none, the refusal is the correct outcome."""
+
+    def assert_absent(self, result, **detail):
+        self.assert_refused(result, "SV_CHANGE_ADMIT_RESOLVED_ISSUE_FACTS_ABSENT")
+        self.assertEqual(result["failed_predicate"], "RESOLVED_ISSUE_FACTS_ARE_DERIVED_FROM_THE_LEDGER_AT_THE_CHANGE_BASE")
+        self.assertEqual(result["authority_effect"], "NONE_REFUSAL_ONLY")
+        for key, value in detail.items():
+            self.assertEqual(result[key], value, key)
+
+    def test_a_successor_that_cites_no_issue_is_refused_and_appends_nothing(self):
+        self.assert_absent(self.append(self.mk(self.pred, resolves=[])), detail="RESOLVES_IS_EMPTY")
+
+    def test_an_issue_the_ledger_does_not_derive_is_refused_not_recorded(self):
+        for cited in ("svi:" + "1" * 64, "svi:" + "0" * 64):
+            result = self.append(self.mk(self.pred, resolves=[cited]))
+            self.assert_absent(result, detail="CITED_ISSUE_NOT_DERIVED_FROM_THE_LEDGER")
+            self.assertEqual(result["derived_issue_ids"], [self.issue["issue_id"]])
+        # one derived and one not: still refused, nothing is half-admitted
+        self.assert_absent(self.append(self.mk(self.pred, resolves=[self.issue["issue_id"], "svi:" + "2" * 64])),
+                           detail="CITED_ISSUE_NOT_DERIVED_FROM_THE_LEDGER")
+
+    def test_a_ledger_with_no_failing_check_receipt_has_no_issue_for_any_change(self):
+        # the successor cites an id no receipt on the ledger derives
+        tip = self.tip()
+        succ = self.mk(self.pred)
+        store = ledger_store.open_store(f"git+{self.bare}#{REF}")
+        facts = ca.ledger_issue_facts(store, successor_record(self.pred, tip, resolves=["svi:" + "4" * 64]), 1, admission()["change_commits"])
+        self.assertEqual(facts["failure_code"], "SV_CHANGE_ADMIT_RESOLVED_ISSUE_FACTS_ABSENT", facts)
+        self.assertEqual(self.tip(), tip)
+        self.assertIsNotNone(succ)
+
+    def test_a_passing_check_receipt_derives_no_issue(self):
+        ok = appendtests.svc.append_check_receipt(appendtests.check_receipt(disposition="ALLOW", failure_code=None, failed_predicate=None,
+                                                                         required_evidence_or_repair=None, retry_entrypoint=None,
+                                                                         owning_existing_goal=None, next_attempt=None,
+                                                                         head_sha="c" * 40), hb_epoch=EPOCH)
+        self.assertEqual(ok["disposition"], "ALLOW", ok)
+        store = ledger_store.open_store(f"git+{self.bare}#{REF}")
+        facts = ca.ledger_issue_facts(store, self.mk(self.pred), GENERATION, admission()["change_commits"])
+        self.assertEqual([i["issue_id"] for i in facts["issues"]], [self.issue["issue_id"]], "only the failing receipt derives an issue")
+        self.assertEqual(facts["check_receipts_read"], 2)
+
+    def test_the_issue_is_never_a_request_field(self):
+        text = (ROOT / "resident-runtime" / "sv_change_admit_append.py").read_text(encoding="utf-8")
+        self.assertNotIn('"resolved_issues": []', text)
+        self.assertNotIn('admission.get("resolved', text)
+        self.assertEqual(ca.ADMISSION_FIELDS, {"predicate_digest", "corpus_head", "actor_session", "change_commits", "push_ranges", "registry_generation"})
+        result = self.append(adm=admission(resolved_issues=[{"issue_id": self.issue["issue_id"]}]))
+        self.assertEqual(result["failure_code"], "SV_CHANGE_ADMIT_REQUEST_MALFORMED", result)
+
+
 class Refusals(AdmitBase):
     def test_a_malformed_request_is_refused_before_any_write(self):
         for name, args in {
@@ -281,15 +360,22 @@ class Refusals(AdmitBase):
             self.assertEqual(result["failed_predicate"], "SUCCESSOR_HB_EPOCH_EQUALS_REQUEST_HB_EPOCH")
 
     def test_a_successor_that_does_not_name_the_predecessor_is_recorded_as_the_supersede_refusal_not_hidden(self):
-        succ = successor_record(self.pred, self.tip(), supersedes="sha256:" + "9" * 64)
+        succ = self.mk(self.pred, supersedes="sha256:" + "9" * 64)
         result = self.append(succ)
         self.assertEqual(result["disposition"], "ALLOW", result)  # appended: the refusal is the recorded outcome
         self.assertEqual(result["chain"][0]["failure_code"], "SUCCESSOR_DOES_NOT_NAME_PREDECESSOR", result["chain"])
         self.assertNotEqual(result["admit_disposition"], "ALLOW")
 
     def test_a_stale_base_is_never_allow(self):
-        succ = successor_record(self.pred, "e" * 40)  # not the ledger tip
+        succ = self.mk(self.pred, "e" * 40)  # not a commit of this ledger
+        self.assert_refused(self.append(succ), "SV_CHANGE_ADMIT_RESOLVED_ISSUE_FACTS_ABSENT")
+
+    def test_an_older_base_that_is_a_ledger_commit_reads_its_facts_there_and_is_never_allow(self):
+        older = self.tip()
+        self.assertEqual(pa.append_push_receipt(push_receipt(1, 2), hb_epoch=EPOCH)["disposition"], "ALLOW")
+        succ = self.mk(self.pred, older)
         result = self.append(succ)
+        self.assertEqual(result["disposition"], "ALLOW", result)  # appended: the outcome is what the evaluator returned
         self.assertNotEqual(result["admit_disposition"], "ALLOW", result)
 
     def test_the_vendored_p1_files_are_pinned_and_a_drifted_one_refuses_before_any_write(self):

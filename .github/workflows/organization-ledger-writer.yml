@@ -907,8 +907,11 @@ jobs:
           if-no-files-found: ignore
 
   # A committed ingest request: .stegverse/organization-ledger-ingest/request.json.
-  # Three operations, declared in .stegverse/organization-ledger-ingest/operations.json
-  # and read from the request (INGEST_OPERATION). sv_push_receipt appends one
+  # Four operations, declared in .stegverse/organization-ledger-ingest/operations.json
+  # and read from the request (INGEST_OPERATION). sv_check_receipt appends one NWI-S1 check
+  # receipt (resident-runtime/sv_check_receipt_append.py, the port of the StegVerse-Labs/.github
+  # operation; supplied epoch only), the source of the native SV_ISSUEs sv_change_admit reads
+  # from this ledger. sv_push_receipt appends one
   # sealed push receipt per push range (resident-runtime/sv_push_receipt_append.py,
   # the port of StegVerse-Labs/.github#3424; a duplicate range is refused six-field,
   # supplied epoch only); sv_change_admit records one SV_CHANGE_ADMIT outcome per
@@ -943,7 +946,7 @@ jobs:
           python -m py_compile resident-runtime/organization_ledger_ingest.py \
             resident-runtime/aggregate_repo_transition.py resident-runtime/organization_ledger_readback.py \
             resident-runtime/sv_push_receipt.py resident-runtime/sv_push_receipt_append.py \
-            resident-runtime/sv_change_admit_append.py
+            resident-runtime/sv_change_admit_append.py resident-runtime/sv_check_receipt_append.py
           python resident-runtime/organization_ledger_ingest.py read --request "$REQUEST" \
             --materialize "$RUNNER_TEMP/ingest" --github-env "$GITHUB_ENV"
 
@@ -957,6 +960,25 @@ jobs:
           fi
           git fetch --no-tags origin "+$LEDGER_REF:$LEDGER_REF"
           echo "ledger tip: $(git rev-parse "$LEDGER_REF")"
+
+      - name: Append the check receipt to the repository and organization ledgers (operation sv_check_receipt)
+        if: env.INGEST_OPERATION == 'sv_check_receipt'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/results"
+          namespace=$(python3 -c 'import json; l=json.load(open(".stegverse/transition-ledger/contract.json"))["repository_ledger_location"]; assert l["ref"]=="refs/stegverse/organization-ledger", l; print(l["namespace"])')
+          export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF"
+          export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$LEDGER_REF:$namespace"
+          # Time is supplied in the committed request, never sampled: an integer epoch >= 32 that passes
+          # the shared supplied_epoch_failure and equals the receipt's own hb_epoch. A stage-gate receipt is
+          # appended only into the subject repository's own ledger: --ledger-repository is this repository.
+          gate_args=()
+          if [ -f "$RUNNER_TEMP/ingest/evaluation-subject.json" ]; then gate_args+=(--subject "$RUNNER_TEMP/ingest/evaluation-subject.json"); fi
+          if [ -f "$RUNNER_TEMP/ingest/base-state-readback.json" ]; then gate_args+=(--readback "$RUNNER_TEMP/ingest/base-state-readback.json"); fi
+          python resident-runtime/sv_check_receipt_append.py append \
+            --check-receipt "$RUNNER_TEMP/ingest/check-receipt.json" --hb-epoch "$HB_EPOCH" \
+            --ledger-repository "$GITHUB_REPOSITORY" "${gate_args[@]}" \
+            --out "$RUNNER_TEMP/results/check-receipt-append.json" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Append the push receipt to the repository and organization ledgers (operation sv_push_receipt)
         if: env.INGEST_OPERATION == 'sv_push_receipt'
@@ -1008,6 +1030,22 @@ jobs:
             echo '{"disposition":"FAIL_CLOSED","failure_code":"ORGANIZATION_LEDGER_PUBLISH_RACE","failed_predicate":"PUBLISHED_REF_FAST_FORWARDS","required_evidence_or_repair":"another append moved the ref first; this run published nothing","retry_entrypoint":".github/workflows/organization-ledger-writer.yml ledger-ingest","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"re-run; the request is answered from the ledger if already recorded","consequence_committed":false}'
             exit 1
           fi
+
+      - name: Read the appended check receipt back from a fresh fetch
+        if: env.INGEST_OPERATION == 'sv_check_receipt'
+        run: |
+          set -euo pipefail
+          fresh="$RUNNER_TEMP/readback-sv-check.git"
+          git init -q --bare "$fresh"
+          auth_header=$(git config --local --get http.https://github.com/.extraheader || true)
+          if [ -z "$auth_header" ]; then
+            echo '{"disposition":"FAIL_CLOSED","failure_code":"AUTHENTICATED_LEDGER_READBACK_UNAVAILABLE","failed_predicate":"FRESH_FETCH_AUTHENTICATED","required_evidence_or_repair":"checkout credentials unavailable for independent sovereign ref fetch","retry_entrypoint":".github/workflows/organization-ledger-writer.yml ledger-ingest","owning_existing_goal":"StegVerse-org/.github#162 P0-runtime-and-custody","next_attempt":"retry with authorized existing repository contents token","consequence_committed":false}'
+            exit 1
+          fi
+          git --git-dir="$fresh" -c http.https://github.com/.extraheader="$auth_header" fetch -q "$(git remote get-url origin)" "+$LEDGER_REF:$LEDGER_REF"
+          python resident-runtime/sv_check_receipt_append.py readback --location "git+$fresh#$LEDGER_REF" \
+            --result "$RUNNER_TEMP/results/check-receipt-append.json" \
+            --out "$RUNNER_TEMP/results/check-receipt-readback.json" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Read the appended push receipt back from a fresh fetch
         if: env.INGEST_OPERATION == 'sv_push_receipt'

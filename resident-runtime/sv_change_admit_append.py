@@ -20,7 +20,12 @@ schedule):
     request: each declared push range is looked up as SV_PUSH_RECEIPT_APPEND:<range id> and passed on only if the ledger holds
     it; an unrecorded range stays unobserved, so branch-writer derivation fails closed. This checkout holds no task registry,
     so the registry generation is the one value the request supplies (``admission.registry_generation``) and the evidence
-    labels it SUPPLIED_IN_REQUEST. Required-check receipts, sign-offs and the resolved SV_ISSUEs are not supplied by this
+    labels it SUPPLIED_IN_REQUEST. The resolved SV_ISSUE facts are DERIVED from this organization's own ledger, never taken
+    from the request: at the successor's own base_ref.ledger_head the writer reads every retained sv_check_receipt,
+    re-derives the NATIVE issue each failing one yields (P1's derive_issue_from_check_receipt) and builds the facts for the
+    issues the successor cites in $.resolves (derive_resolved_issue_facts). A cited issue the ledger does not derive is a
+    six-field FAIL_CLOSED SV_CHANGE_ADMIT_RESOLVED_ISSUE_FACTS_ABSENT before any write; nothing here fabricates an issue
+    and there is no other source. Required-check receipts and sign-offs are not supplied by this
     operation, so a change that needs them is refused by the evaluator, and
     that refusal is the outcome (nothing here turns a gap into ALLOW);
   * the outcome is recorded whatever it is (``record()``): one repository receipt (``transition_class`` SV_CHANGE_ADMIT,
@@ -283,18 +288,101 @@ def _step(result: Mapping[str, Any]) -> dict[str, Any]:
     return out | {"record_sha256": sha(rec), "lifecycle_state": rec.get("lifecycle_state"), "superseded_by": rec.get("superseded_by")}
 
 
+def _blob(store: Any, commit: str, key: str) -> bytes | None:
+    """The bytes of `key` in the ledger tree at `commit`, exactly as stored; None if absent."""
+    found = store._git("rev-parse", "--verify", "-q", commit + ":" + store._path(key), check=False)
+    if found.returncode != 0:
+        return None
+    return store._git("cat-file", "blob", found.stdout.decode().strip()).stdout
+
+
+def ledger_issue_facts(store: Any, successor: Mapping[str, Any], generation: Any, change_commits: Mapping[str, Any]) -> dict[str, Any]:
+    """The resolved-issue facts for the issues `successor` cites, read from the organization ledger at the successor's own
+    base_ref.ledger_head and derived by P1's pure functions; never from the request.
+
+    Returns {"facts", "issues", "ledger_commit", "check_receipts_read"} or a six-field refusal (disposition FAIL_CLOSED, nothing
+    written). The only source of an issue is a retained sv_check_receipt (a non-ALLOW check the sv_check_receipt operation
+    appended): an issue is derived from it, not stored. A cited issue that no such receipt derives, or a successor that cites
+    none, is SV_CHANGE_ADMIT_RESOLVED_ISSUE_FACTS_ABSENT."""
+    wi = p1_readers()
+    base = successor.get("base_ref")
+    commit = base.get("ledger_head") if isinstance(base, dict) else None
+    cited = successor.get("resolves") if isinstance(successor.get("resolves"), list) else []
+    gone = lambda why, **d: refusal(  # noqa: E731
+        "SV_CHANGE_ADMIT_RESOLVED_ISSUE_FACTS_ABSENT", "RESOLVED_ISSUE_FACTS_ARE_DERIVED_FROM_THE_LEDGER_AT_THE_CHANGE_BASE",
+        "a NATIVE SV_ISSUE the successor genuinely resolves, derived by derive_issue_from_check_receipt from a non-ALLOW sv_check_receipt this "
+        "ledger retains at the successor's base_ref.ledger_head and cited in $.resolves; this operation reads it from the ledger and "
+        "takes no issue from the request. " + why, "after a NATIVE SV_ISSUE the change resolves is on this ledger at the change's base "
+        "(a failing sv_check_receipt appended by the sv_check_receipt operation); nothing was written", cited=sorted(map(str, cited)),
+        ledger_commit=commit, **d)
+    if not (isinstance(commit, str) and GIT_SHA.match(commit)) or store._git("cat-file", "-e", commit + "^{commit}", check=False).returncode != 0:
+        return gone("The successor's base_ref.ledger_head is not a commit of this ledger.", detail="BASE_LEDGER_HEAD_NOT_ON_THIS_LEDGER")
+    if not cited:
+        return gone("The successor cites no issue ($.resolves is empty).", detail="RESOLVES_IS_EMPTY")
+    objects: dict[str, bytes] = {}
+    issues: list[dict[str, Any]] = []
+    read = 0
+    listed = store._git("ls-tree", "--name-only", commit, "--", store._path("receipts") + "/", check=False)
+    for name in sorted(listed.stdout.decode().splitlines()):
+        raw = _blob(store, commit, name)
+        try:
+            org_receipt = json.loads(raw) if raw is not None else None
+        except ValueError:
+            continue
+        boundary = org_receipt.get("boundary_evidence") if isinstance(org_receipt, dict) else None
+        if not (isinstance(boundary, dict) and boundary.get("operation") == wi.SV_CHECK_RECEIPT_OPERATION):
+            continue
+        repo_sha = org_receipt.get("repo_receipt_sha256")
+        if not (isinstance(repo_sha, str) and DIGEST.match(repo_sha)):
+            continue
+        source_key = "source-receipts/" + repo_sha.split(":", 1)[1] + ".json"
+        source = _blob(store, commit, source_key)
+        if source is None:
+            continue
+        read += 1
+        objects[commit + ":" + name], objects[commit + ":" + source_key] = raw, source
+        # The issue is derived at the commit that appended its receipt (the ref the receipt first appears at); the change's
+        # own base is where it must still be present, byte for byte (derive_resolved_issue_facts).
+        added = store._git("log", "--diff-filter=A", "--format=%H", commit, "--", store._path(name), check=False).stdout.decode().split()
+        first = added[-1] if added else None
+        if first is None or _blob(store, first, name) is None or _blob(store, first, source_key) is None:
+            continue
+        objects[first + ":" + name], objects[first + ":" + source_key] = _blob(store, first, name), _blob(store, first, source_key)
+        try:
+            issues.append(wi.derive_issue_from_check_receipt(
+                objects, LEDGER_REF + "@" + first + ":" + name, observed_base={"registry_generation": generation, "ledger_head": first}))
+        except wi.Refusal:
+            continue  # an ALLOW check, or one this ledger bytes do not derive an issue from: no issue
+    try:
+        facts = wi.derive_resolved_issue_facts(objects, LEDGER_REF + "@" + commit, successor, issues, change_commits=change_commits)
+    except wi.Refusal as exc:
+        rec = exc.record
+        out = refusal(rec["failure_code"], rec["failed_predicate"], rec["required_evidence_or_repair"],
+                      rec.get("next_attempt") or "after the repair; nothing was written", cited=sorted(map(str, cited)), ledger_commit=commit)
+        out["disposition"] = "FAIL_CLOSED"
+        return out
+    have = {f["issue_id"] for f in facts}
+    if not set(cited) <= have:
+        return gone("The ledger derives " + str(len(issues)) + " issue(s) from " + str(read) + " retained check receipt(s) at that commit; "
+                    "cited and not derived: " + ", ".join(sorted(set(map(str, cited)) - have)) + ".",
+                    detail="CITED_ISSUE_NOT_DERIVED_FROM_THE_LEDGER", derived_issue_ids=sorted(i["issue_id"] for i in issues),
+                    check_receipts_read=read)
+    return {"facts": facts, "issues": issues, "ledger_commit": commit, "check_receipts_read": read}
+
+
 def evaluate(predecessor: dict[str, Any], successor: dict[str, Any], admission: Mapping[str, Any], push_receipts: list[dict[str, Any]],
-             current_base: Mapping[str, Any], hb_epoch: int) -> dict[str, Any]:
+             current_base: Mapping[str, Any], hb_epoch: int, resolved_issues: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """The lifecycle over the supplied records and the observed ledger facts. Returns {result, chain}: `result` is the
     SV_CHANGE_ADMIT outcome (ALLOW, DENY or FAIL_CLOSED, six fields on every non-ALLOW), `chain` the step dispositions."""
     wi = p1_readers()
     epoch = str(hb_epoch)
     commits = dict(admission["change_commits"])
     writer_ctx = {"push_receipts": push_receipts, "change_commits": commits}
+    facts = [dict(f) for f in resolved_issues or []]
     supersede = wi.transition("SV_CHANGE_SUPERSEDE", predecessor, hb_epoch=epoch, context={"successor": successor})
-    verify = wi.transition("SV_CHANGE_VERIFY", successor, hb_epoch=epoch, context={**writer_ctx, "resolved_issues": []})
+    verify = wi.transition("SV_CHANGE_VERIFY", successor, hb_epoch=epoch, context={**writer_ctx, "resolved_issues": facts})
     state = verify["record"]
-    admit_ctx = {**writer_ctx, "resolved_issues": [], "current_base": dict(current_base),
+    admit_ctx = {**writer_ctx, "resolved_issues": facts, "current_base": dict(current_base),
                  "predicate_digest": admission["predicate_digest"], "corpus_head": admission["corpus_head"],
                  "actor_session": admission["actor_session"]}
     admitted = wi.transition("SV_CHANGE_ADMIT", state, hb_epoch=epoch, context=admit_ctx)
@@ -355,7 +443,10 @@ def append_change_admit(predecessor: Any, successor: Any, admission: Any, *, hb_
             else:
                 unrecorded.append(dict(rng))
         current_base = {"registry_generation": generation, "ledger_head": ledger_head}
-        run = evaluate(predecessor, successor, admission, found, current_base, hb_epoch)
+        derived = ledger_issue_facts(rl.ledger_store.open_store(org.ledger_root()), successor, generation, admission["change_commits"])
+        if "facts" not in derived:
+            return derived
+        run = evaluate(predecessor, successor, admission, found, current_base, hb_epoch, derived["facts"])
         wi = p1_readers()
         observed = {"current_base": current_base,
                     "current_base_sources": {"ledger_head": "OBSERVED_FROM_THE_DECLARED_LEDGER_REF",
@@ -363,8 +454,12 @@ def append_change_admit(predecessor: Any, successor: Any, admission: Any, *, hb_
                     "push_receipts_read_from_ledger": [r["result_sha256"] for r in found],
                     "unrecorded_push_ranges": unrecorded, "predecessor_request_digest": predecessor.get("request_digest"),
                     "predecessor_sha256": sha(predecessor), "admission": dict(admission), "chain": run["chain"],
+                    "resolved_issue_facts_derived_from_the_ledger": {
+                        "ledger_commit": derived["ledger_commit"], "check_receipts_read": derived["check_receipts_read"],
+                        "issues": [{"issue_id": i["issue_id"], "source_receipt": i["source_receipt"]} for i in derived["issues"]
+                                   if i["issue_id"] in {f["issue_id"] for f in derived["facts"]}]},
                     "not_supplied_by_this_operation": ["required-check ledger receipts", "sign-off receipts",
-                                                       "resolved SV_ISSUE facts", "base-state readback receipt"]}
+                                                       "base-state readback receipt"]}
 
         def append(transition_id_: str, cls: str, pred: str, succ: str, *, evidence: Mapping[str, Any],
                    authority_effect: str, hb_epoch: int) -> dict[str, Any]:  # noqa: ARG001 - authority_effect: the ledger's own NONE
