@@ -47,11 +47,11 @@
    },
    "message_sha256": "sha256:7d7f53c2b9a11bcf24fb2542ff8323adaafc56c97fa8d7224dfb88f5b6b040e3",
    "path_id": "Triad-Test->StegVerse-Labs:intr-destination",
-   "payload_sha256": "sha256:22ace649f26547bdb2d6fd4256c361f21a1c6bda654a58e04e0c79822cb63b76",
+   "payload_sha256": "sha256:89cf461448aae84847954531c46db1bd7492a8360a0e8253cdd79520c779eee4",
    "repository": "StegVerse-Labs/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "be06a9ffb0025f4c5cc550070d7b0fe21342967e",
+    "source_ledger_tip": "1b59d169df7768cdf419b4976b8d276f86044ed9",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -85,7 +85,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:7dc2588d80bc5633b835c90c50f7c8dccb0b059582549d177a7051c2ee2a1feb",
+ "record_sha256": "sha256:e2036c32cb897cc400e995fc41ae543d154acdc29117a052064f370ef23dba53",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Triad-Test",
  "source_receipts": {
@@ -172,7 +172,7 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->StegVerse-Labs:intr-destination@intr-path-v1:Triad-Test->StegVerse-Labs"
   },
-  "source_ledger_tip_observed": "be06a9ffb0025f4c5cc550070d7b0fe21342967e"
+  "source_ledger_tip_observed": "1b59d169df7768cdf419b4976b8d276f86044ed9"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",

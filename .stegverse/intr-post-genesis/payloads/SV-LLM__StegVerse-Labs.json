@@ -47,11 +47,11 @@
    },
    "message_sha256": "sha256:4a1cdc20c72928d701fee56bb3e355d60b64d49e31eab4f782702ec9ad384ec5",
    "path_id": "SV-LLM->StegVerse-Labs:intr-destination",
-   "payload_sha256": "sha256:d054ef3e69a66ff37ed0f27282589593d38529c6c93a9c8e814903cb00e3bb78",
+   "payload_sha256": "sha256:af176a7e3f755987917dbab298611113ed0d63686a5496fcfe2177477829349f",
    "repository": "StegVerse-Labs/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "d3a3b89ed8c016ee59cb53eb06fe09632b2b5eb1",
+    "source_ledger_tip": "67ac95a44bb875ff5ab2a6f15e6a9593544084b6",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -85,7 +85,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:9c47d8c2dff39c7bbad74d2316db157a021b1da2b7ff2b37d37991c04e36656a",
+ "record_sha256": "sha256:3373150a418c98e41ba835524f7f408463f5f42197547665de22f91ada730847",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "SV-LLM",
  "source_receipts": {
@@ -172,7 +172,7 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:SV-LLM->StegVerse-Labs:intr-destination@intr-path-v1:SV-LLM->StegVerse-Labs"
   },
-  "source_ledger_tip_observed": "d3a3b89ed8c016ee59cb53eb06fe09632b2b5eb1"
+  "source_ledger_tip_observed": "67ac95a44bb875ff5ab2a6f15e6a9593544084b6"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",

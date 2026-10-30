@@ -73,11 +73,16 @@ class IntrPostGenesisKitTests(unittest.TestCase):
             self.assertEqual((record["cls"], record["expected_at_genesis"]), (kit.DESTINATION_LEDGERED, "ALLOW"), pid)
             self.assertIn(pid, MANIFEST["ledgered_allow"])
         self.assertEqual(sum(MANIFEST["class_counts"].values()), 240)
-        # master-records, formalism-tests and Infrastructure-Continuity-Ventures joined the declared paths (240 over 16 organizations).
-        # The 156 paths among the first 13 organizations stay destination-ledgered; the 84 paths that touch a new organization are
-        # sealed with their six fields until the new organizations' writers have appended and consumed them (reseal follows).
-        self.assertEqual(MANIFEST["class_counts"].get(kit.DESTINATION_LEDGERED), 156 + MANIFEST["class_counts"].get("NEW_ORG_PATHS_LEDGERED", 0))
-        self.assertEqual(sum(v for k, v in MANIFEST["class_counts"].items() if k != kit.DESTINATION_LEDGERED), 84 - MANIFEST["class_counts"].get("NEW_ORG_PATHS_LEDGERED", 0))
+        # master-records, formalism-tests and Infrastructure-Continuity-Ventures joined the declared paths (240 over 16 organizations)
+        # and their writers have appended and consumed their rows: 234 of the 240 paths are destination-ledgered. The six that are
+        # not all touch StegVerse-Labs, whose crossings wait on the Labs ledger head carrying a supplied epoch (Labs#3364/#3416,
+        # HB_EPOCH_SOURCE_UNOBSERVED); they stay sealed with their six fields.
+        self.assertEqual(MANIFEST["class_counts"].get(kit.DESTINATION_LEDGERED), 234)
+        self.assertEqual(sum(v for k, v in MANIFEST["class_counts"].items() if k != kit.DESTINATION_LEDGERED), 6)
+        unledgered = [p for p in kit.paths() if p["path_id"] not in MANIFEST["ledgered_allow"]]
+        self.assertEqual(len(unledgered), 6)
+        for p in unledgered:
+            self.assertIn("StegVerse-Labs", (p["source"], p["destination"]), p["path_id"])
 
     def test_carry_set_and_the_allow_ready_count(self):
         # SV-LLM/.github#50's writer has landed and both carried rows were consumed: the former carry paths are
@@ -87,8 +92,8 @@ class IntrPostGenesisKitTests(unittest.TestCase):
             record = kit.load_record(pid)
             self.assertEqual((record["cls"], record["expected_at_genesis"]), (kit.DESTINATION_LEDGERED, "ALLOW"))
             self.assertNotIn("expected_after_carry", record)
-        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 156)
-        self.assertEqual(len(MANIFEST["ledgered_allow"]), 156)
+        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 234)
+        self.assertEqual(len(MANIFEST["ledgered_allow"]), 234)
         for pid in MANIFEST["ledgered_allow"]:
             record = kit.load_record(pid)
             self.assertEqual(record["cls"], kit.DESTINATION_LEDGERED)
@@ -213,7 +218,7 @@ class IntrPostGenesisKitTests(unittest.TestCase):
     def test_the_sealed_payload_is_what_this_repositorys_writer_appends(self):
         here = kit.ingress.organization()
         mine = [pid for pid in MANIFEST["ledgered_allow"] if kit.load_record(pid)["destination"] == here]
-        self.assertEqual(len(mine), 12)
+        self.assertEqual(len(mine), 15)  # every other organization, including the three new ones
         for pid in mine:
             record = kit.load_record(pid)
             src = record["source_receipts"]

@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: StegVerse-002/.github's ledger (read anonymously at 26aaead6081e2d8b196f34894d76e10d1dc11d24) holds destination receipt sha256:aae20d366e81a8d5a4a8398cb52cf6a68841e4e43542a03850ab9a5d18b27364; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: StegVerse-002/.github's ledger (read anonymously at 7eb35d705dd7c43ac40512fe93883768e2e2dd5f) holds destination receipt sha256:aae20d366e81a8d5a4a8398cb52cf6a68841e4e43542a03850ab9a5d18b27364; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:Triad-Test->StegVerse-002",
  "destination": "StegVerse-002",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "26aaead6081e2d8b196f34894d76e10d1dc11d24",
+  "destination_ledger_tip_observed": "7eb35d705dd7c43ac40512fe93883768e2e2dd5f",
   "destination_organization_receipt_sha256": "sha256:aae20d366e81a8d5a4a8398cb52cf6a68841e4e43542a03850ab9a5d18b27364"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:f4b70f36f6fc06c8d584e3770ad3b1028080997f6e396ad4a0485665b90e6e41",
    "path_id": "Triad-Test->StegVerse-002:intr-destination",
-   "payload_sha256": "sha256:00c6cdbf9264f9599ddc1c72836134c5655223d7cccce64cbbe8dbdfb66d85b0",
+   "payload_sha256": "sha256:2c73886d5db0680e496e06b699d585c9350ce2f889cbc1df15683a38b5f69627",
    "repository": "StegVerse-002/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "be06a9ffb0025f4c5cc550070d7b0fe21342967e",
+    "source_ledger_tip": "1b59d169df7768cdf419b4976b8d276f86044ed9",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:3daaabef61b024aea0bd7eb42d12503bfa2096eeddc562aeece86e011048de0b",
+ "record_sha256": "sha256:2018b47aed3656cd87bf32aa8fa15ccc8b6672db2dc5d0505c5cd9cac2ce706d",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Triad-Test",
  "source_receipts": {
@@ -164,14 +164,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Triad-Test->StegVerse-002:intr-destination@intr-path-v1:Triad-Test->StegVerse-002"
   },
-  "source_ledger_tip_observed": "be06a9ffb0025f4c5cc550070d7b0fe21342967e"
+  "source_ledger_tip_observed": "1b59d169df7768cdf419b4976b8d276f86044ed9"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: StegVerse-002/.github's ledger (read anonymously at 26aaead6081e2d8b196f34894d76e10d1dc11d24) holds destination receipt sha256:aae20d366e81a8d5a4a8398cb52cf6a68841e4e43542a03850ab9a5d18b27364; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: StegVerse-002/.github's ledger (read anonymously at 7eb35d705dd7c43ac40512fe93883768e2e2dd5f) holds destination receipt sha256:aae20d366e81a8d5a4a8398cb52cf6a68841e4e43542a03850ab9a5d18b27364; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }
