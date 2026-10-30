@@ -15,6 +15,16 @@ the job's fast-forward publish.
    "receipt": {<a test receipt sealed by its producer's CI, byte-for-value as the run printed it>},
    "provenance": {"repository": "<producer>", "run_id": <int>, "head_sha": "<producer commit>", ...}}
 
+  {"schema": "stegverse.organization-ledger-ingest-request/v1",
+   "operation": "sv_push_receipt",
+   "push_receipt": {<one stegverse.sv_push_receipt.v1 object, as resident-runtime/sv_push_receipt.py emit wrote it>},
+   "hb_epoch": <non-negative integer>}
+
+sv_push_receipt is appended by resident-runtime/sv_push_receipt_append.py (the port of StegVerse-Labs/.github#3424) at
+the request's supplied epoch (it must equal the receipt's own hb_epoch), once per push range (repository, ref,
+old_sha, new_sha); a second receipt for the same range is refused as a duplicate. The operations are declared in
+.stegverse/organization-ledger-ingest/operations.json.
+
 The sealed receipt is retained unchanged as source-receipts/<receipt_sha256>.json,
 consumed by one organization transition receipt, at the supplied epoch the
 ledger head carries (merge_transfer.head_epoch; no clock). The append is the
@@ -53,11 +63,14 @@ LEDGER_REF = "refs/stegverse/organization-ledger"
 ENTRYPOINT = ".github/workflows/organization-ledger-writer.yml ledger-ingest (push to main touching " + REQUEST_PATH + ")"
 GOAL = "StegVerse-org/.github#162 P0-runtime-and-custody"
 SEALED = "sealed_test_receipt"
+SV_PUSH = "sv_push_receipt"
+OPERATIONS_PATH = ".stegverse/organization-ledger-ingest/operations.json"
 SEALED_CLASS = "ORGANIZATION_SEALED_TEST_RECEIPT_INGEST"
 FIELDS = {
     SEALED: ({"schema", "operation", "receipt", "provenance"}, set()),
+    SV_PUSH: ({"schema", "operation", "push_receipt", "hb_epoch"}, set()),
 }
-FILES = {"receipt": "sealed-receipt.json", "provenance": "provenance.json"}
+FILES = {"receipt": "sealed-receipt.json", "provenance": "provenance.json", "push_receipt": "push-receipt.json"}
 MATCH_KEYS = ("schema", "receipt_kind", "suite", "repository")
 
 
@@ -99,10 +112,17 @@ def read_request(path: Path | str) -> dict[str, Any]:
         return refusal("INGEST_REQUEST_SCHEMA_MISMATCH", "REQUEST_MATCHES_" + SCHEMA,
                        operation + " takes the fields " + ", ".join(sorted(required))
                        + (" and optionally " + ", ".join(sorted(optional)) if optional else ""))
-    for name in required - {"schema", "operation"}:
+    for name in required - {"schema", "operation", "hb_epoch"}:
         if not isinstance(request[name], dict):
-            return refusal("INGEST_REQUEST_SCHEMA_MISMATCH", name.upper() + "_IS_ONE_JSON_OBJECT", name + " as one JSON object")
+            code = "LEDGER_EVIDENCE_NOT_A_PUSH_RECEIPT" if name == "push_receipt" else "INGEST_REQUEST_SCHEMA_MISMATCH"
+            return refusal(code, name.upper() + "_IS_ONE_JSON_OBJECT", name + " as one JSON object")
     result = {"disposition": "ALLOW", "operation": operation}
+    if operation == SV_PUSH:
+        epoch = request["hb_epoch"]
+        if isinstance(epoch, bool) or not isinstance(epoch, int) or epoch < 0:
+            return refusal("SV_PUSH_RECEIPT_HB_EPOCH_INVALID", "HB_EPOCH_IS_A_NON_NEGATIVE_INTEGER",
+                           "hb_epoch as a non-negative integer in the request; no clock is read for it")
+        return result | {"push_receipt": request["push_receipt"], "hb_epoch": epoch}
     return result | {"receipt": request["receipt"], "provenance": request["provenance"]}
 
 
@@ -302,6 +322,7 @@ def main(argv: list[str] | None = None) -> int:
     read = sub.add_parser("read", help="check the request's shape; materialize its parts")
     read.add_argument("--request", default=REQUEST_PATH)
     read.add_argument("--materialize", help="write the request's parts here as the operation's input files")
+    read.add_argument("--github-env", help="append INGEST_OPERATION (and HB_EPOCH for sv_push_receipt) here")
     append = sub.add_parser("append-sealed", help="append a sealed_test_receipt request through the governed writer")
     append.add_argument("--request", default=REQUEST_PATH)
     append.add_argument("--ledger-repository", required=True)
@@ -318,7 +339,26 @@ def main(argv: list[str] | None = None) -> int:
     result = read_request(args.request)
     if result["disposition"] != "ALLOW":
         return _emit(result, getattr(args, "out", None))
+    if args.command != "read" and result["operation"] != SEALED:
+        return _emit(refusal("INGEST_OPERATION_NOT_SEALED_TEST_RECEIPT", "COMMAND_MATCHES_THE_REQUESTS_OPERATION",
+                             args.command + " runs the " + SEALED + " operation; the committed request is "
+                             + result["operation"] + ", appended by its own step"), getattr(args, "out", None))
     if args.command == "read":
+        if args.github_env:
+            with open(args.github_env, "a", encoding="utf-8") as env:
+                env.write("INGEST_OPERATION=%s\n" % result["operation"])
+                if result["operation"] == SV_PUSH:
+                    env.write("HB_EPOCH=%d\n" % result["hb_epoch"])
+        if result["operation"] == SV_PUSH:
+            if args.materialize:
+                target = Path(args.materialize)
+                target.mkdir(parents=True, exist_ok=True)
+                (target / FILES["push_receipt"]).write_text(json.dumps(result["push_receipt"], sort_keys=True), encoding="utf-8")
+            receipt = result["push_receipt"]
+            return _emit({"disposition": "ALLOW", "request": args.request, "operation": SV_PUSH,
+                          "hb_epoch": result["hb_epoch"], "repository": receipt.get("repository"),
+                          "ref": receipt.get("ref"), "old_sha": receipt.get("old_sha"),
+                          "new_sha": receipt.get("new_sha")}, None)
         if args.materialize:
             target = Path(args.materialize)
             target.mkdir(parents=True, exist_ok=True)
