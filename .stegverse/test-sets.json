@@ -451,6 +451,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_intr_hop_h36_phases.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_hop_h36_phases.py"
+   ],
+   "tests": [
+    "tests.test_intr_hop_h36_phases"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_intr_org_crossing.py",
    "inputs": [],
    "surfaces": [
@@ -4977,6 +4989,10 @@
    "org-runtime/interlock-intr.json",
    "resident-runtime/intr_hop.py",
    "tools/tasks/retired/intr-destination-hop.yml"
+  ],
+  "tests/test_intr_hop_h36_phases.py": [
+   "org-kernel/kernel.py",
+   "tests/test_intr_hop.py"
   ],
   "tests/test_intr_org_crossing.py": [
    "org-boundary/registry/services.json",
