@@ -173,7 +173,14 @@ def consume(contract: dict, ledger: str, head_root: Path, selection: dict | None
                              # key name fixed by the pinned selector; the value is the org commit TVC fetched
                              "bound_labs_commit": (doc.get("consumed_source") or {}).get("commit"),
                              "surface_files_matched": len(set(contract["surface_paths"])
-                                                          | set(doc["consumed_source"]["observed_surface"]))}
+                                                          | set(doc["consumed_source"]["observed_surface"])),
+                             # the exact binding, for test_suite_skip_receipt.py: each surface path with the sha256
+                             # this head holds (equal to what the producer observed), and the test ids it ran
+                             "bound_surface": {p: file_sha256(head_root / p) for p in sorted(
+                                 set(contract["surface_paths"]) | set(doc["consumed_source"]["observed_surface"]))},
+                             "bound_test_ids": sorted(doc.get("test_ids") or []),
+                             "bound_event": doc.get("event"),
+                             "bound_ledger_candidate": True}
         stale.append({"receipt_sha256": doc["receipt_sha256"], "differs": diff})
     newest = stale[0]
     return record | {"disposition": "FAIL_CLOSED", "stale_receipts": stale, "refusals": [refusal(

@@ -81,3 +81,31 @@ another organization also need this transition installed in that organization's 
 `INTR_PATH_RECEIPT_NOT_LEDGERED` here. Fresh appends are tested on a copy of the pre-receipt tip `0db6e0bd`. Receipts in
 the tests and the PR dry-run are written to temporary directories or a scratch ref. They are not ledgered and
 not authentic.
+
+## Ledger binding per organization (`resident-runtime/intr_path_ledger.py`)
+
+The path transfer and the path ingress reach their organization's ledger through one adapter. The adapter is selected by `data/intr-protocol/v1/protocol.json` → `main_merge_transfer.verifiers_by_organization`.
+
+**Organizations not listed** (StegVerse-org, SV-011, StegGhost, SV-LLM and the rest) use `MERGE_TRANSFER_PY`: `resident-runtime/merge_transfer.py` (032ed727) for readers, the transfer verdict and the head epoch, and `intr_destination_ingress.py::_append` for appends. This is unchanged; the same tests pass.
+
+**StegVerse-Labs and GCAT-BCAT-Engine** use `MERGE_TRANSFER_GITSTORE`: Lane D's `resident-runtime/ledger_gitstore.py` (`pin.ledger_module`, sha256 `436ecfc3…`; preflight predicate `pin.ledger_module.preflight_predicate`, `STEGVERSE_ORG_LEDGER_GIT_REF_IS_THE_BOUND_REF`) over `resident-runtime/merge_transfer_gitstore.py` (`pin.path`, sha256 `bf9f1c15…`).
+Each append, the path receipts' and the main-merge transfer's (`ledger_gitstore.append_merge_transfer`), is all or nothing. A two-level preflight resolves both halves' locations before either is written (FAIL_CLOSED `LEDGER_TWO_LEVEL_PREFLIGHT_REFUSED`), and a failed append is rolled back by compare-and-swap (FAIL_CLOSED `LEDGER_TWO_LEVEL_ROLLBACK_FAILED` when a ref cannot be restored). Both reach the path results with their six fields.
+- Each file is loaded only at its pinned digest. Otherwise the result is FAIL_CLOSED `INTR_PATH_LEDGER_VERIFIER_DIGEST_UNPINNED`.
+- The binding provides the readers (`org_store` / `repo_store`, re-built after every append), `verify_merge_transfer` in `pin.mode` (dual), `head_epoch`, `org_chain`, and `append(transition_class, packet_id, evidence, hb_epoch, *, operation, profile_id, boundary_extra, root)`. The append goes through the organization's own writer surface: `AGGREGATE_TRANSITION` for Labs, `DUAL_LEDGER` for GCAT.
+- The path transfer verifies the transfer commit first. It then writes that transfer's `organization_receipt_sha256` into the path evidence (`merge_transfer_organization_receipt_sha256`).
+- A checkout that carries the verifier but not the ledger module still reads and verifies. Every append there is FAIL_CLOSED `INTR_PATH_GITSTORE_WRITER_UNBOUND`, and nothing is written.
+
+The operations are the same in every organization:
+- source half: `INTR_MESH_PATH_TRANSFER` / `intr-mesh-path-transfer`
+- destination half: `ORGANIZATION_INTR_DESTINATION_INGRESS` / `intr-destination`
+
+`ledger_gitstore.append` accepts any operation, so no organization-specific names are needed.
+
+**Tests:**
+- `tests/test_intr_path_ledger.py` runs the real `ledger_gitstore.append` from pinned byte copies (`tests/fixtures/intr-path-ledger/gitstore-checkout/`). It runs on this organization's own writer surface, over temporary POSIX and bare-git ledgers at the pinned tip.
+  - All 7 source-half appends are ALLOW, each linked to the verified transfer.
+  - A replay writes nothing.
+  - The retained `source-receipts/` copy equals the repository receipt.
+  - The real state is unchanged when read through the git-store readers.
+- `tests/intr_path_temp_ledger.py` builds the temporary ledger the way the bound backend reads it: a directory, or a bare git repository on the declared ref with a fixed git identity and date.
+- `python3 resident-runtime/intr_path_ledger.py which` names the binding. `append-merge-transfer --commit <c>` appends through it; the dry-run job uses this for `temp_merge_transfers`.

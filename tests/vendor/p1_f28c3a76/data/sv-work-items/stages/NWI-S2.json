@@ -1,0 +1,28 @@
+{
+  "entry_transition": "STAGE_NWI_S2_ADMITTED",
+  "exit_gate": [
+    {
+      "evidence": "metric",
+      "predicate": "SV_LLM_VERDICT_AGREEMENT_RATE",
+      "threshold": {
+        "comparator": ">=",
+        "derivation": {
+          "baseline": "S1_CORPUS_VERDICT_AGREEMENT",
+          "formula": "FLOOR_4DP(agreed/evaluated)",
+          "min_observations": 3,
+          "rule": "value = the agreement observed at S1, floored to 4 decimals: agreed/evaluated where the evaluations are the NWI-S1 verifier bundles of the S1 corpus (the snapshot's pinned SV-LLM/.github evidence/sv-check-receipts) joined by (repository, head commit) to ledgered admission decisions, counted by sv_e0_terminals.verdict_agreement_e0 under its own evidence rules (verifier receipts and admission decisions must both be organization-ledger receipts). S2 must not fall below S1's observed agreement. FAIL_CLOSED STAGE_THRESHOLD_BASELINE_INSUFFICIENT if the baseline is unobserved, evaluated < min_observations, or the value is vacuous (0, which every rate passes).",
+          "rule_id": "NWI-S2-AGREEMENT-FLOOR-FROM-S1-BASELINE/v1",
+          "transition": "STAGE_THRESHOLD_DERIVE"
+        },
+        "metric": "agreement_rate",
+        "value": null
+      }
+    }
+  ],
+  "name": "VERIFY_ONLY",
+  "ordinal": 2,
+  "schema": "stegverse.nwi-stage-manifest/v1",
+  "source": "KV INDEX.md 'STEPWISE GROWTH' (Rigel 12:44Z) and 'STAGE VERIFICATION' (12:53Z)",
+  "stage_id": "NWI-S2",
+  "thresholds_source": "this manifest only; value is written solely by the declared STAGE_THRESHOLD_DERIVE transition (resident-runtime/stage_threshold_derive.py, scripts/derive_stage_thresholds.py) from threshold.derivation, never by hand; a null value is undeclared and the gate FAIL_CLOSES STAGE_THRESHOLD_UNDECLARED"
+}

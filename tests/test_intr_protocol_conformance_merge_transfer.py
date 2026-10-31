@@ -160,8 +160,10 @@ class RealState(unittest.TestCase):
             self.assertEqual(live[row["merge_commit"]]["repository_receipt"], row["repository_receipt"])
 
     def test_mesh_conformance_stays_thirteen_allow_with_the_separate_dimension(self):
+        # The test id is required verification at base and keeps its name; the pinned count is now all sixteen
+        # organizations ALLOW (StegVerse-org/.github#162), the thirteen of the earlier mesh plus the three new ones.
         report = intr.conform_mesh(DESTINATIONS, merge_transfer_manifest=MANIFEST)
-        self.assertEqual(report["counts"], {"ALLOW": 13, "DENY": 0, "FAIL_CLOSED": 3})
+        self.assertEqual(report["counts"], {"ALLOW": 16, "DENY": 0, "FAIL_CLOSED": 0})
         self.assertEqual(report["merge_transfer"]["counts"], {"ALLOW": 4, "DENY": 0, "FAIL_CLOSED": 1})
         plain = intr.conform_mesh(DESTINATIONS)
         self.assertNotIn("merge_transfer", plain)

@@ -1,0 +1,31 @@
+{
+  "entry_transition": "STAGE_NWI_S1_ADMITTED",
+  "exit_gate": [
+    {
+      "evidence": "receipt",
+      "predicate": "SV_LLM_READS_REGISTRY_AND_LEDGER_AT_BOUND_GENERATION_AND_HEAD"
+    },
+    {
+      "evidence": "receipt",
+      "predicate": "SV_LLM_RUNS_DETERMINISTIC_VERIFICATION_NO_CLOCK_NO_EXTERNAL_MACHINE"
+    },
+    {
+      "evidence": "receipt",
+      "predicate": "SV_LLM_EMITS_SIX_FIELD_DISPOSITIONS_AND_RECEIPTS"
+    },
+    {
+      "evidence": "receipt",
+      "predicate": "W04_SANDBOX_RUNTIME_OBSERVED"
+    },
+    {
+      "evidence": "receipt",
+      "predicate": "AI_ENTITY_REGISTRATION_ON_MAIN"
+    }
+  ],
+  "name": "BUILD_SV_LLM_SOLVE_ENVIRONMENT",
+  "ordinal": 1,
+  "schema": "stegverse.nwi-stage-manifest/v1",
+  "source": "KV INDEX.md 'STEPWISE GROWTH' (Rigel 12:44Z) and 'STAGE VERIFICATION' (12:53Z)",
+  "stage_id": "NWI-S1",
+  "thresholds_source": "this manifest only; a null value is undeclared and the gate FAIL_CLOSES STAGE_THRESHOLD_UNDECLARED"
+}

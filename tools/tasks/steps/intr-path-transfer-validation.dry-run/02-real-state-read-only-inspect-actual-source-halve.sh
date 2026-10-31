@@ -1,6 +1,4 @@
 set -euo pipefail
-export STEGVERSE_ORG_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF"
-export STEGVERSE_REPO_LEDGER_ROOT="git+$GITHUB_WORKSPACE#$DRY_RUN_REF:$REPO_LEDGER_NAMESPACE"
 python3 resident-runtime/intr_path_transfer.py verify --out "$RUNNER_TEMP/results/real-state.json" > /dev/null
 python3 - <<'PY'
 import json, os

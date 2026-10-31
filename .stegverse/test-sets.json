@@ -3,7 +3,7 @@
  "generated_from": {
   "generator": "scripts/test_set_selection.py (StegVerse-Labs/.github)",
   "spec": ".stegverse/test-set-spec.json",
-  "spec_sha256": "86c5e67cce079ec9f50459a2de56d4eca106c0aa38ddf349f2837d2018ab8c6e"
+  "spec_sha256": "f47e244afc3ad14bb3fe040def1a07e8c36a71fe0de9ecdb090256301a096d29"
  },
  "inputs": {
   "jsonschema": {
@@ -451,6 +451,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_intr_hop_h36_phases.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_hop_h36_phases.py"
+   ],
+   "tests": [
+    "tests.test_intr_hop_h36_phases"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_intr_org_crossing.py",
    "inputs": [],
    "surfaces": [
@@ -472,6 +484,18 @@
    ],
    "tests": [
     "tests.test_intr_path_ingress"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_intr_path_ledger.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_path_ledger.py"
+   ],
+   "tests": [
+    "tests.test_intr_path_ledger"
    ]
   },
   {
@@ -589,6 +613,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:AaCT-E->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__Infrastructure_Continuity_Ventures"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:AaCT-E->SV-011",
    "inputs": [],
    "surfaces": [
@@ -673,6 +709,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:AaCT-E->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AaCT-E->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AaCT_E__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:Admissible-Existence->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -728,6 +788,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -817,6 +889,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:Admissible-Existence->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Admissible-Existence->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Admissible_Existence__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:AdmittedCode->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -872,6 +968,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -961,6 +1069,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:AdmittedCode->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:AdmittedCode->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_AdmittedCode__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:Data-Continuation->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -1016,6 +1148,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -1105,6 +1249,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:Data-Continuation->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Data-Continuation->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Data_Continuation__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:ECAT-ICAT-Formal->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -1160,6 +1328,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -1249,6 +1429,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:ECAT-ICAT-Formal->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_ECAT_ICAT_Formal__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:GCAT-BCAT-Engine->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -1304,6 +1508,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -1393,6 +1609,210 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:GCAT-BCAT-Engine->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_GCAT_BCAT_Engine__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Infrastructure-Continuity-Ventures->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Infrastructure_Continuity_Ventures__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:SV-011->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -1460,6 +1880,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -1537,6 +1969,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:SV-011->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-011->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_011__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:SV-LLM->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -1604,6 +2060,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -1681,6 +2149,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:SV-LLM->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:SV-LLM->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_SV_LLM__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:StegGhost->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -1748,6 +2240,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -1825,6 +2329,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:StegGhost->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegGhost->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegGhost__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:StegVerse-002->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -1892,6 +2420,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -1969,6 +2509,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:StegVerse-002->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-002->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_002__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:StegVerse-Labs->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -2036,6 +2600,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -2113,6 +2689,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:StegVerse-Labs->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-Labs->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_Labs__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:StegVerse-org->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -2180,6 +2780,18 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__Infrastructure_Continuity_Ventures"
    ]
   },
   {
@@ -2257,6 +2869,30 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:StegVerse-org->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:StegVerse-org->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_StegVerse_org__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:Triad-Test->AaCT-E",
    "inputs": [],
    "surfaces": [
@@ -2329,6 +2965,18 @@
   {
    "always": false,
    "exclude": [],
+   "id": "intr-path:Triad-Test->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__Infrastructure_Continuity_Ventures"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "intr-path:Triad-Test->SV-011",
    "inputs": [],
    "surfaces": [
@@ -2396,6 +3044,390 @@
    ],
    "tests": [
     "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__formalism_tests"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:Triad-Test->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_Triad_Test__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__Infrastructure_Continuity_Ventures"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:formalism-tests->master-records",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_formalism_tests__master_records"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->AaCT-E",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__AaCT_E"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->Admissible-Existence",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__Admissible_Existence"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->AdmittedCode",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__AdmittedCode"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->Data-Continuation",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__Data_Continuation"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->ECAT-ICAT-Formal",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__ECAT_ICAT_Formal"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->GCAT-BCAT-Engine",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__GCAT_BCAT_Engine"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->Infrastructure-Continuity-Ventures",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__Infrastructure_Continuity_Ventures"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->SV-011",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__SV_011"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->SV-LLM",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__SV_LLM"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->StegGhost",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__StegGhost"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->StegVerse-002",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__StegVerse_002"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->StegVerse-Labs",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__StegVerse_Labs"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->StegVerse-org",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__StegVerse_org"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->Triad-Test",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__Triad_Test"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "intr-path:master-records->formalism-tests",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_intr_post_genesis_replay.py"
+   ],
+   "tests": [
+    "tests.test_intr_post_genesis_replay.IntrPostGenesisPathTests.test_master_records__formalism_tests"
    ]
   },
   {
@@ -3285,6 +4317,54 @@
   {
    "always": false,
    "exclude": [],
+   "id": "tests/test_sv_change_admit_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sv_change_admit_append.py"
+   ],
+   "tests": [
+    "tests.test_sv_change_admit_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sv_check_receipt_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sv_check_receipt_append.py"
+   ],
+   "tests": [
+    "tests.test_sv_check_receipt_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sv_push_receipt.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sv_push_receipt.py"
+   ],
+   "tests": [
+    "tests.test_sv_push_receipt"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
+   "id": "tests/test_sv_push_receipt_append.py",
+   "inputs": [],
+   "surfaces": [
+    "tests/test_sv_push_receipt_append.py"
+   ],
+   "tests": [
+    "tests.test_sv_push_receipt_append"
+   ]
+  },
+  {
+   "always": false,
+   "exclude": [],
    "id": "tests/test_task_registry.py",
    "inputs": [],
    "surfaces": [
@@ -3578,7 +4658,15 @@
    ".stegverse/intr-path-transfer/**",
    ".stegverse/intr-path-transfer/inbound.json",
    "org-kernel/kernel.py",
+   "resident-runtime/intr_path_ledger.py",
    "resident-runtime/intr_path_tvc_read.py",
+   "tools/tasks/intr_public_ledgers.sh"
+  ],
+  "resident-runtime/intr_path_ledger.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "data/intr-protocol/v1/**",
+   "data/intr-protocol/v1/protocol.json",
+   "resident-runtime/intr_destination_ingress.py",
    "resident-runtime/merge_transfer.py"
   ],
   "resident-runtime/intr_path_transfer.py": [
@@ -3586,7 +4674,7 @@
    ".stegverse/intr-path-transfer/transfers.json",
    "org-runtime/intr_protocol.py",
    "resident-runtime/intr_path_ingress.py",
-   "resident-runtime/merge_transfer.py",
+   "resident-runtime/intr_path_ledger.py",
    "tests/fixtures/**",
    "tests/fixtures/intr-protocol/destinations/**",
    "tests/fixtures/intr-protocol/destinations/manifest.json"
@@ -3642,6 +4730,7 @@
   "resident-runtime/organization_ledger_ingest.py": [
    ".github/workflows/organization-ledger-writer.yml",
    ".stegverse/organization-ledger-ingest/accepted-sealed-receipts.json",
+   ".stegverse/organization-ledger-ingest/operations.json",
    ".stegverse/organization-ledger-ingest/request.json",
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
@@ -3676,6 +4765,10 @@
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
    "resident-runtime/organization_egress_boundary.py"
+  ],
+  "resident-runtime/push_receipt_session_binder.py": [
+   "resident-runtime/sv_push_receipt.py",
+   "schemas/sv-push-receipt.v1.schema.json"
   ],
   "resident-runtime/receipt_disorder_measurement.py": [
    ".stegverse/transition-ledger/emit.py",
@@ -3733,6 +4826,22 @@
    "org-kernel/kernel.py",
    "resident-runtime/aggregate_repo_transition.py"
   ],
+  "resident-runtime/sv_change_admit_append.py": [
+   "org-kernel/kernel.py",
+   "org-kernel/node_store.py",
+   "resident-runtime/sv_push_receipt.py",
+   "resident-runtime/sv_push_receipt_append.py"
+  ],
+  "resident-runtime/sv_check_receipt_append.py": [
+   "org-kernel/kernel.py",
+   "org-kernel/node_store.py",
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/sv_push_receipt.py"
+  ],
+  "resident-runtime/sv_push_receipt_append.py": [
+   "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/sv_push_receipt.py"
+  ],
   "resident-runtime/task_registry_disclosure_endpoint.py": [
    "orchestration/task-registry.json"
   ],
@@ -3769,6 +4878,9 @@
   "tests/fixtures/sdk_manifest_fixture_build.py": [
    "tests/fixtures/sdk-manifest-build-spec.json",
    "tests/fixtures/sdk-manifests/**"
+  ],
+  "tests/intr_path_temp_ledger.py": [
+   "tests/fixtures/intr-path-ledger/snapshots/**"
   ],
   "tests/peer_organization.py": [
    ".stegverse/transition-ledger/contract.json",
@@ -3963,6 +5075,10 @@
    "resident-runtime/intr_hop.py",
    "tools/tasks/retired/intr-destination-hop.yml"
   ],
+  "tests/test_intr_hop_h36_phases.py": [
+   "org-kernel/kernel.py",
+   "tests/test_intr_hop.py"
+  ],
   "tests/test_intr_org_crossing.py": [
    "org-boundary/registry/services.json",
    "org-boundary/runtime/intr_transport.py",
@@ -3970,10 +5086,21 @@
    "resident-runtime/run_once.py"
   ],
   "tests/test_intr_path_ingress.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
    ".stegverse/transition-ledger/contract.json",
    "resident-runtime/intr_path_ingress.py",
    "tests/fixtures/intr-path-ingress/pin.json",
+   "tests/intr_path_temp_ledger.py",
    "tools/tasks/intr_public_ledgers.sh"
+  ],
+  "tests/test_intr_path_ledger.py": [
+   ".stegverse/transition-ledger/contract.json",
+   "resident-runtime/intr_path_ingress.py",
+   "resident-runtime/intr_path_transfer.py",
+   "resident-runtime/merge_transfer_gitstore.py",
+   "tests/fixtures/intr-path-transfer/expected-real-state.json",
+   "tests/intr_path_temp_ledger.py"
   ],
   "tests/test_intr_path_public_ledger_read.py": [
    ".stegverse/intr-path-transfer/inbound.json",
@@ -3988,6 +5115,7 @@
    "resident-runtime/intr_path_transfer.py",
    "tests/fixtures/**",
    "tests/fixtures/intr-path-transfer/**",
+   "tests/intr_path_temp_ledger.py",
    "tools/tasks/**",
    "tools/tasks/intr_public_ledgers.sh"
   ],
@@ -4197,11 +5325,13 @@
   ],
   "tests/test_organization_ledger_ingest.py": [
    ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/operations.json",
    ".stegverse/organization-ledger-ingest/request.json",
    "control/workflow-surface-registry.json",
    "resident-runtime/aggregate_repo_transition.py",
    "resident-runtime/ledger_store.py",
    "resident-runtime/organization_ledger_ingest.py",
+   "tests/fixtures/organization-ledger-ingest/sealed-request.json",
    "tools/tasks/writer_plan.py"
   ],
   "tests/test_organization_manifest_ingress.py": [
@@ -4392,6 +5522,8 @@
    "docs/EXTERNAL_REVIEWER_NODE_STANDING_PROMPT.md",
    "docs/EXTERNAL_REVIEWER_TASK_REGISTRY_PROMPT.md",
    "orchestration/schemas/task-registry.schema.json",
+   "resident-runtime/sv_change_admit_append.py",
+   "resident-runtime/sv_check_receipt_append.py",
    "tests/test_organization_role_runtime_reality_deployment.py",
    "tests/test_task_registry.py",
    "tests/test_task_registry_schema_conformance.py"
@@ -4444,6 +5576,51 @@
    "resident-runtime/pinned_labs.py",
    "tests/workflow_surface.py"
   ],
+  "tests/test_sv_change_admit_append.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/**",
+   ".stegverse/organization-ledger-ingest/operations.json",
+   "resident-runtime/sv_change_admit_append.py",
+   "tests/fixtures/**",
+   "tests/fixtures/sv-change-admit/**",
+   "tests/fixtures/sv-change-admit/migrated-changes.jsonl",
+   "tests/test_sv_check_receipt_append.py",
+   "tests/test_sv_push_receipt_append.py",
+   "tools/tasks/**",
+   "tools/tasks/task_catalog.json"
+  ],
+  "tests/test_sv_check_receipt_append.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/**",
+   ".stegverse/organization-ledger-ingest/operations.json",
+   "control/workflow-surface-registry.json",
+   "resident-runtime/sv_check_receipt_append.py",
+   "tests/test_sv_push_receipt_append.py",
+   "tools/tasks/**",
+   "tools/tasks/task_catalog.json"
+  ],
+  "tests/test_sv_push_receipt.py": [
+   "resident-runtime/sv_push_receipt.py",
+   "schemas/sv-push-receipt.v1.schema.json"
+  ],
+  "tests/test_sv_push_receipt_append.py": [
+   ".github/workflows/**",
+   ".github/workflows/organization-ledger-writer.yml",
+   ".stegverse/organization-ledger-ingest/**",
+   ".stegverse/organization-ledger-ingest/operations.json",
+   "control/workflow-surface-registry.json",
+   "resident-runtime/organization_egress_boundary.py",
+   "resident-runtime/organization_ledger_ingest.py",
+   "resident-runtime/organization_ledger_readback.py",
+   "resident-runtime/sv_push_receipt_append.py",
+   "schemas/sv-push-receipt.v1.schema.json",
+   "tests/test_merge_transfer_gitstore.py",
+   "tools/tasks/**",
+   "tools/tasks/task_catalog.json",
+   "tools/tasks/writer_plan.py"
+  ],
   "tests/test_task_registry.py": [
    "control/task-vector-index.json",
    "docs/CANONICAL_NODE_INGRESS_CONTRACT_001.json",
@@ -4473,7 +5650,17 @@
    "resident-runtime/test_suite_baseline_refresh.py"
   ],
   "tests/test_test_suite_skip_receipt.py": [
-   "scripts/test_suite_skip_receipt.py"
+   ".stegverse/verification-inputs/**",
+   ".stegverse/verification-inputs/tvc-conformance-receipt.json",
+   "data/test-suite-skip-items.json",
+   "org-kernel/kernel.py",
+   "resident-runtime/tvc_conformance_receipt.py",
+   "scripts/test_suite_skip_receipt.py",
+   "tests/test_origin_attestation_tvc_conformance.py",
+   "tests/test_task_registry_schema_conformance.py",
+   "tools/tasks/**",
+   "tools/tasks/steps/test-suite-selected.selected/**",
+   "tools/tasks/steps/test-suite-selected.selected/08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh"
   ],
   "tests/test_transition_console.py": [
    "orchestration/task-registry.json",

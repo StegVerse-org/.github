@@ -29,13 +29,27 @@ TEST_SUITE_NEW_FAILURE_ON_HEAD. Without --base-junit, failures are counted and
 listed but not judged here: in a repository with a failure ratchet, the
 ratchet judges them, separately from skips.
 
-Deterministic: reads only the files it is given. No clock, no network, no
+With --receipt-consumption INPUT=FILE (#162 D2 option (d), a draft for the
+owner to ratify or revert), a skip whose recorded item declares
+`satisfiable_by_receipt` for INPUT is satisfied only by that input's ledger
+consumption record (resident-runtime/tvc_conformance_receipt.py or
+repo_standards_owner_drift_receipt.py `consume --out`, run at this exact head):
+ALLOW with no refusal, a bound receipt the producer offered as a ledger
+candidate from a push (never a pull_request run), the skipped test's own id
+among the test ids that receipt ran, and every bound surface path holding the
+bound sha256 in --root. A satisfied skip stays listed and counted as skipped,
+with the receipt it is bound to; it is not converted. Any other skip, or a
+skip whose binding does not hold, fails closed exactly as before.
+
+Deterministic: reads only the files it is given (and, for a receipt-satisfied
+skip, the bound surface paths under --root). No clock, no network, no
 environment reads. Standard library only. Non-authorizing: it confers no
 admission and mints no authority; a receipt is evidence for a reviewer.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -118,13 +132,78 @@ def owner_item(row: dict, items: list[dict], retry: str) -> dict:
     }
 
 
+def test_file_of(tid: str, surface: dict) -> str | None:
+    """The bound surface path that is the skipped test's own module."""
+    classname = tid.partition("::")[0] if "::" in tid else tid
+    for path in sorted(surface):
+        mod = module_of(path)
+        if classname == mod or classname.startswith(mod + "."):
+            return path
+    return None
+
+
+def file_sha256(path: Path) -> str | None:
+    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+
+def receipt_satisfaction(row: dict, item: dict, consumptions: dict, root: Path) -> tuple[dict | None, list[str]]:
+    """(binding, []) when a ledger receipt covers this skip at these exact bytes; (None, why) otherwise."""
+    want = item.get("satisfiable_by_receipt") or {}
+    name = want.get("input")
+    if not name:
+        return None, ["the skip's recorded item declares no receipt input"]
+    reason = want.get("reason_contains")
+    if not (isinstance(reason, str) and reason):
+        return None, ["the skip's recorded item declares no reason_contains; no skip reason is relaxed without one"]
+    if reason not in row["reason"]:
+        return None, [f"the skip reason is not the private-input skip {reason!r}"]
+    record = consumptions.get(name)
+    if not isinstance(record, dict):
+        return None, [f"no readable {name} ledger consumption record for this head"]
+    why = []
+    if record.get("schema") != want.get("consumption_schema"):
+        why.append(f"consumption schema {record.get('schema')!r} is not {want.get('consumption_schema')!r}")
+    if record.get("disposition") != "ALLOW" or record.get("refusals"):
+        refusals = record.get("refusals") or [{}]
+        why.append(f"consumption disposition {record.get('disposition')!r}"
+                   f" ({refusals[0].get('failed_predicate', 'no predicate')})")
+        return None, why
+    bound = record.get("bound_receipt_sha256")
+    if not (isinstance(bound, str) and bound.startswith("sha256:")):
+        why.append("no bound receipt")
+    if record.get("bound_ledger_candidate") is not True or record.get("bound_event") != "push":
+        why.append(f"the bound receipt is not a ledger candidate from a push (event {record.get('bound_event')!r})")
+    tid = row["test"]
+    classname, _, test_name = tid.partition("::")
+    ids = record.get("bound_test_ids") or []
+    if not (tid in ids or (test_name == "setUpClass" and any(i.startswith(classname + "::") for i in ids))):
+        why.append(f"{tid} is not among the test ids the bound receipt ran")
+    surface = record.get("bound_surface") or {}
+    if not isinstance(surface, dict) or not surface:
+        why.append("the consumption record binds no surface")
+        surface = {}
+    elif test_file_of(tid, surface) is None:
+        why.append(f"the bound surface does not include the test file of {tid}")
+    differs = sorted(p for p, digest in surface.items() if file_sha256(root / p) != digest)
+    if differs:
+        why.append(f"{len(differs)} bound surface path(s) differ at this head ({', '.join(differs[:5])})")
+    if why:
+        return None, why
+    return {"input": name, "bound_receipt_sha256": bound,
+            "bound_by_organization_receipt_sha256": record.get("bound_by_organization_receipt_sha256"),
+            "bound_event": record["bound_event"], "epoch_from_ledger_head": record.get("epoch_from_ledger_head"),
+            "surface_files_matched": len(surface)}, []
+
+
 def refusal(code: str, predicate: str, repair: str, retry: str, goal: str) -> dict:
     return dict(zip(SIX, (code, predicate, repair, retry, goal, NEXT_ATTEMPT)))
 
 
 def build(junit: Path, head: str, retry: str, goal: str, items: list[dict],
           base_junit: Path | None = None, base: str | None = None,
-          selection: dict | None = None) -> dict:
+          selection: dict | None = None, consumptions: dict | None = None,
+          root: Path = Path(".")) -> dict:
+    consumptions = consumptions or {}
     receipt = {"schema": SCHEMA, "head_sha": head, "authority_effect": "NONE",
                "skips_are_never_converted_or_deselected": True}
     modules = None
@@ -155,20 +234,38 @@ def build(junit: Path, head: str, retry: str, goal: str, items: list[dict],
     receipt["counts"]["tests"] = sum(receipt["counts"].values())
     receipt["skipped"] = [row | {"item": owner_item(row, items, retry)}
                           for row in sorted(run["skipped"], key=lambda r: r["test"])]
+    unsatisfied, refused = [], []
+    for row in receipt["skipped"]:
+        item = next((i for i in items if row["test"].startswith(i["test_prefix"])), {})
+        if not item.get("satisfiable_by_receipt"):
+            unsatisfied.append(row)
+            continue
+        binding, why = receipt_satisfaction(row, item, consumptions, root)
+        if binding is not None:
+            row["satisfied_by_ledger_receipt"] = binding
+        else:
+            row["receipt_satisfaction_refused"] = why
+            unsatisfied.append(row)
+            refused.append(row)
+    receipt["counts"]["skipped_satisfied_by_ledger_receipt"] = len(receipt["skipped"]) - len(unsatisfied)
+    receipt["receipt_satisfied_skips_stay_listed_and_counted_as_skipped"] = True
     receipt["xfailed"] = sorted(run["xfailed"], key=lambda r: r["test"])
     failing = sorted(set(run["failed"]) | set(run["errors"]))
     receipt["failing_on_head"] = failing
     refusals = []
-    if run["skipped"]:
+    if unsatisfied:
+        not_bound = (f"; {len(refused)} of them could be satisfied by a ledger receipt and were not: "
+                     f"{refused[0]['test']}: {'; '.join(refused[0]['receipt_satisfaction_refused'])}"
+                     if refused else "")
         refusals.append(refusal(
             "TEST_SUITE_SKIPPED_ON_HEAD",
             ("SELECTED_TESTS_ON_EXACT_HEAD_ZERO_SKIPPED" if modules is not None
              else "FULL_SUITE_ON_EXACT_HEAD_ZERO_SKIPPED"),
-            (f"{len(run['skipped'])} skipped; a run on this exact head with "
+            (f"{len(unsatisfied)} skipped; a run on this exact head with "
              "skipped=0: provide in CI what each listed skip names (a pinned "
              "checkout of an existing StegVerse repository, no new third-party "
              "dependency), or resolve each listed item under its owning Goal. "
-             "Never skip, deselect or convert a test"),
+             "Never skip, deselect or convert a test" + not_bound),
             retry, goal))
     if receipt["counts"]["tests"] == 0:
         refusals.append(refusal(
@@ -213,14 +310,25 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--selection", type=Path,
                    help="select_tests_for_change.py output; judge only the selected tests")
     p.add_argument("--tested-commit", help="the commit the suite ran on, when it is not --head")
+    p.add_argument("--receipt-consumption", action="append", default=[], metavar="INPUT=FILE",
+                   help="a ledger consumption record for INPUT; an absent or unreadable file satisfies nothing")
+    p.add_argument("--root", type=Path, default=Path("."),
+                   help="the checkout the head run ran in, for the bound surface sha256 check")
     a = p.parse_args(argv)
     items = []
     if a.skip_items is not None:
         items = json.loads(a.skip_items.read_text(encoding="utf-8"))["items"]
     selection = (json.loads(a.selection.read_text(encoding="utf-8"))
                  if a.selection is not None else None)
+    consumptions = {}
+    for pair in a.receipt_consumption:
+        name, _, path = pair.partition("=")
+        try:
+            consumptions[name] = json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            consumptions[name] = None  # unreadable: satisfies nothing
     receipt = build(a.junit, a.head, a.retry_entrypoint, a.owning_goal, items,
-                    a.base_junit, a.base, selection)
+                    a.base_junit, a.base, selection, consumptions, a.root)
     if a.tested_commit:
         receipt["tested_commit"] = a.tested_commit
     a.out.parent.mkdir(parents=True, exist_ok=True)
@@ -232,7 +340,9 @@ def main(argv: list[str] | None = None) -> int:
           f"selected_files={len(receipt.get('selected_tests', [])) if selection is not None else 'ALL'} "
           f"not_selected_files={len(receipt.get('not_selected_for_this_change', []))}")
     for row in receipt.get("skipped", []):
-        print(f"SKIPPED {row['test']} :: {row['reason']} :: owner={row['item']['owning_existing_goal']}")
+        bound = row.get("satisfied_by_ledger_receipt")
+        print(f"SKIPPED {row['test']} :: {row['reason']} :: owner={row['item']['owning_existing_goal']}"
+              + (f" :: SATISFIED_BY_LEDGER_RECEIPT {bound['input']} {bound['bound_receipt_sha256']}" if bound else ""))
     for r in receipt["refusals"]:
         print("FAIL_CLOSED " + " ".join(f"{k}={r[k]!r}" for k in SIX))
     return 0 if receipt["disposition"] == "ALLOW" else 1

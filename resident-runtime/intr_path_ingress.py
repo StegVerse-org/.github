@@ -49,6 +49,20 @@ FAIL_CLOSED with the six fields. A path whose newest receipt recorded the
 inclusion as unobserved gets one successor receipt (packet suffix
 #source-inclusion) that records it, and ``verify`` refuses a newest receipt
 that does not record an observed inclusion.
+
+The only successor declared for a destination pair is that #source-inclusion one
+(c71f23c): ``verify_inbound`` refuses FAIL_CLOSED a newest receipt whose transition
+id is neither the pair's own nor the pair's own plus #source-inclusion, never
+skipping to an older receipt; ``readback`` of this ledger's own destination
+receipts applies the same check, and ``verify_end_to_end`` returns its refusal.
+``verify_inbound`` also refuses a #source-inclusion successor whose predecessor
+(the receipt with the pair's own transition id) is absent or already recorded an
+observed inclusion: the successor exists only to record an unobserved one.
+No reader re-reads the recorded inclusion: ``verify_inbound`` checks only its
+shape (state, 40-hex source ledger tip). ``verify_end_to_end`` checks that the
+carried source receipts are on the source ledger readback's chain and that the
+destination receipts are on this ledger's chain and link them by seal; it never
+compares the destination's recorded source_ledger_tip with anything.
 """
 from __future__ import annotations
 
@@ -74,11 +88,24 @@ def _module(name: str, relative: str):
     return module
 
 
-mt = _module("merge_transfer_for_path_ingress", "resident-runtime/merge_transfer.py")
-ingress = mt.ingress
+path_ledger = _module("intr_path_ledger", "resident-runtime/intr_path_ledger.py")
 tvc_read = _module("intr_path_tvc_read", "resident-runtime/intr_path_tvc_read.py")
-Refused = getattr(mt, "Refused", type("Refused", (Exception,), {"result": {}}))
+Refused = path_ledger.Refused
 TVC_FIXTURE_OK = False   # tests only: accept FIXTURE_NOT_AUTHENTIC TVC read receipts
+
+
+def bind(binding: Any = None) -> Any:
+    """This organization's ledger binding, selected by its protocol.json pin (or ``binding``): merge_transfer.py
+    organizations exactly as before; StegVerse-Labs and GCAT-BCAT-Engine through merge_transfer_gitstore.py."""
+    global ledger, ingress
+    binding = binding if binding is not None else path_ledger.bound(ROOT)
+    ledger, ingress = binding, binding.ingress
+    return binding
+
+
+ledger: Any = None
+ingress: Any = None
+bind()
 
 SOURCE_OPERATION = "INTR_MESH_PATH_TRANSFER"
 SOURCE_EVIDENCE_SCHEMA = "stegverse.intr-path-transfer-evidence/v1"
@@ -94,7 +121,7 @@ ENTRYPOINT = (".github/workflows/intr-path-ingress.yml (after Organization Ledge
               "completes on a push to main)")
 CREDENTIAL_ENTRYPOINT = tvc_read.TVC_TRANSITION
 CREDENTIAL_GOAL = tvc_read.TVC_GOAL
-SIX_FIELDS = mt.SIX_FIELDS
+SIX_FIELDS = path_ledger.SIX_FIELDS
 ALLOW, DENY, FAIL_CLOSED = "ALLOW", "DENY", "FAIL_CLOSED"
 
 NOT_CARRIED = "INTR_PATH_SOURCE_RECEIPT_NOT_CARRIED"
@@ -105,17 +132,25 @@ CREDENTIAL_NOT_ISSUED = "INTR_PATH_CROSS_ORG_READ_CREDENTIAL_NOT_ISSUED"
 SOURCE_NOT_LEDGERED = "INTR_PATH_RECEIPT_NOT_LEDGERED"
 SOURCE_LINK_UNVERIFIED = "INTR_PATH_RECEIPT_LINK_UNVERIFIED"
 INCLUSION_UNOBSERVED = "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED"
+SUCCESSOR_UNDECLARED = "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED"
+SUCCESSOR_PREDECESSOR_OBSERVED = "INTR_PATH_DESTINATION_SUCCESSOR_PREDECESSOR_OBSERVED"
+CROSSING_RECORDED = "INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED"
+DUPLICATE_OF_CROSSING = "INTR_PATH_DESTINATION_DUPLICATE_OF_THE_SAME_CROSSING"
 PUBLIC_LEDGERS_ENV = "STEGVERSE_INTR_PUBLIC_LEDGERS"
 LEDGER_REF = "refs/stegverse/organization-ledger"
 PUBLIC_STATE = "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ"
 TVC_STATE = "VERIFIED_BY_TVC_READ_RECEIPT"
 
-sha = ingress.sha
-sealed = mt.sealed
+def sha(value: Any) -> str:
+    return ledger.sha(value)
+
+
+def sealed(receipt: Any) -> bool:
+    return ledger.sealed(receipt)
 
 
 def repository() -> str:
-    return mt.repository()
+    return ledger.repository()
 
 
 def organization() -> str:
@@ -152,7 +187,7 @@ def check_source_pair(org_receipt: Any, repo_receipt: Any, path_id: str, communi
         return refusal(FAIL_CLOSED, NOT_CARRIED, "SOURCE_PATH_RECEIPTS_ARE_SUPPLIED_SEALED",
                        "the source's sealed INTR_MESH_PATH_TRANSFER organization receipt and its sealed repository receipt",
                        "supply both receipts and re-run; nothing was appended", **base)
-    boundary = mt._boundary(org_receipt)
+    boundary = ledger.boundary(org_receipt)
     evidence = repo_receipt.get("evidence") if isinstance(repo_receipt.get("evidence"), Mapping) else {}
     problems = []
     if boundary.get("operation") != SOURCE_OPERATION or boundary.get("path_id") != path_id \
@@ -272,7 +307,7 @@ def public_readback(path_id: str, communication_id: str, other_repository: str,
         if not isinstance(receipt, Mapping):
             break
         chain.append(receipt)
-        b = mt._boundary(receipt)  # either receipt generation: boundary_evidence, or evidence (SV-011)
+        b = ledger.boundary(receipt)  # either receipt generation: boundary_evidence, or evidence (SV-011)
         if b.get("operation") == operation and b.get("path_id") == path_id \
                 and b.get("communication_id") == communication_id:
             found = receipt
@@ -381,17 +416,116 @@ def recorded_inclusion(repo_receipt: Any) -> str | None:
     return None
 
 
+def find_destinations(path_id: str, communication_id: str, organization_store: Any = None,
+                      repository_store: Any = None) -> tuple[list[tuple[Any, Any]], str | None]:
+    """Every destination receipt pair this ledger holds for the crossing (operation, path_id, communication_id),
+    newest first, and why the chain could not be read (or None). A crossing has exactly one receipt: the oldest is
+    the crossing's receipt, and any other is a duplicate of the same crossing."""
+    if organization_store is None or repository_store is None:
+        bound = ledger.readers()
+        organization_store = organization_store if organization_store is not None else bound[0]
+        repository_store = repository_store if repository_store is not None else bound[1]
+    pairs = []
+    for digest, receipt in ledger.chain(organization_store):
+        if not sealed(receipt):
+            return [], "organization receipt " + digest + " on the chain is absent or unsealed"
+        b = ledger.boundary(receipt)
+        if b.get("operation") == OPERATION and b.get("path_id") == path_id and b.get("communication_id") == communication_id:
+            pairs.append((receipt, ledger.receipt(repository_store, receipt.get("repo_receipt_sha256"))))
+    return pairs, None
+
+
 def find_destination(path_id: str, communication_id: str, organization_store: Any = None,
                      repository_store: Any = None) -> tuple[Any, Any, str | None]:
-    organization_store = organization_store if organization_store is not None else mt.org_store()
-    repository_store = repository_store if repository_store is not None else mt.repo_store()
-    for digest, receipt in mt.org_chain(organization_store):
-        if not sealed(receipt):
-            return None, None, "organization receipt " + digest + " on the chain is absent or unsealed"
-        b = mt._boundary(receipt)
-        if b.get("operation") == OPERATION and b.get("path_id") == path_id and b.get("communication_id") == communication_id:
-            return receipt, mt._receipt(repository_store, receipt.get("repo_receipt_sha256")), None
-    return None, None, None
+    """The crossing's one destination receipt: the OLDEST pair recorded for it. Later receipts for the same
+    crossing are duplicates (find_destinations) and grant nothing."""
+    pairs, broken = find_destinations(path_id, communication_id, organization_store, repository_store)
+    if broken is not None:
+        return None, None, broken
+    return (*pairs[-1], None) if pairs else (None, None, None)
+
+
+def duplicate_findings(path_id: Any, communication_id: Any, pairs: list[tuple[Any, Any]]) -> list[dict[str, Any]]:
+    """One finding per receipt after the crossing's first: DUPLICATE_OF_THE_SAME_CROSSING. It names the receipt and
+    its transition id and says it grants nothing. ``declared`` is False for a transition id that is neither the
+    pair's own nor its one declared #source-inclusion packet."""
+    declared = declared_transition_id(path_id, communication_id)
+    found = []
+    for org_receipt, repo_receipt in reversed(pairs[:-1]):
+        transition_id = repo_receipt.get("transition_id") if isinstance(repo_receipt, Mapping) else None
+        found.append({"finding": DUPLICATE_OF_CROSSING, "grants": "NOTHING",
+                      "organization_receipt_sha256": org_receipt.get("receipt_sha256"),
+                      "transition_id": transition_id,
+                      "declared": transition_id in (declared, declared + SOURCE_INCLUSION_PACKET_SUFFIX)})
+    return found
+
+
+def declared_transition_id(path_id: Any, communication_id: Any) -> str:
+    return TRANSITION_CLASS + ":" + str(path_id) + "@" + str(communication_id)
+
+
+def successor_refusal(path_id: Any, communication_id: Any, org_receipt: Any, repo_receipt: Any) -> dict[str, Any] | None:
+    """None when this ledger's destination receipt has the pair's own transition id or its one declared successor
+    (the pair's own + #source-inclusion); else FAIL_CLOSED. This organization's own receipts only: other
+    organizations' readbacks are not held to it."""
+    declared = declared_transition_id(path_id, communication_id)
+    transition_id = repo_receipt.get("transition_id") if isinstance(repo_receipt, Mapping) else None
+    if transition_id in (declared, declared + SOURCE_INCLUSION_PACKET_SUFFIX):
+        return None
+    return refusal(FAIL_CLOSED, SUCCESSOR_UNDECLARED, "DESTINATION_RECEIPT_IS_THE_PAIR_OR_ITS_DECLARED_SUCCESSOR",
+                   "the newest destination receipt for " + str(path_id) + " must have transition id " + declared
+                   + " or its declared successor " + declared + SOURCE_INCLUSION_PACKET_SUFFIX + "; it has "
+                   + repr(transition_id),
+                   "an owner decision on #162 declares or retires this successor; nothing was verified",
+                   path_id=path_id, communication_id=communication_id, half="destination",
+                   organization_receipt_sha256=org_receipt.get("receipt_sha256") if isinstance(org_receipt, Mapping) else None)
+
+
+def crossing_refusal(path_id: Any, communication_id: Any, pairs: list[tuple[Any, Any]]) -> dict[str, Any] | None:
+    """FAIL_CLOSED when this ledger's receipts for the crossing are not exactly the crossing's one receipt, with
+    the forged or misplaced ones refused; else None. ``pairs`` is find_destinations, newest first.
+    - The crossing's receipt (the oldest) has the pair's own transition id or its declared #source-inclusion id.
+    - A later receipt is a duplicate of the same crossing and grants nothing. One whose transition id is not
+      declared is refused (#258: a forged successor never verifies); a declared #source-inclusion duplicate over a
+      receipt that already recorded an observed inclusion is refused too. Any other declared duplicate (the
+      historical ones) is identified by ``duplicate_findings`` and changes no verdict."""
+    first_org, first_repo = pairs[-1]
+    refused = successor_refusal(path_id, communication_id, first_org, first_repo)
+    if refused is not None:
+        return refused
+    declared = declared_transition_id(path_id, communication_id)
+    for finding, (later_org, later_repo) in zip(reversed(duplicate_findings(path_id, communication_id, pairs)),
+                                                pairs[:-1]):
+        if not finding["declared"]:
+            return {**successor_refusal(path_id, communication_id, later_org, later_repo),
+                    "required_evidence_or_repair": "a later receipt for the crossing " + str(path_id) + " is a "
+                    "duplicate of the same crossing (" + DUPLICATE_OF_CROSSING + ") and has transition id "
+                    + repr(finding["transition_id"]) + ", which is neither " + declared + " nor its declared "
+                    + SOURCE_INCLUSION_PACKET_SUFFIX + " packet; it grants nothing",
+                    "duplicate_receipts": duplicate_findings(path_id, communication_id, pairs)}
+        if finding["transition_id"] == declared + SOURCE_INCLUSION_PACKET_SUFFIX and recorded_inclusion(first_repo) is None:
+            return refusal(FAIL_CLOSED, SUCCESSOR_PREDECESSOR_OBSERVED,
+                           "THE_CROSSING_HAS_ONE_RECEIPT_AND_A_DUPLICATE_OVER_AN_OBSERVED_ONE_IS_REFUSED",
+                           "a " + declared + SOURCE_INCLUSION_PACKET_SUFFIX + " receipt is a duplicate of the same "
+                           "crossing, and the crossing's own receipt already records an observed source inclusion",
+                           "an owner decision on #162 retires this duplicate; nothing was verified",
+                           path_id=path_id, communication_id=communication_id, half="destination",
+                           organization_receipt_sha256=later_org.get("receipt_sha256"),
+                           duplicate_receipts=duplicate_findings(path_id, communication_id, pairs))
+    return None
+
+
+def crossing_recorded_refusal(path_id: Any, communication_id: Any, existing: Any, recorded: str) -> dict[str, Any]:
+    """consume, when the crossing already has its one receipt but it records the source inclusion as unobserved: no
+    second receipt is appended, whatever it would record."""
+    return refusal(FAIL_CLOSED, CROSSING_RECORDED, "ONE_DESTINATION_RECEIPT_PER_CROSSING",
+                   "the crossing " + str(path_id) + "@" + str(communication_id) + " already has its one destination "
+                   "receipt, which records the source inclusion as unobserved (" + recorded + "); a second receipt "
+                   "would be a duplicate of the same crossing and is never appended",
+                   "verify reads the source's public ledger itself and reports the inclusion it observes; nothing "
+                   "was written for this row",
+                   path_id=path_id, communication_id=communication_id, half="destination", appended=False,
+                   organization_receipt_sha256=existing.get("receipt_sha256") if isinstance(existing, Mapping) else None)
 
 
 def consume(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
@@ -407,19 +541,35 @@ def consume(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
         if checked["disposition"] != ALLOW:
             out.append(checked)
             continue
-        existing, existing_repo, _ = find_destination(pid, cid)
+        try:
+            pairs, broken = find_destinations(pid, cid)
+        except Refused as exc:
+            out.append({**exc.result, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
+            continue
+        existing, existing_repo = pairs[-1] if pairs else (None, None)
         packet = pid + "@" + cid
+        if broken is not None:
+            out.append(refusal(FAIL_CLOSED, NOT_LEDGERED, "DESTINATION_CHAIN_IS_READABLE", broken,
+                               "repair the chain; nothing was written for this row", path_id=pid, communication_id=cid))
+            continue
         if existing is not None:
+            # A crossing has exactly one receipt. Whatever it records, a second one would be a duplicate of the
+            # same crossing: never appended, here or by any later run. The row is answered from the ledger.
             ok = verify_destination_pair(existing, existing_repo, checked)
-            if ok["disposition"] != ALLOW or recorded_inclusion(existing_repo) is None:
-                out.append({**ok, "replayed": True} if ok["disposition"] == ALLOW else ok)
+            if ok["disposition"] != ALLOW:
+                out.append(ok)
                 continue
-            # The newest receipt for this path records source inclusion as unobserved (written before the
-            # writer read the source's public ledger). Every organization's .github is public, so the
-            # inclusion is observable without a credential: observe it and append one successor receipt that
-            # records it. Readers walk from the ledger head, so the successor is the path's receipt from here on.
-            packet = packet + SOURCE_INCLUSION_PACKET_SUFFIX
-        epoch, failed = mt.head_epoch(mt.org_store())   # read only when a row is to be appended
+            recorded = recorded_inclusion(existing_repo)
+            if recorded is not None:
+                out.append({**crossing_recorded_refusal(pid, cid, existing, recorded), "schema": RESULT_SCHEMA})
+                continue
+            duplicates = duplicate_findings(pid, cid, pairs)
+            out.append({**ok, "replayed": True, **({"duplicate_receipts": duplicates} if duplicates else {})})
+            continue
+        try:
+            epoch, failed = ledger.head_epoch()   # read only when a row is to be appended
+        except Refused as exc:
+            epoch, failed = None, exc.result
         if failed is not None:
             out.append({**failed, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
             continue
@@ -432,13 +582,19 @@ def consume(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
             continue
         evidence = ingress_evidence(checked, inclusion)
         try:
-            appended, replayed = ingress._append(
+            raced, _ = find_destinations(pid, cid)   # the writer's own guard: a crossing never gets a second receipt
+            if raced:
+                raise Refused(crossing_recorded_refusal(pid, cid, raced[-1][0], "recorded since this row was read"))
+            appended, replayed = ledger.append(
                 TRANSITION_CLASS, packet, evidence, epoch, operation=OPERATION, profile_id=ingress.PROFILE_ID,
                 boundary_extra={"path_id": pid, "source_repository": checked["source_repository"],
                                 "source_organization_receipt_sha256": checked["source_organization_receipt_sha256"],
                                 "source_repository_receipt_sha256": checked["source_repository_receipt_sha256"]})
+        except Refused as exc:
+            out.append({**exc.result, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
+            continue
         except (ValueError, SystemExit) as exc:
-            out.append(refusal(FAIL_CLOSED, mt.WRITER_REFUSED, "LEDGER_WRITER_ADMITS_THE_APPEND",
+            out.append(refusal(FAIL_CLOSED, path_ledger.WRITER_REFUSED, "LEDGER_WRITER_ADMITS_THE_APPEND",
                                "repair what the ledger writer refused: " + str(exc),
                                "re-run once repaired; nothing was written for this row", path_id=pid, communication_id=cid))
             continue
@@ -448,6 +604,15 @@ def consume(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
                     "repository_receipt_sha256": appended["repository_receipt"]["receipt_sha256"],
                     "source_inclusion": inclusion})
     return out
+
+
+def consume_exit_code(results: list[dict[str, Any]]) -> int:
+    """0 when every row is ALLOW, or is a crossing that already has its one receipt and was answered from the ledger
+    with nothing appended (CROSSING_RECORDED, appended False): that is the steady state of the one-receipt-per-crossing
+    rule, not a failure of the writer, so the push job stays green. The row's own result is still FAIL_CLOSED in the
+    output, with the six fields; any other refusal still exits 1."""
+    steady = lambda x: x.get("failure_code") == CROSSING_RECORDED and x.get("appended") is False
+    return 0 if all(x["disposition"] == ALLOW or steady(x) for x in results) else 1
 
 
 def verify_inbound(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
@@ -461,16 +626,34 @@ def verify_inbound(inbound: Path | str = INBOUND) -> list[dict[str, Any]]:
         if checked["disposition"] != ALLOW:
             out.append(checked)
             continue
-        found, found_repo, broken = find_destination(pid, cid)
+        try:
+            pairs, broken = find_destinations(pid, cid)
+        except Refused as exc:
+            out.append({**exc.result, "schema": RESULT_SCHEMA, "path_id": pid, "communication_id": cid})
+            continue
+        found, found_repo = pairs[-1] if pairs else (None, None)
         result = verify_destination_pair(found, found_repo, checked)
+        if result["disposition"] == ALLOW:
+            result = crossing_refusal(pid, cid, pairs) or result
         unobserved = recorded_inclusion(found_repo) if result["disposition"] == ALLOW else None
         if unobserved is not None:
-            result = refusal(FAIL_CLOSED, INCLUSION_UNOBSERVED, "DESTINATION_RECEIPT_RECORDS_AN_OBSERVED_SOURCE_INCLUSION",
-                             "the newest destination receipt for " + str(pid) + " must record the source receipts' "
-                             "inclusion read from the source organization's public ledger (" + unobserved + ")",
-                             "the next push-triggered writer run reads the source ledger anonymously and appends the "
-                             "successor receipt; then re-verify", path_id=pid, communication_id=cid, half="destination",
-                             organization_receipt_sha256=found.get("receipt_sha256"))
+            # The crossing's one receipt recorded the inclusion as unobserved, and no second receipt can repair it.
+            # This verifier reads the source's public ledger itself (local anonymous copy: no network, no clock) and
+            # reports the inclusion it observes; it appends and records nothing.
+            observed = source_inclusion(checked)
+            if observed.get("disposition") == ALLOW:
+                result = {**result, "source_inclusion_recorded": unobserved, "source_inclusion_observed_at_verification": observed}
+            else:
+                result = refusal(FAIL_CLOSED, INCLUSION_UNOBSERVED, "SOURCE_INCLUSION_IS_OBSERVED_BY_THE_VERIFIER_OR_RECORDED",
+                                 "the destination receipt for " + str(pid) + " records the source inclusion as unobserved ("
+                                 + unobserved + ") and the source organization's public ledger could not be read to observe "
+                                 "it now: " + str(observed.get("failure_code")),
+                                 "the writer's anonymous fetch of the source ledger (tools/tasks/intr_public_ledgers.sh), "
+                                 "then re-verify; no second receipt is appended", path_id=pid, communication_id=cid,
+                                 half="destination", organization_receipt_sha256=found.get("receipt_sha256"))
+        duplicates = duplicate_findings(pid, cid, pairs) if pairs else []
+        if duplicates and "duplicate_receipts" not in result:
+            result = {**result, "duplicate_receipts": duplicates}
         out.append({**result, "detail": broken} if broken else result)
     return out
 
@@ -489,7 +672,7 @@ def verify_destination_pair(org_receipt: Any, repo_receipt: Any, source: Mapping
                        + destination_repository + "'s ledger, linked to its sealed repository receipt",
                        "receipts appear only after the inbound row lands on " + destination_repository
                        + " main and " + ENTRYPOINT + " consumes it", **base)
-    b = mt._boundary(org_receipt)
+    b = ledger.boundary(org_receipt)
     evidence = repo_receipt.get("evidence") if isinstance(repo_receipt.get("evidence"), Mapping) else {}
     problems = []
     if org_receipt.get("repo_receipt_sha256") != repo_receipt["receipt_sha256"]:
@@ -538,6 +721,8 @@ def verify_end_to_end(path_id: str, communication_id: str, source_readback: Any,
             ends = str(path_id).split(":")[0].split("->")
             org = ends[0] if name == "source" else (ends[1] if len(ends) > 1 else "<destination>")
             return {**inclusion_refusal(org + "/.github", path_id, communication_id), "half": name, "path": "UNVERIFIED"}
+        if isinstance(rb.get("refused"), Mapping):   # set by ``readback`` of this organization's own ledger
+            return {**rb["refused"], "path": "UNVERIFIED"}
         readbacks.append(rb)
     src, dst = readbacks
     s_org, s_rep = src.get("organization_receipt"), src.get("repository_receipt")
@@ -567,20 +752,31 @@ def verify_end_to_end(path_id: str, communication_id: str, source_readback: Any,
 
 
 def readback(path_id: str, communication_id: str, operation: str, ledger_tip: str | None = None) -> dict[str, Any]:
-    """Read this repository's own ledger (the bound stores) into a stegverse.intr-path-ledger-readback/v1 object."""
-    org, rep = mt.org_store(), mt.repo_store()
-    chain = [r for _, r in mt.org_chain(org) if isinstance(r, Mapping)]
-    found = next((r for r in chain if mt._boundary(r).get("operation") == operation
-                  and mt._boundary(r).get("path_id") == path_id
-                  and mt._boundary(r).get("communication_id") == communication_id), None)
+    """Read this repository's own ledger (the bound stores) into a stegverse.intr-path-ledger-readback/v1 object.
+    For this organization's destination receipts, a newest receipt that is neither the pair's own nor its declared
+    successor is carried as ``refused`` (FAIL_CLOSED), which ``verify_end_to_end`` returns."""
+    org, rep = ledger.readers()
+    chain = [r for _, r in ledger.chain(org) if isinstance(r, Mapping)]
+    matches = [r for r in chain if ledger.boundary(r).get("operation") == operation
+               and ledger.boundary(r).get("path_id") == path_id
+               and ledger.boundary(r).get("communication_id") == communication_id]
+    found = matches[-1] if matches else None   # the oldest is the crossing's one receipt; later ones are duplicates
     head = chain[0]["receipt_sha256"] if chain else None
     if found is not None:
-        cut = [r for r in chain]
-        chain = cut[:cut.index(found) + 1]
-    return {"schema": READBACK_SCHEMA, "repository": repository(), "ledger_tip": ledger_tip,
-            "head_receipt_sha256": head, "chain": chain if found is not None else [],
-            "organization_receipt": found,
-            "repository_receipt": mt._receipt(rep, found.get("repo_receipt_sha256")) if found else None}
+        chain = chain[:chain.index(found) + 1]
+    found_repo = ledger.receipt(rep, found.get("repo_receipt_sha256")) if found else None
+    out = {"schema": READBACK_SCHEMA, "repository": repository(), "ledger_tip": ledger_tip,
+           "head_receipt_sha256": head, "chain": chain if found is not None else [],
+           "organization_receipt": found, "repository_receipt": found_repo}
+    if operation == OPERATION and found is not None:
+        refused = crossing_refusal(path_id, communication_id,
+                                   [(r, ledger.receipt(rep, r.get("repo_receipt_sha256"))) for r in matches])
+        if refused:
+            return {**out, "refused": refused}
+        if len(matches) > 1:
+            out["duplicate_receipts"] = duplicate_findings(
+                path_id, communication_id, [(r, ledger.receipt(rep, r.get("repo_receipt_sha256"))) for r in matches])
+    return out
 
 
 def end_to_end_via_tvc(path_id: str, communication_id: str, directory: Path | str | None = None,
@@ -641,13 +837,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "consume":
         result: Any = consume(args.inbound)
-        code = 0 if all(x["disposition"] == ALLOW for x in result) else 1
+        code = consume_exit_code(result)
     elif args.command == "verify":
         result = verify_inbound(args.inbound)
         code = 0 if all(x["disposition"] == ALLOW for x in result) else 1
     elif args.command == "readback":
-        result = readback(args.path_id, args.communication_id, args.operation, args.ledger_tip)
-        code = 0
+        try:
+            result, code = readback(args.path_id, args.communication_id, args.operation, args.ledger_tip), 0
+        except Refused as exc:
+            result, code = {**exc.result, "schema": RESULT_SCHEMA}, 1
     elif args.command == "end-to-end-via-tvc":
         result = end_to_end_via_tvc(args.path_id, args.communication_id, args.receipts, args.ledger_tip,
                                     args.public_ledgers)

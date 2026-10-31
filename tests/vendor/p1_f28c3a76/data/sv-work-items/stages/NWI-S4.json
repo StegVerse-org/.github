@@ -1,0 +1,10 @@
+{
+  "entry_transition": "STAGE_NWI_S4_ADMITTED",
+  "exit_gate": [],
+  "name": "NATIVE",
+  "ordinal": 4,
+  "schema": "stegverse.nwi-stage-manifest/v1",
+  "source": "KV INDEX.md 'STEPWISE GROWTH' (Rigel 12:44Z) and 'STAGE VERIFICATION' (12:53Z)",
+  "stage_id": "NWI-S4",
+  "thresholds_source": "this manifest only; a null value is undeclared and the gate FAIL_CLOSES STAGE_THRESHOLD_UNDECLARED"
+}

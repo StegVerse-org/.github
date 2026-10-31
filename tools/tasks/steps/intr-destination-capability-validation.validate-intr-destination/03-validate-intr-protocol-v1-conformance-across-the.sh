@@ -3,8 +3,8 @@ python org-runtime/intr_protocol.py mesh --manifest tests/fixtures/intr-protocol
 python - <<'PY'
 import json
 r = json.load(open("mesh.json"))
-# 16 organizations (federation.json); 3 do not install the receiving operation (class B).
-assert r["counts"] == {"ALLOW": 13, "DENY": 0, "FAIL_CLOSED": 3}, r["counts"]
+# 16 organizations (federation.json); all 16 install the receiving operation (StegVerse-org/.github#162).
+assert r["counts"] == {"ALLOW": 16, "DENY": 0, "FAIL_CLOSED": 0}, r["counts"]
 for row in r["results"]:
     print(" ", row["subject"]["organization"], row["disposition"], row.get("failure_code", ""), row.get("failed_predicate", ""))
 print("INTR_PROTOCOL_V1_MESH", json.dumps(r["counts"], sort_keys=True), r["report_digest"])

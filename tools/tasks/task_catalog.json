@@ -363,7 +363,7 @@
         {
           "name": "Validate InTr protocol v1 conformance across the mesh snapshot",
           "run_file": "tools/tasks/steps/intr-destination-capability-validation.validate-intr-destination/03-validate-intr-protocol-v1-conformance-across-the.sh",
-          "run_sha256": "3d3b2979144583b5d25b0cbfef846b7f3c71fc58a62faad54d44d3175d5013d2"
+          "run_sha256": "55eb60d23eebc58926cd03e46d0b267ffea6f2564d3fe028657bc749ac5141e3"
         }
       ],
       "artifacts": [],
@@ -481,6 +481,11 @@
           "name": "Cross-organization pair check through TV/TVC (TVC#528 fixture receipts; no token; real state FAIL_CLOSED at the TVC transition)",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.unit/04-cross-organization-pair-check-through-tv-tvc-tvc.sh",
           "run_sha256": "be7f7e67312319d91344228dbc9de1ec5434724a49a6fa3ee06e819fe4bfd18e"
+        },
+        {
+          "name": "Ledger binding per organization (protocol.json pin); git-store backend over Lane D's pinned modules",
+          "run_file": "tools/tasks/steps/intr-path-transfer-validation.unit/05-ledger-binding-per-organization-protocol-json-pin.sh",
+          "run_sha256": "39833e2162884daf40afb453ba702ca23343dbf1af7696d2a1122c2d59623e6d"
         }
       ],
       "artifacts": [],
@@ -511,24 +516,23 @@
         "push"
       ],
       "env": {
-        "LEDGER_REF": "refs/stegverse/organization-ledger",
-        "DRY_RUN_REF": "refs/dry-run/organization-ledger"
+        "LEDGER_REF": "refs/stegverse/organization-ledger"
       },
       "steps": [
         {
-          "name": "Copy the published ledger to a scratch ref",
+          "name": "Copy the published ledger into a scratch git dir",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.dry-run/01-copy-the-published-ledger-to-a-scratch-ref.sh",
-          "run_sha256": "3127ce8dcd732fe6e0a4e52018ab4e8fd862af9b57113ce7357fb6c95d982233"
+          "run_sha256": "9022f558690877456990a09f17b1d6fdb443da88fd24bfc73273eb60b416a41f"
         },
         {
           "name": "Real state, read-only: inspect actual source halves without assuming absent receipts",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.dry-run/02-real-state-read-only-inspect-actual-source-halve.sh",
-          "run_sha256": "72bdb9f0d84a8da48033238a8fda8faf39495a81a22b2b956f972079fff47cb8"
+          "run_sha256": "20a7017da93b516e519da8ba462744be598a6e2291175afc46bd125d6d3177b7"
         },
         {
-          "name": "The writer's append on the scratch ref, linked to the last ledgered main merge",
+          "name": "The writer's append on the scratch copy, linked to the last ledgered main merge",
           "run_file": "tools/tasks/steps/intr-path-transfer-validation.dry-run/03-the-writer-s-append-on-the-scratch-ref-linked-to.sh",
-          "run_sha256": "963d2eaae5b994750a981b030fac14839cd1d5bda289e0f3172ecef7fd211b8e"
+          "run_sha256": "3b4127992080d30a0a290841ae323c3c8de1b42557b7a54a0f72b2227f7b3bcb"
         }
       ],
       "artifacts": [],
@@ -1221,12 +1225,12 @@
         {
           "name": "Ingest unit tests (strict 0 skipped, exact head)",
           "run_file": "tools/tasks/steps/organization-ledger-ingest-validation.unit/01-ingest-unit-tests-strict-0-skipped.sh",
-          "run_sha256": "d992edd28913bdc0785e3922326de7760e77c7288d491c5d1d3742a9f5bd9de7"
+          "run_sha256": "eedae2f0792f4a5eee71d256b3ae4065b93cbefc4b08798e86f31449d358f56f"
         },
         {
           "name": "The committed request on a scratch copy of the published ledger",
           "run_file": "tools/tasks/steps/organization-ledger-ingest-validation.unit/02-the-committed-request-on-a-scratch-copy-of-the-published-ledger.sh",
-          "run_sha256": "547c2161f14595f1f6a5d70c7ca5bde5394bcb17028e124575d2fd1d9ca8f6dd"
+          "run_sha256": "f60817fa4c0ebcc4d576a29efc4f533a958548f3bfa21b6c639bd6270d30c4a6"
         }
       ],
       "artifacts": [],
@@ -2585,7 +2589,7 @@
         {
           "name": "Receipt the selected set; a skip in it, or a new failure, fails closed",
           "run_file": "tools/tasks/steps/test-suite-selected.selected/08-receipt-the-selected-set-a-skip-in-it-or-a-new-f.sh",
-          "run_sha256": "65827c508f617343ce2e6b5c472f91827963e413165a87b6eacc887edc45071c",
+          "run_sha256": "b134b3cb7f5c10dcc545a72625f6f9404acc5c4fd3c64f61d491baa87a925f17",
           "if": "${{ !cancelled() }}"
         }
       ],

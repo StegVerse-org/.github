@@ -1,0 +1,55 @@
+{
+  "entry_transition": "STAGE_NWI_S3_ADMITTED",
+  "exit_gate": [
+    {
+      "evidence": "receipt",
+      "predicate": "W05_TV_TVC_HELD_INVOCATION_ADMITTED"
+    },
+    {
+      "evidence": "metric",
+      "predicate": "ADMISSION_MISS_RATE",
+      "threshold": {
+        "comparator": "<",
+        "derivation": {
+          "baseline": "S1_CORPUS_ADMISSION_MISS_RATE",
+          "formula": "CEIL_4DP((misses+1)/(observed+1))",
+          "min_observations": 3,
+          "rule": "value = (misses+1)/(observed+1) over the S1-era admission decisions (ledgered decisions joined to the S1 corpus heads) and their observed outcomes, ceiled to 4 decimals, computed by admission_miss_rate.admission_miss_rate_e0 under metric_definitions.admission_miss_rate; the +1 keeps a zero-miss baseline a satisfiable strict ceiling at the S1 sample size. S3's miss rate must stay strictly under it. FAIL_CLOSED STAGE_THRESHOLD_BASELINE_INSUFFICIENT if the baseline is unobserved (UNKNOWN), observed < min_observations, or the value is vacuous (>= 1).",
+          "rule_id": "NWI-S3-MISS-CEILING-FROM-S1-BASELINE/v1",
+          "transition": "STAGE_THRESHOLD_DERIVE"
+        },
+        "metric": "admission_miss_rate",
+        "value": null
+      }
+    }
+  ],
+  "metric_definitions": {
+    "admission_miss_rate": {
+      "decision_population": "admission decisions that are organization-ledger receipts (LEDGER_RECEIPT_REF): ALLOW (e.g. ORGANIZATION_MAIN_MERGE_TRANSFER), DENY and FAIL_CLOSED admission outcomes; each with its ledger_seq and the change it decided (repository, head commit, change digest, base)",
+      "definition_id": "NWI-S3-ADMISSION-MISS/v1",
+      "false_admit_miss_kinds": [
+        "CORRECTION",
+        "REFUSAL",
+        "REVERT"
+      ],
+      "held": "a decision named by a sealed stegverse.admission_outcome.v1 record with outcome HELD whose evidence_ref is an organization-ledger receipt; a miss for the same decision wins and the contradiction is recorded",
+      "learning_path": "every counted miss -> admission_learning.harvest -> generalize -> generate -> corpus_append (SCENARIO_CORPUS_APPEND), resident-runtime/admission_miss_rate.py::learn_from_misses",
+      "min_observed_outcomes": 1,
+      "miss": {
+        "FALSE_ADMIT": "an ALLOW decision named (admission_receipt_ref) by a sealed stegverse.admission_miss.v1 record (admission_learning.admission_miss) of a kind in false_admit_miss_kinds whose correcting_ref is an organization-ledger receipt: the admitted change was later reverted, corrected or refused",
+        "FALSE_REFUSAL": "a DENY decision for a change digest at a base followed, later in the ledger, by an ALLOW decision for the same change digest at the same base: nothing differed, so the refusal was the miss"
+      },
+      "not_applicable": "a FAIL_CLOSED decision (evidence missing; a later ALLOW after the evidence is appended is the designed path)",
+      "producer": "resident-runtime/admission_miss_rate.py::admission_miss_rate_e0",
+      "rate": "(FALSE_ADMIT + FALSE_REFUSAL) / (FALSE_ADMIT + FALSE_REFUSAL + HELD)",
+      "unknown": "every other decision; UNKNOWN is never counted as HELD (no absence of a revert is read as an outcome) and is excluded from the rate",
+      "unobserved": "observed outcomes < min_observed_outcomes: FAIL_CLOSED ADMISSION_MISS_RATE_UNOBSERVED with six fields, admission_miss_rate UNKNOWN; no rate is defaulted"
+    }
+  },
+  "name": "BOUNDED_SOLVING",
+  "ordinal": 3,
+  "schema": "stegverse.nwi-stage-manifest/v1",
+  "source": "KV INDEX.md 'STEPWISE GROWTH' (Rigel 12:44Z) and 'STAGE VERIFICATION' (12:53Z)",
+  "stage_id": "NWI-S3",
+  "thresholds_source": "this manifest only; value is written solely by the declared STAGE_THRESHOLD_DERIVE transition (resident-runtime/stage_threshold_derive.py, scripts/derive_stage_thresholds.py) from threshold.derivation, never by hand; a null value is undeclared and the gate FAIL_CLOSES STAGE_THRESHOLD_UNDECLARED"
+}
