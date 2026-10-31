@@ -4667,6 +4667,7 @@
    "data/intr-protocol/v1/**",
    "data/intr-protocol/v1/protocol.json",
    "resident-runtime/intr_destination_ingress.py",
+   "resident-runtime/ledger_gitstore.py",
    "resident-runtime/merge_transfer.py"
   ],
   "resident-runtime/intr_path_transfer.py": [
@@ -5098,6 +5099,7 @@
    ".stegverse/transition-ledger/contract.json",
    "resident-runtime/intr_path_ingress.py",
    "resident-runtime/intr_path_transfer.py",
+   "resident-runtime/ledger_gitstore.py",
    "resident-runtime/merge_transfer_gitstore.py",
    "tests/fixtures/intr-path-transfer/expected-real-state.json",
    "tests/intr_path_temp_ledger.py"
