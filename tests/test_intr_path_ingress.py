@@ -269,12 +269,8 @@ class Consume(unittest.TestCase):
                             "source_repository_receipt_sha256": repo["receipt_sha256"]})
         return appended["organization_receipt"]["receipt_sha256"], legacy
 
-    def test_an_unobserved_inclusion_gets_one_successor_receipt_that_records_it(self):
-        # The name is kept because the required-verification baseline pins it (a base test may not be removed or
-        # renamed). The successor it once described was the defect: an unobserved inclusion gets NO successor.
-        # Rigel (2026-10-29): "This shouldn't be possible without being a literal duplicate." One receipt per
-        # crossing: consume answers from the ledger and appends nothing, even when the receipt recorded the source
-        # inclusion as unobserved and the source ledger is readable now.
+    def test_an_unobserved_inclusion_is_refused_a_second_receipt_and_nothing_is_appended(self):
+        # Renamed from test_an_unobserved_inclusion_gets_one_successor_receipt_that_records_it after PR #261.
         org, repo = synthetic_source()
         first, _ = self._legacy_first_receipt(org, repo)
         inbound = self.ledger.write_inbound([row(org, repo)])
