@@ -5087,7 +5087,10 @@
    "tests/intr_path_temp_ledger.py"
   ],
   "tests/test_intr_path_public_ledger_read.py": [
+   ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/destination-duplicate-annotations.v1.json",
    ".stegverse/intr-path-transfer/inbound.json",
+   "docs/INTR_DESTINATION_DUPLICATE_RECEIPTS.md",
    "resident-runtime/intr_path_ingress.py"
   ],
   "tests/test_intr_path_transfer.py": [

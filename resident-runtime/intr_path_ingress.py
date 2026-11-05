@@ -45,24 +45,27 @@ Rigel's standing invariant: every organization's .github is public, so verifying
 a ledger receipt never needs a credential or a TVC read receipt. ``consume``
 therefore appends a destination receipt only with an observed source inclusion;
 when the anonymous read fails it writes nothing for the row and answers
-FAIL_CLOSED with the six fields. A path whose newest receipt recorded the
-inclusion as unobserved gets one successor receipt (packet suffix
-#source-inclusion) that records it, and ``verify`` refuses a newest receipt
-that does not record an observed inclusion.
+FAIL_CLOSED with the six fields. A crossing has exactly one destination receipt.
+The oldest is that receipt. A later receipt for the same crossing is
+``INTR_PATH_DESTINATION_DUPLICATE_OF_THE_SAME_CROSSING`` and grants nothing.
+``consume`` never appends a second: it answers from the ledger, and when the
+crossing's receipt recorded the inclusion as unobserved it is FAIL_CLOSED
+``INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED`` with the six fields and
+``appended`` false. The historical ``#source-inclusion`` receipts from org#250
+stay on the append-only ledger as duplicates. Nothing rewrites them.
 
-The only successor declared for a destination pair is that #source-inclusion one
-(c71f23c): ``verify_inbound`` refuses FAIL_CLOSED a newest receipt whose transition
-id is neither the pair's own nor the pair's own plus #source-inclusion, never
-skipping to an older receipt; ``readback`` of this ledger's own destination
-receipts applies the same check, and ``verify_end_to_end`` returns its refusal.
-``verify_inbound`` also refuses a #source-inclusion successor whose predecessor
-(the receipt with the pair's own transition id) is absent or already recorded an
-observed inclusion: the successor exists only to record an unobserved one.
-No reader re-reads the recorded inclusion: ``verify_inbound`` checks only its
-shape (state, 40-hex source ledger tip). ``verify_end_to_end`` checks that the
-carried source receipts are on the source ledger readback's chain and that the
-destination receipts are on this ledger's chain and link them by seal; it never
-compares the destination's recorded source_ledger_tip with anything.
+``verify_inbound``, ``readback`` and ``public_readback`` grant the oldest
+destination receipt. A later receipt whose transition id is neither the pair's
+own nor that id plus ``#source-inclusion`` is FAIL_CLOSED
+``INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED`` (#258), and ``verify_end_to_end``
+returns that refusal. A declared ``#source-inclusion`` duplicate over a receipt
+that already recorded an observed inclusion is FAIL_CLOSED
+``INTR_PATH_DESTINATION_SUCCESSOR_PREDECESSOR_OBSERVED``. Any other declared
+duplicate is identified by ``duplicate_findings`` and changes no verdict.
+``verify_end_to_end`` checks that the carried source receipts are on the source
+ledger readback's chain and that the destination receipts are on this ledger's
+chain and link them by seal; it never compares the destination's recorded
+source_ledger_tip with anything.
 """
 from __future__ import annotations
 
@@ -279,6 +282,14 @@ def _git_json(git_dir: Path, tip: str, path: str) -> Any:
         return None
 
 
+def _repo_receipt_at(git_dir: Path, tip: str, repository: str, org_receipt: Any) -> Any:
+    """The repository receipt an organization receipt names, from the anonymous copy. None when absent."""
+    repo_key = _key(org_receipt.get("repo_receipt_sha256")) if isinstance(org_receipt, Mapping) else None
+    if not repo_key:
+        return None
+    return _git_json(git_dir, tip, "repository-ledger/" + str(repository) + "/receipts/" + repo_key)
+
+
 def _key(digest: Any) -> str | None:
     if not isinstance(digest, str) or not digest.startswith("sha256:") or len(digest) != 71:
         return None
@@ -291,7 +302,10 @@ def public_readback(path_id: str, communication_id: str, other_repository: str,
     """The other organization's ledger readback from its anonymous (no-credential) copy, or None if absent.
 
     Reads only the local copy (HEAD.json, receipts/<hex>.json, repository-ledger/<repo>/receipts/<hex>.json at the
-    fetched tip): no network, no clock, no credential. Seals are checked by the verifiers that consume it."""
+    fetched tip): no network, no clock, no credential. Seals are checked by the verifiers that consume it.
+    A destination crossing's receipt is the oldest match. A later one is
+    ``INTR_PATH_DESTINATION_DUPLICATE_OF_THE_SAME_CROSSING`` and grants nothing. A source read still stops at
+    its first match: a source path has one transfer receipt."""
     git_dir = public_ledger_dir(other_repository, public_ledgers)
     tip = _git_tip(git_dir) if git_dir is not None else None
     if tip is None:
@@ -300,7 +314,7 @@ def public_readback(path_id: str, communication_id: str, other_repository: str,
     operation = SOURCE_OPERATION if purpose == "source_inclusion" else OPERATION
     head = _git_json(git_dir, tip, "HEAD.json")
     digest = head.get("receipt_sha256") if isinstance(head, Mapping) else None
-    chain, seen, found = [], set(), None
+    chain, seen, matches = [], set(), []
     while _key(digest) and digest not in seen:
         seen.add(digest)
         receipt = _git_json(git_dir, tip, "receipts/" + _key(digest))
@@ -310,17 +324,26 @@ def public_readback(path_id: str, communication_id: str, other_repository: str,
         b = ledger.boundary(receipt)  # either receipt generation: boundary_evidence, or evidence (SV-011)
         if b.get("operation") == operation and b.get("path_id") == path_id \
                 and b.get("communication_id") == communication_id:
-            found = receipt
-            break
+            matches.append(receipt)
+            if operation != OPERATION:
+                break
         digest = receipt.get("previous_receipt_sha256")
-    repo_key = _key(found.get("repo_receipt_sha256")) if found else None
-    repo_receipt = (_git_json(git_dir, tip, "repository-ledger/" + str(other_repository) + "/receipts/" + repo_key)
-                    if repo_key else None)
-    return {"schema": READBACK_SCHEMA, "repository": str(other_repository), "ledger_tip": tip,
-            "head_receipt_sha256": chain[0].get("receipt_sha256") if chain else None,
-            "ledger_head_epoch": head_epoch(chain[0]) if chain and found is not None else None,
-            "chain": chain if found is not None else [], "organization_receipt": found,
-            "repository_receipt": repo_receipt, "read_route": "ANONYMOUS_PUBLIC_LEDGER_READ"}
+    found = matches[-1] if matches else None   # the oldest destination receipt; the one source match
+    if found is not None:
+        chain = chain[:chain.index(found) + 1]
+    repo_receipt = _repo_receipt_at(git_dir, tip, other_repository, found) if found else None
+    out = {"schema": READBACK_SCHEMA, "repository": str(other_repository), "ledger_tip": tip,
+           "head_receipt_sha256": chain[0].get("receipt_sha256") if chain else None,
+           "ledger_head_epoch": head_epoch(chain[0]) if chain and found is not None else None,
+           "chain": chain if found is not None else [], "organization_receipt": found,
+           "repository_receipt": repo_receipt, "read_route": "ANONYMOUS_PUBLIC_LEDGER_READ"}
+    if operation == OPERATION and found is not None and len(matches) > 1:
+        pairs = [(m, _repo_receipt_at(git_dir, tip, other_repository, m)) for m in matches]
+        refused = crossing_refusal(path_id, communication_id, pairs)
+        if refused:
+            return {**out, "refused": refused}
+        out["duplicate_receipts"] = duplicate_findings(path_id, communication_id, pairs)
+    return out
 
 
 def head_epoch(head_receipt: Any) -> int | None:
@@ -753,8 +776,9 @@ def verify_end_to_end(path_id: str, communication_id: str, source_readback: Any,
 
 def readback(path_id: str, communication_id: str, operation: str, ledger_tip: str | None = None) -> dict[str, Any]:
     """Read this repository's own ledger (the bound stores) into a stegverse.intr-path-ledger-readback/v1 object.
-    For this organization's destination receipts, a newest receipt that is neither the pair's own nor its declared
-    successor is carried as ``refused`` (FAIL_CLOSED), which ``verify_end_to_end`` returns."""
+    The crossing's receipt is the oldest. A later receipt that is neither the pair's own nor its declared
+    successor is carried as ``refused`` (FAIL_CLOSED), which ``verify_end_to_end`` returns. A declared later
+    receipt is ``duplicate_receipts`` and grants nothing."""
     org, rep = ledger.readers()
     chain = [r for _, r in ledger.chain(org) if isinstance(r, Mapping)]
     matches = [r for r in chain if ledger.boundary(r).get("operation") == operation

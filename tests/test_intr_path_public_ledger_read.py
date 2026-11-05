@@ -148,5 +148,139 @@ class PublicLedgerRoute(unittest.TestCase):
         self.assertTrue(all(got[f] for f in SIX))
 
 
+DEST_PID = "SV-011->StegVerse-org:intr-destination"
+DEST_CID = "intr-path-v1:SV-011->StegVerse-org"
+DEST_REPOSITORY = "StegVerse-org/.github"
+DECLARED = "INTR_MESH_PATH_INGRESS:" + DEST_PID + "@" + DEST_CID
+ANNOTATION = ROOT / ".stegverse" / "intr-path-transfer" / "destination-duplicate-annotations.v1.json"
+ANNOTATION_DOC = ROOT / "docs" / "INTR_DESTINATION_DUPLICATE_RECEIPTS.md"
+
+
+def _sha(byte: str) -> str:
+    return "sha256:" + byte * 32
+
+
+def destination_copy(root: Path, newer_suffix: str, older_inclusion) -> tuple[str, str, str]:
+    """A bare StegVerse-org.git whose destination chain is oldest, then a later receipt. Returns tip and the two org shas."""
+    oldest_org, newer_org = _sha("11"), _sha("22")
+    oldest_repo, newer_repo = _sha("33"), _sha("44")
+    bare = root / "StegVerse-org.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(bare)], check=True)
+
+    def blob(doc) -> str:
+        return _git(bare, "hash-object", "-w", "--stdin", data=(json.dumps(doc, indent=2, sort_keys=True) + "\n").encode())
+
+    def tree(entries: dict[str, tuple[str, str]]) -> str:
+        lines = "".join(("100644 blob " if kind == "blob" else "040000 tree ") + sha + "\t" + name + "\n"
+                        for name, (kind, sha) in sorted(entries.items()))
+        return _git(bare, "mktree", data=lines.encode())
+
+    def org(digest, previous, repo_digest):
+        return {"receipt_sha256": digest, "previous_receipt_sha256": previous, "repo_receipt_sha256": repo_digest,
+                "hb_reference": {"epoch": 446655631},
+                "boundary_evidence": {"operation": "ORGANIZATION_INTR_DESTINATION_INGRESS", "disposition": "ALLOW",
+                                      "path_id": DEST_PID, "communication_id": DEST_CID}}
+
+    def repo(digest, transition_id, inclusion):
+        return {"receipt_sha256": digest, "transition_id": transition_id,
+                "evidence": {"source_inclusion": inclusion, "disposition": "ALLOW"}}
+
+    oldest_key = oldest_org.split(":", 1)[1] + ".json"
+    newer_key = newer_org.split(":", 1)[1] + ".json"
+    oldest_repo_key = oldest_repo.split(":", 1)[1] + ".json"
+    newer_repo_key = newer_repo.split(":", 1)[1] + ".json"
+    receipts = tree({oldest_key: ("blob", blob(org(oldest_org, None, oldest_repo))),
+                     newer_key: ("blob", blob(org(newer_org, oldest_org, newer_repo)))})
+    repo_receipts = tree({
+        oldest_repo_key: ("blob", blob(repo(oldest_repo, DECLARED, older_inclusion))),
+        newer_repo_key: ("blob", blob(repo(newer_repo, DECLARED + newer_suffix,
+                                           {"state": pi.PUBLIC_STATE, "source_ledger_tip": "ab" * 20,
+                                            "tvc_read_receipt": None}))),
+    })
+    top = tree({
+        "HEAD.json": ("blob", blob({"receipt_sha256": newer_org})),
+        "receipts": ("tree", receipts),
+        "repository-ledger": ("tree", tree({
+            "StegVerse-org": ("tree", tree({".github": ("tree", tree({"receipts": ("tree", repo_receipts)}))})),
+        })),
+    })
+    tip = _git(bare, "commit-tree", top, "-m", "fixture destination ledger copy")
+    _git(bare, "update-ref", pi.LEDGER_REF, tip)
+    return tip, oldest_org, newer_org
+
+
+class PublicDestinationDuplicate(unittest.TestCase):
+    """The anonymous destination read grants the oldest receipt. A later one is a duplicate and grants nothing."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def test_a_later_destination_receipt_on_the_public_copy_is_a_duplicate_and_the_oldest_is_read(self):
+        tip, oldest, newer = destination_copy(
+            self.root, pi.SOURCE_INCLUSION_PACKET_SUFFIX, "UNOBSERVED_WITHOUT_A_CROSS_ORG_READ_CREDENTIAL")
+        got = pi.public_readback(DEST_PID, DEST_CID, DEST_REPOSITORY, self.root)
+        self.assertEqual(got["ledger_tip"], tip)
+        self.assertEqual(got["organization_receipt"]["receipt_sha256"], oldest)
+        self.assertEqual(got["head_receipt_sha256"], newer)
+        self.assertEqual(got["ledger_head_epoch"], 446655631)
+        self.assertNotIn("refused", got)
+        (finding,) = got["duplicate_receipts"]
+        self.assertEqual((finding["finding"], finding["grants"], finding["organization_receipt_sha256"],
+                          finding["declared"]),
+                         (pi.DUPLICATE_OF_CROSSING, "NOTHING", newer, True))
+
+    def test_an_undeclared_later_destination_receipt_on_the_public_copy_is_refused(self):
+        _, oldest, newer = destination_copy(self.root, "#forged-claim", "UNOBSERVED_WITHOUT_A_CROSS_ORG_READ_CREDENTIAL")
+        got = pi.public_readback(DEST_PID, DEST_CID, DEST_REPOSITORY, self.root)
+        self.assertEqual(got["organization_receipt"]["receipt_sha256"], oldest)
+        refused = got["refused"]
+        self.assertEqual(refused["failure_code"], "INTR_PATH_DESTINATION_SUCCESSOR_UNDECLARED")
+        self.assertTrue(all(refused.get(field) for field in SIX))
+        self.assertEqual(refused["duplicate_receipts"][0]["organization_receipt_sha256"], newer)
+        self.assertEqual(refused["duplicate_receipts"][0]["grants"], "NOTHING")
+
+
+class CommittedDuplicateAnnotation(unittest.TestCase):
+    def test_the_committed_duplicate_annotation_names_each_later_receipt_non_authoritative(self):
+        doc = json.loads(ANNOTATION.read_text(encoding="utf-8"))
+        prose = ANNOTATION_DOC.read_text(encoding="utf-8")
+        self.assertEqual(doc["schema"], "stegverse.intr-destination-duplicate-annotation/v1")
+        self.assertEqual(doc["authority_effect"], "NONE")
+        self.assertEqual(doc["ledger_ref"], pi.LEDGER_REF)
+        self.assertEqual(len(doc["ledger_tip"]), 40)
+        self.assertEqual(doc["inbound_crossings_with_two_allow_destination_receipts"], 10)
+        self.assertEqual(doc["of_which_in_original_8_org_mesh"], 5)
+        self.assertEqual(len(doc["crossings"]), 10)
+        self.assertIn(doc["ledger_tip"], prose)
+        self.assertIn(doc["excluded_not_a_path_crossing"]["organization_receipt_sha256"], prose)
+        mesh = 0
+        seen = set()
+        for crossing in doc["crossings"]:
+            self.assertNotIn(crossing["path_id"], seen)
+            seen.add(crossing["path_id"])
+            first, later = crossing["authoritative"], crossing["duplicate"]
+            self.assertEqual((first["authoritative"], first["generation"]), (True, 1))
+            self.assertEqual((later["authoritative"], later["generation"], later["finding"], later["grants"]),
+                             (False, 2, pi.DUPLICATE_OF_CROSSING, "NOTHING"))
+            self.assertTrue(later["is_org_250_source_inclusion_successor"])
+            self.assertTrue(later["transition_id"].endswith(pi.SOURCE_INCLUSION_PACKET_SUFFIX))
+            self.assertFalse(first["transition_id"].endswith(pi.SOURCE_INCLUSION_PACKET_SUFFIX))
+            self.assertEqual(first["source_inclusion"], "UNOBSERVED_WITHOUT_A_CROSS_ORG_READ_CREDENTIAL")
+            self.assertEqual(later["source_inclusion_state"], pi.PUBLIC_STATE)
+            self.assertEqual(len(later["source_ledger_tip"]), 40)
+            self.assertEqual((later["writer_run"], later["writer_pull_request"]), (40152359683, 250))
+            self.assertNotEqual(first["organization_receipt_sha256"], later["organization_receipt_sha256"])
+            for digest in (first["organization_receipt_sha256"], first["repository_receipt_sha256"],
+                           later["organization_receipt_sha256"], later["repository_receipt_sha256"]):
+                self.assertRegex(digest, r"^sha256:[0-9a-f]{64}$")
+                self.assertIn(digest, prose)
+            if crossing["in_original_8_org_mesh"]:
+                mesh += 1
+                self.assertIn(crossing["path_id"].split(":")[0].split("->")[0], doc["original_8_org_mesh"])
+        self.assertEqual(mesh, 5)
+
+
 if __name__ == "__main__":
     unittest.main()
