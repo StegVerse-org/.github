@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:a7f9da03dea6f2ca76e79a0e1bdb5e2b5f6cd494ce0bdd449c371ac1be9ecd00",
    "path_id": "master-records->GCAT-BCAT-Engine:intr-destination",
-   "payload_sha256": "sha256:6eed972d6bc430f289b2b774934738d25a0f6d6b10ac256fbd7cbbde33f87445",
+   "payload_sha256": "sha256:00bc88fc2cd7a596a50720bd73f71bca8427b244245e3cbaef10449fd6384f8e",
    "repository": "GCAT-BCAT-Engine/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "d4694b8364b368c059451dc96a157f4ba43ccac1",
+    "source_ledger_tip": "d8e83b5a7a27405913e789f30f9964014f2c1825",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:e134b37ce79a77d0d69dfdd019e436d9133bc16c8f5e6bea4a1da10ac0c088c5",
+ "record_sha256": "sha256:f8ae13f16092aa079fb5f27c99655fa686e7a65229ce556d79f85badaab13842",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "master-records",
  "source_receipts": {
@@ -164,7 +164,7 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:master-records->GCAT-BCAT-Engine:intr-destination@intr-path-v1:master-records->GCAT-BCAT-Engine"
   },
-  "source_ledger_tip_observed": "d4694b8364b368c059451dc96a157f4ba43ccac1"
+  "source_ledger_tip_observed": "d8e83b5a7a27405913e789f30f9964014f2c1825"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",

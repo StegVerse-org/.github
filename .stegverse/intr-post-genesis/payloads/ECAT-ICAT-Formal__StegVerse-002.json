@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: StegVerse-002/.github's ledger (read anonymously at 7eb35d705dd7c43ac40512fe93883768e2e2dd5f) holds destination receipt sha256:bb331580e5133b7a6bfcff94dded5a9e5de7c965741ab524330195762a9462c1; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: StegVerse-002/.github's ledger (read anonymously at 021236472e0340cd9798ad8ded3e1d158ba98adb) holds destination receipt sha256:bb331580e5133b7a6bfcff94dded5a9e5de7c965741ab524330195762a9462c1; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:ECAT-ICAT-Formal->StegVerse-002",
  "destination": "StegVerse-002",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "7eb35d705dd7c43ac40512fe93883768e2e2dd5f",
+  "destination_ledger_tip_observed": "021236472e0340cd9798ad8ded3e1d158ba98adb",
   "destination_organization_receipt_sha256": "sha256:bb331580e5133b7a6bfcff94dded5a9e5de7c965741ab524330195762a9462c1"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:4b12ec269a7e6662275b1fa0ac80139bced611c063d0445ab44abcd27dfc74e9",
    "path_id": "ECAT-ICAT-Formal->StegVerse-002:intr-destination",
-   "payload_sha256": "sha256:009801e10c7ee8c08f23eb44b61db3abaaac69c8345aa7047778ffc1dba3ed75",
+   "payload_sha256": "sha256:288bd8537719164c7597a12bc5b2e6e384c132e2f151ec56ccec9214af088d74",
    "repository": "StegVerse-002/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "bfff95ce3e6c4d1576e0b6e3582a4a1aa7ae483c",
+    "source_ledger_tip": "a69d600d1cc2bb8e9d2fa3680c0d9ff5381b6ef2",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:f98cf6b209f47af219a53643d170edb972ac8e8d8a5b6589c131161959d28f74",
+ "record_sha256": "sha256:c6e469ff91e8f1be50f23330acf8f1521ba17b8f1178f6e64bae9a93b22198f1",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "ECAT-ICAT-Formal",
  "source_receipts": {
@@ -164,14 +164,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:ECAT-ICAT-Formal->StegVerse-002:intr-destination@intr-path-v1:ECAT-ICAT-Formal->StegVerse-002"
   },
-  "source_ledger_tip_observed": "bfff95ce3e6c4d1576e0b6e3582a4a1aa7ae483c"
+  "source_ledger_tip_observed": "a69d600d1cc2bb8e9d2fa3680c0d9ff5381b6ef2"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: StegVerse-002/.github's ledger (read anonymously at 7eb35d705dd7c43ac40512fe93883768e2e2dd5f) holds destination receipt sha256:bb331580e5133b7a6bfcff94dded5a9e5de7c965741ab524330195762a9462c1; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: StegVerse-002/.github's ledger (read anonymously at 021236472e0340cd9798ad8ded3e1d158ba98adb) holds destination receipt sha256:bb331580e5133b7a6bfcff94dded5a9e5de7c965741ab524330195762a9462c1; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

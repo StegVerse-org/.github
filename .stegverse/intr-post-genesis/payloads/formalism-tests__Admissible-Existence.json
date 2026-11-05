@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at 5a0166d463c823f24619211aa80fc8d1fb57a982) holds destination receipt sha256:c188cc7495905045de4d0aa0c28bda4ed09c72083e847ae609658af85e307ab4; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at 62e69ffd4833bd5672c8a9199ab0082ca9f2fd16) holds destination receipt sha256:c188cc7495905045de4d0aa0c28bda4ed09c72083e847ae609658af85e307ab4; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:formalism-tests->Admissible-Existence",
  "destination": "Admissible-Existence",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "5a0166d463c823f24619211aa80fc8d1fb57a982",
+  "destination_ledger_tip_observed": "62e69ffd4833bd5672c8a9199ab0082ca9f2fd16",
   "destination_organization_receipt_sha256": "sha256:c188cc7495905045de4d0aa0c28bda4ed09c72083e847ae609658af85e307ab4"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:44c4d7c07bf0d256c2dd61668ae2976e2653084dd3c9aca582a1245f23279c45",
    "path_id": "formalism-tests->Admissible-Existence:intr-destination",
-   "payload_sha256": "sha256:4c2fa494718fded18f8fdf96ae08bff69948d9f801052f11f3ada13eac8c734b",
+   "payload_sha256": "sha256:3b952b87d6adac35dc4e8f2bd60ceb7d33f2b561e80b113b2d2799129c300e0c",
    "repository": "Admissible-Existence/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "f79085fb2bb60e27ca6a1f19730aef6e71d8e35f",
+    "source_ledger_tip": "a2644919855488d7bfe075d9307dedfe1163a719",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:aac2a53299c05e5cc5416527a7ed5d06a14e8610e49cad47752497810634464e",
+ "record_sha256": "sha256:ab92c9a373a4a18c59adbc630ac4e0f433dc497a717cf56a54f84f9cec35c27b",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "formalism-tests",
  "source_receipts": {
@@ -164,14 +164,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:formalism-tests->Admissible-Existence:intr-destination@intr-path-v1:formalism-tests->Admissible-Existence"
   },
-  "source_ledger_tip_observed": "f79085fb2bb60e27ca6a1f19730aef6e71d8e35f"
+  "source_ledger_tip_observed": "a2644919855488d7bfe075d9307dedfe1163a719"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at 5a0166d463c823f24619211aa80fc8d1fb57a982) holds destination receipt sha256:c188cc7495905045de4d0aa0c28bda4ed09c72083e847ae609658af85e307ab4; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: Admissible-Existence/.github's ledger (read anonymously at 62e69ffd4833bd5672c8a9199ab0082ca9f2fd16) holds destination receipt sha256:c188cc7495905045de4d0aa0c28bda4ed09c72083e847ae609658af85e307ab4; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

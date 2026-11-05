@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: formalism-tests/.github's ledger (read anonymously at f79085fb2bb60e27ca6a1f19730aef6e71d8e35f) holds destination receipt sha256:a384352fcc01905d84faf6c1e4ee7827cb0234a01b7d4ebfa87b06d452599f75; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: formalism-tests/.github's ledger (read anonymously at a2644919855488d7bfe075d9307dedfe1163a719) holds destination receipt sha256:a384352fcc01905d84faf6c1e4ee7827cb0234a01b7d4ebfa87b06d452599f75; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:Infrastructure-Continuity-Ventures->formalism-tests",
  "destination": "formalism-tests",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "f79085fb2bb60e27ca6a1f19730aef6e71d8e35f",
+  "destination_ledger_tip_observed": "a2644919855488d7bfe075d9307dedfe1163a719",
   "destination_organization_receipt_sha256": "sha256:a384352fcc01905d84faf6c1e4ee7827cb0234a01b7d4ebfa87b06d452599f75"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:5ec99f6b05ac35c2e38b0e28572c5de65ef4574c60d58ebee690cfb5eabc270d",
    "path_id": "Infrastructure-Continuity-Ventures->formalism-tests:intr-destination",
-   "payload_sha256": "sha256:ee7a808af7a01286adbbe8df2a19c1b48f06e20d0dcdf3cf14f85950a4af004c",
+   "payload_sha256": "sha256:d18d25407f36228c4ddef74841ddbe1abdbc8bf42e114936f4e4c1559974e790",
    "repository": "formalism-tests/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "41fba313f9ac60dcc11a92a40169c10b4617f47b",
+    "source_ledger_tip": "070799d2ab5cea78d29c0d20817f1b1d215a2d1c",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:dacafe1e382b2a5298617f87b99edbcaff93b03eaaeb750dca0ba364557aa815",
+ "record_sha256": "sha256:4e95376721b3f4786f030dcc1b7f8695aff48c4c0514b01577c826cc2996b43f",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Infrastructure-Continuity-Ventures",
  "source_receipts": {
@@ -164,14 +164,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Infrastructure-Continuity-Ventures->formalism-tests:intr-destination@intr-path-v1:Infrastructure-Continuity-Ventures->formalism-tests"
   },
-  "source_ledger_tip_observed": "41fba313f9ac60dcc11a92a40169c10b4617f47b"
+  "source_ledger_tip_observed": "070799d2ab5cea78d29c0d20817f1b1d215a2d1c"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: formalism-tests/.github's ledger (read anonymously at f79085fb2bb60e27ca6a1f19730aef6e71d8e35f) holds destination receipt sha256:a384352fcc01905d84faf6c1e4ee7827cb0234a01b7d4ebfa87b06d452599f75; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: formalism-tests/.github's ledger (read anonymously at a2644919855488d7bfe075d9307dedfe1163a719) holds destination receipt sha256:a384352fcc01905d84faf6c1e4ee7827cb0234a01b7d4ebfa87b06d452599f75; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }
