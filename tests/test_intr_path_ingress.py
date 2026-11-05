@@ -270,11 +270,53 @@ class Consume(unittest.TestCase):
         return appended["organization_receipt"]["receipt_sha256"], legacy
 
     def test_an_unobserved_inclusion_gets_one_successor_receipt_that_records_it(self):
-        # The name is kept because the required-verification baseline pins it (a base test may not be removed or
-        # renamed). The successor it once described was the defect: an unobserved inclusion gets NO successor.
-        # Rigel (2026-10-29): "This shouldn't be possible without being a literal duplicate." One receipt per
-        # crossing: consume answers from the ledger and appends nothing, even when the receipt recorded the source
-        # inclusion as unobserved and the source ledger is readable now.
+        # Baseline id. The successor this name once described was the defect: an unobserved inclusion gets no
+        # successor. What still holds: the oldest receipt is authoritative, a second is a duplicate that grants
+        # nothing, and the writer refuses a second.
+        org, repo = synthetic_source()
+        first, _ = self._legacy_first_receipt(org, repo)
+        self.public.publish(org, repo)
+        checked = pi.check_source_pair(org, repo, PID, CID, DESTINATION)
+        epoch, failed = pi.ledger.head_epoch()
+        self.assertIsNone(failed)
+        observed = pi.ingress_evidence(checked, pi.source_inclusion(checked))
+        appended, _ = pi.ledger.append(
+            pi.TRANSITION_CLASS, PID + "@" + CID + pi.SOURCE_INCLUSION_PACKET_SUFFIX, observed, epoch,
+            operation=pi.OPERATION, profile_id=pi.ingress.PROFILE_ID,
+            boundary_extra={"path_id": PID, "source_repository": checked["source_repository"],
+                            "source_organization_receipt_sha256": org["receipt_sha256"],
+                            "source_repository_receipt_sha256": repo["receipt_sha256"]})
+        duplicate = appended["organization_receipt"]["receipt_sha256"]
+        inbound = self.ledger.write_inbound([row(org, repo)])
+        d_org, _, _ = pi.find_destination(PID, CID)
+        self.assertEqual(d_org["receipt_sha256"], first)
+        (verified,) = pi.verify_inbound(inbound)
+        self.assertEqual(verified["disposition"], "ALLOW", verified)
+        self.assertEqual(verified["organization_receipt_sha256"], first)
+        self.assertIn("source_inclusion_observed_at_verification", verified)
+        (finding,) = verified["duplicate_receipts"]
+        self.assertEqual((finding["finding"], finding["grants"], finding["organization_receipt_sha256"]),
+                         ("INTR_PATH_DESTINATION_DUPLICATE_OF_THE_SAME_CROSSING", "NOTHING", duplicate))
+        self.public.withdraw()
+        (denied,) = pi.verify_inbound(inbound)
+        self.assertEqual((denied["disposition"], denied["failure_code"], denied["organization_receipt_sha256"]),
+                         ("FAIL_CLOSED", "INTR_PATH_SOURCE_INCLUSION_UNOBSERVED", first), denied)
+        self.six(denied)
+        before = self.ledger.files()
+        (refused,) = pi.consume(inbound)
+        self.assertEqual((refused["disposition"], refused["failure_code"], refused["appended"],
+                          refused["organization_receipt_sha256"]),
+                         ("FAIL_CLOSED", "INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED", False, first), refused)
+        self.six(refused)
+        self.assertEqual(self.ledger.files(), before)
+        (again,) = pi.consume(inbound)
+        self.assertEqual((again["failure_code"], again["appended"], again["organization_receipt_sha256"]),
+                         ("INTR_PATH_DESTINATION_CROSSING_ALREADY_RECORDED", False, first), again)
+        self.assertEqual(self.ledger.files(), before)
+
+    def test_an_unobserved_inclusion_is_refused_a_second_receipt_and_nothing_is_appended(self):
+        # Replacement regression, kept beside the baseline id above: the writer refuses a second receipt for an
+        # unobserved inclusion and appends nothing; verification reports the inclusion it observes.
         org, repo = synthetic_source()
         first, _ = self._legacy_first_receipt(org, repo)
         inbound = self.ledger.write_inbound([row(org, repo)])
