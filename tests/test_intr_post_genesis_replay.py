@@ -75,54 +75,46 @@ class IntrPostGenesisKitTests(unittest.TestCase):
         self.assertIsNone(MANIFEST["class_counts"].get(kit.GENESIS_READY))
         for pid in four:
             record = kit.load_record(pid)
-            if pid in DUAL_GEN1_PATHS:
-                self.assertEqual((record["cls"], record["expected_at_genesis"]),
-                                 (kit.INBOUND_ROW_ABSENT, "FAIL_CLOSED"), pid)
-                self.assertNotIn(pid, MANIFEST["ledgered_allow"])
-                continue
             self.assertEqual((record["cls"], record["expected_at_genesis"]), (kit.DESTINATION_LEDGERED, "ALLOW"), pid)
             self.assertIn(pid, MANIFEST["ledgered_allow"])
         self.assertEqual(sum(MANIFEST["class_counts"].values()), 240)
         # master-records, formalism-tests and Infrastructure-Continuity-Ventures joined the declared paths (240 over 16 organizations).
-        # After org#274 the reader grants generation 1 only. 224 paths are destination-ledgered. The other 16 stay sealed
-        # with six fields: the ten annotated dual receipts into StegVerse-org, plus the six that touch StegVerse-Labs and
-        # one of the three joined organizations (Labs#3364/#3416).
-        self.assertEqual(MANIFEST["class_counts"].get(kit.DESTINATION_LEDGERED), 224)
-        self.assertEqual(sum(v for k, v in MANIFEST["class_counts"].items() if k != kit.DESTINATION_LEDGERED), 16)
+        # org#274 grants generation 1. The ten dual receipts are sealed to that receipt's unobserved inclusion and are
+        # ALLOW. 234 paths are destination-ledgered. The six that are not all touch StegVerse-Labs and one of the three
+        # joined organizations (Labs#3364/#3416).
+        self.assertEqual(MANIFEST["class_counts"].get(kit.DESTINATION_LEDGERED), 234)
+        self.assertEqual(sum(v for k, v in MANIFEST["class_counts"].items() if k != kit.DESTINATION_LEDGERED), 6)
         unledgered = [p for p in kit.paths() if p["path_id"] not in MANIFEST["ledgered_allow"]]
-        self.assertEqual(len(unledgered), 16)
-        self.assertEqual({p["path_id"] for p in unledgered if p["path_id"] in DUAL_GEN1_PATHS}, DUAL_GEN1_PATHS)
+        self.assertEqual(len(unledgered), 6)
+        self.assertTrue(DUAL_GEN1_PATHS <= set(MANIFEST["ledgered_allow"]))
+        for pid in DUAL_GEN1_PATHS:
+            record = kit.load_record(pid)
+            self.assertEqual(record["payload"]["evidence_at_observed_source_tip"]["source_inclusion"],
+                             kit.UNOBSERVED_INCLUSION, pid)
         for p in unledgered:
-            if p["path_id"] in DUAL_GEN1_PATHS:
-                record = kit.load_record(p["path_id"])
-                self.assertEqual(record["cls"], kit.INBOUND_ROW_ABSENT, p["path_id"])
-                self.assertEqual(record["expected_at_genesis"], "FAIL_CLOSED", p["path_id"])
-                self.assertEqual(record["status"]["failure_code"], kit.ingress.NOT_LEDGERED, p["path_id"])
-                continue
             self.assertIn("StegVerse-Labs", (p["source"], p["destination"]), p["path_id"])
             self.assertTrue(NEW_ORGS & {p["source"], p["destination"]}, p["path_id"])
 
     def test_carry_set_and_the_allow_ready_count(self):
-        # SV-LLM/.github#50's writer has landed and both carried rows were consumed. SV-LLM->Labs stays ledgered.
-        # SV-LLM->org is one of the ten annotated dual receipts: generation 1 grants, and it is not ALLOW.
+        # SV-LLM/.github#50's writer has landed and both carried rows were consumed. SV-LLM->org is one of the ten
+        # annotated dual receipts: the seal matches generation 1's unobserved inclusion, and the path is ALLOW.
         # Nothing remains to carry, and the ALLOW-ready count is exactly the ledgered set.
         self.assertEqual(MANIFEST["carry_allow"], [])
         for pid in ("SV-LLM->StegVerse-Labs:intr-destination", "SV-LLM->StegVerse-org:intr-destination"):
             record = kit.load_record(pid)
             self.assertNotIn("expected_after_carry", record)
-            if pid in DUAL_GEN1_PATHS:
-                self.assertEqual((record["cls"], record["expected_at_genesis"]),
-                                 (kit.INBOUND_ROW_ABSENT, "FAIL_CLOSED"))
-                continue
             self.assertEqual((record["cls"], record["expected_at_genesis"]), (kit.DESTINATION_LEDGERED, "ALLOW"))
-        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 224)
-        self.assertEqual(len(MANIFEST["ledgered_allow"]), 224)
+        self.assertEqual(MANIFEST["allow_ready_after_genesis"], 234)
+        self.assertEqual(len(MANIFEST["ledgered_allow"]), 234)
         for pid in MANIFEST["ledgered_allow"]:
             record = kit.load_record(pid)
             self.assertEqual(record["cls"], kit.DESTINATION_LEDGERED)
             self.assertIn("evidence_invariant", record["payload"])
-            self.assertEqual(record["payload"]["evidence_at_observed_source_tip"]["source_inclusion"]["state"],
-                             kit.ingress.PUBLIC_STATE)
+            inclusion = record["payload"]["evidence_at_observed_source_tip"]["source_inclusion"]
+            if pid in DUAL_GEN1_PATHS:
+                self.assertEqual(inclusion, kit.UNOBSERVED_INCLUSION, pid)
+            else:
+                self.assertEqual(inclusion["state"], kit.ingress.PUBLIC_STATE, pid)
             self.assertRegex(record["destination_receipts"]["destination_organization_receipt_sha256"],
                              r"^sha256:[0-9a-f]{64}$")
 
@@ -139,14 +131,6 @@ class IntrPostGenesisKitTests(unittest.TestCase):
                 # consumed it; the reseal that follows moves them to DESTINATION_RECEIPT_LEDGERED.
                 if record["cls"] != kit.DESTINATION_LEDGERED:
                     self.assertTrue(all(kit.has_six(b) for b in record["blockers"]), p["path_id"])
-                continue
-            if p["path_id"] in DUAL_GEN1_PATHS:
-                # org#274: the granted receipt is generation 1 and records an unobserved inclusion. The observed
-                # inclusion lives only on the generation-2 duplicate, which grants nothing, so the path is not ALLOW.
-                self.assertEqual(record["cls"], kit.INBOUND_ROW_ABSENT, p["path_id"])
-                self.assertEqual(record["expected_at_genesis"], "FAIL_CLOSED", p["path_id"])
-                self.assertEqual(record["status"]["failure_code"], kit.ingress.NOT_LEDGERED, p["path_id"])
-                self.assertTrue(kit.has_six(record["status"]), p["path_id"])
                 continue
             if p["source"] in public and p["destination"] in public:
                 # StegVerse-002 joined the mesh (StegVerse-002/.github#52 and its eleven inbound rows): every other
@@ -249,15 +233,18 @@ class IntrPostGenesisKitTests(unittest.TestCase):
     def test_the_sealed_payload_is_what_this_repositorys_writer_appends(self):
         here = kit.ingress.organization()
         mine = [pid for pid in MANIFEST["ledgered_allow"] if kit.load_record(pid)["destination"] == here]
-        # The ten annotated dual receipts grant generation 1 only, so they are not in the ledgered ALLOW set.
-        self.assertEqual(set(mine), {p["path_id"] for p in kit.paths()
-                                     if p["destination"] == here and p["path_id"] not in DUAL_GEN1_PATHS})
-        self.assertEqual(len(mine), 5)
+        self.assertEqual(set(mine), {p["path_id"] for p in kit.paths() if p["destination"] == here})
+        self.assertEqual(len(mine), 15)  # every other organization, including the ten generation-1 dual receipts
         for pid in mine:
             record = kit.load_record(pid)
             src = record["source_receipts"]
             checked = kit.ingress.check_source_pair(src["organization_receipt"], src["repository_receipt"], pid,
                                                     record["communication_id"], here)
+            if pid in DUAL_GEN1_PATHS:
+                self.assertEqual(kit.evidence_at_granted_unobserved(kit.evidence_core(checked, here),
+                                                                    record["communication_id"]),
+                                 record["payload"]["evidence_at_observed_source_tip"])
+                continue
             inclusion = {"disposition": "ALLOW", "state": kit.ingress.PUBLIC_STATE,
                          "source_ledger_tip": src["source_ledger_tip_observed"], "tvc_read_receipt": None}
             self.assertEqual(kit.ingress.ingress_evidence(checked, inclusion),

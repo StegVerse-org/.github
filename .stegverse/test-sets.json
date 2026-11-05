@@ -5112,6 +5112,7 @@
   ],
   "tests/test_intr_post_genesis_replay.py": [
    ".stegverse/intr-path-transfer/**",
+   ".stegverse/intr-path-transfer/destination-duplicate-annotations.v1.json",
    ".stegverse/intr-path-transfer/inbound.json",
    ".stegverse/intr-post-genesis/**",
    "scripts/intr_post_genesis_replay.py",
