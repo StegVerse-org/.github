@@ -1,0 +1,38 @@
+{
+  "authority_effect": "NONE",
+  "evidence": {
+    "communication_id": "main-merge-transfer:StegVerse-org/.github@20a91488af62c3ef8e9d1a1434236e7bef687c52",
+    "disposition": "ALLOW",
+    "merge_commit": "20a91488af62c3ef8e9d1a1434236e7bef687c52",
+    "merge_kind": "MERGE_COMMIT",
+    "parents": [
+      "998e1083514b2301d5c7e204f3144fabaa6a0623",
+      "5cb20534036ab32951f9004ec2ef2b3bb8b5bcbe"
+    ],
+    "payload_sha256": "sha256:4031edf7f8fd4eff322aca6b980b097cdc4a36f87b0ca91e61677f54e79f9ff9",
+    "pull_request": 276,
+    "pull_request_source": "MERGE_COMMIT_SUBJECT",
+    "ref": "refs/heads/main",
+    "repository": "StegVerse-org/.github",
+    "schema": "stegverse.main-merge-transfer-evidence/v1",
+    "tree": "0dfc183e73941dd371739d1fcd10bda220bd2299"
+  },
+  "hb_reference": {
+    "authority_effect": "NONE",
+    "derived_from_clock": false,
+    "epoch": 574296107,
+    "frequency_hz": 100,
+    "generation": 574296107,
+    "heartbeat_id": "HB:574296107",
+    "phase_offset_ns": 0,
+    "progression_dependency": "OSCILLATOR_ONLY"
+  },
+  "predecessor_state_sha256": "sha256:4031edf7f8fd4eff322aca6b980b097cdc4a36f87b0ca91e61677f54e79f9ff9",
+  "previous_receipt_sha256": "sha256:4f59d3e2175e268eeec71046d66c0ca05ddb8c624e3919c155b82c516008b3b3",
+  "receipt_sha256": "sha256:f75071eb24111d816131e796de51f634fe299aabaedcd1dbd4bfba613b7b0a57",
+  "repository": "StegVerse-org/.github",
+  "schema": "stegverse.repo-transition-receipt/v1",
+  "successor_state_sha256": "sha256:3e228933c65f9083ed10c5be9f56a1ed80d9cbba2a5624b2bb3d344d10b6114e",
+  "transition_class": "ORGANIZATION_MAIN_MERGE_TRANSFER",
+  "transition_id": "ORGANIZATION_MAIN_MERGE_TRANSFER:20a91488af62c3ef8e9d1a1434236e7bef687c52"
+}
