@@ -420,9 +420,31 @@ def _result(evidence: Mapping[str, Any], appended: Mapping[str, Any] | None, *,
     return result
 
 
+_LEDGER_GITSTORE: Any = None
+
+
+def _two_level_atomic():
+    """resident-runtime/ledger_gitstore.py two_level_atomic: both halves' locations are resolved and
+    checked before either is written, and a failure after the repository half rolls its ref back."""
+    global _LEDGER_GITSTORE
+    if _LEDGER_GITSTORE is None:
+        _LEDGER_GITSTORE = _module("ledger_gitstore_for_intr_destination_ingress", "resident-runtime/ledger_gitstore.py")
+    return _LEDGER_GITSTORE.two_level_atomic(ROOT, surface=_LEDGER_GITSTORE.BoundSurface(emit=repository_ledger, aggregate=organization_ledger))
+
+
 def _append(transition_class: str, packet_id: str, evidence: Mapping[str, Any],
             hb_epoch: int | None, *, operation: str = OPERATION_ID, profile_id: str = PROFILE_ID,
             boundary_extra: Mapping[str, Any] | None = None) -> tuple[dict[str, Any], bool]:
+    """Append at both levels, all or nothing (see _two_level_atomic); a refusal of either
+    location raises ledger_gitstore.TwoLevelAppendRefused (a ValueError) before any write."""
+    with _two_level_atomic():
+        return _append_halves(transition_class, packet_id, evidence, hb_epoch, operation=operation,
+                              profile_id=profile_id, boundary_extra=boundary_extra)
+
+
+def _append_halves(transition_class: str, packet_id: str, evidence: Mapping[str, Any],
+                   hb_epoch: int | None, *, operation: str = OPERATION_ID, profile_id: str = PROFILE_ID,
+                   boundary_extra: Mapping[str, Any] | None = None) -> tuple[dict[str, Any], bool]:
     """Append at both levels. A replay of the same packet returns the recorded pair.
 
     ``operation``, ``profile_id`` and ``boundary_extra`` name another operation
