@@ -93,11 +93,21 @@ class RepositoryReceiptTests(unittest.TestCase):
             b = emit_repo_receipt(second)
             self.assertEqual(a["receipt_sha256"], b["receipt_sha256"])
 
-    def test_a_repository_receipt_without_a_tick_marks_itself_derived(self):
+    def test_a_repository_receipt_without_a_tick_is_refused_and_not_written(self):
+        # Flipped by B1 (emit.py L105): it used to be stamped from the host clock
+        # and marked derived; now it is refused six-field and nothing is written.
         with tempfile.TemporaryDirectory() as root:
-            receipt = emit_repo_receipt(root, hb_epoch=None)
-            self.assertIs(receipt["hb_reference"]["derived_from_clock"], True)
-            self.assertIn("sampled_unix_ns", receipt["hb_reference"])
+            command = [sys.executable, str(EMIT),
+                       "--transition-id", "t-1", "--transition-class", "TEST",
+                       "--predecessor-state-sha256", STATE_BEFORE,
+                       "--successor-state-sha256", STATE_AFTER]
+            completed = subprocess.run(command, capture_output=True, text=True, cwd=str(ROOT),
+                                       env=dict(os.environ, STEGVERSE_REPO_LEDGER_ROOT=str(Path(root) / "ledger")))
+            self.assertEqual(completed.returncode, 1, completed.stderr)
+            refusal = json.loads(completed.stdout.splitlines()[-1])
+            self.assertEqual(refusal["failure_code"], "HB_EPOCH_NOT_SUPPLIED")
+            self.assertIs(refusal["derived_from_clock"], False)
+            self.assertFalse((Path(root) / "ledger").exists())
 
 
 class OrganizationReceiptTests(unittest.TestCase):
