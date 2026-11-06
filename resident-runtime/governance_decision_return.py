@@ -298,6 +298,23 @@ def return_on_consumption(response_packet: Mapping[str, Any], *, mesh_root: Path
             "response_packet_id": response_packet.get("packet_id")}
 
 
+def _cli_hb_epoch(text):
+    """--hb-epoch as typed (type=str), checked by the shared supplied-epoch rule (H39, decided by Q14).
+
+    An absent --hb-epoch stays None (unchanged). A supplied one is refused
+    six-field FAIL_CLOSED HB_EPOCH_INVALID unless it is ASCII digits >= 32, so
+    '+33', ' 33' and '3_3' are no longer coerced by int().
+    """
+    if text is None:
+        return None, None
+    path = ROOT / "org-boundary/runtime/capability_ingress.py"
+    spec = importlib.util.spec_from_file_location("capability_ingress_cli_epoch", path)
+    rule = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rule)
+    refusal = rule.direct_epoch_refusal(text, "resident-runtime/governance_decision_return.py::main")
+    return (None, refusal) if refusal else (rule.supplied_epoch(text), None)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--manifest", type=Path, required=True)
@@ -305,9 +322,14 @@ def main() -> int:
     parser.add_argument("--communication-id", required=True)
     parser.add_argument("--mesh-root", type=Path, required=True,
                         help="federation mesh this node was materialized with")
-    parser.add_argument("--hb-epoch", type=int, default=None)
+    parser.add_argument("--hb-epoch", type=str, default=None,
+                        help="heartbeat epoch as supplied (ASCII digits >= 32, checked by the shared rule)")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
+    args.hb_epoch, refusal = _cli_hb_epoch(args.hb_epoch)
+    if refusal is not None:
+        print(json.dumps(refusal, sort_keys=True))
+        return EXIT_NOT_ALLOWED
     result = return_decision(json.loads(args.manifest.read_text(encoding="utf-8")),
                              packet_id=args.packet_id, communication_id=args.communication_id,
                              mesh_root=args.mesh_root, hb_epoch=args.hb_epoch)
