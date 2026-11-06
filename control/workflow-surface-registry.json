@@ -989,5 +989,15 @@
       ],
       "reason": "Lane B #231 (StegVerse-org/.github#162) ported onto G17 #238 via #239: .github/workflows/test-suite-selected.yml was a workflow file #231 added; its one job is this catalog group run by validation-dispatcher.yml"
     }
-  ]
+  ],
+  "ceiling_fail_closed": {
+    "disposition": "FAIL_CLOSED",
+    "workflow_count": 3,
+    "failure_code": "G17_AT_EXCEPTION_CEILING",
+    "failed_predicate": "workflow_count <= preferred_repository_workflow_count_max (2); at exception_repository_workflow_count_max (3)",
+    "required_evidence_or_repair": "StegVerse-org/.github is at the documented exception ceiling of 3: validation-dispatcher.yml + organization-ledger-writer.yml (KEEP_STABLE_DISPATCHER pair) and organization-egress-boundary-validation.yml (KEEP_STANDALONE_EXCEPTION; 3rd-workflow exception recorded in open_decisions). No further safe fold without collapsing the ledger writer or egress boundary into the dispatcher under an admitted design. Credentials belong only in the SKAP Vault inside KV (TV/TVC).",
+    "retry_entrypoint": "tests/test_workflow_surface_registry.py",
+    "owning_existing_goal": "G17-WORKFLOW-SURFACE-MINIMIZATION (StegVerse-Labs/.github#167/#168); StegVerse-org/.github#166",
+    "next_attempt": "owner decision on the 3rd-workflow exception (organization-egress-boundary-validation.yml) or an admitted catalog design that preserves ledger-writer semantics; until then org stays at exception ceiling 3"
+  }
 }
