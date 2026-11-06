@@ -173,10 +173,23 @@ def evidence_core(checked: Mapping[str, Any], destination: str) -> dict:
             "addressed_service": destination_address(destination)}
 
 
+# The string ``ingress_evidence`` records when the destination receipt did not observe the source inclusion.
+# Generation 1 of the ten annotated dual receipts carries this value. Generation 2 recorded an observed inclusion
+# and grants nothing.
+UNOBSERVED_INCLUSION = "UNOBSERVED_WITHOUT_A_CROSS_ORG_READ_CREDENTIAL"
+
+
 def evidence_at_tip(core: Mapping[str, Any], communication: str, source_ledger_tip: str) -> dict:
     """The full evidence the writer appends when the source inclusion is read anonymously at ``source_ledger_tip``."""
     full = {**core, "source_inclusion": {"state": ingress.PUBLIC_STATE, "source_ledger_tip": source_ledger_tip,
                                          "tvc_read_receipt": None}}
+    return {**full, "payload_sha256": ingress.sha(full), "disposition": ALLOW, "communication_id": communication}
+
+
+def evidence_at_granted_unobserved(core: Mapping[str, Any], communication: str) -> dict:
+    """The evidence a granted generation-1 receipt actually carries: the same core, with source_inclusion the
+    unobserved string. This is the ledgered payload, not the observed-inclusion payload a later duplicate recorded."""
+    full = {**core, "source_inclusion": UNOBSERVED_INCLUSION}
     return {**full, "payload_sha256": ingress.sha(full), "disposition": ALLOW, "communication_id": communication}
 
 
@@ -322,17 +335,27 @@ def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers:
     core = evidence_core(checked, dst)
     rec["source_receipts"] = {"source_ledger_tip_observed": rb["ledger_tip"],
                               "organization_receipt": org_r, "repository_receipt": rb["repository_receipt"]}
+    ledgered = destination_ledgered(path, rb, core, public_ledgers)
+    granted_unobserved = ledgered is not None and ledgered.get("source_inclusion") == UNOBSERVED_INCLUSION
+    at_tip = (evidence_at_granted_unobserved(core, cid) if granted_unobserved
+              else evidence_at_tip(core, cid, rb["ledger_tip"]))
     rec["payload"] = {"evidence_invariant": {k: core[k] for k in INVARIANT_FIELDS},
                       "evidence_invariant_sha256": digest({k: core[k] for k in INVARIANT_FIELDS}),
-                      "source_inclusion_rule": {"state": ingress.PUBLIC_STATE, "tvc_read_receipt": None,
-                                                "source_ledger_tip": "the source ledger tip read at consume time; "
-                                                "its chain must include source_organization_receipt_sha256"},
-                      "evidence_at_observed_source_tip": evidence_at_tip(core, cid, rb["ledger_tip"])}
-    ledgered = destination_ledgered(path, rb, core, public_ledgers)
+                      "source_inclusion_rule": (
+                          {"recorded": UNOBSERVED_INCLUSION,
+                           "rule": "the granted generation-1 receipt records source_inclusion as this string; "
+                                   "a later receipt of the same crossing grants nothing"}
+                          if granted_unobserved else
+                          {"state": ingress.PUBLIC_STATE, "tvc_read_receipt": None,
+                           "source_ledger_tip": "the source ledger tip read at consume time; "
+                                                "its chain must include source_organization_receipt_sha256"}),
+                      "evidence_at_observed_source_tip": at_tip}
     if ledgered is not None:
-        # The destination receipt is already on the destination's public ledger, the same end-to-end verification
-        # the replay runs answers ALLOW, and it records an anonymously observed source inclusion. Genesis rows,
-        # ingress-on-main and epochs are moot for it: they gate writing a receipt that is already written.
+        ledgered = {k: ledgered[k] for k in ("destination_ledger_tip_observed",
+                                             "destination_organization_receipt_sha256")}
+        # The destination receipt is already on the destination's public ledger and the same end-to-end verification
+        # the replay runs answers ALLOW. Its source inclusion is the anonymous public read, or the unobserved string
+        # the granted generation-1 receipt recorded. Genesis rows, ingress-on-main and epochs are moot for it.
         status = six("INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED", "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
                      "nothing to write: " + dst + "/.github's ledger (read anonymously at "
                      + ledgered["destination_ledger_tip_observed"] + ") holds destination receipt "
@@ -376,8 +399,9 @@ def classify(inputs: Mapping[str, Any], path: Mapping[str, Any], public_ledgers:
 def destination_ledgered(path: Mapping[str, Any], source_rb: Mapping[str, Any], core: Mapping[str, Any],
                          public_ledgers: Path | str | None) -> dict | None:
     """The destination half already on ``path``'s destination public ledger, verified exactly as ``replay_path``
-    verifies it (verify_end_to_end ALLOW, the invariant evidence equal to ``core``, an anonymously observed source
-    inclusion); None otherwise. Reads only the local anonymous copies: no network, no clock, no credential."""
+    verifies it (verify_end_to_end ALLOW, the invariant evidence equal to ``core``, and the source inclusion either
+    an anonymous public read or the unobserved string the granted generation-1 receipt recorded). None otherwise.
+    Reads only the local anonymous copies: no network, no clock, no credential."""
     pid, cid, dst = path["path_id"], path["communication_id"], path["destination"]
     if not readable(public_ledgers, dst):
         return None
@@ -388,12 +412,20 @@ def destination_ledgered(path: Mapping[str, Any], source_rb: Mapping[str, Any], 
         return None
     d_repo = drb.get("repository_receipt") if isinstance(drb.get("repository_receipt"), Mapping) else {}
     evidence = d_repo.get("evidence") if isinstance(d_repo.get("evidence"), Mapping) else {}
-    inc = evidence.get("source_inclusion") if isinstance(evidence.get("source_inclusion"), Mapping) else {}
-    if any(evidence.get(k) != core[k] for k in INVARIANT_FIELDS) or inc.get("state") != ingress.PUBLIC_STATE \
-            or inc.get("tvc_read_receipt") is not None:
+    inc_raw = evidence.get("source_inclusion")
+    inc = inc_raw if isinstance(inc_raw, Mapping) else {}
+    observed = inc.get("state") == ingress.PUBLIC_STATE and inc.get("tvc_read_receipt") is None
+    unobserved = inc_raw == UNOBSERVED_INCLUSION
+    if any(evidence.get(k) != core[k] for k in INVARIANT_FIELDS) or not (observed or unobserved):
         return None
+    if unobserved:
+        granted = evidence_at_granted_unobserved(core, cid)
+        if evidence.get("payload_sha256") != granted["payload_sha256"] \
+                or evidence.get("communication_id") != cid or evidence.get("disposition") != ALLOW:
+            return None
     return {"destination_ledger_tip_observed": drb["ledger_tip"],
-            "destination_organization_receipt_sha256": drb["organization_receipt"].get("receipt_sha256")}
+            "destination_organization_receipt_sha256": drb["organization_receipt"].get("receipt_sha256"),
+            "source_inclusion": inc_raw}
 
 
 def seal_all(inputs: Mapping[str, Any], public_ledgers: Path | str) -> tuple[list[dict], dict]:
@@ -506,8 +538,12 @@ def check_record(record: Mapping[str, Any], manifest: Mapping[str, Any] | None =
         p = record["payload"]
         if p.get("evidence_invariant") != inv or p.get("evidence_invariant_sha256") != digest(inv):
             problems.append("payload invariant does not recompute")
-        if p.get("evidence_at_observed_source_tip") != evidence_at_tip(core, record["communication_id"],
-                                                                       src.get("source_ledger_tip_observed")):
+        sealed_tip = p.get("evidence_at_observed_source_tip")
+        granted = evidence_at_granted_unobserved(core, record["communication_id"])
+        if isinstance(sealed_tip, Mapping) and sealed_tip.get("source_inclusion") == UNOBSERVED_INCLUSION:
+            if sealed_tip != granted:
+                problems.append("payload at the granted unobserved inclusion does not recompute")
+        elif sealed_tip != evidence_at_tip(core, record["communication_id"], src.get("source_ledger_tip_observed")):
             problems.append("payload at the observed source tip does not recompute")
     elif record.get("cls") == DESTINATION_LEDGERED:
         problems.append("class " + record["cls"] + " needs a payload")
@@ -669,9 +705,18 @@ def replay_path(record: Mapping[str, Any], inputs: Mapping[str, Any], public_led
     else:
         expected = record["payload"]["evidence_invariant"]
     differs = sorted(k for k in INVARIANT_FIELDS if evidence.get(k) != expected.get(k))
-    inc = evidence.get("source_inclusion") if isinstance(evidence.get("source_inclusion"), Mapping) else {}
-    if inc.get("state") != ingress.PUBLIC_STATE or inc.get("tvc_read_receipt") is not None:
-        differs.append("source_inclusion.state")
+    sealed_tip = payload.get("evidence_at_observed_source_tip") if isinstance(payload, Mapping) else {}
+    sealed_inc = sealed_tip.get("source_inclusion") if isinstance(sealed_tip, Mapping) else None
+    live_inc = evidence.get("source_inclusion")
+    if sealed_inc == UNOBSERVED_INCLUSION:
+        # The granted receipt recorded the unobserved string. That is the sealed payload. A later observed
+        # inclusion on a duplicate of the same crossing grants nothing and is not what this comparison reads.
+        if live_inc != sealed_inc or evidence.get("payload_sha256") != sealed_tip.get("payload_sha256"):
+            differs.append("source_inclusion")
+    else:
+        inc = live_inc if isinstance(live_inc, Mapping) else {}
+        if inc.get("state") != ingress.PUBLIC_STATE or inc.get("tvc_read_receipt") is not None:
+            differs.append("source_inclusion.state")
     if differs:
         return {**out, "disposition": DENY, **six(
             "INTR_POST_GENESIS_LEDGERED_PAYLOAD_DIFFERS_FROM_SEALED", "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",

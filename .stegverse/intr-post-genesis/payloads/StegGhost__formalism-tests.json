@@ -7,7 +7,7 @@
    "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
    "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
    "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "nothing to write: formalism-tests/.github's ledger (read anonymously at f79085fb2bb60e27ca6a1f19730aef6e71d8e35f) holds destination receipt sha256:8324ad5760e7af7e362cdc13a4edffa03f5496bc814d2c54430338901c07fa21; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+   "required_evidence_or_repair": "nothing to write: formalism-tests/.github's ledger (read anonymously at a2644919855488d7bfe075d9307dedfe1163a719) holds destination receipt sha256:8324ad5760e7af7e362cdc13a4edffa03f5496bc814d2c54430338901c07fa21; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
    "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
   }
  ],
@@ -15,7 +15,7 @@
  "communication_id": "intr-path-v1:StegGhost->formalism-tests",
  "destination": "formalism-tests",
  "destination_receipts": {
-  "destination_ledger_tip_observed": "f79085fb2bb60e27ca6a1f19730aef6e71d8e35f",
+  "destination_ledger_tip_observed": "a2644919855488d7bfe075d9307dedfe1163a719",
   "destination_organization_receipt_sha256": "sha256:8324ad5760e7af7e362cdc13a4edffa03f5496bc814d2c54430338901c07fa21"
  },
  "e0_terminal": true,
@@ -39,11 +39,11 @@
    },
    "message_sha256": "sha256:6db1eb1ebff8fa1de1e612bb7a44e679a012372360903aa6788b9b4555dc3a5d",
    "path_id": "StegGhost->formalism-tests:intr-destination",
-   "payload_sha256": "sha256:615565909e6415d752e60297f7d8cf438efbc4a8db652030542bd9797424000c",
+   "payload_sha256": "sha256:24cd077f51c54562af6c965eafcf761be790d6041327f1e24d915a6b1bc86ba0",
    "repository": "formalism-tests/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "85ba46b3f55dafba3460959052a87c0261ec95b2",
+    "source_ledger_tip": "13066a1c091a5d56d008d4b2e9e2cde44f2a63c8",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -77,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:24b5ac04b8789dc9121d3f11de5df6ff8689b978aa9a5fb11223d31bd5d29637",
+ "record_sha256": "sha256:be1e4e07171a8105ea370245a9fe6cc7b807b167575ca8fae934e609f189f33b",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegGhost",
  "source_receipts": {
@@ -164,14 +164,14 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:StegGhost->formalism-tests:intr-destination@intr-path-v1:StegGhost->formalism-tests"
   },
-  "source_ledger_tip_observed": "85ba46b3f55dafba3460959052a87c0261ec95b2"
+  "source_ledger_tip_observed": "13066a1c091a5d56d008d4b2e9e2cde44f2a63c8"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
   "failure_code": "INTR_POST_GENESIS_LEDGERED_RECEIPT_REPLAYED",
   "next_attempt": "fetch both ledgers anonymously, then scripts/intr_post_genesis_replay.py replay --require-ledgered-allow",
   "owning_existing_goal": "StegVerse-org/.github#162",
-  "required_evidence_or_repair": "nothing to write: formalism-tests/.github's ledger (read anonymously at f79085fb2bb60e27ca6a1f19730aef6e71d8e35f) holds destination receipt sha256:8324ad5760e7af7e362cdc13a4edffa03f5496bc814d2c54430338901c07fa21; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
+  "required_evidence_or_repair": "nothing to write: formalism-tests/.github's ledger (read anonymously at a2644919855488d7bfe075d9307dedfe1163a719) holds destination receipt sha256:8324ad5760e7af7e362cdc13a4edffa03f5496bc814d2c54430338901c07fa21; the replay re-reads both ledgers anonymously and requires the ledgered evidence to equal this sealed payload",
   "retry_entrypoint": "scripts/intr_post_genesis_replay.py replay"
  }
 }

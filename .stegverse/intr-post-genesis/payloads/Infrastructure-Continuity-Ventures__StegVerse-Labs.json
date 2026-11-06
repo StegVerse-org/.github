@@ -9,14 +9,6 @@
    "owning_existing_goal": "StegVerse-org/.github#162",
    "required_evidence_or_repair": "an inbound row for Infrastructure-Continuity-Ventures->StegVerse-Labs:intr-destination on StegVerse-Labs/.github main carrying the source receipt pair",
    "retry_entrypoint": "StegVerse-Labs/.github .github/workflows/intr-path-ingress.yml (workflow_run after the main-merge transfer of the push that lands the row)"
-  },
-  {
-   "failed_predicate": "MERGE_TRANSFER_EPOCH_IS_THE_LEDGER_HEAD_SUPPLIED_EPOCH",
-   "failure_code": "HB_EPOCH_SOURCE_UNOBSERVED",
-   "next_attempt": "after the head carries a supplied epoch: fetch anonymously, re-seal, and re-run the writers' push",
-   "owning_existing_goal": "StegVerse-org/.github#162",
-   "required_evidence_or_repair": "StegVerse-Labs/.github's organization ledger head receipt sha256:b9a73bf78d55228abe9b31f52654e041b94a39cee69ff071538fa66a7a8a1aed carries epoch 574296107 without derived_from_clock: false, so its merge-transfer, path-transfer and ingress writers refuse before writing; its writer must take a supplied epoch and its ledger head must be re-appended with one",
-   "retry_entrypoint": "StegVerse-Labs/.github .github/workflows/organization-ledger-transition.yml (a supplied hb_epoch)"
   }
  ],
  "cls": "DESTINATION_INBOUND_ROW_ABSENT",
@@ -24,14 +16,6 @@
  "destination": "StegVerse-Labs",
  "e0_terminal": true,
  "expected_at_genesis": "FAIL_CLOSED",
- "ledger_head_epoch": {
-  "StegVerse-Labs": {
-   "epoch": 574296107,
-   "head_receipt_sha256": "sha256:b9a73bf78d55228abe9b31f52654e041b94a39cee69ff071538fa66a7a8a1aed",
-   "organization": "StegVerse-Labs",
-   "supplied": false
-  }
- },
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "Infrastructure-Continuity-Ventures->StegVerse-Labs:intr-destination",
@@ -51,11 +35,11 @@
    },
    "message_sha256": "sha256:0c421898f0bc04373d278ad563095e025fbc8196d2312e660a45f6c88ff9e417",
    "path_id": "Infrastructure-Continuity-Ventures->StegVerse-Labs:intr-destination",
-   "payload_sha256": "sha256:ded77a6a68962f71a4594d7fadebd03e0c853f1881ec127e14e49079b9b2c2f5",
+   "payload_sha256": "sha256:de5cdd197067e6c3fe08fdea134e6d5f0b636ae6fa9f374c45e9e95d3c4a222e",
    "repository": "StegVerse-Labs/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "41fba313f9ac60dcc11a92a40169c10b4617f47b",
+    "source_ledger_tip": "070799d2ab5cea78d29c0d20817f1b1d215a2d1c",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -89,7 +73,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:b5603022c1d0e80c52307e18d73ebdc96d303afd585cba55b6e7ccedfa748c4c",
+ "record_sha256": "sha256:ee912d5b8a2f49172753f5a0b04dee13a5ef647651d6e3f763409683b5e4c64d",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "Infrastructure-Continuity-Ventures",
  "source_receipts": {
@@ -176,7 +160,7 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:Infrastructure-Continuity-Ventures->StegVerse-Labs:intr-destination@intr-path-v1:Infrastructure-Continuity-Ventures->StegVerse-Labs"
   },
-  "source_ledger_tip_observed": "41fba313f9ac60dcc11a92a40169c10b4617f47b"
+  "source_ledger_tip_observed": "070799d2ab5cea78d29c0d20817f1b1d215a2d1c"
  },
  "status": {
   "failed_predicate": "PATH_HAS_A_DESTINATION_LEDGER_RECEIPT",

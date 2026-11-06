@@ -20,14 +20,6 @@
  },
  "e0_terminal": true,
  "expected_at_genesis": "ALLOW",
- "ledger_head_epoch": {
-  "StegVerse-Labs": {
-   "epoch": 574296107,
-   "head_receipt_sha256": "sha256:b9a73bf78d55228abe9b31f52654e041b94a39cee69ff071538fa66a7a8a1aed",
-   "organization": "StegVerse-Labs",
-   "supplied": false
-  }
- },
  "ledgered": false,
  "operation": "ORGANIZATION_INTR_DESTINATION_INGRESS",
  "path_id": "StegVerse-Labs->GCAT-BCAT-Engine:intr-destination",
@@ -47,11 +39,11 @@
    },
    "message_sha256": "sha256:913a99f8775a44fcbc66831c18f666519d91492031d97abc5df5d0ee06abce6b",
    "path_id": "StegVerse-Labs->GCAT-BCAT-Engine:intr-destination",
-   "payload_sha256": "sha256:1505f4c11eac267c0cd6f3556d4a33d31ab51d0c7b400d6ff699654a1ebb0b34",
+   "payload_sha256": "sha256:9edb60a90d6416cd84743efae0cf11a97103e908e41733a503c0d9ce8a02d491",
    "repository": "GCAT-BCAT-Engine/.github",
    "schema": "stegverse.intr-path-ingress-evidence/v1",
    "source_inclusion": {
-    "source_ledger_tip": "b2d90fc301fe0ced4fd5d68dc0734342e59f8cea",
+    "source_ledger_tip": "d4a3f007bc2451eabf9e99e32ea52851c8d96c85",
     "state": "VERIFIED_BY_ANONYMOUS_PUBLIC_LEDGER_READ",
     "tvc_read_receipt": null
    },
@@ -85,7 +77,7 @@
    "tvc_read_receipt": null
   }
  },
- "record_sha256": "sha256:46786d081ea30fe6c785389c14bb242fab3dff4f03cc7c79fd508276ca6b4375",
+ "record_sha256": "sha256:edce245795bc1e7b8ca785fc6c24db5c156fed0b82abe74e319c37784e2d0bc7",
  "schema": "stegverse.intr-post-genesis-path/v1",
  "source": "StegVerse-Labs",
  "source_receipts": {
@@ -175,7 +167,7 @@
    "transition_class": "INTR_MESH_PATH_TRANSFER",
    "transition_id": "INTR_MESH_PATH_TRANSFER:StegVerse-Labs->GCAT-BCAT-Engine:intr-destination@intr-path-v1:StegVerse-Labs->GCAT-BCAT-Engine"
   },
-  "source_ledger_tip_observed": "b2d90fc301fe0ced4fd5d68dc0734342e59f8cea"
+  "source_ledger_tip_observed": "d4a3f007bc2451eabf9e99e32ea52851c8d96c85"
  },
  "status": {
   "failed_predicate": "LEDGERED_INGRESS_EVIDENCE_EQUALS_SEALED_PAYLOAD",
