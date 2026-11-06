@@ -86,8 +86,10 @@ TRANSITION_DISPOSITIONS = {"ALLOW", "DENY", "FAIL_CLOSED"}
 OBSERVATION_DISPOSITIONS = {"PENDING", "NOTHING_PUBLISHED", "CLOSURE_ALREADY_RECORDED"}
 #: The only environment variables a runtime module may read by name: each names
 #: a ledger location and confers nothing.
+#: STEGVERSE_ORG_LEDGER_GIT_REF is read by ledger_gitstore.py's preflight only to refuse
+#: a ref that disagrees with the bound organization ledger ref.
 LOCATION_VARIABLES = {"STEGVERSE_REPO_LEDGER_ROOT", "STEGVERSE_ORG_LEDGER_ROOT",
-                      "STEGVERSE_REPO_LEDGER_HOME"}
+                      "STEGVERSE_REPO_LEDGER_HOME", "STEGVERSE_ORG_LEDGER_GIT_REF"}
 CREDENTIAL_VARIABLES = {"GITHUB_TOKEN", "GH_TOKEN", "GITHUB_PAT", "GITHUB_PERSONAL_ACCESS_TOKEN",
                         "ACTIONS_RUNTIME_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "TV_HMAC_SIGNING_KEY"}
 
