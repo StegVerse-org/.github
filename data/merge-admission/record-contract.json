@@ -1,0 +1,43 @@
+{
+ "schema": "stegverse.org-merge-admission-record-contract/v1",
+ "record_schema": "stegverse.merge-admission-record/v2.1",
+ "record_fields": [
+  "authoring_session",
+  "authoring_session_source",
+  "base_head_sha",
+  "base_ref",
+  "change_digest",
+  "change_digest_rule",
+  "check_counts",
+  "corpus_head",
+  "effect",
+  "genesis_receipt_sha256",
+  "hb_epoch",
+  "head_sha",
+  "ledger_head",
+  "ledger_operation",
+  "manifest_sha256",
+  "predicates",
+  "pull_number",
+  "push_receipt_head_sha256",
+  "record_sha256",
+  "repository",
+  "required_checks",
+  "schema",
+  "surface_kinds",
+  "transition"
+ ],
+ "admitted_manifest_sha256": "sha256:9f0e58ec71438b65fae7a739530ce11fd59eeca04a3e56b8243432fb24bb7217",
+ "manifest_source": "StegVerse-Labs/TVC#534 @3019f1c2 config/sv-merge-admission/manifest.json v2.2, digest as sv_merge_admission.admission_manifest_sha256 computes it; supersedes v2.1 sha256:7b7a1b74b2e164792d0b2ff66092b519e6460ee758f3d9cc1304428d416b36bc and v2 sha256:7370db4088ea0fa5621f64ddd4f8c77778ce28358a1841254b3b6e28c58bf4e3 (re-pin here when the manifest changes; a record under any other manifest is refused)",
+ "record_producer": "StegVerse-Labs/TVC sv_merge_admission.admission_record (TVC#534 @3019f1c2); schema schemas/merge-admission-record.v2_1.schema.json there (record fields unchanged in v2.2)",
+ "consumer": "resident-runtime/merge_transfer_admission.py admission_records (B2): boundary operation MERGE_ADMISSION_RECORD, boundary admission_record",
+ "delivery": {
+  "envelope_schema": "stegverse.merge-admission-record-delivery/v1",
+  "signed_payload_schema": "stegverse.merge-admission-record-delivery-payload/v1",
+  "signature": "ed25519 over canonical JSON (sort_keys, separators , :) of signed_payload, base64; verified by openssl pkeyutl -verify -rawin",
+  "signer_public_key_pem": null,
+  "signer_key_id": null,
+  "pin_status": "UNKNOWN_NOT_AUTHENTICALLY_OBSERVED: no TVC resident issuance receipt publishing the merge-admission signer public key has been observed",
+  "pin_event": "a TVC resident issuance receipt that publishes the merge-admission signer public key (ed25519, PEM) and its key id; a PR re-pins this block from it. Only the public key is ever pinned here."
+ }
+}
